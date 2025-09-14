@@ -231,12 +231,17 @@ export default function Header() {
 
   const handleSignOut = async () => {
     try {
+      console.log('로그아웃 시작...')
       const supabase = createBrowserClient()
+      console.log('Supabase 클라이언트 생성됨')
+      
       await supabase.auth.signOut()
+      console.log('Supabase 로그아웃 완료')
       
       // localStorage 캐시 클리어
       localStorage.removeItem('cached_user_name')
       localStorage.removeItem('cached_user_type')
+      console.log('localStorage 캐시 클리어 완료')
       
       setUser(null)
       setUserProfile(null)
@@ -244,7 +249,10 @@ export default function Header() {
       setDisplayName('')
       profileLoadedRef.current = false
       setIsUserDropdownOpen(false)
+      console.log('상태 초기화 완료')
+      
       router.push('/')
+      console.log('홈페이지로 리다이렉트 완료')
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -374,6 +382,7 @@ export default function Header() {
                         )}
                         <button
                           onClick={() => {
+                            console.log('로그아웃 버튼 클릭됨 (드롭다운)')
                             handleSignOut()
                             setIsUserDropdownOpen(false)
                           }}
@@ -507,6 +516,7 @@ export default function Header() {
                         </div>
                         <button
                           onClick={() => {
+                            console.log('로그아웃 버튼 클릭됨 (모바일)')
                             handleSignOut()
                             setIsMenuOpen(false)
                           }}

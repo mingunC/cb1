@@ -129,20 +129,9 @@ function calculateProjectStatus(project: Project, contractorId: string): Project
   
   // 2. 현장방문 신청한 경우
   if (project.site_visit_application) {
-    console.log('현장방문 신청 상태 확인:', {
-      projectId: project.id,
-      siteVisitApplication: project.site_visit_application,
-      isCancelled: project.site_visit_application.is_cancelled,
-      projectStatus: project.status
-    })
     
     // 취소된 경우 다시 신청 가능하도록 pending 상태로 처리
     if (project.site_visit_application.is_cancelled) {
-      console.log('취소된 현장방문 신청 -> pending 상태 반환', {
-        projectId: project.id,
-        isCancelled: project.site_visit_application.is_cancelled,
-        cancelledAt: project.site_visit_application.cancelled_at
-      })
       return 'pending'
     }
     // 활성 신청인 경우
@@ -221,8 +210,6 @@ export default function IntegratedContractorDashboard() {
       
       const supabase = createBrowserClient()
       
-      console.log(`🔍 프로젝트 데이터 조회 시작... (offset: ${offset})`)
-      
       // quote_requests 목록 조회 (방문 신청 정보 포함)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
@@ -233,6 +220,9 @@ export default function IntegratedContractorDashboard() {
             contractor_id,
             status,
             applied_at,
+            is_cancelled,
+            cancelled_at,
+            cancelled_by,
             contractors (
               id,
               company_name,
@@ -255,16 +245,7 @@ export default function IntegratedContractorDashboard() {
 
       if (projectsError) throw projectsError
 
-      console.log(`📊 전체 프로젝트 수: ${projectsData?.length || 0}`)
-      console.log('📋 프로젝트 상태별 분포:', projectsData?.reduce((acc, project) => {
-        acc[project.status] = (acc[project.status] || 0) + 1
-        return acc
-      }, {} as Record<string, number>))
       
-      // 특정 프로젝트 ID들 확인
-      const targetIds = ['89fad813-4324-4801-8bac-3a403b799e48', '0f04b690-17ec-4812-a499-70dc7641f292']
-      const targetProjects = projectsData?.filter(p => targetIds.includes(p.id))
-      console.log('🎯 타겟 프로젝트들:', targetProjects?.map(p => ({ id: p.id, status: p.status })))
 
       // 프로젝트별로 업체와의 관계 데이터 필터링 및 상태 계산
       const processedProjects: Project[] = (projectsData || []).map(project => {
@@ -320,12 +301,6 @@ export default function IntegratedContractorDashboard() {
       // 더 이상 로드할 데이터가 없는지 확인
       setHasMore(relevantProjects.length === itemsPerPage)
       
-      console.log(`✅ ${relevantProjects.length}개 프로젝트 로드 완료`)
-      console.log('🎯 프로젝트 상태별 분포:', relevantProjects.reduce((acc, project) => {
-        const status = project.projectStatus || 'unknown'
-        acc[status] = (acc[status] || 0) + 1
-        return acc
-      }, {} as Record<string, number>))
       
     } catch (error) {
       console.error('프로젝트 데이터 로드 실패:', error)
@@ -503,9 +478,6 @@ export default function IntegratedContractorDashboard() {
     try {
       const supabase = createBrowserClient()
       
-      console.log('취소 시도:', { applicationId, projectId })
-      
-      // 1. 사용자 인증 확인
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       
       if (userError || !user) {
@@ -515,7 +487,6 @@ export default function IntegratedContractorDashboard() {
       }
 
       // 2. site_visit_applications 취소
-      console.log('현장방문 신청 취소 시작...')
       const { data: svaData, error: svaError } = await supabase
         .from('site_visit_applications')
         .update({
@@ -526,7 +497,6 @@ export default function IntegratedContractorDashboard() {
         .eq('id', applicationId)
         .select()
 
-      console.log('취소 결과:', { svaData, svaError })
 
       if (svaError) {
         console.error('SVA Error:', svaError)
@@ -544,14 +514,6 @@ export default function IntegratedContractorDashboard() {
       // 취소된 현장방문 신청은 site_visit_applications에서만 처리
       // status를 변경하지 않아서 프로젝트가 사라지지 않음
 
-      console.log('취소 성공:', { svaData })
-      console.log('취소된 현장방문 신청 상세:', svaData[0])
-      toast.success('현장방문이 취소되었습니다')
-      
-      // 4. 데이터 새로고침
-      console.log('데이터 새로고침 시작...')
-      await refreshData()
-      console.log('데이터 새로고침 완료')
       
     } catch (error) {
       console.error('Error:', error)
@@ -861,15 +823,7 @@ export default function IntegratedContractorDashboard() {
                         {(project.projectStatus === 'approved' || project.projectStatus === 'pending') && 
                          !isSiteVisitMissed(project, contractorData?.id || '') && (
                           <button
-                            onClick={() => {
-                              console.log('현장방문 신청 버튼 클릭:', {
-                                projectId: project.id,
-                                projectStatus: project.projectStatus,
-                                siteVisitApplication: project.site_visit_application,
-                                isCancelled: project.site_visit_application?.is_cancelled
-                              })
-                              handleSiteVisitApplication(project.id)
-                            }}
+                            onClick={() => handleSiteVisitApplication(project.id)}
                             className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                           >
                             <Plus className="h-4 w-4" />
