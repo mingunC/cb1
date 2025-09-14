@@ -1,0 +1,56 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "success": "성공",
+    "cancel": "취소",
+    "save": "저장",
+    "delete": "삭제",
+    "edit": "편집",
+    "view": "보기",
+    "submit": "제출",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "이전",
+    "close": "닫기"
+  },
+  "auth": {
+    "signIn": "로그인",
+    "signUp": "회원가입",
+    "signOut": "로그아웃",
+    "email": "이메일",
+    "password": "비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "resetPassword": "비밀번호 재설정",
+    "signInWithGoogle": "Google로 로그인"
+  },
+  "navigation": {
+    "home": "홈",
+    "pros": "업체",
+    "portfolio": "포트폴리오",
+    "events": "이벤트",
+    "myQuotes": "내 견적",
+    "quoteRequest": "견적 요청"
+  },
+  "quote": {
+    "title": "견적 요청",
+    "step1": "프로젝트 세부사항",
+    "step2": "예산",
+    "step3": "일정",
+    "step4": "위치",
+    "step5": "추가 세부사항",
+    "spaceType": "공간 유형",
+    "projectTypes": "프로젝트 유형",
+    "budget": "예산",
+    "timeline": "일정",
+    "location": "위치",
+    "description": "설명",
+    "photos": "사진"
+  },
+  "roles": {
+    "customer": "고객",
+    "contractor": "업체",
+    "admin": "관리자"
+  }
+}
