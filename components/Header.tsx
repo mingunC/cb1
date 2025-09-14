@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Menu, X, User, LogIn, LogOut } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import toast from 'react-hot-toast'
 
 interface UserProfile {
   user_type: 'customer' | 'admin' | 'contractor'
@@ -42,6 +43,7 @@ export default function Header() {
   const [isLoading, setIsLoading] = useState(true)
   const [displayName, setDisplayName] = useState<string>(getCachedUserName())
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   
   // 상태 추적을 위한 ref
   const isMounted = useRef(true)
@@ -230,31 +232,63 @@ export default function Header() {
   }, [isUserDropdownOpen])
 
   const handleSignOut = async () => {
+    if (isLoggingOut) return // 이미 로그아웃 중이면 무시
+    
     try {
-      console.log('로그아웃 시작...')
+      setIsLoggingOut(true)
+      console.log('🚪 로그아웃 시작...')
       const supabase = createBrowserClient()
-      console.log('Supabase 클라이언트 생성됨')
+      console.log('✅ Supabase 클라이언트 생성됨')
       
-      await supabase.auth.signOut()
-      console.log('Supabase 로그아웃 완료')
+      // 로그아웃 실행
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('❌ Supabase 로그아웃 에러:', error)
+        throw error
+      }
+      
+      console.log('✅ Supabase 로그아웃 완료')
       
       // localStorage 캐시 클리어
       localStorage.removeItem('cached_user_name')
       localStorage.removeItem('cached_user_type')
-      console.log('localStorage 캐시 클리어 완료')
+      console.log('✅ localStorage 캐시 클리어 완료')
       
+      // 상태 초기화
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
       setDisplayName('')
       profileLoadedRef.current = false
       setIsUserDropdownOpen(false)
-      console.log('상태 초기화 완료')
+      console.log('✅ 상태 초기화 완료')
       
+      // 홈페이지로 리다이렉트
       router.push('/')
-      console.log('홈페이지로 리다이렉트 완료')
+      console.log('✅ 홈페이지로 리다이렉트 완료')
+      toast.success('로그아웃되었습니다')
+      
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('❌ 로그아웃 에러:', error)
+      toast.error('로그아웃 중 오류가 발생했습니다')
+      
+      // 에러가 발생해도 상태는 초기화
+      setUser(null)
+      setUserProfile(null)
+      setContractorProfile(null)
+      setDisplayName('')
+      profileLoadedRef.current = false
+      setIsUserDropdownOpen(false)
+      
+      // localStorage 캐시 클리어
+      localStorage.removeItem('cached_user_name')
+      localStorage.removeItem('cached_user_type')
+      
+      // 홈페이지로 리다이렉트
+      router.push('/')
+    } finally {
+      setIsLoggingOut(false)
     }
   }
 
@@ -386,10 +420,15 @@ export default function Header() {
                             handleSignOut()
                             setIsUserDropdownOpen(false)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                          disabled={isLoggingOut}
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                            isLoggingOut 
+                              ? 'text-gray-400 cursor-not-allowed' 
+                              : 'text-red-600 hover:bg-red-50'
+                          }`}
                         >
                           <LogOut className="h-4 w-4 mr-2" />
-                          로그아웃
+                          {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
                         </button>
                       </div>
                     </div>
@@ -520,10 +559,15 @@ export default function Header() {
                             handleSignOut()
                             setIsMenuOpen(false)
                           }}
-                          className="flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 text-base font-medium w-full rounded-lg"
+                          disabled={isLoggingOut}
+                          className={`flex items-center justify-center px-3 py-2 text-base font-medium w-full rounded-lg ${
+                            isLoggingOut 
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
                         >
                           <LogOut className="h-4 w-4 mr-1" />
-                          로그아웃
+                          {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
                         </button>
                       </div>
                     ) : (
