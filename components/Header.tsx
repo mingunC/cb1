@@ -237,41 +237,46 @@ export default function Header() {
     try {
       setIsLoggingOut(true)
       console.log('🚪 로그아웃 시작...')
-      const supabase = createBrowserClient()
-      console.log('✅ Supabase 클라이언트 생성됨')
       
-      // 로그아웃 실행
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('❌ Supabase 로그아웃 에러:', error)
-        throw error
-      }
-      
-      console.log('✅ Supabase 로그아웃 완료')
-      
-      // localStorage 캐시 클리어
-      localStorage.removeItem('cached_user_name')
-      localStorage.removeItem('cached_user_type')
-      console.log('✅ localStorage 캐시 클리어 완료')
-      
-      // 상태 초기화
+      // 즉시 UI 상태 초기화 (사용자 경험 개선)
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
       setDisplayName('')
       profileLoadedRef.current = false
       setIsUserDropdownOpen(false)
-      console.log('✅ 상태 초기화 완료')
+      console.log('✅ UI 상태 즉시 초기화 완료')
       
-      // 홈페이지로 리다이렉트
-      router.push('/')
-      console.log('✅ 홈페이지로 리다이렉트 완료')
-      toast.success('로그아웃되었습니다')
+      const supabase = createBrowserClient()
+      console.log('✅ Supabase 클라이언트 생성됨')
+      
+      // 로그아웃 실행 (타임아웃 추가)
+      const logoutPromise = supabase.auth.signOut()
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('로그아웃 타임아웃')), 5000)
+      )
+      
+      const { error } = await Promise.race([logoutPromise, timeoutPromise]) as any
+      
+      if (error) {
+        console.error('❌ Supabase 로그아웃 에러:', error)
+        // 에러가 있어도 계속 진행 (UI는 이미 초기화됨)
+      } else {
+        console.log('✅ Supabase 로그아웃 완료')
+      }
+      
+      // localStorage 캐시 클리어
+      localStorage.removeItem('cached_user_name')
+      localStorage.removeItem('cached_user_type')
+      localStorage.removeItem('sb-josdopshblohlcfyrylt-auth-token') // Supabase 토큰도 제거
+      console.log('✅ localStorage 캐시 클리어 완료')
+      
+      // 강제 페이지 리로드 (확실한 로그아웃)
+      console.log('✅ 강제 페이지 리로드 실행')
+      window.location.href = '/'
       
     } catch (error) {
       console.error('❌ 로그아웃 에러:', error)
-      toast.error('로그아웃 중 오류가 발생했습니다')
       
       // 에러가 발생해도 상태는 초기화
       setUser(null)
@@ -284,9 +289,10 @@ export default function Header() {
       // localStorage 캐시 클리어
       localStorage.removeItem('cached_user_name')
       localStorage.removeItem('cached_user_type')
+      localStorage.removeItem('sb-josdopshblohlcfyrylt-auth-token')
       
-      // 홈페이지로 리다이렉트
-      router.push('/')
+      // 강제 페이지 리로드
+      window.location.href = '/'
     } finally {
       setIsLoggingOut(false)
     }
