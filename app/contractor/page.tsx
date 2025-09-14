@@ -282,6 +282,18 @@ export default function IntegratedContractorDashboard() {
           }, contractorId)
         }
         
+        // 특정 프로젝트 디버깅
+        if (project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a' || project.id === '1aa4bbf1-461d-49fd-b986-a44eb59d5ca9') {
+          console.log(`🔍 프로젝트 ${project.id} 디버깅:`, {
+            originalStatus: project.status,
+            siteVisitApplication: siteVisitForStatus,
+            isCancelled: siteVisitForStatus?.is_cancelled,
+            calculatedStatus: processedProject.projectStatus,
+            mySiteVisit: mySiteVisit,
+            allMySiteVisits: allMySiteVisits
+          })
+        }
+        
         return processedProject
       })
       
@@ -542,6 +554,11 @@ export default function IntegratedContractorDashboard() {
       // 취소된 현장방문 신청은 site_visit_applications에서만 처리
       // status를 변경하지 않아서 프로젝트가 사라지지 않음
 
+      console.log('현장방문 취소 성공:', svaData[0])
+      toast.success('현장방문이 취소되었습니다')
+      
+      // 4. 데이터 새로고침
+      await refreshData()
       
     } catch (error) {
       console.error('Error:', error)
@@ -848,16 +865,30 @@ export default function IntegratedContractorDashboard() {
                         )}
                         
                         {/* 현장방문 신청 버튼 - 신청 가능한 상태 */}
-                        {(project.projectStatus === 'approved' || project.projectStatus === 'pending') && 
-                         !isSiteVisitMissed(project, contractorData?.id || '') && (
-                          <button
-                            onClick={() => handleSiteVisitApplication(project.id)}
-                            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                          >
-                            <Plus className="h-4 w-4" />
-                            현장방문 신청
-                          </button>
-                        )}
+                        {(() => {
+                          const shouldShowApplyButton = 
+                            (project.projectStatus === 'approved' || project.projectStatus === 'pending') && 
+                            !isSiteVisitMissed(project, contractorData?.id || '');
+                          
+                          if (project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a') {
+                            console.log('🔴 North York 버튼 조건:', {
+                              projectStatus: project.projectStatus,
+                              isPending: project.projectStatus === 'pending',
+                              isMissed: isSiteVisitMissed(project, contractorData?.id || ''),
+                              shouldShow: shouldShowApplyButton
+                            });
+                          }
+                          
+                          return shouldShowApplyButton && (
+                            <button
+                              onClick={() => handleSiteVisitApplication(project.id)}
+                              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                            >
+                              <Plus className="h-4 w-4" />
+                              현장방문 신청
+                            </button>
+                          );
+                        })()}
                         
                         {/* 현장방문 취소 버튼 */}
                         {project.projectStatus === 'site-visit-applied' && project.site_visit_application && (
