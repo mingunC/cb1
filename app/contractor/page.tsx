@@ -422,25 +422,52 @@ export default function IntegratedContractorDashboard() {
         return;
       }
 
-      // 3. 중복 신청 체크 (취소되지 않은 신청만 체크)
+      // 3. 기존 신청 체크 (취소된 것 포함 모두)
       const { data: existingApplication, error: checkError } = await supabase
         .from('site_visit_applications')
         .select('*')
         .eq('project_id', quoteRequestId)
         .eq('contractor_id', contractor.id)
-        .eq('is_cancelled', false); // 취소되지 않은 신청만 체크
+        .single(); // 모든 신청 체크
 
-      if (checkError) {
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116은 row not found 에러
         console.error('중복 체크 오류:', checkError);
         throw checkError;
       }
 
-      if (existingApplication && existingApplication.length > 0) {
+      // 취소된 신청이 있으면 재활성화
+      if (existingApplication && existingApplication.is_cancelled) {
+        const { data: reactivated, error: updateError } = await supabase
+          .from('site_visit_applications')
+          .update({
+            is_cancelled: false,
+            cancelled_at: null,
+            cancelled_by: null,
+            status: 'pending',
+            applied_at: new Date().toISOString()
+          })
+          .eq('id', existingApplication.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('재활성화 오류:', updateError);
+          throw updateError;
+        }
+
+        console.log('방문 신청 재활성화:', reactivated);
+        toast.success('방문 신청이 다시 활성화되었습니다!');
+        await refreshData();
+        return;
+      }
+
+      // 활성 신청이 이미 있는 경우
+      if (existingApplication && !existingApplication.is_cancelled) {
         toast.error('이미 이 프로젝트에 방문 신청을 하셨습니다.');
         return;
       }
 
-      // 4. 새로운 방문 신청 생성
+      // 4. 신청이 전혀 없는 경우에만 새로 생성
       const { data: newApplication, error: insertError } = await supabase
         .from('site_visit_applications')
         .insert([
@@ -448,7 +475,8 @@ export default function IntegratedContractorDashboard() {
             project_id: quoteRequestId,
             contractor_id: contractor.id,
             status: 'pending',
-            notes: ''
+            notes: '',
+            is_cancelled: false
           }
         ])
         .select()
