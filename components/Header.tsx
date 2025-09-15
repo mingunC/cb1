@@ -138,12 +138,21 @@ export default function Header() {
     try {
       const supabase = createBrowserClient()
       
+      // 특정 사용자 디버깅
+      if (email === 'mgc202077@gmail.com') {
+        console.log('🔍 mgc202077@gmail.com 사용자 프로필 로드 시작:', { userId, email })
+      }
+      
       // 1. 먼저 업체인지 확인
       const { data: contractorData } = await supabase
         .from('contractors')
         .select('company_name, contact_name')
         .eq('user_id', userId)
         .maybeSingle()
+
+      if (email === 'mgc202077@gmail.com') {
+        console.log('🔍 contractors 테이블 조회 결과:', { contractorData })
+      }
 
       if (contractorData && isMounted.current) {
         setContractorProfile(contractorData)
@@ -155,6 +164,10 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
+        if (email === 'mgc202077@gmail.com') {
+          console.log('✅ 업체로 인식됨:', { finalDisplayName })
+        }
+        
         profileLoadedRef.current = true
         return
       }
@@ -165,6 +178,10 @@ export default function Header() {
         .select('user_type, first_name, last_name')
         .eq('id', userId)
         .maybeSingle()
+
+      if (email === 'mgc202077@gmail.com') {
+        console.log('🔍 users 테이블 조회 결과:', { userData })
+      }
 
       if (userData && isMounted.current) {
         setUserProfile(userData)
@@ -189,6 +206,10 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', userData.user_type)
         
+        if (email === 'mgc202077@gmail.com') {
+          console.log('✅ 일반 사용자로 인식됨:', { userData, finalDisplayName })
+        }
+        
         profileLoadedRef.current = true
       } else if (isMounted.current) {
         // 기본값 설정
@@ -200,6 +221,10 @@ export default function Header() {
         // localStorage에 캐시 저장
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
+        
+        if (email === 'mgc202077@gmail.com') {
+          console.log('⚠️ 기본값으로 설정됨 (customer):', { finalDisplayName })
+        }
         
         profileLoadedRef.current = true
       }
