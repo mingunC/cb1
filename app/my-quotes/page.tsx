@@ -389,11 +389,15 @@ export default function MyQuotesPage() {
   // 탭 변경 함수 제거 - 통합 뷰로 변경
 
   // 업체 선택 핸들러
-  const handleSelectContractor = async (contractorQuoteId: string, projectId: string) => {
+  const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     try {
       const supabase = createBrowserClient()
       
-      // 선택된 업체의 상태를 'accepted'로 변경
+      if (!confirm('이 업체를 선택하시겠습니까? 선택 후에는 변경할 수 없습니다.')) {
+        return
+      }
+      
+      // 1. 선택된 업체의 상태를 'accepted'로 변경
       const { error: updateError } = await supabase
         .from('contractor_quotes')
         .update({ status: 'accepted' })
@@ -405,7 +409,7 @@ export default function MyQuotesPage() {
         return
       }
 
-      // 같은 프로젝트의 다른 업체들을 'rejected'로 변경
+      // 2. 같은 프로젝트의 다른 업체들을 'rejected'로 변경
       const { error: rejectError } = await supabase
         .from('contractor_quotes')
         .update({ status: 'rejected' })
@@ -414,21 +418,24 @@ export default function MyQuotesPage() {
 
       if (rejectError) {
         console.error('Error rejecting other contractor quotes:', rejectError)
-        // 선택은 성공했으므로 계속 진행
       }
 
-      // 프로젝트 상태를 'selected'로 변경
+      // 3. 프로젝트 상태를 'completed'로 변경 (중요!)
       const { error: projectError } = await supabase
         .from('quote_requests')
-        .update({ status: 'selected' })
+        .update({ 
+          status: 'completed',  // 'selected'가 아니라 'completed'
+          updated_at: new Date().toISOString()
+        })
         .eq('id', projectId)
 
       if (projectError) {
         console.error('Error updating project status:', projectError)
-        // 업체 선택은 성공했으므로 계속 진행
+        alert('프로젝트 상태 업데이트 중 오류가 발생했습니다.')
+        return
       }
 
-      alert('업체가 성공적으로 선택되었습니다!')
+      alert('업체가 성공적으로 선택되었습니다! 프로젝트가 완료되었습니다.')
       
       // 데이터 새로고침
       if (user?.id) {
@@ -704,7 +711,7 @@ export default function MyQuotesPage() {
                                     </div>
                                   ) : (
                                     <button 
-                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id)}
+                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id)}
                                       className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
                                     >
                                       업체 선택하기
@@ -759,7 +766,7 @@ export default function MyQuotesPage() {
                                     </div>
                                   ) : (
                                     <button 
-                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id)}
+                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id)}
                                       className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
                                     >
                                       업체 선택하기
