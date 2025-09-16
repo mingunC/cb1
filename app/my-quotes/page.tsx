@@ -435,7 +435,20 @@ export default function MyQuotesPage() {
         return
       }
 
-      alert('업체가 성공적으로 선택되었습니다! 프로젝트가 완료되었습니다.')
+      // 선택된 업체 정보 가져오기
+      const { data: selectedContractor } = await supabase
+        .from('contractors')
+        .select('company_name, contact_name, phone')
+        .eq('id', contractorId)
+        .single()
+
+      const contractorInfo = selectedContractor ? 
+        `${selectedContractor.company_name} (${selectedContractor.contact_name})` : 
+        '선택된 업체'
+
+      const phoneNumber = selectedContractor?.phone || '등록된 전화번호'
+
+      alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
       
       // 데이터 새로고침
       if (user?.id) {
