@@ -784,7 +784,7 @@ export default function IntegratedContractorDashboard() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 홈으로
               </button>
-              <h1 className="text-lg font-semibold text-gray-900">내 프로젝트 관리</h1>
+              <h1 className="text-lg font-semibold text-gray-900">내 견적 관리</h1>
             </div>
             <button
               onClick={refreshData}
