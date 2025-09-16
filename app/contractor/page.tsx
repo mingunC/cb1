@@ -250,6 +250,17 @@ export default function IntegratedContractorDashboard() {
 
       if (projectsError) throw projectsError
 
+      // 디버깅: 로드된 프로젝트 확인
+      console.log('로드된 프로젝트 수:', projectsData?.length || 0)
+      console.log('로드된 프로젝트 ID들:', projectsData?.map(p => p.id) || [])
+      const targetProject = projectsData?.find(p => p.id === '754a95f9-6fe2-45bf-bc0f-d97545ab0455')
+      console.log('찾는 프로젝트가 로드되었는가:', !!targetProject)
+      if (targetProject) {
+        console.log('찾는 프로젝트 상태:', targetProject.status)
+        console.log('찾는 프로젝트 현장방문 신청:', targetProject.site_visit_applications)
+        console.log('찾는 프로젝트 견적:', targetProject.contractor_quotes)
+      }
+
       
 
       // 프로젝트별로 업체와의 관계 데이터 필터링 및 상태 계산
@@ -375,6 +386,11 @@ export default function IntegratedContractorDashboard() {
         }
         
         setContractorData(contractorInfo)
+        
+        // 디버깅: 현재 로그인한 contractor ID 확인
+        console.log('현재 로그인한 contractor ID:', contractorInfo.id)
+        console.log('찾고 있는 contractor ID:', '58ead562-2045-4d14-8522-53728f72537e')
+        console.log('프로젝트 ID:', '754a95f9-6fe2-45bf-bc0f-d97545ab0455')
         
         // 직접 데이터 로드
         const supabaseClient = createBrowserClient()
