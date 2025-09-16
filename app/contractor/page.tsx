@@ -347,7 +347,7 @@ export default function IntegratedContractorDashboard() {
       setIsLoadingMore(false)
       console.log('✅ 로딩 상태 해제 완료')
     }
-  }, [itemsPerPage])
+  }, [itemsPerPage]) // fetchProjectsData 자체를 제거
 
   // 인증 체크 및 초기 데이터 로드
   useEffect(() => {
@@ -376,7 +376,41 @@ export default function IntegratedContractorDashboard() {
         }
         
         setContractorData(contractorInfo)
-        await fetchProjectsData(contractorInfo.id, 0, false)
+        
+        // 직접 데이터 로드
+        const supabaseClient = createBrowserClient()
+        const { data: projectsData } = await supabaseClient
+          .from('quote_requests')
+          .select(`
+            *,
+            site_visit_applications!left (*),
+            contractor_quotes!left (*)
+          `)
+          .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted'])
+          .order('created_at', { ascending: false })
+          .range(0, 8)
+        
+        if (projectsData) {
+          const processedProjects = projectsData.map(project => {
+            const myLatestSiteVisit = project.site_visit_applications?.find(
+              (app: any) => app.contractor_id === contractorInfo.id
+            );
+            const myQuote = project.contractor_quotes?.find(
+              (quote: any) => quote.contractor_id === contractorInfo.id
+            );
+            return {
+              ...project,
+              site_visit_application: myLatestSiteVisit,
+              contractor_quote: myQuote,
+              projectStatus: calculateProjectStatus({
+                ...project,
+                site_visit_application: myLatestSiteVisit,
+                contractor_quote: myQuote
+              }, contractorInfo.id)
+            };
+          });
+          setProjects(processedProjects)
+        }
         
       } catch (error) {
         console.error('초기화 오류:', error)
@@ -387,7 +421,7 @@ export default function IntegratedContractorDashboard() {
   }
 
     initializeData()
-  }, [router]) // fetchProjectsData 의존성 제거하여 무한루프 방지
+  }, [router]) // fetchProjectsData 의존성 제거
 
   // 새로고침 함수
   const refreshData = useCallback(async () => {
@@ -396,10 +430,15 @@ export default function IntegratedContractorDashboard() {
     setIsRefreshing(true)
     setCurrentOffset(0)
     setHasMore(true)
-    await fetchProjectsData(contractorData.id, 0, false)
-    setIsRefreshing(false)
-    toast.success('데이터를 새로고침했습니다')
-  }, [contractorData]) // fetchProjectsData 의존성 제거
+    
+    try {
+      // fetchProjectsData를 직접 호출하는 대신 내부 로직 실행
+      await fetchProjectsData(contractorData.id, 0, false)
+    } finally {
+      setIsRefreshing(false)
+      toast.success('데이터를 새로고침했습니다')
+    }
+  }, [contractorData, fetchProjectsData])
 
   // 무한 스크롤을 위한 추가 데이터 로드 함수
   const loadMoreProjects = useCallback(async () => {
@@ -414,7 +453,7 @@ export default function IntegratedContractorDashboard() {
     
     console.log('📥 loadMoreProjects 실행:', { currentOffset })
     await fetchProjectsData(contractorData.id, currentOffset, true)
-  }, [contractorData, isLoadingMore, hasMore, currentOffset]) // fetchProjectsData 의존성 제거
+  }, [contractorData, isLoadingMore, hasMore, currentOffset, fetchProjectsData])
 
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(() => {
@@ -1043,9 +1082,14 @@ export default function IntegratedContractorDashboard() {
         project={quoteModal.project}
         mode={quoteModal.mode}
         contractorId={contractorData?.id}
-        onSuccess={() => {
+        onSuccess={async () => {
+          // 먼저 모달을 닫고
           closeQuoteModal()
-          refreshData()
+          
+          // 약간의 지연 후 데이터 새로고침
+          setTimeout(() => {
+            refreshData()
+          }, 500)
         }}
       />
     )}
@@ -1139,75 +1183,52 @@ function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }:
       return
     }
 
-    if (isSubmitting) return
+    // 중복 제출 방지
+    if (isSubmitting) {
+      console.log('이미 제출 중입니다')
+      return
+    }
 
     setIsSubmitting(true)
+    
     try {
       const supabase = createBrowserClient()
 
       // PDF 업로드
       const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
       
-      // contractor_quotes 테이블이 존재하는지 확인하고 저장 시도
-      try {
-        const { error } = await supabase
-          .from('contractor_quotes')
-          .insert({
-            project_id: project.id,
-            contractor_id: contractorId,
-            price: parseFloat(price),
-            description: detailedDescription,
-            pdf_url: uploadResult.pdfUrl,
-            pdf_filename: uploadResult.pdfFilename,
-            status: 'pending', // 'submitted' 대신 'pending' 사용
-            created_at: new Date().toISOString()
-          })
+      // 견적서 저장
+      const { error } = await supabase
+        .from('contractor_quotes')
+        .insert({
+          project_id: project.id,
+          contractor_id: contractorId,
+          price: parseFloat(price),
+          description: detailedDescription,
+          pdf_url: uploadResult.pdfUrl,
+          pdf_filename: uploadResult.pdfFilename,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
 
-        if (error) {
-          console.warn('contractor_quotes 테이블 저장 실패, 기존 방식으로 fallback:', error)
-          // 기존 방식으로 fallback - 별도 필드들로 저장
-          await supabase
-            .from('quote_requests')
-            .update({ 
-              status: 'quote-submitted',
-              contractor_price: parseFloat(price),
-              contractor_description: detailedDescription,
-              contractor_pdf_url: uploadResult.pdfUrl,
-              contractor_pdf_filename: uploadResult.pdfFilename,
-              contractor_quote_status: 'pending'
-            })
-            .eq('id', project.id)
-        } else {
-          // contractor_quotes 테이블 저장 성공 시 quote_requests 상태만 업데이트
-          await supabase
-            .from('quote_requests')
-            .update({ status: 'quote-submitted' })
-            .eq('id', project.id)
-        }
-      } catch (tableError) {
-        console.warn('contractor_quotes 테이블 접근 실패, 기존 방식으로 fallback:', tableError)
-        // 기존 방식으로 fallback - 별도 필드들로 저장
-        await supabase
-          .from('quote_requests')
-          .update({ 
-            status: 'quote-submitted',
-            contractor_price: parseFloat(price),
-            contractor_description: detailedDescription,
-            contractor_pdf_url: uploadResult.pdfUrl,
-            contractor_pdf_filename: uploadResult.pdfFilename,
-            contractor_quote_status: 'pending'
-          })
-          .eq('id', project.id)
-      }
+      if (error) throw error
 
+      // 프로젝트 상태 업데이트는 서버에서 처리하도록 변경
+      // (또는 별도 트랜잭션으로 처리)
+      
       toast.success('견적서가 성공적으로 제출되었습니다!')
-      onSuccess()
+      
+      // 모달 닫고 데이터 새로고침
+      setTimeout(() => {
+        onSuccess()
+      }, 100) // 약간의 지연을 줘서 상태 업데이트가 완료되도록
+      
     } catch (error) {
       console.error('견적서 제출 오류:', error)
       toast.error('견적서 제출 중 오류가 발생했습니다')
-    } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false) // 에러 시에만 여기서 reset
     }
+    // finally 블록 제거 - onSuccess에서 처리
   }
 
   if (!isOpen || !project) return null
