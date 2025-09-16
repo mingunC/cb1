@@ -50,7 +50,7 @@ interface ContractorQuote {
   bid_description: string
   pdf_url: string
   valid_until: string
-  status: 'pending' | 'accepted' | 'rejected'
+  status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'selected' | 'expired'
   created_at: string
   contractor_name?: string
   contractor_company?: string
