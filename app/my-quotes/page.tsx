@@ -717,8 +717,10 @@ export default function MyQuotesPage() {
                       </div>
                     </div>
 
-                    {/* 현장방문 신청 섹션 */}
-                    {quote.site_visit_applications && quote.site_visit_applications.length > 0 && (
+                    {/* 현장방문 신청 섹션 - 입찰중 이전 상태에서만 표시 */}
+                    {quote.site_visit_applications && 
+                     quote.site_visit_applications.length > 0 && 
+                     !['bidding', 'quote-submitted', 'completed'].includes(quote.status) && (
                       <div className="mt-6 mb-6">
                         <div className="mb-4">
                           <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
@@ -763,6 +765,63 @@ export default function MyQuotesPage() {
                               
                               <div className="text-xs text-gray-500">
                                 신청일: {new Date(application.applied_at).toLocaleDateString('ko-KR')}
+                              </div>
+                              
+                              {application.notes && (
+                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-700">
+                                  <strong>메모:</strong> {application.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 견적 제출 예정 업체 섹션 - 입찰중 상태에서 표시 */}
+                    {quote.status === 'bidding' && 
+                     quote.site_visit_applications && 
+                     quote.site_visit_applications.filter(app => app.status === 'approved').length > 0 && (
+                      <div className="mt-6 mb-6">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                            <Clock className="w-5 h-5 mr-2 text-orange-600" />
+                            견적 제출 예정 업체 ({quote.site_visit_applications.filter(app => app.status === 'approved').length}개)
+                          </h3>
+                          <p className="text-sm text-gray-600">현장방문을 완료한 업체들이 견적서를 준비 중입니다.</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {quote.site_visit_applications
+                            .filter(application => application.status === 'approved')
+                            .map((application) => (
+                            <div key={application.id} className="border border-orange-200 rounded-lg p-4 bg-orange-50 hover:bg-orange-100 transition-colors">
+                              <div className="mb-3">
+                                <h4 className="font-semibold text-lg text-gray-900">
+                                  {application.contractor?.company_name || '업체명 없음'}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  담당자: {application.contractor?.contact_name || '담당자 정보 없음'}
+                                </p>
+                              </div>
+                              
+                              <div className="mb-3">
+                                <p className="text-sm text-gray-600">
+                                  📞 {application.contractor?.phone || '연락처 없음'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  ✉️ {application.contractor?.email || '이메일 없음'}
+                                </p>
+                              </div>
+                              
+                              <div className="mb-3">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  견적서 준비중
+                                </span>
+                              </div>
+                              
+                              <div className="text-xs text-gray-500">
+                                현장방문 완료: {new Date(application.applied_at).toLocaleDateString('ko-KR')}
                               </div>
                               
                               {application.notes && (
