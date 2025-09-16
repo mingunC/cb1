@@ -699,8 +699,8 @@ export default function MyQuotesPage() {
                                       ✓ 선택된 업체
                                     </div>
                                   ) : contractorQuote.status === 'rejected' ? (
-                                    <div className="w-full px-4 py-2 bg-red-100 text-red-800 rounded text-sm font-medium text-center">
-                                      ✗ 거절됨
+                                    <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
+                                      미선택
                                     </div>
                                   ) : (
                                     <button 
@@ -754,8 +754,8 @@ export default function MyQuotesPage() {
                                       ✓ 선택된 업체
                                     </div>
                                   ) : contractorQuote.status === 'rejected' ? (
-                                    <div className="w-full px-4 py-2 bg-red-100 text-red-800 rounded text-sm font-medium text-center">
-                                      ✗ 거절됨
+                                    <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
+                                      미선택
                                     </div>
                                   ) : (
                                     <button 
