@@ -17,7 +17,7 @@ interface Project {
   postal_code: string
   description: string
   photos: any[]
-  status: 'pending' | 'approved' | 'in_progress' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'completed' | 'cancelled'
+  status: 'pending' | 'approved' | 'rejected' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'selected' | 'completed' | 'cancelled'
   created_at: string
   updated_at: string
 }
@@ -208,6 +208,7 @@ export default function ProjectsPage() {
       'site-visit-completed': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, text: '현장방문완료' },
       bidding: { color: 'bg-orange-100 text-orange-800', icon: Clock, text: '입찰중' },
       'quote-submitted': { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' },
+      selected: { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: '업체선택완료' },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료됨' },
       cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle, text: '취소됨' }
     }
@@ -222,7 +223,8 @@ export default function ProjectsPage() {
       'site-visit-pending': ['site-visit-completed', 'cancelled'],
       'site-visit-completed': ['bidding', 'cancelled'],
       'bidding': ['quote-submitted', 'cancelled'],
-      'quote-submitted': ['completed', 'cancelled'],
+      'quote-submitted': ['selected', 'completed', 'cancelled'],
+      'selected': ['completed', 'cancelled'],
       'completed': [],
       'cancelled': ['approved']
     }
@@ -238,6 +240,7 @@ export default function ProjectsPage() {
       'site-visit-completed': '현장방문완료',
       'bidding': '입찰중',
       'quote-submitted': '견적제출완료',
+      'selected': '업체선택완료',
       'completed': '완료됨',
       'cancelled': '취소됨'
     }
