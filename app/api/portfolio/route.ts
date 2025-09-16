@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // 포트폴리오 프로젝트 조회
     const { data, error } = await supabase
-      .from('portfolio_projects')
+      .from('portfolios')
       .select('*')
       .eq('contractor_id', contractorId)
       .order('created_at', { ascending: false })
@@ -105,14 +105,16 @@ export async function POST(request: NextRequest) {
 
     // 포트폴리오 프로젝트 생성
     const { data, error } = await supabase
-      .from('portfolio_projects')
+      .from('portfolios')
       .insert({
         contractor_id,
         title,
         description,
-        image_url,
-        category,
-        year: parseInt(year)
+        project_type: category,
+        space_type: 'detached_house', // 기본값 설정
+        photos: image_url ? [image_url] : [],
+        thumbnail_url: image_url,
+        completion_date: year ? `${year}-01-01` : null
       })
       .select()
       .single()
@@ -171,7 +173,7 @@ export async function PUT(request: NextRequest) {
 
     // 포트폴리오 프로젝트 소유권 확인
     const { data: project, error: projectError } = await supabase
-      .from('portfolio_projects')
+      .from('portfolios')
       .select(`
         id,
         contractor_id,
@@ -186,13 +188,14 @@ export async function PUT(request: NextRequest) {
 
     // 포트폴리오 프로젝트 업데이트
     const { data, error } = await supabase
-      .from('portfolio_projects')
+      .from('portfolios')
       .update({
         title,
         description,
-        image_url,
-        category,
-        year: parseInt(year),
+        project_type: category,
+        photos: image_url ? [image_url] : [],
+        thumbnail_url: image_url,
+        completion_date: year ? `${year}-01-01` : null,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -257,10 +260,10 @@ export async function DELETE(request: NextRequest) {
 
     // 포트폴리오 프로젝트 소유권 확인
     const { data: project, error: projectError } = await supabase
-      .from('portfolio_projects')
+      .from('portfolios')
       .select(`
         id,
-        image_url,
+        thumbnail_url,
         contractor_id,
         contractors!inner(user_id)
       `)
@@ -272,9 +275,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 스토리지에서 이미지 삭제
-    if (project.image_url) {
+    if (project.thumbnail_url) {
       try {
-        const imagePath = project.image_url.split('/').slice(-2).join('/')
+        const imagePath = project.thumbnail_url.split('/').slice(-2).join('/')
         await supabase.storage
           .from('portfolio-images')
           .remove([imagePath])
@@ -286,7 +289,7 @@ export async function DELETE(request: NextRequest) {
 
     // 포트폴리오 프로젝트 삭제
     const { error } = await supabase
-      .from('portfolio_projects')
+      .from('portfolios')
       .delete()
       .eq('id', projectId)
 
