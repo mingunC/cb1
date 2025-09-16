@@ -640,19 +640,14 @@ export default function MyQuotesPage() {
                                   제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
                                 </div>
                                 
-                                <div className="space-y-2">
-                                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">
-                                    상세 보기
+                                {contractorQuote.pdf_url && (
+                                  <button 
+                                    onClick={() => downloadQuote(contractorQuote.id)}
+                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                                  >
+                                    견적서 다운로드
                                   </button>
-                                  {contractorQuote.pdf_url && (
-                                    <button 
-                                      onClick={() => downloadQuote(contractorQuote.id)}
-                                      className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
-                                    >
-                                      견적서 다운로드
-                                    </button>
-                                  )}
-                                </div>
+                                )}
                               </div>
                             ))
                           ) : (
@@ -681,19 +676,14 @@ export default function MyQuotesPage() {
                                   제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
                                 </div>
                                 
-                                <div className="space-y-2">
-                                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">
-                                    상세 보기
+                                {contractorQuote.pdf_url && (
+                                  <button 
+                                    onClick={() => downloadQuote(contractorQuote.id)}
+                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                                  >
+                                    견적서 다운로드
                                   </button>
-                                  {contractorQuote.pdf_url && (
-                                    <button 
-                                      onClick={() => downloadQuote(contractorQuote.id)}
-                                      className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
-                                    >
-                                      견적서 다운로드
-                                    </button>
-                                  )}
-                                </div>
+                                )}
                               </div>
                             ))
                           )}
