@@ -105,17 +105,23 @@ interface ContractorData {
 
 // 현장방문 누락 여부 확인 함수
 function isSiteVisitMissed(project: Project, contractorId: string): boolean {
-  // 프로젝트가 현장방문 단계를 지나갔지만 본인이 신청하지 않은 경우
-  if (project.status === 'site-visit-pending' || project.status === 'site-visit-completed' || project.status === 'bidding') {
-    // 본인이 현장방문을 신청하지 않았고, 다른 업체가 신청한 경우
-    const hasOtherApplications = project.site_visit_applications?.some(
-      (app: any) => app.contractor_id !== contractorId
-    )
-    
-    return !project.site_visit_application && hasOtherApplications
+  // 디버깅 로그
+  if (project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
+      project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a') {
+    console.log(`🔍 ${project.id} 누락 체크:`, {
+      projectStatus: project.status,
+      hasSiteVisitApplication: !!project.site_visit_application,
+      siteVisitApplicationCancelled: project.site_visit_application?.is_cancelled
+    });
   }
   
-  return false
+  // 단순화: 현장방문이 완료되었는데 본인이 신청하지 않은 경우만 누락
+  if (project.status === 'site-visit-completed' || project.status === 'bidding') {
+    // 본인이 활성 신청을 하지 않은 경우
+    return !project.site_visit_application || project.site_visit_application.is_cancelled;
+  }
+  
+  return false;
 }
 
 // 프로젝트 상태 계산 함수
@@ -249,53 +255,48 @@ export default function IntegratedContractorDashboard() {
 
       // 프로젝트별로 업체와의 관계 데이터 필터링 및 상태 계산
       const processedProjects: Project[] = (projectsData || []).map(project => {
-        // 현재 업체의 현장방문 신청 찾기 (취소되지 않은 활성 신청만)
+        // 현재 업체의 현장방문 신청 찾기 (취소되지 않은 활성 신청)
         const mySiteVisit = project.site_visit_applications?.find(
           (app: any) => app.contractor_id === contractorId && !app.is_cancelled
-        )
+        );
         
-        // 현재 업체의 모든 현장방문 신청 찾기 (취소된 것 포함)
-        const allMySiteVisits = project.site_visit_applications?.filter(
+        // 현재 업체의 가장 최근 신청 (취소 여부 관계없이)
+        const myLatestSiteVisit = project.site_visit_applications?.find(
           (app: any) => app.contractor_id === contractorId
-        )
+        );
         
         // 현재 업체의 견적서 찾기
         const myQuote = project.contractor_quotes?.find(
           (quote: any) => quote.contractor_id === contractorId
-        )
+        );
         
-        // 다른 업체가 이미 신청했는지 확인
-        const hasOtherApplications = project.site_visit_applications?.some(
-          (app: any) => app.contractor_id !== contractorId
-        )
-        
-        // 프로젝트 상태 계산 - 데이터 일관성 유지
-        const siteVisitForStatus = allMySiteVisits?.[0] // 취소된 신청도 포함
+        // 프로젝트 상태 계산
         const processedProject: Project = {
           ...project,
-          site_visit_application: siteVisitForStatus, // 상태 계산과 동일한 데이터 사용
+          site_visit_application: myLatestSiteVisit, // 가장 최근 신청 사용
           contractor_quote: myQuote,
+          site_visit_applications: project.site_visit_applications, // 전체 배열 유지
           projectStatus: calculateProjectStatus({
             ...project,
-            site_visit_application: siteVisitForStatus,
+            site_visit_application: myLatestSiteVisit,
             contractor_quote: myQuote
           }, contractorId)
-        }
+        };
         
         // 특정 프로젝트 디버깅
-        if (project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a' || project.id === '1aa4bbf1-461d-49fd-b986-a44eb59d5ca9') {
-          console.log(`🔍 프로젝트 ${project.id} 디버깅:`, {
+        if (project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
+            project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a') {
+          console.log(`🔍 프로젝트 ${project.id} 처리 완료:`, {
             originalStatus: project.status,
-            siteVisitApplication: siteVisitForStatus,
-            isCancelled: siteVisitForStatus?.is_cancelled,
-            calculatedStatus: processedProject.projectStatus,
             mySiteVisit: mySiteVisit,
-            allMySiteVisits: allMySiteVisits
-          })
+            myLatestSiteVisit: myLatestSiteVisit,
+            calculatedStatus: processedProject.projectStatus,
+            allApplications: project.site_visit_applications?.length || 0
+          });
         }
         
-        return processedProject
-      })
+        return processedProject;
+      });
       
       // 무한 스크롤을 위한 데이터 처리
       const relevantProjects = processedProjects
@@ -311,7 +312,30 @@ export default function IntegratedContractorDashboard() {
       }
       
       // 더 이상 로드할 데이터가 없는지 확인
-      setHasMore(relevantProjects.length === itemsPerPage)
+      // 받은 데이터가 페이지 크기보다 적으면 더 이상 데이터가 없음
+      const hasMoreData = relevantProjects.length === itemsPerPage
+      
+      console.log('📊 무한 스크롤 상태 확인:', {
+        relevantProjectsCount: relevantProjects.length,
+        itemsPerPage,
+        hasMoreData,
+        isLoadMore,
+        currentOffset
+      })
+      
+      // 안전장치: 데이터가 0개이면 확실히 더 이상 없음
+      if (relevantProjects.length === 0) {
+        setHasMore(false)
+        console.log('🚫 데이터가 0개 - hasMore를 false로 설정')
+      } else {
+        setHasMore(hasMoreData)
+      }
+      
+      // 추가 안전장치: hasMore가 false이면 isLoadingMore도 false로 강제 설정
+      if (!hasMoreData) {
+        setIsLoadingMore(false)
+        console.log('🛑 hasMore가 false - isLoadingMore도 false로 강제 설정')
+      }
       
       
     } catch (error) {
@@ -321,6 +345,7 @@ export default function IntegratedContractorDashboard() {
     } finally {
       setIsLoading(false)
       setIsLoadingMore(false)
+      console.log('✅ 로딩 상태 해제 완료')
     }
   }, [itemsPerPage])
 
@@ -378,17 +403,41 @@ export default function IntegratedContractorDashboard() {
 
   // 무한 스크롤을 위한 추가 데이터 로드 함수
   const loadMoreProjects = useCallback(async () => {
-    if (!contractorData || isLoadingMore || !hasMore) return
+    if (!contractorData || isLoadingMore || !hasMore) {
+      console.log('🚫 loadMoreProjects 호출 차단:', { 
+        hasContractor: !!contractorData, 
+        isLoadingMore, 
+        hasMore 
+      })
+      return
+    }
     
+    console.log('📥 loadMoreProjects 실행:', { currentOffset })
     await fetchProjectsData(contractorData.id, currentOffset, true)
   }, [contractorData, isLoadingMore, hasMore, currentOffset]) // fetchProjectsData 의존성 제거
 
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(() => {
-    if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+    const scrollTop = document.documentElement.scrollTop
+    const windowHeight = window.innerHeight
+    const documentHeight = document.documentElement.offsetHeight
+    
+    const isNearBottom = scrollTop + windowHeight >= documentHeight - 1000
+    
+    console.log('📜 스크롤 이벤트:', {
+      scrollTop,
+      windowHeight,
+      documentHeight,
+      isNearBottom,
+      isLoadingMore,
+      hasMore
+    })
+    
+    if (isNearBottom && !isLoadingMore && hasMore) {
+      console.log('🚀 스크롤로 인한 추가 로드 트리거')
       loadMoreProjects()
     }
-  }, [loadMoreProjects])
+  }, [loadMoreProjects, isLoadingMore, hasMore])
 
   // 스크롤 이벤트 리스너 등록
   useEffect(() => {
@@ -866,20 +915,31 @@ export default function IntegratedContractorDashboard() {
                         
                         {/* 현장방문 신청 버튼 - 신청 가능한 상태 */}
                         {(() => {
-                          const shouldShowApplyButton = 
-                            (project.projectStatus === 'approved' || project.projectStatus === 'pending') && 
-                            !isSiteVisitMissed(project, contractorData?.id || '');
+                          // 디버깅용 체크
+                          const isTargetProject = project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
+                                                project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a';
                           
-                          if (project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a') {
-                            console.log('🔴 North York 버튼 조건:', {
-                              projectStatus: project.projectStatus,
-                              isPending: project.projectStatus === 'pending',
-                              isMissed: isSiteVisitMissed(project, contractorData?.id || ''),
-                              shouldShow: shouldShowApplyButton
+                          // 현장방문 신청 가능 조건:
+                          // 1. 프로젝트가 approved 또는 site-visit-pending 상태
+                          // 2. 아직 견적서를 제출하지 않음
+                          // 3. 현재 활성 신청이 없음 (취소된 신청은 재신청 가능)
+                          const canApply = (project.status === 'approved' || project.status === 'site-visit-pending') &&
+                                         !project.contractor_quote &&
+                                         (!project.site_visit_application || project.site_visit_application.is_cancelled);
+                          
+                          if (isTargetProject) {
+                            console.log('🔴 현장방문 버튼 조건 (수정됨):', {
+                              projectId: project.id,
+                              projectStatus: project.status,
+                              projectStatusCalculated: project.projectStatus,
+                              hasQuote: !!project.contractor_quote,
+                              hasSiteVisit: !!project.site_visit_application,
+                              isCancelled: project.site_visit_application?.is_cancelled,
+                              canApply: canApply
                             });
                           }
                           
-                          return shouldShowApplyButton && (
+                          return canApply && (
                             <button
                               onClick={() => handleSiteVisitApplication(project.id)}
                               className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"

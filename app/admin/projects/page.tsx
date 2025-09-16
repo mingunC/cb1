@@ -134,6 +134,7 @@ export default function ProjectsPage() {
       
       console.log('Updating project status to:', newStatus)
       
+      // 1. 프로젝트 상태 업데이트
       const { data, error } = await supabase
         .from('quote_requests')
         .update({ 
@@ -149,14 +150,42 @@ export default function ProjectsPage() {
         alert('상태 업데이트 실패: ' + error.message)
         return
       }
-
+  
+      // 2. 🎯 비딩 상태로 변경 시 모든 pending 현장방문을 completed로 자동 변경
+      if (newStatus === 'bidding') {
+        console.log('비딩 상태로 변경 - 모든 현장방문을 자동 완료 처리')
+        
+        const { data: updatedVisits, error: visitError } = await supabase
+          .from('site_visit_applications')
+          .update({ 
+            status: 'completed',
+            notes: '프로젝트가 비딩 단계로 전환되어 자동 완료 처리',
+            updated_at: new Date().toISOString()
+          })
+          .eq('project_id', projectId)
+          .eq('status', 'pending')
+          .select()
+        
+        if (visitError) {
+          console.error('현장방문 자동 완료 처리 실패:', visitError)
+          alert('경고: 현장방문 상태 업데이트 실패. 수동으로 처리해주세요.')
+        } else if (updatedVisits && updatedVisits.length > 0) {
+          console.log(`✅ ${updatedVisits.length}개의 현장방문이 자동 완료 처리됨`)
+          alert(`상태가 "bidding"으로 업데이트되었습니다.\n${updatedVisits.length}개의 현장방문이 자동으로 완료 처리되었습니다.`)
+        } else {
+          alert(`상태가 "${newStatus}"으로 업데이트되었습니다.`)
+        }
+      } else {
+        alert(`상태가 "${newStatus}"으로 업데이트되었습니다.`)
+      }
+  
       // 로컬 상태 업데이트
       setProjects(projects.map(project => 
         project.id === projectId 
           ? { ...project, status: newStatus as any, updated_at: new Date().toISOString() }
           : project
       ))
-
+  
       if (selectedProject && selectedProject.id === projectId) {
         setSelectedProject({
           ...selectedProject,
@@ -164,8 +193,7 @@ export default function ProjectsPage() {
           updated_at: new Date().toISOString()
         })
       }
-
-      alert(`상태가 "${newStatus}"으로 업데이트되었습니다.`)
+  
     } catch (error) {
       console.error('Error:', error)
       alert('상태 업데이트 중 오류가 발생했습니다.')
