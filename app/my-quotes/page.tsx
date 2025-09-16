@@ -388,6 +388,59 @@ export default function MyQuotesPage() {
 
   // 탭 변경 함수 제거 - 통합 뷰로 변경
 
+  // 업체 선택 핸들러
+  const handleSelectContractor = async (contractorQuoteId: string, projectId: string) => {
+    try {
+      const supabase = createBrowserClient()
+      
+      // 선택된 업체의 상태를 'accepted'로 변경
+      const { error: updateError } = await supabase
+        .from('contractor_quotes')
+        .update({ status: 'accepted' })
+        .eq('id', contractorQuoteId)
+
+      if (updateError) {
+        console.error('Error updating contractor quote status:', updateError)
+        alert('업체 선택 중 오류가 발생했습니다.')
+        return
+      }
+
+      // 같은 프로젝트의 다른 업체들을 'rejected'로 변경
+      const { error: rejectError } = await supabase
+        .from('contractor_quotes')
+        .update({ status: 'rejected' })
+        .eq('project_id', projectId)
+        .neq('id', contractorQuoteId)
+
+      if (rejectError) {
+        console.error('Error rejecting other contractor quotes:', rejectError)
+        // 선택은 성공했으므로 계속 진행
+      }
+
+      // 프로젝트 상태를 'selected'로 변경
+      const { error: projectError } = await supabase
+        .from('quote_requests')
+        .update({ status: 'selected' })
+        .eq('id', projectId)
+
+      if (projectError) {
+        console.error('Error updating project status:', projectError)
+        // 업체 선택은 성공했으므로 계속 진행
+      }
+
+      alert('업체가 성공적으로 선택되었습니다!')
+      
+      // 데이터 새로고침
+      if (user?.id) {
+        await fetchQuotes(user.id)
+      }
+      
+    } catch (error) {
+      console.error('Error selecting contractor:', error)
+      alert('업체 선택 중 오류가 발생했습니다.')
+    }
+  }
+
   const downloadQuote = async (quoteId: string) => {
     try {
       const supabase = createBrowserClient()
@@ -640,14 +693,33 @@ export default function MyQuotesPage() {
                                   제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
                                 </div>
                                 
-                                {contractorQuote.pdf_url && (
-                                  <button 
-                                    onClick={() => downloadQuote(contractorQuote.id)}
-                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
-                                  >
-                                    견적서 다운로드
-                                  </button>
-                                )}
+                                <div className="space-y-2">
+                                  {contractorQuote.status === 'accepted' ? (
+                                    <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
+                                      ✓ 선택된 업체
+                                    </div>
+                                  ) : contractorQuote.status === 'rejected' ? (
+                                    <div className="w-full px-4 py-2 bg-red-100 text-red-800 rounded text-sm font-medium text-center">
+                                      ✗ 거절됨
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id)}
+                                      className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                                    >
+                                      업체 선택하기
+                                    </button>
+                                  )}
+                                  
+                                  {contractorQuote.pdf_url && (
+                                    <button 
+                                      onClick={() => downloadQuote(contractorQuote.id)}
+                                      className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
+                                    >
+                                      견적서 다운로드
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ))
                           ) : (
@@ -676,14 +748,33 @@ export default function MyQuotesPage() {
                                   제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
                                 </div>
                                 
-                                {contractorQuote.pdf_url && (
-                                  <button 
-                                    onClick={() => downloadQuote(contractorQuote.id)}
-                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
-                                  >
-                                    견적서 다운로드
-                                  </button>
-                                )}
+                                <div className="space-y-2">
+                                  {contractorQuote.status === 'accepted' ? (
+                                    <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
+                                      ✓ 선택된 업체
+                                    </div>
+                                  ) : contractorQuote.status === 'rejected' ? (
+                                    <div className="w-full px-4 py-2 bg-red-100 text-red-800 rounded text-sm font-medium text-center">
+                                      ✗ 거절됨
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id)}
+                                      className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                                    >
+                                      업체 선택하기
+                                    </button>
+                                  )}
+                                  
+                                  {contractorQuote.pdf_url && (
+                                    <button 
+                                      onClick={() => downloadQuote(contractorQuote.id)}
+                                      className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
+                                    >
+                                      견적서 다운로드
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ))
                           )}
