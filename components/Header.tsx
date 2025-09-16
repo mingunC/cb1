@@ -190,14 +190,20 @@ export default function Header() {
         // 이름 설정 (유효성 검증 포함)
         const firstName = userData.first_name || ''
         const lastName = userData.last_name || ''
-        const fullName = `${firstName} ${lastName}`.trim()
+        let fullName = `${firstName} ${lastName}`.trim()
+        
+        // "User"가 포함된 경우 제거
+        fullName = fullName.replace(/\s*User\s*/g, '').trim()
         
         // 이름이 유효한지 확인
         const isValidName = fullName && 
                            fullName !== 'user user' && 
                            fullName !== 'User' &&
+                           fullName !== 'user' &&
                            firstName !== 'user' &&
-                           lastName !== 'user'
+                           lastName !== 'user' &&
+                           firstName !== 'User' &&
+                           lastName !== 'User'
         
         const finalDisplayName = isValidName ? fullName : email?.split('@')[0] || 'User'
         setDisplayName(finalDisplayName)

@@ -22,6 +22,20 @@ export default function AuthCallback() {
         if (session) {
           console.log('Login successful:', session.user.email)
           
+          // Google OAuth 메타데이터 디버깅
+          if (session.user.app_metadata?.provider === 'google') {
+            console.log('🔍 Google OAuth 메타데이터:')
+            console.log('- user_metadata:', session.user.user_metadata)
+            console.log('- app_metadata:', session.user.app_metadata)
+            console.log('- identities:', session.user.identities)
+            
+            // Google Identity 데이터 상세 확인
+            const googleIdentity = session.user.identities?.find(id => id.provider === 'google')
+            if (googleIdentity) {
+              console.log('- Google Identity data:', googleIdentity.identity_data)
+            }
+          }
+          
           // 관리자 권한 확인 후 리다이렉트
           try {
             const { data: userData, error: queryError } = await supabase
