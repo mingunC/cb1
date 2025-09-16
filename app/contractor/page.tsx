@@ -245,7 +245,7 @@ export default function IntegratedContractorDashboard() {
             created_at
           )
         `)
-        .or(`status.eq.site-visit-pending,status.eq.site-visit-completed,status.eq.bidding,status.eq.quote-submitted,status.eq.completed,status.eq.cancelled`)
+        .or(`status.eq.pending,status.eq.approved,status.eq.site-visit-pending,status.eq.site-visit-completed,status.eq.bidding,status.eq.quote-submitted,status.eq.selected,status.eq.completed,status.eq.cancelled`)
         .order('created_at', { ascending: false })
         .range(offset, offset + itemsPerPage - 1)
 
