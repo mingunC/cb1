@@ -1,118 +1,216 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
-import { useAuth } from '@/lib/supabase/hooks'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import { toast } from 'react-hot-toast'
+
+// 타입 정의
+interface FormData {
+  email: string
+  password: string
+}
+
+interface LoginError {
+  message: string
+  code?: string
+}
 
 export default function LoginPage() {
+  const router = useRouter()
+  const supabase = createBrowserClient()
+  
+  // 상태 관리
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [formData, setFormData] = useState({
+  const [error, setError] = useState<string>('')
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: ''
   })
-  
-  const router = useRouter()
-  const { signIn, signInWithGoogle } = useAuth()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 사용자 타입별 리다이렉트 처리
+  const handleUserRedirect = useCallback(async (userId: string, email: string) => {
+    try {
+      // 1. contractors 테이블 확인 (업체)
+      const { data: contractorData } = await supabase
+        .from('contractors')
+        .select('id')
+        .eq('user_id', userId)
+        .single()
+
+      if (contractorData) {
+        console.log('Contractor user detected, redirecting to contractor dashboard')
+        toast.success('업체 계정으로 로그인되었습니다')
+        router.push('/contractor')
+        return
+      }
+
+      // 2. 관리자 이메일 확인
+      if (email === 'cmgg919@gmail.com') {
+        console.log('Admin user detected, redirecting to admin dashboard')
+        toast.success('관리자 계정으로 로그인되었습니다')
+        router.push('/admin')
+        return
+      }
+
+      // 3. 일반 고객
+      console.log('Customer user detected, redirecting to home')
+      toast.success('로그인되었습니다')
+      router.push('/')
+      
+    } catch (error) {
+      console.error('Redirect error:', error)
+      toast.error('리다이렉트 중 오류가 발생했습니다')
+      router.push('/')
+    }
+  }, [supabase, router])
+
+  // 로그인 처리
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // 유효성 검사
+    if (!formData.email || !formData.password) {
+      setError('이메일과 비밀번호를 모두 입력해주세요.')
+      return
+    }
+
+    // 이메일 형식 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError('올바른 이메일 형식을 입력해주세요.')
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
     try {
-      const { data, error } = await signIn(formData.email, formData.password)
-      
-      console.log('Login result:', { data, error }) // 디버깅용
-      
-      if (error) {
-        setError(error.message)
-      } else if (data.user) {
-        console.log('Login successful, user:', data.user.email) // 디버깅용
+      // Supabase 로그인
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
+      })
+
+      if (signInError) {
+        console.error('Login error:', signInError)
         
-        // 관리자 권한 확인 후 리다이렉트
-        try {
-          const supabase = createBrowserClient()
-          const { data: userData, error: queryError } = await supabase
-            .from('users')
-            .select('user_type')
-            .eq('id', data.user.id)
-            .single()
-          
-          if (!queryError && userData?.user_type === 'admin') {
-            // 관리자면 대시보드로 리다이렉트
-            console.log('Admin user, redirecting to dashboard')
-            router.push('/admin')
-          } else {
-            // 일반 사용자면 홈페이지로 리다이렉트
-            console.log('Regular user, redirecting to home')
-            router.push('/')
-          }
-        } catch (redirectError) {
-          console.error('Redirect error:', redirectError)
-          // 오류 시 홈페이지로 리다이렉트
-          router.push('/')
+        // 에러 메시지 한글화
+        if (signInError.message.includes('Invalid login credentials')) {
+          setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+        } else if (signInError.message.includes('Email not confirmed')) {
+          setError('이메일 인증이 필요합니다. 이메일을 확인해주세요.')
+        } else if (signInError.message.includes('Too many requests')) {
+          setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
+        } else {
+          setError('로그인에 실패했습니다. 다시 시도해주세요.')
         }
+        return
       }
-    } catch (err) {
-      console.error('Login error:', err) // 디버깅용
-      setError('로그인 중 오류가 발생했습니다.')
+
+      if (!data.user) {
+        setError('로그인에 실패했습니다. 다시 시도해주세요.')
+        return
+      }
+
+      console.log('Login successful:', data.user.email)
+      
+      // 사용자 타입별 리다이렉트
+      await handleUserRedirect(data.user.id, data.user.email || '')
+
+    } catch (error) {
+      console.error('Unexpected error during login:', error)
+      setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [formData, supabase, handleUserRedirect])
 
-  const handleGoogleSignIn = async () => {
+  // Google 로그인 처리
+  const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
     setError('')
 
     try {
-      const { error } = await signInWithGoogle()
-      if (error) {
-        setError(error.message)
+      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      })
+
+      if (googleError) {
+        console.error('Google login error:', googleError)
+        setError('Google 로그인에 실패했습니다.')
+        toast.error('Google 로그인에 실패했습니다')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Google sign in error:', error)
       setError('Google 로그인 중 오류가 발생했습니다.')
+      toast.error('Google 로그인 중 오류가 발생했습니다')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+  // 입력 핸들러
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    
+    // 입력 시 에러 메시지 제거
+    if (error) setError('')
+  }, [error])
+
+  // 비밀번호 표시 토글
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev)
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* 뒤로가기 버튼 */}
-        <Link href="/" className="absolute left-4 text-white hover:text-gray-200 transition-all duration-200 bg-gray-800 hover:bg-gray-700 rounded-full p-2 shadow-lg" style={{ top: '120px' }}>
-          <ArrowLeft className="h-6 w-6" />
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          계정에 로그인
+        {/* 뒤로가기 버튼 - 위치 개선 */}
+        <div className="mb-6">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            <span>홈으로 돌아가기</span>
+          </Link>
+        </div>
+
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+          로그인
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           아직 회원이 아니신가요?{' '}
-          <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link 
+            href="/signup" 
+            className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+          >
             회원가입
           </Link>
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* 오류 메시지 */}
+        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
+          {/* 에러 메시지 */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-red-600">{error}</span>
             </div>
           )}
@@ -123,9 +221,9 @@ export default function LoginPage() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 이메일
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="email"
@@ -135,7 +233,9 @@ export default function LoginPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  disabled={isLoading}
+                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="your@email.com"
                 />
               </div>
             </div>
@@ -145,9 +245,9 @@ export default function LoginPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 비밀번호
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="password"
@@ -157,25 +257,27 @@ export default function LoginPage() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  disabled={isLoading}
+                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="••••••••"
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" aria-hidden="true" />
-                    ) : (
-                      <Eye className="h-5 w-5" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  disabled={isLoading}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* 비밀번호 찾기 */}
+            {/* 추가 옵션 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -183,32 +285,39 @@ export default function LoginPage() {
                   name="remember-me"
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   로그인 상태 유지
                 </label>
               </div>
 
-              <div className="text-sm">
-                <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                  비밀번호를 잊으셨나요?
-                </Link>
-              </div>
+              <Link 
+                href="/forgot-password" 
+                className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                비밀번호 찾기
+              </Link>
             </div>
 
             {/* 로그인 버튼 */}
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? '로그인 중...' : '로그인'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  로그인 중...
+                </>
+              ) : (
+                '로그인'
+              )}
+            </button>
 
             {/* 구분선 */}
-            <div className="relative">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
@@ -218,34 +327,20 @@ export default function LoginPage() {
             </div>
 
             {/* Google 로그인 */}
-            <div>
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 22.56c3.25 0 5.92-1.09 7.9-2.96l-3.57-2.77c-.98.64-2.23 1.05-4.33 1.05-3.06 0-5.66-2.07-6.6-4.86H1.85v2.83c1.92 3.77 5.79 6.33 10.15 6.33z"
-                  />
-                  <path
-                    fill="#FBBC04"
-                    d="M5.35 14.05c-.1-.3-.16-.62-.16-.97s.06-.68.16-.97V9.25H1.85c-.36.72-.56 1.57-.56 2.49s.2 1.77.56 2.49l3.5-2.7z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.64c1.92 0 3.45.8 4.23 1.55L20.5 2.93C18.42 1.01 15.75 0 12 0 7.64 0 3.77 2.56 1.85 6.33l3.5 2.7c.94-2.79 3.54-4.86 6.6-4.86z"
-                  />
-                </svg>
-                Google로 로그인
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.05-4.71 1.05-3.62 0-6.69-2.44-7.79-5.72H.65v2.86C2.36 19.08 5.89 23 12 23z" />
+                <path fill="#FBBC05" d="M4.21 14.28c-.28-.82-.44-1.69-.44-2.61 0-.92.16-1.79.44-2.61V6.2H.65C.24 7.01 0 7.99 0 9s.24 1.99.65 2.8l3.56 2.48z" />
+                <path fill="#EA4335" d="M12 4.75c2.04 0 3.87.7 5.31 2.07l3.99-3.99C19.46 1.09 16.97 0 12 0 5.89 0 2.36 3.92.65 6.2l3.56 2.48C5.31 7.19 8.38 4.75 12 4.75z" />
+              </svg>
+              Google로 로그인
+            </button>
           </form>
         </div>
       </div>
