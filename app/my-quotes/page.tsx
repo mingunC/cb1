@@ -22,6 +22,24 @@ interface QuoteRequest {
   created_at: string
   updated_at: string
   contractor_quotes?: ContractorQuote[]
+  site_visit_applications?: SiteVisitApplication[]
+}
+
+interface SiteVisitApplication {
+  id: string
+  contractor_id: string
+  status: 'pending' | 'approved' | 'cancelled'
+  notes?: string
+  applied_at: string
+  created_at: string
+  updated_at: string
+  contractor?: {
+    id: string
+    company_name: string
+    contact_name: string
+    phone: string
+    email: string
+  }
 }
 
 interface ContractorQuote {
@@ -142,6 +160,15 @@ export default function MyQuotesPage() {
             status,
             created_at,
             updated_at
+          ),
+          site_visit_applications (
+            id,
+            contractor_id,
+            status,
+            notes,
+            applied_at,
+            created_at,
+            updated_at
           )
         `)
         .eq('customer_id', customerId)
@@ -166,8 +193,8 @@ export default function MyQuotesPage() {
       // contractor 정보를 함께 가져오기 위해 추가
       if (quotesData && quotesData.length > 0) {
         for (const quote of quotesData) {
+          // 견적서 제출 업체들의 contractor 정보 가져오기
           if (quote.contractor_quotes && quote.contractor_quotes.length > 0) {
-            // 각 contractor_quote에 대한 contractor 정보 가져오기
             const contractorIds = quote.contractor_quotes.map((cq: any) => cq.contractor_id)
             
             const { data: contractorsData } = await supabase
@@ -179,6 +206,22 @@ export default function MyQuotesPage() {
             quote.contractor_quotes = quote.contractor_quotes.map((cq: any) => ({
               ...cq,
               contractor: contractorsData?.find(c => c.id === cq.contractor_id)
+            }))
+          }
+
+          // 현장방문 신청 업체들의 contractor 정보 가져오기
+          if (quote.site_visit_applications && quote.site_visit_applications.length > 0) {
+            const siteVisitContractorIds = quote.site_visit_applications.map((sva: any) => sva.contractor_id)
+            
+            const { data: siteVisitContractorsData } = await supabase
+              .from('contractors')
+              .select('id, company_name, contact_name, phone, email')
+              .in('id', siteVisitContractorIds)
+            
+            // contractor 정보 매핑
+            quote.site_visit_applications = quote.site_visit_applications.map((sva: any) => ({
+              ...sva,
+              contractor: siteVisitContractorsData?.find(c => c.id === sva.contractor_id)
             }))
           }
         }
@@ -673,6 +716,65 @@ export default function MyQuotesPage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* 현장방문 신청 섹션 */}
+                    {quote.site_visit_applications && quote.site_visit_applications.length > 0 && (
+                      <div className="mt-6 mb-6">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                            <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                            현장방문 신청 업체 ({quote.site_visit_applications.length}개)
+                          </h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {quote.site_visit_applications.map((application) => (
+                            <div key={application.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50 hover:bg-blue-100 transition-colors">
+                              <div className="mb-3">
+                                <h4 className="font-semibold text-lg text-gray-900">
+                                  {application.contractor?.company_name || '업체명 없음'}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  담당자: {application.contractor?.contact_name || '담당자 정보 없음'}
+                                </p>
+                              </div>
+                              
+                              <div className="mb-3">
+                                <p className="text-sm text-gray-600">
+                                  📞 {application.contractor?.phone || '연락처 없음'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  ✉️ {application.contractor?.email || '이메일 없음'}
+                                </p>
+                              </div>
+                              
+                              <div className="mb-3">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  application.status === 'pending' 
+                                    ? 'bg-yellow-100 text-yellow-800' 
+                                    : application.status === 'approved'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {application.status === 'pending' ? '신청 대기중' : 
+                                   application.status === 'approved' ? '승인됨' : '취소됨'}
+                                </span>
+                              </div>
+                              
+                              <div className="text-xs text-gray-500">
+                                신청일: {new Date(application.applied_at).toLocaleDateString('ko-KR')}
+                              </div>
+                              
+                              {application.notes && (
+                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-700">
+                                  <strong>메모:</strong> {application.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* 받은 견적서 섹션 */}
                     {(quote.contractor_quotes && quote.contractor_quotes.length > 0) || projectQuotes.length > 0 ? (
