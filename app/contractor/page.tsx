@@ -206,6 +206,8 @@ export default function IntegratedContractorDashboard() {
 
   // 무한 스크롤을 위한 데이터 페칭 함수
   const fetchProjectsData = useCallback(async (contractorId: string, offset: number = 0, isLoadMore: boolean = false) => {
+    console.log('🚀 fetchProjectsData 함수 시작:', { contractorId, offset, isLoadMore })
+    
     try {
       if (!isLoadMore) {
         setError(null)
@@ -333,6 +335,11 @@ export default function IntegratedContractorDashboard() {
         currentOffset
       })
       
+      console.log('✅ fetchProjectsData 완료:', {
+        processedProjectsCount: relevantProjects.length,
+        totalProjectsAfterUpdate: isLoadMore ? projects.length + relevantProjects.length : relevantProjects.length
+      })
+      
       // 안전장치: 데이터가 0개이면 확실히 더 이상 없음
       if (relevantProjects.length === 0) {
         setHasMore(false)
@@ -349,7 +356,8 @@ export default function IntegratedContractorDashboard() {
       
       
     } catch (error) {
-      console.error('프로젝트 데이터 로드 실패:', error)
+      console.error('❌ 프로젝트 데이터 로드 실패:', error)
+      console.error('❌ 오류 세부사항:', JSON.stringify(error, null, 2))
       setError('프로젝트 데이터를 불러오는데 실패했습니다.')
       toast.error('데이터 로드 실패')
     } finally {
@@ -401,7 +409,7 @@ export default function IntegratedContractorDashboard() {
             site_visit_applications!left (*),
             contractor_quotes!left (*)
           `)
-          .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted'])
+          .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted', 'selected', 'completed'])
           .order('created_at', { ascending: false })
           .range(0, 8)
         
