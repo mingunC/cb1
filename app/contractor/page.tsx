@@ -216,7 +216,7 @@ export default function IntegratedContractorDashboard() {
       
       const supabase = createBrowserClient()
       
-      // quote_requests 목록 조회 (방문 신청 정보 포함)
+      // quote_requests 목록 조회 (현장방문 신청하거나 견적 제출한 프로젝트만)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select(`
@@ -245,7 +245,7 @@ export default function IntegratedContractorDashboard() {
             created_at
           )
         `)
-        .or(`status.eq.pending,status.eq.approved,status.eq.site-visit-pending,status.eq.site-visit-completed,status.eq.bidding,status.eq.quote-submitted,status.eq.selected,status.eq.completed,status.eq.cancelled`)
+        .or(`site_visit_applications.contractor_id.eq.${contractorId},contractor_quotes.contractor_id.eq.${contractorId}`)
         .order('created_at', { ascending: false })
         .range(offset, offset + itemsPerPage - 1)
 
