@@ -1,74 +1,164 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react'
-import { useAuth } from '@/lib/supabase/hooks'
+import { createBrowserClient } from '@/lib/supabase/clients'
+import { toast } from 'react-hot-toast'
+
+// 타입 정의
+interface FormData {
+  email: string
+  password: string
+}
 
 export default function ContractorLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: ''
   })
   
   const router = useRouter()
-  const { signIn, signInWithGoogle } = useAuth()
+  const supabase = createBrowserClient()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // 유효성 검사
+    if (!formData.email || !formData.password) {
+      setError('이메일과 비밀번호를 모두 입력해주세요.')
+      return
+    }
+
+    // 이메일 형식 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError('올바른 이메일 형식을 입력해주세요.')
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
     try {
-      const { data, error } = await signIn(formData.email, formData.password)
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
+      })
       
-      if (error) {
-        setError(error.message)
-      } else if (data.user) {
-        // 로그인 성공 시 홈페이지로 리다이렉트
-        router.push('/')
+      if (signInError) {
+        console.error('Login error:', signInError)
+        
+        // 에러 메시지 한글화
+        if (signInError.message.includes('Invalid login credentials')) {
+          setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+        } else if (signInError.message.includes('Email not confirmed')) {
+          setError('이메일 인증이 필요합니다.')
+        } else if (signInError.message.includes('Too many requests')) {
+          setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
+        } else {
+          setError('로그인에 실패했습니다. 다시 시도해주세요.')
+        }
+        return
       }
+
+      if (!data.user) {
+        setError('로그인에 실패했습니다. 다시 시도해주세요.')
+        return
+      }
+
+      console.log('Login successful:', data.user.email)
+      
+      // contractors 테이블에서 업체 정보 확인
+      const { data: contractorData } = await supabase
+        .from('contractors')
+        .select('id, company_name, status')
+        .eq('user_id', data.user.id)
+        .single()
+
+      if (!contractorData) {
+        setError('업체 계정이 아닙니다. 업체 회원가입을 해주세요.')
+        await supabase.auth.signOut()
+        return
+      }
+
+      if (contractorData.status !== 'active') {
+        setError('계정이 비활성화되어 있습니다.')
+        await supabase.auth.signOut()
+        return
+      }
+
+      // 로그인 성공 시 업체 대시보드로 리다이렉트
+      toast.success(`${contractorData.company_name} 계정으로 로그인되었습니다`)
+      router.push('/contractor')
+      
     } catch (err) {
+      console.error('Unexpected error during login:', err)
       setError('로그인 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [formData, supabase, router])
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
     setError('')
 
     try {
-      const { error } = await signInWithGoogle()
-      if (error) {
-        setError(error.message)
+      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?type=contractor`
+        }
+      })
+
+      if (googleError) {
+        console.error('Google login error:', googleError)
+        setError('Google 로그인에 실패했습니다.')
+        toast.error('Google 로그인에 실패했습니다')
       }
     } catch (err) {
+      console.error('Google sign in error:', err)
       setError('Google 로그인 중 오류가 발생했습니다.')
+      toast.error('Google 로그인 중 오류가 발생했습니다')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    
+    // 입력 시 에러 메시지 제거
+    if (error) setError('')
+  }, [error])
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev)
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* 뒤로가기 버튼 */}
-        <Link href="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
-          <ArrowLeft className="h-6 w-6" />
-        </Link>
+        <div className="mb-6">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            <span>홈으로 돌아가기</span>
+          </Link>
+        </div>
+        
         <div className="text-center">
           <Building2 className="mx-auto h-12 w-12 text-green-600" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -93,11 +183,11 @@ export default function ContractorLoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
           {/* 오류 메시지 */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-red-600">{error}</span>
             </div>
           )}
@@ -108,9 +198,9 @@ export default function ContractorLoginPage() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 이메일
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="email"
@@ -120,7 +210,9 @@ export default function ContractorLoginPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  disabled={isLoading}
+                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="your@email.com"
                 />
               </div>
             </div>
@@ -130,9 +222,9 @@ export default function ContractorLoginPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 비밀번호
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="password"
@@ -142,21 +234,23 @@ export default function ContractorLoginPage() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  disabled={isLoading}
+                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="••••••••"
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" aria-hidden="true" />
-                    ) : (
-                      <Eye className="h-5 w-5" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  disabled={isLoading}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -168,6 +262,7 @@ export default function ContractorLoginPage() {
                   name="remember-me"
                   type="checkbox"
                   className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   로그인 상태 유지
@@ -186,14 +281,21 @@ export default function ContractorLoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? '로그인 중...' : '업체 로그인'}
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    로그인 중...
+                  </>
+                ) : (
+                  '업체 로그인'
+                )}
               </button>
             </div>
 
             {/* 구분선 */}
-            <div className="relative">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
@@ -208,7 +310,7 @@ export default function ContractorLoginPage() {
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <path
