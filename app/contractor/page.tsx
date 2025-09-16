@@ -216,12 +216,12 @@ export default function IntegratedContractorDashboard() {
       
       const supabase = createBrowserClient()
       
-      // quote_requests 목록 조회 (현장방문 신청하거나 견적 제출한 프로젝트만)
-      const { data: projectsData, error: projectsError } = await supabase
+      // 1. 현장방문 신청한 프로젝트 조회
+      const { data: siteVisitProjects, error: siteVisitError } = await supabase
         .from('quote_requests')
         .select(`
           *,
-          site_visit_applications (
+          site_visit_applications!inner (
             id,
             contractor_id,
             status,
@@ -245,11 +245,53 @@ export default function IntegratedContractorDashboard() {
             created_at
           )
         `)
-        .or(`site_visit_applications.contractor_id.eq.${contractorId},contractor_quotes.contractor_id.eq.${contractorId}`)
+        .eq('site_visit_applications.contractor_id', contractorId)
         .order('created_at', { ascending: false })
         .range(offset, offset + itemsPerPage - 1)
 
-      if (projectsError) throw projectsError
+      if (siteVisitError) throw siteVisitError
+
+      // 2. 견적 제출한 프로젝트 조회
+      const { data: quoteProjects, error: quoteError } = await supabase
+        .from('quote_requests')
+        .select(`
+          *,
+          site_visit_applications (
+            id,
+            contractor_id,
+            status,
+            applied_at,
+            is_cancelled,
+            cancelled_at,
+            cancelled_by,
+            contractors (
+              id,
+              company_name,
+              contact_name
+            )
+          ),
+          contractor_quotes!inner (
+            id,
+            contractor_id,
+            price,
+            description,
+            pdf_url,
+            status,
+            created_at
+          )
+        `)
+        .eq('contractor_quotes.contractor_id', contractorId)
+        .order('created_at', { ascending: false })
+
+      if (quoteError) throw quoteError
+
+      // 3. 두 결과를 합치고 중복 제거
+      const allProjects = [...(siteVisitProjects || []), ...(quoteProjects || [])]
+      const uniqueProjects = allProjects.filter((project, index, self) => 
+        index === self.findIndex(p => p.id === project.id)
+      )
+
+      const projectsData = uniqueProjects.slice(0, itemsPerPage)
 
       
 
