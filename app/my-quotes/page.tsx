@@ -715,8 +715,13 @@ export default function MyQuotesPage() {
                                 
                                 <div className="space-y-2">
                                   {contractorQuote.status === 'accepted' ? (
-                                    <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
-                                      ✓ 선택된 업체
+                                    <div className="space-y-2">
+                                      <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
+                                        ✓ 선택된 업체
+                                      </div>
+                                      <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
+                                        📞 {contractorQuote.contractor?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
+                                      </div>
                                     </div>
                                   ) : contractorQuote.status === 'rejected' ? (
                                     <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
@@ -770,8 +775,13 @@ export default function MyQuotesPage() {
                                 
                                 <div className="space-y-2">
                                   {contractorQuote.status === 'accepted' ? (
-                                    <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
-                                      ✓ 선택된 업체
+                                    <div className="space-y-2">
+                                      <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
+                                        ✓ 선택된 업체
+                                      </div>
+                                      <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
+                                        📞 {contractorQuote.contractor?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
+                                      </div>
                                     </div>
                                   ) : contractorQuote.status === 'rejected' ? (
                                     <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
