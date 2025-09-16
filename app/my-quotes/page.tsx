@@ -21,6 +21,7 @@ interface QuoteRequest {
   status: 'pending' | 'approved' | 'rejected' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'completed' | 'cancelled'
   created_at: string
   updated_at: string
+  contractor_quotes?: ContractorQuote[]
 }
 
 interface ContractorQuote {
@@ -37,6 +38,13 @@ interface ContractorQuote {
   contractor_company?: string
   price?: number
   description?: string
+  contractor?: {
+    id: string
+    company_name: string
+    contact_name: string
+    phone: string
+    email: string
+  }
 }
 
 export default function MyQuotesPage() {
@@ -116,8 +124,28 @@ export default function MyQuotesPage() {
       console.log('=== FETCHING QUOTES ===')
       console.log('Customer ID:', customerId)
       
-      // 유틸리티 함수 사용하여 견적 요청서 조회 (자동 폴백 포함)
-      const { data: quotesData, error: quotesError } = await getQuoteRequests(customerId)
+      const supabase = createBrowserClient()
+      
+      // quote_requests를 조회하는 부분을 찾아서
+      const { data: quotesData, error: quotesError } = await supabase
+        .from('quote_requests')
+        .select(`
+          *,
+          contractor_quotes!contractor_quotes_project_id_fkey (
+            id,
+            contractor_id,
+            project_id,
+            price,
+            description,
+            pdf_url,
+            pdf_filename,
+            status,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
       
       console.log('Quotes query result:', { quotesData, quotesError })
       console.log('Quotes count:', quotesData?.length || 0)
@@ -134,6 +162,27 @@ export default function MyQuotesPage() {
       } else {
         console.log('No quotes found for this customer')
       }
+
+      // contractor 정보를 함께 가져오기 위해 추가
+      if (quotesData && quotesData.length > 0) {
+        for (const quote of quotesData) {
+          if (quote.contractor_quotes && quote.contractor_quotes.length > 0) {
+            // 각 contractor_quote에 대한 contractor 정보 가져오기
+            const contractorIds = quote.contractor_quotes.map((cq: any) => cq.contractor_id)
+            
+            const { data: contractorsData } = await supabase
+              .from('contractors')
+              .select('id, company_name, contact_name, phone, email')
+              .in('id', contractorIds)
+            
+            // contractor 정보 매핑
+            quote.contractor_quotes = quote.contractor_quotes.map((cq: any) => ({
+              ...cq,
+              contractor: contractorsData?.find(c => c.id === cq.contractor_id)
+            }))
+          }
+        }
+      }
       
       setQuotes(quotesData || [])
 
@@ -142,8 +191,6 @@ export default function MyQuotesPage() {
       console.log('Project IDs for contractor quotes:', projectIds)
       
       if (projectIds.length > 0) {
-        const supabase = createBrowserClient()
-        
         // contractor_quotes 테이블에서 조회
         const { data: contractorQuotesData, error: contractorQuotesError } = await supabase
           .from('contractor_quotes')
@@ -173,7 +220,6 @@ export default function MyQuotesPage() {
           contractor_name: q.contractors?.company_name || q.contractors?.contact_name,
           status: q.status
         })))
-
 
         if (!contractorQuotesError && contractorQuotesData) {
           const formattedQuotes = contractorQuotesData.map(quote => ({
@@ -249,7 +295,7 @@ export default function MyQuotesPage() {
         console.log('Contractor quotes error:', contractorQuotesError)
 
 
-        let allContractorQuotes = []
+        let allContractorQuotes: ContractorQuote[] = []
 
         if (!contractorQuotesError && contractorQuotesData) {
           const formattedQuotes = contractorQuotesData.map(quote => ({
@@ -345,8 +391,8 @@ export default function MyQuotesPage() {
     if (tab === 'compare' && user?.id) {
       const compareData = await fetchCompareQuotes(user.id)
       setQuotes(compareData.quotes)
-      setContractorQuotes(compareData.contractorQuotes)
-      setQuotesTableData(compareData.quotesTableData)
+      setContractorQuotes(compareData.contractorQuotes || [])
+      setQuotesTableData(compareData.quotesTableData || [])
       console.log('Quotes table data received:', compareData.quotesTableData)
     } else if (tab === 'requests' && user?.id) {
       await fetchQuotes(user.id)
@@ -669,98 +715,79 @@ export default function MyQuotesPage() {
                 </button>
               </div>
             ) : (
-              quotes.map((quote) => {
-                const projectQuotes = contractorQuotes.filter(cq => cq.project_id === quote.id)
-                
-                return (
-                  <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="p-6">
-                      {/* 프로젝트 제목과 견적서 개수만 표시 */}
-                      <div className="mb-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-xl font-semibold text-gray-900">
-                            {spaceTypeMap[quote.space_type] || quote.space_type}
-                          </h2>
-                          <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                            견적서 {projectQuotes.length}개
-                          </span>
-                        </div>
+              quotes.map((quote) => (
+                <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-6">
+                    {/* 프로젝트 제목과 견적서 개수만 표시 */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          {spaceTypeMap[quote.space_type] || quote.space_type}
+                        </h2>
+                        <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                          견적서 {quote.contractor_quotes?.length || 0}개
+                        </span>
                       </div>
-
-                      {/* 업체 견적서만 표시 */}
-                      {projectQuotes.length > 0 ? (
-                        <div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {projectQuotes.map((contractorQuote) => {
-                              const statusInfo = getStatusColor(contractorQuote.status)
-                              const IconComponent = statusInfo.icon
-                              
-                              return (
-                                <div key={contractorQuote.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center space-x-2">
-                                      <Building className="h-5 w-5 text-gray-400" />
-                                      <h4 className="font-medium text-gray-900">{contractorQuote.contractor_company}</h4>
-                                    </div>
-                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                                      <IconComponent className="w-3 h-3 mr-1" />
-                                      {statusInfo.text}
-                                    </span>
-                                  </div>
-                                  
-                                  <div className="space-y-2 mb-4">
-                                    <div className="flex items-center space-x-2">
-                                      <DollarSign className="h-4 w-4 text-green-600" />
-                                      <span className="text-lg font-semibold text-gray-900">
-                                        ${contractorQuote.price ? contractorQuote.price.toLocaleString() : '견적금액 없음'}
-                                      </span>
-                                    </div>
-                                    
-                                    <div className="flex items-center space-x-2">
-                                      <Calendar className="h-4 w-4 text-gray-400" />
-                                      <span className="text-sm text-gray-600">
-                                        {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {contractorQuote.description && (
-                                    <p className="text-sm text-gray-600 mb-4 bg-gray-50 p-2 rounded">
-                                      {contractorQuote.description}
-                                    </p>
-                                  )}
-
-                                  <div className="flex space-x-2">
-                                    {contractorQuote.pdf_url ? (
-                                      <button
-                                        onClick={() => downloadQuote(contractorQuote.id)}
-                                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center"
-                                      >
-                                        <Download className="h-4 w-4 mr-1" />
-                                        견적서 다운로드
-                                      </button>
-                                    ) : (
-                                      <div className="flex-1 bg-gray-300 text-gray-500 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
-                                        <FileText className="h-4 w-4 mr-1" />
-                                        PDF 파일 없음
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <FileText className="h-8 w-8 mx-auto mb-2" />
-                          <p>아직 제출된 견적서가 없습니다.</p>
-                        </div>
-                      )}
                     </div>
+
+                    {/* 업체 견적서만 표시 */}
+                    {activeTab === 'compare' && (
+                      <div className="space-y-6">
+                        {quote.contractor_quotes && quote.contractor_quotes.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {quote.contractor_quotes.map((contractorQuote) => (
+                              <div key={contractorQuote.id} className="border rounded-lg p-4 bg-white">
+                                <div className="mb-3">
+                                  <h3 className="font-semibold text-lg">
+                                    {contractorQuote.contractor?.company_name || '업체명 없음'}
+                                  </h3>
+                                  <p className="text-sm text-gray-600">
+                                    담당자: {contractorQuote.contractor?.contact_name}
+                                  </p>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <p className="text-2xl font-bold text-blue-600">
+                                    ${contractorQuote.price?.toLocaleString() || '0'} CAD
+                                  </p>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <p className="text-sm text-gray-700">
+                                    {contractorQuote.description || '설명 없음'}
+                                  </p>
+                                </div>
+                                
+                                <div className="text-sm text-gray-500">
+                                  제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
+                                </div>
+                                
+                                <div className="mt-4 space-y-2">
+                                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    상세 보기
+                                  </button>
+                                  {contractorQuote.pdf_url && (
+                                    <button 
+                                      onClick={() => downloadQuote(contractorQuote.id)}
+                                      className="w-full px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                                    >
+                                      견적서 다운로드
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            아직 받은 견적서가 없습니다.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )
-              })
+                </div>
+              ))
             )}
           </div>
         )}
