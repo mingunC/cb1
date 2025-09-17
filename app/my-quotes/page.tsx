@@ -157,6 +157,7 @@ export default function MyQuotesPage() {
             id,
             contractor_id,
             project_id,
+            quote_request_id,
             price,
             description,
             pdf_url,
@@ -442,10 +443,22 @@ export default function MyQuotesPage() {
 
       alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
       
-      // 데이터 새로고침
-      if (user?.id) {
-        await fetchQuotes(user.id)
-      }
+      // 로컬 상태 업데이트 (전체 새로고침 대신)
+      setQuotes(prevQuotes => 
+        prevQuotes.map(quote => 
+          quote.id === projectId 
+            ? {
+                ...quote,
+                status: 'completed',
+                contractor_quotes: quote.contractor_quotes?.map(cq => 
+                  cq.id === contractorQuoteId 
+                    ? { ...cq, status: 'accepted' }
+                    : { ...cq, status: 'rejected' }
+                ) || []
+              }
+            : quote
+        )
+      )
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
