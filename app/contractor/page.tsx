@@ -20,6 +20,19 @@ import {
 import StatusBadge from '@/components/contractor/StatusBadge'
 import ProjectFilters from '@/components/contractor/ProjectFilters'
 import ProjectCard from '@/components/contractor/ProjectCard'
+import QuoteModal from '@/components/contractor/QuoteModal'
+import { 
+  fetchProjects, 
+  applySiteVisit, 
+  cancelSiteVisit, 
+  getContractorInfo, 
+  loadInitialProjects 
+} from '@/lib/api/contractor'
+import { 
+  useProjectsData, 
+  useInfiniteScroll, 
+  useProjectFilter 
+} from '@/hooks/useContractor'
 
 
 
