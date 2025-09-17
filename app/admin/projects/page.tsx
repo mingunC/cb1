@@ -4,23 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, User, Phone, Mail } from 'lucide-react'
-
-interface Project {
-  id: string
-  customer_id: string
-  space_type: string
-  project_types: string[]
-  budget: string
-  timeline: string
-  visit_date: string
-  full_address: string
-  postal_code: string
-  description: string
-  photos: any[]
-  status: 'pending' | 'approved' | 'rejected' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'selected' | 'completed' | 'cancelled'
-  created_at: string
-  updated_at: string
-}
+import type { Project } from '@/types/contractor'
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])

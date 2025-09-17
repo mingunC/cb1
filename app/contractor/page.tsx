@@ -6,6 +6,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Eye, DollarSign, FileText, Upload, Calendar, MapPin, Clock, CheckCircle, XCircle, Image, Plus, Minus, RefreshCw, X, ChevronDown } from 'lucide-react'
 import { toast } from 'react-hot-toast' // or react-toastify
 import PortfolioManager from '@/components/PortfolioManager'
+import type { Project, ProjectStatus, ContractorData, QuoteModalProps } from '@/types/contractor'
 
 // 프로젝트 타입 정보 함수
 const getProjectTypeInfo = (type: string) => {
@@ -44,64 +45,6 @@ const getSpaceTypeInfo = (spaceType: string) => {
   return spaceTypeMap[spaceType] || { label: spaceType, color: 'bg-gray-100 text-gray-700' }
 }
 
-// 명확한 프로젝트 상태 타입 정의
-type ProjectStatus = 
-  | 'pending'              // 고객 견적요청 (대기중)
-  | 'approved'             // 관리자 승인됨
-  | 'site-visit-applied'   // 현장방문 신청함
-  | 'site-visit-completed' // 현장방문 완료
-  | 'quoted'               // 견적서 제출함
-  | 'selected'             // 고객에게 선택됨
-  | 'not-selected'         // 선택 안됨
-  | 'completed'            // 완료됨
-  | 'cancelled'            // 취소됨
-
-interface Project {
-  id: string
-  customer_id: string
-  space_type: string
-  project_types: string[]
-  budget: string
-  timeline: string
-  visit_date?: string
-  visit_dates?: string[]
-  full_address: string
-  postal_code: string
-  description: string
-  photos?: any[]
-  status: string
-  status_detail?: string
-  created_at: string
-  updated_at: string
-
-  // 관계 데이터
-  site_visit_application?: {
-  id: string
-  contractor_id: string
-    is_cancelled: boolean
-    applied_at: string
-  }
-  contractor_quote?: {
-    id: string
-    price: number
-    description: string | null
-    detailed_description?: string | null
-    pdf_url: string | null
-    pdf_filename?: string | null
-    status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'submitted'
-    created_at: string
-  }
-  
-  // 프로젝트 상태 (클라이언트 계산용)
-  projectStatus?: ProjectStatus
-}
-
-interface ContractorData {
-  id: string
-  company_name: string
-  contact_name: string
-  status: string
-}
 
 // 현장방문 누락 여부 확인 함수
 function isSiteVisitMissed(project: Project, contractorId: string): boolean {
@@ -1121,14 +1064,6 @@ export default function IntegratedContractorDashboard() {
 }
 
 // 견적서 모달 컴포넌트 (White & Gold Theme)
-interface QuoteModalProps {
-  isOpen: boolean
-  onClose: () => void
-  project: Project | null
-  mode: 'create' | 'view'
-  contractorId?: string
-  onSuccess: () => void
-}
 
 function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }: QuoteModalProps) {
   const [price, setPrice] = useState('')
