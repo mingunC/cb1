@@ -1166,6 +1166,8 @@ function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }:
       setDetailedDescription('')
       setPdfFile(null)
     }
+    // 모달이 열릴 때마다 제출 상태 리셋
+    setIsSubmitting(false)
   }, [mode, project?.id]) // project 전체 대신 project.id만 의존성으로 사용
 
   // 견적서 업로드 함수
@@ -1230,7 +1232,7 @@ function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }:
           description: detailedDescription,
           pdf_url: uploadResult.pdfUrl,
           pdf_filename: uploadResult.pdfFilename,
-          status: 'pending',
+          status: 'submitted',
           created_at: new Date().toISOString()
         })
 
@@ -1241,6 +1243,9 @@ function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }:
       
       toast.success('견적서가 성공적으로 제출되었습니다!')
       
+      // 성공 시 상태 리셋
+      setIsSubmitting(false)
+      
       // 모달 닫고 데이터 새로고침
       setTimeout(() => {
         onSuccess()
@@ -1249,9 +1254,8 @@ function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }:
     } catch (error) {
       console.error('견적서 제출 오류:', error)
       toast.error('견적서 제출 중 오류가 발생했습니다')
-      setIsSubmitting(false) // 에러 시에만 여기서 reset
+      setIsSubmitting(false) // 에러 시 상태 리셋
     }
-    // finally 블록 제거 - onSuccess에서 처리
   }
 
   if (!isOpen || !project) return null
