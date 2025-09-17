@@ -47,7 +47,6 @@ interface ContractorQuote {
   id: string
   project_id: string
   contractor_id: string
-  quote_request_id?: string
   bid_amount: number
   bid_description: string
   pdf_url: string
@@ -157,7 +156,6 @@ export default function MyQuotesPage() {
             id,
             contractor_id,
             project_id,
-            quote_request_id,
             price,
             description,
             pdf_url,
@@ -850,11 +848,11 @@ export default function MyQuotesPage() {
                                 ) : (
                                   <button 
                                     onClick={() => {
-                                      console.log('Button clicked with:', {
-                                        contractorId: contractorQuote.contractor_id,
-                                        quoteRequestId: quote.id,
-                                        quote_request_id: contractorQuote.quote_request_id
-                                      });
+                                        console.log('Button clicked with:', {
+                                          contractorId: contractorQuote.contractor_id,
+                                          quoteRequestId: quote.id,
+                                          projectId: contractorQuote.project_id
+                                        });
                                       // project_id는 이미 quote_requests.id를 참조하므로 quote.id 사용
                                       handleContractorSelect(contractorQuote.contractor_id, quote.id);
                                     }}
