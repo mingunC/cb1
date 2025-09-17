@@ -74,8 +74,6 @@ export default function MyQuotesPage() {
   const [contractorQuotes, setContractorQuotes] = useState<ContractorQuote[]>([])
   const [quotesTableData, setQuotesTableData] = useState<any[]>([])
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
-  const [selectedContractor, setSelectedContractor] = useState<{contractorId: string, projectId: string} | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   // 탭 상태 제거 - 단일 통합 뷰로 변경
   const router = useRouter()
 
@@ -362,24 +360,7 @@ export default function MyQuotesPage() {
 
   // 탭 변경 함수 제거 - 통합 뷰로 변경
 
-  // 업체 선택 핸들러
-  const handleContractorSelect = (contractorId: string, quoteRequestId: string) => {
-    console.log('Selecting contractor:', { contractorId, quoteRequestId });
-    
-    if (!quoteRequestId) {
-      console.error('Quote Request ID is missing');
-      toast.error('견적 요청 정보가 없습니다');
-      return;
-    }
-    
-    setSelectedContractor({
-      contractorId,
-      projectId: quoteRequestId  // quote_request_id를 projectId로 사용
-    });
-    setIsModalOpen(true);
-  };
-
-  // 실제 업체 선택 처리 함수 (기존 로직 유지)
+  // 업체 선택 처리 함수
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     try {
       const supabase = createBrowserClient()
@@ -853,8 +834,8 @@ export default function MyQuotesPage() {
                                           quoteRequestId: quote.id,
                                           projectId: contractorQuote.project_id
                                         });
-                                      // project_id는 이미 quote_requests.id를 참조하므로 quote.id 사용
-                                      handleContractorSelect(contractorQuote.contractor_id, quote.id);
+                                      // 직접 업체 선택 처리 함수 호출
+                                      handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id);
                                     }}
                                     className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                                   >
