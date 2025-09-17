@@ -7,118 +7,22 @@ import { ArrowLeft, Eye, DollarSign, FileText, Upload, Calendar, MapPin, Clock, 
 import { toast } from 'react-hot-toast' // or react-toastify
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData, QuoteModalProps } from '@/types/contractor'
-
-// 프로젝트 타입 정보 함수
-const getProjectTypeInfo = (type: string) => {
-  const typeMap: Record<string, { label: string; color: string }> = {
-    'kitchen': { label: '주방', color: 'bg-orange-100 text-orange-700' },
-    'bathroom': { label: '욕실', color: 'bg-blue-100 text-blue-700' },
-    'basement': { label: '지하실', color: 'bg-gray-100 text-gray-700' },
-    'flooring': { label: '바닥재', color: 'bg-amber-100 text-amber-700' },
-    'painting': { label: '페인팅', color: 'bg-purple-100 text-purple-700' },
-    'full_renovation': { label: '전체 리노베이션', color: 'bg-red-100 text-red-700' },
-    'office': { label: '사무실', color: 'bg-indigo-100 text-indigo-700' },
-    'retail': { label: '상가/매장', color: 'bg-green-100 text-green-700' },
-    'restaurant': { label: '카페/식당', color: 'bg-yellow-100 text-yellow-700' },
-    'education': { label: '학원/교육', color: 'bg-pink-100 text-pink-700' },
-    'hospitality': { label: '숙박/병원', color: 'bg-teal-100 text-teal-700' },
-    'other': { label: '기타', color: 'bg-gray-100 text-gray-700' }
-  }
-  
-  return typeMap[type] || { label: type, color: 'bg-gray-100 text-gray-700' }
-}
-
-// 부동산 유형 정보 함수
-const getSpaceTypeInfo = (spaceType: string) => {
-  const spaceTypeMap: Record<string, { label: string; color: string }> = {
-    'detached_house': { label: 'Detached House', color: 'bg-green-100 text-green-700' },
-    'town_house': { label: 'Town House', color: 'bg-blue-100 text-blue-700' },
-    'condo': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' },
-    'commercial': { label: 'Commercial', color: 'bg-orange-100 text-orange-700' },
-    // 추가 매핑 (혹시 다른 값이 저장된 경우)
-    'detached-house': { label: 'Detached House', color: 'bg-green-100 text-green-700' },
-    'townhouse': { label: 'Town House', color: 'bg-blue-100 text-blue-700' },
-    'apartment': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' },
-    'condo-apartment': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' }
-  }
-  
-  return spaceTypeMap[spaceType] || { label: spaceType, color: 'bg-gray-100 text-gray-700' }
-}
+import { 
+  getProjectTypeInfo,
+  getSpaceTypeInfo,
+  formatPrice,
+  isSiteVisitMissed,
+  calculateProjectStatus,
+  canApplySiteVisit,
+  formatDate,
+  getVisitDate
+} from '@/lib/contractor/projectHelpers'
+import StatusBadge from '@/components/contractor/StatusBadge'
+import ProjectFilters from '@/components/contractor/ProjectFilters'
+import ProjectCard from '@/components/contractor/ProjectCard'
 
 
-// 현장방문 누락 여부 확인 함수
-function isSiteVisitMissed(project: Project, contractorId: string): boolean {
-  // 디버깅 로그
-  if (project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
-      project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a') {
-    console.log(`🔍 ${project.id} 누락 체크:`, {
-      projectStatus: project.status,
-      hasSiteVisitApplication: !!project.site_visit_application,
-      siteVisitApplicationCancelled: project.site_visit_application?.is_cancelled
-    });
-  }
-  
-  // 단순화: 현장방문이 완료되었는데 본인이 신청하지 않은 경우만 누락
-  if (project.status === 'site-visit-completed' || project.status === 'bidding') {
-    // 본인이 활성 신청을 하지 않은 경우
-    return !project.site_visit_application || project.site_visit_application.is_cancelled;
-  }
-  
-  return false;
-}
 
-// 프로젝트 상태 계산 함수
-function calculateProjectStatus(project: Project, contractorId: string): ProjectStatus {
-  // 1. 견적서를 제출한 경우
-  if (project.contractor_quote) {
-    if (project.contractor_quote.status === 'accepted') return 'selected'
-    if (project.contractor_quote.status === 'rejected') return 'not-selected'
-    return 'quoted'
-  }
-  
-  // 2. 현장방문 신청한 경우
-  if (project.site_visit_application) {
-    
-    // 취소된 경우 다시 신청 가능하도록 pending 상태로 처리
-    if (project.site_visit_application.is_cancelled) {
-      return 'pending'
-    }
-    // 활성 신청인 경우
-    if (project.status === 'site-visit-completed' || project.status === 'bidding') return 'site-visit-completed'
-    return 'site-visit-applied'
-  }
-  
-  // 3. 기본 상태에 따른 분류
-  if (project.status === 'cancelled') return 'cancelled'
-  if (project.status === 'completed') return 'completed'
-  if (project.status === 'quote-submitted') return 'quoted'
-  if (project.status === 'approved' || project.status === 'site-visit-pending') return 'approved'
-  
-  return 'pending'
-}
-
-// 상태별 배지 컴포넌트
-const StatusBadge = ({ status }: { status: ProjectStatus }) => {
-  const configs = {
-    'pending': { color: 'bg-gray-100 text-gray-800', label: '대기중' },
-    'approved': { color: 'bg-green-100 text-green-800', label: '승인됨' },
-    'site-visit-applied': { color: 'bg-purple-100 text-purple-800', label: '현장방문 신청' },
-    'site-visit-completed': { color: 'bg-indigo-100 text-indigo-800', label: '현장방문 완료' },
-    'quoted': { color: 'bg-yellow-100 text-yellow-800', label: '견적서 제출' },
-    'selected': { color: 'bg-green-100 text-green-800', label: '선택됨' },
-    'not-selected': { color: 'bg-red-100 text-red-800', label: '미선택' },
-    'completed': { color: 'bg-gray-100 text-gray-800', label: '완료' },
-    'cancelled': { color: 'bg-red-100 text-red-800', label: '취소' }
-  }
-  
-  const config = configs[status] || configs['pending']
-  
-  return (
-    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.color}`}>
-      {config.label}
-    </span>
-  )
-}
 
 export default function IntegratedContractorDashboard() {
   const router = useRouter()
@@ -765,30 +669,11 @@ export default function IntegratedContractorDashboard() {
         {activeTab === 'projects' && (
           <>
             {/* 필터 탭 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'approved', 'site-visit-applied', 'site-visit-completed', 'quoted', 'selected', 'not-selected'] as const).map(status => (
-              <button
-                key={status}
-                onClick={() => setProjectFilter(status)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  projectFilter === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {status === 'all' ? '전체' :
-                 status === 'approved' ? '승인됨' :
-                 status === 'site-visit-applied' ? '현장방문 신청' :
-                 status === 'site-visit-completed' ? '현장방문 완료' :
-                 status === 'quoted' ? '견적 제출' :
-                 status === 'selected' ? '선택됨' :
-                 status === 'not-selected' ? '미선택' : status}
-                <span className="ml-2 text-xs">({statusCounts[status]})</span>
-              </button>
-            ))}
-          </div>
-        </div>
+            <ProjectFilters
+              currentFilter={projectFilter}
+              onFilterChange={handleFilterChange}
+              statusCounts={statusCounts}
+            />
 
         {/* 프로젝트 목록 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -806,196 +691,15 @@ export default function IntegratedContractorDashboard() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProjects.map((project) => (
-                  <div key={project.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                    {/* 카드 헤더 */}
-                    <div className="p-4 border-b border-gray-100">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-lg font-semibold text-gray-900 truncate">
-                          {getSpaceTypeInfo(project.space_type).label}
-                        </h4>
-                        <StatusBadge status={project.projectStatus!} />
-                      </div>
-                      
-                      {/* 프로젝트 타입 배지들 */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {project.project_types?.map((type, index) => {
-                          const typeInfo = getProjectTypeInfo(type)
-                          return (
-                            <div
-                              key={index}
-                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${typeInfo.color}`}
-                            >
-                              {typeInfo.label}
-                            </div>
-                          )
-                        }) || (
-                          <div className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                            프로젝트
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">예산: </span>
-                        {project.budget === 'under_50k' ? '$50,000 미만' :
-                         project.budget === '50k_100k' ? '$50,000-$100,000' :
-                         project.budget === 'over_100k' ? '$100,000 이상' : project.budget}
-                      </div>
-                    </div>
-
-                    {/* 카드 바디 */}
-                    <div className="p-4 space-y-3">
-                      {/* 기본 정보 */}
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="flex flex-col">
-                          <span className="text-gray-500 font-medium text-xs">일정</span>
-                          <span className="text-gray-900 font-medium">
-                            {project.timeline === 'immediate' ? '즉시 시작' :
-                             project.timeline === '1_month' ? '1개월 내' :
-                             project.timeline === '3_months' ? '3개월 내' :
-                             project.timeline === 'planning' ? '계획중' : project.timeline}
-                          </span>
-                        </div>
-                        
-                        <div className="flex flex-col">
-                          <span className="text-gray-500 font-medium text-xs">방문일</span>
-                          <span className="text-gray-900 font-medium">
-                            {project.visit_date 
-                              ? new Date(project.visit_date).toLocaleDateString('ko-KR')
-                              : project.visit_dates && project.visit_dates.length > 0 
-                                ? new Date(project.visit_dates[0]).toLocaleDateString('ko-KR')
-                                : '미정'
-                            }
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 주소 */}
-                      <div className="flex items-start gap-2 text-sm text-gray-600">
-                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <span className="line-clamp-2">{project.full_address}</span>
-                      </div>
-
-                      {/* 프로젝트 요구사항 */}
-                      {project.description && (
-                        <div className="flex items-start gap-2 text-sm text-gray-600">
-                          <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <span className="font-medium text-gray-700">요구사항:</span>
-                            <p className="mt-1 text-gray-600 line-clamp-3">{project.description}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 등록일 */}
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        <span>등록일: {new Date(project.created_at).toLocaleDateString('ko-KR')}</span>
-                      </div>
-
-                      {/* 견적 정보 */}
-                      {project.contractor_quote && (
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm text-gray-700 font-medium">
-                            제출 견적: ${project.contractor_quote.price.toLocaleString()}
-                          </p>
-                          {project.contractor_quote.status === 'accepted' && (
-                            <p className="text-sm text-green-600 mt-1 font-medium">✓ 고객이 선택했습니다</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 카드 푸터 - 액션 버튼 */}
-                    <div className="p-4 bg-gray-50 border-t border-gray-100">
-                      <div className="flex flex-col gap-2">
-                        
-                        {/* 현장방문 누락 표시 */}
-                        {isSiteVisitMissed(project, contractorData?.id || '') && (
-                          <div className="w-full px-4 py-2 bg-red-100 text-red-800 rounded-md text-sm font-medium flex items-center justify-center gap-2">
-                            <XCircle className="h-4 w-4" />
-                            현장방문 누락
-                          </div>
-                        )}
-                        
-                        {/* 현장방문 신청 버튼 - 신청 가능한 상태 */}
-                        {(() => {
-                          // 디버깅용 체크
-                          const isTargetProject = project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
-                                                project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a';
-                          
-                          // 현장방문 신청 가능 조건:
-                          // 1. 프로젝트가 approved 또는 site-visit-pending 상태
-                          // 2. 아직 견적서를 제출하지 않음
-                          // 3. 현재 활성 신청이 없음 (취소된 신청은 재신청 가능)
-                          const canApply = (project.status === 'approved' || project.status === 'site-visit-pending') &&
-                                         !project.contractor_quote &&
-                                         (!project.site_visit_application || project.site_visit_application.is_cancelled);
-                          
-                          if (isTargetProject) {
-                            console.log('🔴 현장방문 버튼 조건 (수정됨):', {
-                              projectId: project.id,
-                              projectStatus: project.status,
-                              projectStatusCalculated: project.projectStatus,
-                              hasQuote: !!project.contractor_quote,
-                              hasSiteVisit: !!project.site_visit_application,
-                              isCancelled: project.site_visit_application?.is_cancelled,
-                              canApply: canApply
-                            });
-                          }
-                          
-                          return canApply && (
-                            <button
-                              onClick={() => handleSiteVisitApplication(project.id)}
-                              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                            >
-                              <Plus className="h-4 w-4" />
-                              현장방문 신청
-                            </button>
-                          );
-                        })()}
-                        
-                        {/* 현장방문 취소 버튼 */}
-                        {project.projectStatus === 'site-visit-applied' && project.site_visit_application && (
-                          <button
-                            onClick={() => handleSiteVisitCancellation(project.site_visit_application!.id, project.id)}
-                            disabled={project.site_visit_application.is_cancelled}
-                            className={`w-full px-4 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-                              project.site_visit_application.is_cancelled
-                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                : 'bg-red-600 hover:bg-red-700 text-white'
-                            }`}
-                          >
-                            <Minus className="h-4 w-4" />
-                            {project.site_visit_application.is_cancelled ? '취소됨' : '현장방문 취소'}
-                          </button>
-                        )}
-                        
-                        {/* 견적서 작성 버튼 */}
-                        {project.projectStatus === 'site-visit-completed' && !project.contractor_quote && !isSiteVisitMissed(project, contractorData?.id || '') && (
-                          <button
-                            onClick={() => openQuoteCreateModal(project)}
-                            className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                          >
-                            <FileText className="h-4 w-4" />
-                            견적서 작성
-                          </button>
-                        )}
-                        
-                        {/* 견적서 보기 버튼 */}
-                        {project.projectStatus === 'quoted' && project.contractor_quote && (
-                          <button
-                            onClick={() => openQuoteViewModal(project)}
-                            className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                          >
-                            <Eye className="h-4 w-4" />
-                            견적서 보기
-                          </button>
-                        )}
-                        
-                      </div>
-                    </div>
-                  </div>
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    contractorId={contractorData?.id || ''}
+                    onSiteVisitApply={handleSiteVisitApplication}
+                    onSiteVisitCancel={handleSiteVisitCancellation}
+                    onQuoteCreate={openQuoteCreateModal}
+                    onQuoteView={openQuoteViewModal}
+                  />
                 ))}
               </div>
               
@@ -1072,13 +776,6 @@ function QuoteModal({ isOpen, onClose, project, mode, contractorId, onSuccess }:
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // 금액 포맷팅 함수
-  const formatPrice = (value: string) => {
-    // 숫자만 추출
-    const numericValue = value.replace(/[^0-9]/g, '')
-    // 천 단위 구분자 추가
-    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  }
 
   // 금액 입력 핸들러
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
