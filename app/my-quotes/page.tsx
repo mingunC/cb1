@@ -157,14 +157,20 @@ export default function MyQuotesPage() {
             id,
             contractor_id,
             project_id,
-            quote_request_id,
             price,
             description,
             pdf_url,
             pdf_filename,
             status,
             created_at,
-            updated_at
+            updated_at,
+            contractors (
+              id,
+              company_name,
+              contact_name,
+              phone,
+              email
+            )
           ),
           site_visit_applications (
             id,
@@ -195,42 +201,7 @@ export default function MyQuotesPage() {
         console.log('No quotes found for this customer')
       }
 
-      // contractor 정보를 함께 가져오기 위해 추가
-      if (quotesData && quotesData.length > 0) {
-        for (const quote of quotesData) {
-          // 견적서 제출 업체들의 contractor 정보 가져오기
-          if (quote.contractor_quotes && quote.contractor_quotes.length > 0) {
-            const contractorIds = quote.contractor_quotes.map((cq: any) => cq.contractor_id)
-            
-            const { data: contractorsData } = await supabase
-              .from('contractors')
-              .select('id, company_name, contact_name, phone, email')
-              .in('id', contractorIds)
-            
-            // contractor 정보 매핑
-            quote.contractor_quotes = quote.contractor_quotes.map((cq: any) => ({
-              ...cq,
-              contractor: contractorsData?.find(c => c.id === cq.contractor_id)
-            }))
-          }
-
-          // 현장방문 신청 업체들의 contractor 정보 가져오기
-          if (quote.site_visit_applications && quote.site_visit_applications.length > 0) {
-            const siteVisitContractorIds = quote.site_visit_applications.map((sva: any) => sva.contractor_id)
-            
-            const { data: siteVisitContractorsData } = await supabase
-              .from('contractors')
-              .select('id, company_name, contact_name, phone, email')
-              .in('id', siteVisitContractorIds)
-            
-            // contractor 정보 매핑
-            quote.site_visit_applications = quote.site_visit_applications.map((sva: any) => ({
-              ...sva,
-              contractor: siteVisitContractorsData?.find(c => c.id === sva.contractor_id)
-            }))
-          }
-        }
-      }
+      // contractor 정보는 이제 쿼리에서 직접 가져오므로 별도 조회 불필요
       
       setQuotes(quotesData || [])
 
@@ -918,7 +889,7 @@ export default function MyQuotesPage() {
                                           quoteRequestId: quote.id,
                                           quote_request_id: contractorQuote.quote_request_id
                                         });
-                                        // project.id 또는 quote.quote_request_id 사용
+                                        // project_id는 이미 quote_requests.id를 참조하므로 quote.id 사용
                                         handleContractorSelect(contractorQuote.contractor_id, quote.id);
                                       }}
                                       className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -986,7 +957,7 @@ export default function MyQuotesPage() {
                                           quoteRequestId: quote.id,
                                           quote_request_id: contractorQuote.quote_request_id
                                         });
-                                        // project.id 또는 quote.quote_request_id 사용
+                                        // project_id는 이미 quote_requests.id를 참조하므로 quote.id 사용
                                         handleContractorSelect(contractorQuote.contractor_id, quote.id);
                                       }}
                                       className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
