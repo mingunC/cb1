@@ -74,7 +74,6 @@ export default function MyQuotesPage() {
   const [contractorQuotes, setContractorQuotes] = useState<ContractorQuote[]>([])
   const [quotesTableData, setQuotesTableData] = useState<any[]>([])
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
-  // 탭 상태 제거 - 단일 통합 뷰로 변경
   const router = useRouter()
 
   useEffect(() => {
@@ -201,6 +200,7 @@ export default function MyQuotesPage() {
       console.log('Successfully fetched quotes:', quotesData?.length || 0)
       if (quotesData && quotesData.length > 0) {
         console.log('First quote data:', quotesData[0])
+        console.log('Project status:', quotesData[0].status)
       } else {
         console.log('No quotes found for this customer')
       }
@@ -217,89 +217,6 @@ export default function MyQuotesPage() {
       // 오류가 있어도 빈 배열로 설정하여 페이지가 로드되도록 함
       setQuotes([])
       setContractorQuotes([])
-    }
-  }
-
-  const fetchCompareQuotes = async (customerId: string) => {
-    try {
-      const supabase = createBrowserClient()
-      
-      // 견적서가 제출된 프로젝트만 조회
-      const { data: quotesData, error: quotesError } = await supabase
-        .from('quote_requests')
-        .select('*')
-        .eq('customer_id', customerId)
-        .eq('status', 'quote-submitted')
-        .order('created_at', { ascending: false })
-
-      if (quotesError) {
-        console.error('Error fetching compare quotes:', quotesError)
-        return { quotes: [], contractorQuotes: [] }
-      }
-
-      // 견적서가 제출된 프로젝트들의 업체 견적서 조회
-      const projectIds = quotesData?.map(q => q.id) || []
-      
-      if (projectIds.length > 0) {
-        // quotes 테이블 조회 추가
-        const { data: quotesTableData, error: quotesTableError } = await supabase
-          .from('quotes')
-          .select('*')
-          .in('quote_request_id', projectIds)
-
-        console.log('Quotes table data:', quotesTableData)
-        console.log('Quotes table error:', quotesTableError)
-
-        // contractor_quotes 테이블 조회
-        const { data: contractorQuotesData, error: contractorQuotesError } = await supabase
-          .from('contractor_quotes')
-          .select(`
-            id,
-            project_id,
-            contractor_id,
-            price,
-            description,
-            pdf_url,
-            pdf_filename,
-            status,
-            created_at,
-            contractors:contractor_id (
-              company_name,
-              contact_name
-            )
-          `)
-          .in('project_id', projectIds)
-
-        console.log('Contractor quotes raw data:', contractorQuotesData)
-        console.log('Contractor quotes error:', contractorQuotesError)
-
-
-        let allContractorQuotes: ContractorQuote[] = []
-
-        if (!contractorQuotesError && contractorQuotesData) {
-          const formattedQuotes = contractorQuotesData.map(quote => ({
-            ...quote,
-            contractor_name: quote.contractors?.company_name || quote.contractors?.contact_name || 'Unknown',
-            contractor_company: quote.contractors?.company_name || 'Unknown Company',
-            price: quote.price,
-            description: quote.description
-          }))
-          allContractorQuotes = [...allContractorQuotes, ...formattedQuotes]
-        }
-
-        console.log('All contractor quotes:', allContractorQuotes)
-        return { 
-          quotes: quotesData || [], 
-          contractorQuotes: allContractorQuotes,
-          quotesTableData: quotesTableData || []
-        }
-      }
-      
-      return { quotes: quotesData || [], contractorQuotes: [], quotesTableData: [] }
-      
-    } catch (error) {
-      console.error('Error fetching compare data:', error)
-      return { quotes: [], contractorQuotes: [], quotesTableData: [] }
     }
   }
 
@@ -341,6 +258,7 @@ export default function MyQuotesPage() {
     'detached-house': '단독주택',
     'condo': '콘도',
     'townhouse': '타운하우스',
+    'town_house': '타운하우스',
     'commercial': '상업'
   }
 
@@ -365,31 +283,37 @@ export default function MyQuotesPage() {
     'flexible': '유연함'
   }
 
-  // 탭 변경 함수 제거 - 통합 뷰로 변경
-
-  // 업체 선택 처리 함수
+  // 업체 선택 처리 함수 - API 라우트 사용
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     try {
       if (!confirm('이 업체를 선택하시겠습니까? 선택 후에는 변경할 수 없습니다.')) {
         return
       }
 
-      // 먼저 UI 상태를 즉시 업데이트 (사용자 경험 향상)
-      setQuotes(prevQuotes => 
-        prevQuotes.map(quote => 
-          quote.id === projectId 
-            ? {
-                ...quote,
-                status: 'completed',
-                contractor_quotes: quote.contractor_quotes?.map(cq => 
-                  cq.id === contractorQuoteId 
-                    ? { ...cq, status: 'accepted' }
-                    : { ...cq, status: 'rejected' }
-                ) || []
-              }
-            : quote
-        )
-      )
+      console.log('Selecting contractor:', { contractorQuoteId, projectId, contractorId })
+
+      // API 호출하여 서버에서 데이터베이스 업데이트
+      const response = await fetch('/api/contractor-selection', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          contractorQuoteId, 
+          projectId, 
+          contractorId 
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('API error:', result)
+        alert(result.error || '업체 선택 중 오류가 발생했습니다.')
+        return
+      }
+
+      console.log('API response:', result)
 
       // 선택된 업체 정보 가져오기 (로컬 데이터에서)
       const selectedQuote = quotes.find(q => q.id === projectId)
@@ -400,29 +324,10 @@ export default function MyQuotesPage() {
 
       alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
       
-      // 백그라운드에서 서버 업데이트 시도 (실패해도 UI는 이미 업데이트됨)
-      // 현재 RLS 이슈로 인해 API 라우트 비활성화 - UI만 업데이트
-      console.log('업체 선택 완료 (UI only):', {
-        contractorQuoteId,
-        projectId,
-        contractorId,
-        contractorInfo,
-        phoneNumber
-      })
-      
-      // TODO: RLS 정책 수정 후 서버 업데이트 재활성화
-      // try {
-      //   const response = await fetch('/api/contractor-selection', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify({ contractorQuoteId, projectId, contractorId })
-      //   })
-      //   if (!response.ok) {
-      //     console.warn('서버 업데이트 실패, but UI already updated')
-      //   }
-      // } catch (serverError) {
-      //   console.warn('서버 업데이트 중 오류:', serverError)
-      // }
+      // 데이터 새로고침
+      if (user?.id) {
+        await fetchQuotes(user.id)
+      }
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
