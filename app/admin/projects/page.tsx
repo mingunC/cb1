@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, User, Phone, Mail } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, User, Phone, Mail, RefreshCw } from 'lucide-react'
 import type { Project } from '@/types/contractor'
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [filter, setFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -60,11 +61,11 @@ export default function ProjectsPage() {
     try {
       const supabase = createBrowserClient()
       
-      // 승인된 프로젝트만 가져오기 (approved 이상의 상태)
+      // completed 상태도 포함하여 모든 관련 프로젝트를 가져오기
       const { data, error } = await supabase
         .from('quote_requests')
         .select('*')
-        .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted', 'completed'])
+        .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted', 'completed', 'cancelled'])
         .order('created_at', { ascending: false })
       
       if (error) {
@@ -73,13 +74,24 @@ export default function ProjectsPage() {
       }
       
       console.log('Fetched approved projects:', data)
-      console.log('Project statuses:', data?.map(p => ({ id: p.id, status: p.status })))
+      console.log('Project statuses:', data?.map(p => ({ 
+        id: p.id.slice(0, 8), 
+        customer: p.customer_id.slice(0, 8),
+        status: p.status 
+      })))
       setProjects(data || [])
     } catch (error) {
       console.error('Error:', error)
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
+  }
+
+  // 수동 새로고침 함수
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await fetchProjects()
   }
 
   const filterProjects = () => {
@@ -193,7 +205,7 @@ export default function ProjectsPage() {
       bidding: { color: 'bg-orange-100 text-orange-800', icon: Clock, text: '입찰중' },
       'quote-submitted': { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' },
       selected: { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: '업체선택완료' },
-      completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료됨' },
+      completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료' },
       cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle, text: '취소됨' }
     }
     
@@ -225,7 +237,7 @@ export default function ProjectsPage() {
       'bidding': '입찰중',
       'quote-submitted': '견적제출완료',
       'selected': '업체선택완료',
-      'completed': '완료됨',
+      'completed': '완료',
       'cancelled': '취소됨'
     }
     
@@ -245,6 +257,7 @@ export default function ProjectsPage() {
     'detached-house': '단독주택',
     'condo': '콘도',
     'townhouse': '타운하우스',
+    'town_house': '타운하우스',
     'commercial': '상업공간'
   }
 
@@ -258,6 +271,7 @@ export default function ProjectsPage() {
   }
 
   const budgetMap: { [key: string]: string } = {
+    'under_50k': '5만불 이하',
     'under-50000': '5만불 이하',
     '50000-100000': '5-10만불',
     '100000-200000': '10-20만불',
@@ -266,6 +280,8 @@ export default function ProjectsPage() {
 
   const timelineMap: { [key: string]: string } = {
     'immediate': '즉시',
+    'asap': '가능한 빨리',
+    'within_1_month': '1개월 이내',
     '1-3months': '1-3개월',
     '3-6months': '3-6개월',
     'over-6months': '6개월 이상'
@@ -315,6 +331,15 @@ export default function ProjectsPage() {
               </button>
               <h1 className="text-xl font-semibold text-gray-900">프로젝트 관리</h1>
             </div>
+            {/* 새로고침 버튼 추가 */}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              새로고침
+            </button>
           </div>
         </div>
       </div>
@@ -375,16 +400,6 @@ export default function ProjectsPage() {
                 현장방문대기 ({projects.filter(p => p.status === 'site-visit-pending').length})
               </button>
               <button
-                onClick={() => setFilter('site-visit-completed')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === 'site-visit-completed' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                현장방문완료 ({projects.filter(p => p.status === 'site-visit-completed').length})
-              </button>
-              <button
                 onClick={() => setFilter('bidding')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   filter === 'bidding' 
@@ -395,14 +410,14 @@ export default function ProjectsPage() {
                 입찰중 ({projects.filter(p => p.status === 'bidding').length})
               </button>
               <button
-                onClick={() => setFilter('quote-submitted')}
+                onClick={() => setFilter('completed')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === 'quote-submitted' 
-                    ? 'bg-indigo-600 text-white' 
+                  filter === 'completed' 
+                    ? 'bg-green-600 text-white' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                견적제출완료 ({projects.filter(p => p.status === 'quote-submitted').length})
+                완료 ({projects.filter(p => p.status === 'completed').length})
               </button>
             </div>
           </div>
