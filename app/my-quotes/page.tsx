@@ -201,56 +201,12 @@ export default function MyQuotesPage() {
         console.log('No quotes found for this customer')
       }
 
-      // contractor 정보는 이제 쿼리에서 직접 가져오므로 별도 조회 불필요
-      
+      // contractor 정보는 이제 첫 번째 쿼리에서 직접 가져오므로 별도 조회 불필요
       setQuotes(quotesData || [])
 
-      // 견적서가 제출된 프로젝트들의 업체 견적서 조회
-      const projectIds = quotesData?.filter(q => q.status === 'quote-submitted').map(q => q.id) || []
-      console.log('Project IDs for contractor quotes:', projectIds)
-      
-      if (projectIds.length > 0) {
-        // contractor_quotes 테이블에서 조회
-        const { data: contractorQuotesData, error: contractorQuotesError } = await supabase
-          .from('contractor_quotes')
-          .select(`
-            id,
-            project_id,
-            contractor_id,
-            price,
-            description,
-            pdf_url,
-            pdf_filename,
-            status,
-            created_at,
-            contractors:contractor_id (
-              company_name,
-              contact_name
-            )
-          `)
-          .in('project_id', projectIds)
-
-        console.log('Contractor quotes query result:', { contractorQuotesData, contractorQuotesError })
-        console.log('Contractor quotes data details:', contractorQuotesData?.map(q => ({
-          id: q.id,
-          project_id: q.project_id,
-          price: q.price,
-          description: q.description,
-          contractor_name: q.contractors?.company_name || q.contractors?.contact_name,
-          status: q.status
-        })))
-
-        if (!contractorQuotesError && contractorQuotesData) {
-          const formattedQuotes = contractorQuotesData.map(quote => ({
-            ...quote,
-            contractor_name: quote.contractors?.company_name || quote.contractors?.contact_name || 'Unknown',
-            contractor_company: quote.contractors?.company_name || 'Unknown Company',
-            price: quote.price,
-            description: quote.description
-          }))
-          setContractorQuotes(formattedQuotes)
-        }
-      }
+      // contractorQuotes는 이제 첫 번째 쿼리에서 관계를 통해 가져오므로 별도 설정 불필요
+      // 기존 contractorQuotes 상태는 호환성을 위해 빈 배열로 설정
+      setContractorQuotes([])
       
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -635,7 +591,6 @@ export default function MyQuotesPage() {
             quotes.map((quote) => {
               const statusInfo = getStatusColor(quote.status)
               const IconComponent = statusInfo.icon
-              const projectQuotes = contractorQuotes.filter(cq => cq.project_id === quote.id)
               
               return (
                 <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -829,11 +784,11 @@ export default function MyQuotesPage() {
                     )}
 
                     {/* 받은 견적서 섹션 */}
-                    {(quote.contractor_quotes && quote.contractor_quotes.length > 0) || projectQuotes.length > 0 ? (
+                    {quote.contractor_quotes && quote.contractor_quotes.length > 0 ? (
                       <div className="mt-6">
                         <div className="mb-4">
                           <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            받은 견적서 ({quote.contractor_quotes?.length || projectQuotes.length}개)
+                            받은 견적서 ({quote.contractor_quotes?.length || 0}개)
                           </h3>
                         </div>
                         
@@ -849,74 +804,6 @@ export default function MyQuotesPage() {
                                   <p className="text-sm text-gray-600">
                                     담당자: {contractorQuote.contractor?.contact_name || '담당자 정보 없음'}
                                   </p>
-                                </div>
-                                
-                                <div className="mb-3">
-                                  <p className="text-2xl font-bold text-blue-600">
-                                    ${contractorQuote.price?.toLocaleString() || '0'} CAD
-                                  </p>
-                                </div>
-                                
-                                <div className="mb-3">
-                                  <p className="text-sm text-gray-700">
-                                    {contractorQuote.description || '설명 없음'}
-                                  </p>
-                                </div>
-                                
-                                <div className="text-sm text-gray-500 mb-4">
-                                  제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  {contractorQuote.status === 'accepted' ? (
-                                    <div className="space-y-2">
-                                      <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
-                                        ✓ 선택된 업체
-                                      </div>
-                                      <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
-                                        📞 {contractorQuote.contractor?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
-                                      </div>
-                                    </div>
-                                  ) : contractorQuote.status === 'rejected' ? (
-                                    <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
-                                      미선택
-                                    </div>
-                                  ) : (
-                                    <button 
-                                      onClick={() => {
-                                        console.log('Button clicked with:', {
-                                          contractorId: contractorQuote.contractor_id,
-                                          quoteRequestId: quote.id,
-                                          quote_request_id: contractorQuote.quote_request_id
-                                        });
-                                        // project_id는 이미 quote_requests.id를 참조하므로 quote.id 사용
-                                        handleContractorSelect(contractorQuote.contractor_id, quote.id);
-                                      }}
-                                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                                    >
-                                      업체 선택하기
-                                    </button>
-                                  )}
-                                  
-                                  {contractorQuote.pdf_url && (
-                                    <button 
-                                      onClick={() => downloadQuote(contractorQuote.id)}
-                                      className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
-                                    >
-                                      견적서 다운로드
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            /* 기존 projectQuotes 데이터 사용 (fallback) */
-                            projectQuotes.map((contractorQuote) => (
-                              <div key={contractorQuote.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                                <div className="mb-3">
-                                  <h4 className="font-semibold text-lg text-gray-900">
-                                    {contractorQuote.contractor_company || contractorQuote.contractor_name || '업체명 없음'}
-                                  </h4>
                                 </div>
                                 
                                 <div className="mb-3">
