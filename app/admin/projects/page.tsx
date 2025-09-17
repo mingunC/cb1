@@ -61,11 +61,11 @@ export default function ProjectsPage() {
     try {
       const supabase = createBrowserClient()
       
-      // completed 상태도 포함하여 모든 관련 프로젝트를 가져오기
+      // 모든 프로젝트 가져오기 (pending 제외)
       const { data, error } = await supabase
         .from('quote_requests')
         .select('*')
-        .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted', 'completed', 'cancelled'])
+        .neq('status', 'pending')
         .order('created_at', { ascending: false })
       
       if (error) {
@@ -73,12 +73,31 @@ export default function ProjectsPage() {
         return
       }
       
-      console.log('Fetched approved projects:', data)
-      console.log('Project statuses:', data?.map(p => ({ 
-        id: p.id.slice(0, 8), 
-        customer: p.customer_id.slice(0, 8),
-        status: p.status 
-      })))
+      console.log('=== FETCHED PROJECTS ===')
+      console.log('Total projects:', data?.length)
+      
+      // 각 프로젝트의 상세 정보 로그
+      data?.forEach((project, index) => {
+        console.log(`Project ${index + 1}:`, {
+          id: project.id.slice(0, 8),
+          customer: project.customer_id.slice(0, 8),
+          status: project.status,
+          space_type: project.space_type,
+          created: project.created_at,
+          updated: project.updated_at
+        })
+      })
+      
+      // ba6e7b81 고객의 프로젝트 찾기
+      const targetProject = data?.find(p => p.customer_id.startsWith('ba6e7b81'))
+      if (targetProject) {
+        console.log('🎯 Target project (ba6e7b81...):', {
+          id: targetProject.id,
+          status: targetProject.status,
+          updated: targetProject.updated_at
+        })
+      }
+      
       setProjects(data || [])
     } catch (error) {
       console.error('Error:', error)
@@ -90,15 +109,12 @@ export default function ProjectsPage() {
 
   // 수동 새로고침 함수
   const handleRefresh = async () => {
+    console.log('🔄 Refreshing data...')
     setIsRefreshing(true)
     await fetchProjects()
   }
 
   const filterProjects = () => {
-    console.log('Filtering projects. Current projects:', projects)
-    console.log('Current filter:', filter)
-    console.log('Current searchTerm:', searchTerm)
-    
     let filtered = [...projects]
 
     // 상태 필터
@@ -120,7 +136,6 @@ export default function ProjectsPage() {
       })
     }
 
-    console.log('Filtered results:', filtered)
     setFilteredProjects(filtered)
   }
 
@@ -218,7 +233,7 @@ export default function ProjectsPage() {
       'approved': ['site-visit-pending', 'cancelled'],
       'site-visit-pending': ['site-visit-completed', 'cancelled'],
       'site-visit-completed': ['bidding', 'cancelled'],
-      'bidding': ['quote-submitted', 'cancelled'],
+      'bidding': ['quote-submitted', 'completed', 'cancelled'],
       'quote-submitted': ['selected', 'completed', 'cancelled'],
       'selected': ['completed', 'cancelled'],
       'completed': [],
@@ -255,6 +270,7 @@ export default function ProjectsPage() {
   // 값 변환 맵
   const spaceTypeMap: { [key: string]: string } = {
     'detached-house': '단독주택',
+    'detached_house': '단독주택',
     'condo': '콘도',
     'townhouse': '타운하우스',
     'town_house': '타운하우스',
@@ -267,13 +283,16 @@ export default function ProjectsPage() {
     'flooring': '바닥',
     'painting': '페인팅',
     'basement': '지하실',
-    'full-renovation': '전체 리노베이션'
+    'full-renovation': '전체 리노베이션',
+    'full_renovation': '전체 리노베이션'
   }
 
   const budgetMap: { [key: string]: string } = {
     'under_50k': '5만불 이하',
     'under-50000': '5만불 이하',
+    '50k_to_100k': '5-10만불',
     '50000-100000': '5-10만불',
+    'over_100k': '10만불 이상',
     '100000-200000': '10-20만불',
     'over-200000': '20만불 이상'
   }
@@ -282,6 +301,7 @@ export default function ProjectsPage() {
     'immediate': '즉시',
     'asap': '가능한 빨리',
     'within_1_month': '1개월 이내',
+    '1_month': '1개월 이내',
     '1-3months': '1-3개월',
     '3-6months': '3-6개월',
     'over-6months': '6개월 이상'
