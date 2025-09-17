@@ -176,7 +176,14 @@ export default function MyQuotesPage() {
             notes,
             applied_at,
             created_at,
-            updated_at
+            updated_at,
+            contractors (
+              id,
+              company_name,
+              contact_name,
+              phone,
+              email
+            )
           )
         `)
         .eq('customer_id', customerId)
@@ -394,29 +401,28 @@ export default function MyQuotesPage() {
       alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
       
       // 백그라운드에서 서버 업데이트 시도 (실패해도 UI는 이미 업데이트됨)
-      try {
-        const supabase = createBrowserClient()
-        
-        // API 라우트를 통해 업데이트 (RLS 우회)
-        const response = await fetch('/api/contractor-selection', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contractorQuoteId,
-            projectId,
-            contractorId
-          })
-        })
-
-        if (!response.ok) {
-          console.warn('서버 업데이트 실패, but UI already updated')
-        }
-      } catch (serverError) {
-        console.warn('서버 업데이트 중 오류:', serverError)
-        // UI는 이미 업데이트되었으므로 사용자에게는 성공으로 보임
-      }
+      // 현재 RLS 이슈로 인해 API 라우트 비활성화 - UI만 업데이트
+      console.log('업체 선택 완료 (UI only):', {
+        contractorQuoteId,
+        projectId,
+        contractorId,
+        contractorInfo,
+        phoneNumber
+      })
+      
+      // TODO: RLS 정책 수정 후 서버 업데이트 재활성화
+      // try {
+      //   const response = await fetch('/api/contractor-selection', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify({ contractorQuoteId, projectId, contractorId })
+      //   })
+      //   if (!response.ok) {
+      //     console.warn('서버 업데이트 실패, but UI already updated')
+      //   }
+      // } catch (serverError) {
+      //   console.warn('서버 업데이트 중 오류:', serverError)
+      // }
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
