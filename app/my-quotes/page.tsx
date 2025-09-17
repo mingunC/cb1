@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { getQuoteRequests } from '@/lib/supabase/quotes'
 import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 
 interface QuoteRequest {
   id: string
@@ -46,6 +47,7 @@ interface ContractorQuote {
   id: string
   project_id: string
   contractor_id: string
+  quote_request_id?: string
   bid_amount: number
   bid_description: string
   pdf_url: string
@@ -73,6 +75,8 @@ export default function MyQuotesPage() {
   const [contractorQuotes, setContractorQuotes] = useState<ContractorQuote[]>([])
   const [quotesTableData, setQuotesTableData] = useState<any[]>([])
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
+  const [selectedContractor, setSelectedContractor] = useState<{contractorId: string, projectId: string} | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   // 탭 상태 제거 - 단일 통합 뷰로 변경
   const router = useRouter()
 
@@ -153,6 +157,7 @@ export default function MyQuotesPage() {
             id,
             contractor_id,
             project_id,
+            quote_request_id,
             price,
             description,
             pdf_url,
@@ -432,6 +437,23 @@ export default function MyQuotesPage() {
   // 탭 변경 함수 제거 - 통합 뷰로 변경
 
   // 업체 선택 핸들러
+  const handleContractorSelect = (contractorId: string, quoteRequestId: string) => {
+    console.log('Selecting contractor:', { contractorId, quoteRequestId });
+    
+    if (!quoteRequestId) {
+      console.error('Quote Request ID is missing');
+      toast.error('견적 요청 정보가 없습니다');
+      return;
+    }
+    
+    setSelectedContractor({
+      contractorId,
+      projectId: quoteRequestId  // quote_request_id를 projectId로 사용
+    });
+    setIsModalOpen(true);
+  };
+
+  // 실제 업체 선택 처리 함수 (기존 로직 유지)
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     try {
       const supabase = createBrowserClient()
@@ -890,8 +912,16 @@ export default function MyQuotesPage() {
                                     </div>
                                   ) : (
                                     <button 
-                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id)}
-                                      className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                                      onClick={() => {
+                                        console.log('Button clicked with:', {
+                                          contractorId: contractorQuote.contractor_id,
+                                          quoteRequestId: quote.id,
+                                          quote_request_id: contractorQuote.quote_request_id
+                                        });
+                                        // project.id 또는 quote.quote_request_id 사용
+                                        handleContractorSelect(contractorQuote.contractor_id, quote.id);
+                                      }}
+                                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                                     >
                                       업체 선택하기
                                     </button>
@@ -950,8 +980,16 @@ export default function MyQuotesPage() {
                                     </div>
                                   ) : (
                                     <button 
-                                      onClick={() => handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id)}
-                                      className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                                      onClick={() => {
+                                        console.log('Button clicked with:', {
+                                          contractorId: contractorQuote.contractor_id,
+                                          quoteRequestId: quote.id,
+                                          quote_request_id: contractorQuote.quote_request_id
+                                        });
+                                        // project.id 또는 quote.quote_request_id 사용
+                                        handleContractorSelect(contractorQuote.contractor_id, quote.id);
+                                      }}
+                                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                                     >
                                       업체 선택하기
                                     </button>
