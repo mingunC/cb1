@@ -788,7 +788,7 @@ export default function MyQuotesPage() {
                       <div className="mt-6">
                         <div className="mb-4">
                           <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            받은 견적서 ({quote.contractor_quotes?.length || 0}개)
+                            받은 견적서 ({quote.contractor_quotes.length}개)
                           </h3>
                         </div>
                         
