@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server-clients'
+import { 
+  sendEmail, 
+  createSelectionEmailTemplate, 
+  createCustomerNotificationTemplate 
+} from '@/lib/email/mailgun'
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,7 +139,70 @@ export async function POST(request: NextRequest) {
       updateResults.updatedProject = updatedProject
       console.log('✅ Project status updated to:', updatedProject?.status)
 
-      // 6. 최종 검증 - 프로젝트 상태가 실제로 'completed'로 변경되었는지 확인
+      // 6. 업체 정보 조회 (이메일 발송용)
+      const { data: contractorInfo, error: contractorError } = await supabase
+        .from('contractors')
+        .select('*')
+        .eq('id', acceptedQuote?.contractor_id)
+        .single()
+
+      if (contractorError || !contractorInfo) {
+        console.error('업체 정보 조회 실패:', contractorError)
+      }
+
+      // 7. 고객 정보 조회 (이메일 발송용)
+      const { data: customerInfo, error: customerError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', currentProject.customer_id)
+        .single()
+
+      if (customerError) {
+        console.error('고객 정보 조회 실패:', customerError)
+      }
+
+      // 8. 이메일 발송 (실패해도 전체 프로세스는 계속 진행)
+      if (contractorInfo?.email) {
+        try {
+          // 업체에게 선정 알림 이메일 발송
+          const contractorEmailHtml = createSelectionEmailTemplate(
+            contractorInfo.contact_name || contractorInfo.company_name,
+            currentProject,
+            acceptedQuote
+          )
+
+          await sendEmail({
+            to: contractorInfo.email,
+            subject: `🎉 축하합니다! "${currentProject.space_type}" 프로젝트에 선정되셨습니다`,
+            html: contractorEmailHtml
+          })
+
+          console.log('✅ Selection notification email sent to contractor')
+
+          // 고객에게도 알림 이메일 발송 (옵션)
+          if (customerInfo?.email) {
+            const customerEmailHtml = createCustomerNotificationTemplate(
+              customerInfo.name || '고객',
+              contractorInfo,
+              currentProject,
+              acceptedQuote
+            )
+
+            await sendEmail({
+              to: customerInfo.email,
+              subject: `✅ 프로젝트 업체 선정이 완료되었습니다`,
+              html: customerEmailHtml
+            })
+
+            console.log('✅ Notification email sent to customer')
+          }
+        } catch (emailError: any) {
+          // 이메일 발송 실패는 전체 프로세스를 중단시키지 않음
+          console.error('이메일 발송 실패 (프로세스는 계속됨):', emailError)
+        }
+      }
+
+      // 9. 최종 검증 - 프로젝트 상태가 실제로 'completed'로 변경되었는지 확인
       const { data: finalCheck, error: finalError } = await supabase
         .from('quote_requests')
         .select('status')
@@ -154,6 +222,7 @@ export async function POST(request: NextRequest) {
         message: '업체 선택이 완료되었습니다',
         projectStatus: 'completed',
         updatedAt: updatedProject?.updated_at,
+        emailSent: !!contractorInfo?.email,
         details: {
           acceptedQuoteId: acceptedQuote?.id,
           rejectedCount: rejectedQuotes?.length || 0,
