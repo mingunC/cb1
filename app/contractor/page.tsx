@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Eye, DollarSign, FileText, Upload, Calendar, MapPin, Clock, CheckCircle, XCircle, Image, Plus, Minus, RefreshCw, X, ChevronDown } from 'lucide-react'
-import { toast } from 'react-hot-toast' // or react-toastify
+import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData, QuoteModalProps } from '@/types/contractor'
 import { 
@@ -50,7 +50,7 @@ export default function IntegratedContractorDashboard() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [currentOffset, setCurrentOffset] = useState(0)
-  const [itemsPerPage] = useState(9) // 한 번에 로드할 프로젝트 수
+  const [itemsPerPage] = useState(9)
   const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
   const [quoteModal, setQuoteModal] = useState<{
     isOpen: boolean
@@ -66,8 +66,6 @@ export default function IntegratedContractorDashboard() {
 
   // 무한 스크롤을 위한 데이터 페칭 함수
   const fetchProjectsData = useCallback(async (contractorId: string, offset: number = 0, isLoadMore: boolean = false) => {
-    console.log('🚀 fetchProjectsData 함수 시작:', { contractorId, offset, isLoadMore })
-    
     try {
       if (!isLoadMore) {
         setError(null)
@@ -78,7 +76,7 @@ export default function IntegratedContractorDashboard() {
       
       const supabase = createBrowserClient()
       
-      // 모든 프로젝트 조회 (contractor가 참여하지 않은 프로젝트도 포함)
+      // 모든 프로젝트 조회
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select(`
@@ -112,53 +110,22 @@ export default function IntegratedContractorDashboard() {
 
       if (projectsError) throw projectsError
 
-      // 디버깅: 로드된 프로젝트 확인
-      console.log('로드된 프로젝트 수:', projectsData?.length || 0)
-      console.log('로드된 프로젝트 ID들:', projectsData?.map(p => p.id) || [])
-      const targetProject = projectsData?.find(p => p.id === '754a95f9-6fe2-45bf-bc0f-d97545ab0455')
-      console.log('찾는 프로젝트가 로드되었는가:', !!targetProject)
-      if (targetProject) {
-        console.log('찾는 프로젝트 상태:', targetProject.status)
-        console.log('찾는 프로젝트 현장방문 신청:', targetProject.site_visit_applications)
-        console.log('찾는 프로젝트 견적:', targetProject.contractor_quotes)
-      }
-
-      
-
       // 프로젝트별로 업체와의 관계 데이터 필터링 및 상태 계산
       const processedProjects: Project[] = (projectsData || []).map(project => {
-        // 현재 업체의 현장방문 신청 찾기 (취소되지 않은 활성 신청, legacy ID도 확인)
+        // 현재 업체의 현장방문 신청 찾기 (취소되지 않은 활성 신청)
         const mySiteVisit = project.site_visit_applications?.find(
-          (app: any) => (app.contractor_id === contractorId || 
-                        app.contractor_id === '58ead562-2045-4d14-8522-53728f72537e') && 
-                       !app.is_cancelled
+          (app: any) => app.contractor_id === contractorId && !app.is_cancelled
         );
         
-        // 현재 업체의 가장 최근 신청 (취소 여부 관계없이, legacy ID도 확인)
+        // 현재 업체의 가장 최근 신청 (취소 여부 관계없이)
         const myLatestSiteVisit = project.site_visit_applications?.find(
-          (app: any) => app.contractor_id === contractorId || 
-                        app.contractor_id === '58ead562-2045-4d14-8522-53728f72537e'
+          (app: any) => app.contractor_id === contractorId
         );
         
-        // 현재 업체의 견적서 찾기 (legacy ID도 확인)
+        // 현재 업체의 견적서 찾기
         const myQuote = project.contractor_quotes?.find(
-          (quote: any) => quote.contractor_id === contractorId || 
-                          quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e'
+          (quote: any) => quote.contractor_id === contractorId
         );
-        
-        // micks1 사용자의 견적서가 있는 프로젝트인지 확인하고 로그 출력 (legacy ID도 확인)
-        if (project.contractor_quotes?.some((quote: any) => 
-            quote.contractor_id === contractorId || 
-            quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e')) {
-          console.log('💡 내가 견적서를 제출한 프로젝트 발견:', {
-            projectId: project.id,
-            projectStatus: project.status,
-            myQuote,
-            contractorId,
-            legacyIdFound: project.contractor_quotes?.some((quote: any) => 
-              quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e')
-          });
-        }
         
         // 프로젝트 상태 계산
         const calculatedStatus = calculateProjectStatus({
@@ -169,33 +136,11 @@ export default function IntegratedContractorDashboard() {
         
         const processedProject: Project = {
           ...project,
-          site_visit_application: myLatestSiteVisit, // 가장 최근 신청 사용
+          site_visit_application: myLatestSiteVisit,
           contractor_quote: myQuote,
-          site_visit_applications: project.site_visit_applications, // 전체 배열 유지
+          site_visit_applications: project.site_visit_applications,
           projectStatus: calculatedStatus
         };
-        
-        // 견적서를 제출한 프로젝트의 상태 로그
-        if (myQuote) {
-          console.log('📋 견적서 제출 프로젝트 상태 계산:', {
-            projectId: project.id,
-            originalStatus: project.status,
-            calculatedStatus,
-            quoteStatus: myQuote.status
-          });
-        }
-        
-        // 특정 프로젝트 디버깅
-        if (project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
-            project.id === '17b6f660-a10d-48f8-b83b-0ef84dc6511a') {
-          console.log(`🔍 프로젝트 ${project.id} 처리 완료:`, {
-            originalStatus: project.status,
-            mySiteVisit: mySiteVisit,
-            myLatestSiteVisit: myLatestSiteVisit,
-            calculatedStatus: processedProject.projectStatus,
-            allApplications: project.site_visit_applications?.length || 0
-          });
-        }
         
         return processedProject;
       });
@@ -204,58 +149,35 @@ export default function IntegratedContractorDashboard() {
       const relevantProjects = processedProjects
       
       if (isLoadMore) {
-        // 추가 로드인 경우 기존 데이터에 추가
         setProjects(prev => [...prev, ...relevantProjects])
         setCurrentOffset(prev => prev + itemsPerPage)
       } else {
-        // 초기 로드인 경우 데이터 교체
         setProjects(relevantProjects)
         setCurrentOffset(itemsPerPage)
       }
       
       // 더 이상 로드할 데이터가 없는지 확인
-      // 받은 데이터가 페이지 크기보다 적으면 더 이상 데이터가 없음
       const hasMoreData = relevantProjects.length === itemsPerPage
       
-      console.log('📊 무한 스크롤 상태 확인:', {
-        relevantProjectsCount: relevantProjects.length,
-        itemsPerPage,
-        hasMoreData,
-        isLoadMore,
-        currentOffset
-      })
-      
-      console.log('✅ fetchProjectsData 완료:', {
-        processedProjectsCount: relevantProjects.length,
-        totalProjectsAfterUpdate: isLoadMore ? projects.length + relevantProjects.length : relevantProjects.length
-      })
-      
-      // 안전장치: 데이터가 0개이면 확실히 더 이상 없음
       if (relevantProjects.length === 0) {
         setHasMore(false)
-        console.log('🚫 데이터가 0개 - hasMore를 false로 설정')
       } else {
         setHasMore(hasMoreData)
       }
       
-      // 추가 안전장치: hasMore가 false이면 isLoadingMore도 false로 강제 설정
       if (!hasMoreData) {
         setIsLoadingMore(false)
-        console.log('🛑 hasMore가 false - isLoadingMore도 false로 강제 설정')
       }
       
-      
     } catch (error) {
-      console.error('❌ 프로젝트 데이터 로드 실패:', error)
-      console.error('❌ 오류 세부사항:', JSON.stringify(error, null, 2))
+      console.error('프로젝트 데이터 로드 실패:', error)
       setError('프로젝트 데이터를 불러오는데 실패했습니다.')
       toast.error('데이터 로드 실패')
     } finally {
       setIsLoading(false)
       setIsLoadingMore(false)
-      console.log('✅ 로딩 상태 해제 완료')
     }
-  }, [itemsPerPage]) // fetchProjectsData 자체를 제거
+  }, [itemsPerPage])
 
   // 인증 체크 및 초기 데이터 로드
   useEffect(() => {
@@ -271,77 +193,34 @@ export default function IntegratedContractorDashboard() {
         }
 
         // 업체 정보 확인
-        console.log('🔍 사용자 정보:', { userId: user.id, email: user.email })
-        
         const { data: contractorInfo, error: contractorError } = await supabase
           .from('contractors')
           .select('id, company_name, contact_name, status')
           .eq('user_id', user.id)
           .single()
 
-        console.log('🏢 업체 정보 조회 결과:', { contractorInfo, contractorError })
-
         if (contractorError || !contractorInfo) {
-          console.error('❌ 업체 정보 없음:', contractorError)
+          console.error('업체 정보 없음:', contractorError)
           toast.error('업체 권한이 필요합니다')
           router.push('/')
           return
         }
-
-        console.log('✅ 업체 인증 성공:', contractorInfo)
         
         setContractorData(contractorInfo)
         
-        // 디버깅: 현재 로그인한 contractor ID 확인
-        console.log('현재 로그인한 contractor ID:', contractorInfo.id)
-        console.log('찾고 있는 contractor ID:', '58ead562-2045-4d14-8522-53728f72537e')
-        console.log('프로젝트 ID:', '754a95f9-6fe2-45bf-bc0f-d97545ab0455')
-        
-        // 직접 데이터 로드
-        const supabaseClient = createBrowserClient()
-        const { data: projectsData } = await supabaseClient
-          .from('quote_requests')
-          .select(`
-            *,
-            site_visit_applications!left (*),
-            contractor_quotes!left (*)
-          `)
-          .in('status', ['approved', 'site-visit-pending', 'site-visit-completed', 'bidding', 'quote-submitted', 'selected', 'completed'])
-          .order('created_at', { ascending: false })
-          .range(0, 8)
-        
-        if (projectsData) {
-          const processedProjects = projectsData.map(project => {
-            const myLatestSiteVisit = project.site_visit_applications?.find(
-              (app: any) => app.contractor_id === contractorInfo.id
-            );
-            const myQuote = project.contractor_quotes?.find(
-              (quote: any) => quote.contractor_id === contractorInfo.id
-            );
-            return {
-              ...project,
-              site_visit_application: myLatestSiteVisit,
-              contractor_quote: myQuote,
-              projectStatus: calculateProjectStatus({
-                ...project,
-                site_visit_application: myLatestSiteVisit,
-                contractor_quote: myQuote
-              }, contractorInfo.id)
-            };
-          });
-          setProjects(processedProjects)
-        }
+        // 초기 데이터 로드
+        await fetchProjectsData(contractorInfo.id, 0, false)
         
       } catch (error) {
         console.error('초기화 오류:', error)
         toast.error('시스템 오류가 발생했습니다')
-    } finally {
-      setIsLoading(false)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
 
     initializeData()
-  }, [router]) // fetchProjectsData 의존성 제거
+  }, [router])
 
   // 새로고침 함수
   const refreshData = useCallback(async () => {
@@ -352,7 +231,6 @@ export default function IntegratedContractorDashboard() {
     setHasMore(true)
     
     try {
-      // fetchProjectsData를 직접 호출하는 대신 내부 로직 실행
       await fetchProjectsData(contractorData.id, 0, false)
     } finally {
       setIsRefreshing(false)
@@ -363,15 +241,9 @@ export default function IntegratedContractorDashboard() {
   // 무한 스크롤을 위한 추가 데이터 로드 함수
   const loadMoreProjects = useCallback(async () => {
     if (!contractorData || isLoadingMore || !hasMore) {
-      console.log('🚫 loadMoreProjects 호출 차단:', { 
-        hasContractor: !!contractorData, 
-        isLoadingMore, 
-        hasMore 
-      })
       return
     }
     
-    console.log('📥 loadMoreProjects 실행:', { currentOffset })
     await fetchProjectsData(contractorData.id, currentOffset, true)
   }, [contractorData, isLoadingMore, hasMore, currentOffset, fetchProjectsData])
 
@@ -383,17 +255,7 @@ export default function IntegratedContractorDashboard() {
     
     const isNearBottom = scrollTop + windowHeight >= documentHeight - 1000
     
-    console.log('📜 스크롤 이벤트:', {
-      scrollTop,
-      windowHeight,
-      documentHeight,
-      isNearBottom,
-      isLoadingMore,
-      hasMore
-    })
-    
     if (isNearBottom && !isLoadingMore && hasMore) {
-      console.log('🚀 스크롤로 인한 추가 로드 트리거')
       loadMoreProjects()
     }
   }, [loadMoreProjects, isLoadingMore, hasMore])
@@ -409,7 +271,6 @@ export default function IntegratedContractorDashboard() {
     setProjectFilter(filter)
     setCurrentOffset(0)
     setHasMore(true)
-    // 필터 변경 시에는 모든 데이터를 다시 로드
     if (contractorData) {
       fetchProjectsData(contractorData.id, 0, false)
     }
@@ -422,14 +283,12 @@ export default function IntegratedContractorDashboard() {
     try {
       const supabase = createBrowserClient()
       
-      // 1. 현재 로그인한 사용자 확인
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('로그인이 필요합니다.');
         return;
       }
 
-      // 2. contractors 테이블에서 contractor_id 가져오기
       const { data: contractor, error: contractorError } = await supabase
         .from('contractors')
         .select('id')
@@ -442,15 +301,14 @@ export default function IntegratedContractorDashboard() {
         return;
       }
 
-      // 3. 기존 신청 체크 (취소된 것 포함 모두)
       const { data: existingApplication, error: checkError } = await supabase
         .from('site_visit_applications')
         .select('*')
         .eq('project_id', quoteRequestId)
         .eq('contractor_id', contractor.id)
-        .single(); // 모든 신청 체크
+        .single();
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116은 row not found 에러
+      if (checkError && checkError.code !== 'PGRST116') {
         console.error('중복 체크 오류:', checkError);
         throw checkError;
       }
@@ -475,7 +333,6 @@ export default function IntegratedContractorDashboard() {
           throw updateError;
         }
 
-        console.log('방문 신청 재활성화:', reactivated);
         toast.success('방문 신청이 다시 활성화되었습니다!');
         await refreshData();
         return;
@@ -487,7 +344,7 @@ export default function IntegratedContractorDashboard() {
         return;
       }
 
-      // 4. 신청이 전혀 없는 경우에만 새로 생성
+      // 신청이 전혀 없는 경우에만 새로 생성
       const { data: newApplication, error: insertError } = await supabase
         .from('site_visit_applications')
         .insert([
@@ -507,10 +364,7 @@ export default function IntegratedContractorDashboard() {
         throw insertError;
       }
 
-      console.log('방문 신청 성공:', newApplication);
       toast.success('방문 신청이 완료되었습니다!');
-      
-      // 5. 데이터 새로고침
       await refreshData();
       
     } catch (error) {
@@ -519,7 +373,7 @@ export default function IntegratedContractorDashboard() {
     }
   }, [refreshData])
 
-  // 현장방문 취소 핸들러 (완전 개선)
+  // 현장방문 취소 핸들러
   const handleSiteVisitCancellation = useCallback(async (applicationId: string, projectId: string) => {
     if (!confirm('현장방문 신청을 취소하시겠습니까?\n나중에 다시 신청할 수 있습니다.')) return
 
@@ -534,7 +388,6 @@ export default function IntegratedContractorDashboard() {
         return
       }
 
-      // 2. site_visit_applications 취소
       const { data: svaData, error: svaError } = await supabase
         .from('site_visit_applications')
         .update({
@@ -544,7 +397,6 @@ export default function IntegratedContractorDashboard() {
         })
         .eq('id', applicationId)
         .select()
-
 
       if (svaError) {
         console.error('SVA Error:', svaError)
@@ -558,14 +410,7 @@ export default function IntegratedContractorDashboard() {
         return
       }
 
-      // 3. quote_requests 상태는 그대로 유지 (현장방문 신청 가능한 상태 유지)
-      // 취소된 현장방문 신청은 site_visit_applications에서만 처리
-      // status를 변경하지 않아서 프로젝트가 사라지지 않음
-
-      console.log('현장방문 취소 성공:', svaData[0])
       toast.success('현장방문이 취소되었습니다')
-      
-      // 4. 데이터 새로고침
       await refreshData()
       
     } catch (error) {
@@ -604,13 +449,13 @@ export default function IntegratedContractorDashboard() {
     })
   }
 
-  // 필터링된 프로젝트 (메모이제이션) - 무한 스크롤에서는 클라이언트 사이드 필터링
+  // 필터링된 프로젝트
   const filteredProjects = useMemo(() => {
     if (projectFilter === 'all') return projects
     return projects.filter(p => p.projectStatus === projectFilter)
   }, [projects, projectFilter])
 
-  // 상태별 카운트 (메모이제이션)
+  // 상태별 카운트
   const statusCounts = useMemo(() => {
     const counts: Record<ProjectStatus | 'all', number> = {
       'all': projects.length,
@@ -725,53 +570,53 @@ export default function IntegratedContractorDashboard() {
               statusCounts={statusCounts}
             />
 
-        {/* 프로젝트 목록 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              프로젝트 목록 ({filteredProjects.length}개)
-            </h3>
-          </div>
-          
-          {filteredProjects.length === 0 ? (
-            <div className="px-6 py-12 text-center text-gray-500">
-              해당하는 프로젝트가 없습니다.
-            </div>
-          ) : (
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjects.map((project) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    contractorId={contractorData?.id || ''}
-                    onSiteVisitApply={handleSiteVisitApplication}
-                    onSiteVisitCancel={handleSiteVisitCancellation}
-                    onQuoteCreate={openQuoteCreateModal}
-                    onQuoteView={openQuoteViewModal}
-                  />
-                ))}
+            {/* 프로젝트 목록 */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  프로젝트 목록 ({filteredProjects.length}개)
+                </h3>
               </div>
               
-              {/* 무한 스크롤 로딩 인디케이터 */}
-              {isLoadingMore && (
-                <div className="mt-8 flex justify-center">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span>더 많은 프로젝트를 불러오는 중...</span>
-                  </div>
+              {filteredProjects.length === 0 ? (
+                <div className="px-6 py-12 text-center text-gray-500">
+                  해당하는 프로젝트가 없습니다.
                 </div>
-              )}
-              
-              {/* 더 이상 로드할 데이터가 없을 때 */}
-              {!hasMore && filteredProjects.length > 0 && (
-                <div className="mt-8 text-center text-gray-500">
-                  모든 프로젝트를 불러왔습니다.
+              ) : (
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredProjects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        contractorId={contractorData?.id || ''}
+                        onSiteVisitApply={handleSiteVisitApplication}
+                        onSiteVisitCancel={handleSiteVisitCancellation}
+                        onQuoteCreate={openQuoteCreateModal}
+                        onQuoteView={openQuoteViewModal}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* 무한 스크롤 로딩 인디케이터 */}
+                  {isLoadingMore && (
+                    <div className="mt-8 flex justify-center">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span>더 많은 프로젝트를 불러오는 중...</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 더 이상 로드할 데이터가 없을 때 */}
+                  {!hasMore && filteredProjects.length > 0 && (
+                    <div className="mt-8 text-center text-gray-500">
+                      모든 프로젝트를 불러왔습니다.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
           </>
         )}
 
@@ -783,7 +628,6 @@ export default function IntegratedContractorDashboard() {
                 <PortfolioManager 
                   contractorId={contractorData.id}
                   onPortfolioUpdate={() => {
-                    // 포트폴리오 업데이트 시 필요한 로직
                     console.log('Portfolio updated')
                   }}
                 />
@@ -803,10 +647,7 @@ export default function IntegratedContractorDashboard() {
         mode={quoteModal.mode}
         contractorId={contractorData?.id}
         onSuccess={async () => {
-          // 먼저 모달을 닫고
           closeQuoteModal()
-          
-          // 약간의 지연 후 데이터 새로고침
           setTimeout(() => {
             refreshData()
           }, 500)
@@ -816,4 +657,3 @@ export default function IntegratedContractorDashboard() {
   </Fragment>
   )
 }
-
