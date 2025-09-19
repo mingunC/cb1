@@ -146,7 +146,7 @@ export default function IntegratedContractorDashboard() {
                           quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e'
         );
         
-        // micks1 사용자의 견적서가 있는 프로젝트인지 확인하고 로그 출력 (legacy ID도 확인)
+        // micks1 사용자의 견적서가 있는 프로젝트인지 확인하고 로그 출력 (legacy contractor ID도 확인)
         if (project.contractor_quotes?.some((quote: any) => 
             quote.contractor_id === contractorId || 
             quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e')) {
