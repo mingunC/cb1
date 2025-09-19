@@ -76,12 +76,12 @@ export default function IntegratedContractorDashboard() {
       
       const supabase = createBrowserClient()
       
-      // 모든 프로젝트 조회
+      // 모든 프로젝트 조회 (명시적 외래키 지정)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select(`
           *,
-          site_visit_applications (
+          site_visit_applications!site_visit_applications_project_id_fkey (
             id,
             contractor_id,
             status,
@@ -89,13 +89,13 @@ export default function IntegratedContractorDashboard() {
             is_cancelled,
             cancelled_at,
             cancelled_by,
-            contractors (
+            contractors!site_visit_applications_contractor_id_fkey (
               id,
               company_name,
               contact_name
             )
           ),
-          contractor_quotes (
+          contractor_quotes!contractor_quotes_project_id_fkey (
             id,
             contractor_id,
             price,
