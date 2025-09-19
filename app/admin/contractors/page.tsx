@@ -52,14 +52,17 @@ export default function ContractorManagementPage() {
   const router = useRouter()
 
   // 모든 테이블 조회에 에러 처리 추가
-  const safeQuery = async (query: Promise<any>) => {
+  const safeQuery = async (queryBuilder: any) => {
     try {
-      const result = await query
+      const result = await queryBuilder
       console.log('Query result:', result)
+      if (result.error) {
+        throw new Error(result.error.message)
+      }
       return result.data || []
     } catch (error) {
       console.error('Query error:', error)
-      alert(`데이터베이스 조회 오류: ${error.message}`)
+      alert(`데이터베이스 조회 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
       return []
     }
   }
@@ -152,7 +155,7 @@ export default function ContractorManagementPage() {
       console.log('FetchData completed successfully')
     } catch (error) {
       console.error('Error in fetchData:', error)
-      alert(`데이터 로딩 오류: ${error.message}`)
+      alert(`데이터 로딩 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
     } finally {
       setIsLoading(false)
     }

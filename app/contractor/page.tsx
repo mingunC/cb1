@@ -127,33 +127,63 @@ export default function IntegratedContractorDashboard() {
 
       // 프로젝트별로 업체와의 관계 데이터 필터링 및 상태 계산
       const processedProjects: Project[] = (projectsData || []).map(project => {
-        // 현재 업체의 현장방문 신청 찾기 (취소되지 않은 활성 신청)
+        // 현재 업체의 현장방문 신청 찾기 (취소되지 않은 활성 신청, legacy ID도 확인)
         const mySiteVisit = project.site_visit_applications?.find(
-          (app: any) => app.contractor_id === contractorId && !app.is_cancelled
+          (app: any) => (app.contractor_id === contractorId || 
+                        app.contractor_id === '58ead562-2045-4d14-8522-53728f72537e') && 
+                       !app.is_cancelled
         );
         
-        // 현재 업체의 가장 최근 신청 (취소 여부 관계없이)
+        // 현재 업체의 가장 최근 신청 (취소 여부 관계없이, legacy ID도 확인)
         const myLatestSiteVisit = project.site_visit_applications?.find(
-          (app: any) => app.contractor_id === contractorId
+          (app: any) => app.contractor_id === contractorId || 
+                        app.contractor_id === '58ead562-2045-4d14-8522-53728f72537e'
         );
         
-        // 현재 업체의 견적서 찾기
+        // 현재 업체의 견적서 찾기 (legacy ID도 확인)
         const myQuote = project.contractor_quotes?.find(
-          (quote: any) => quote.contractor_id === contractorId
+          (quote: any) => quote.contractor_id === contractorId || 
+                          quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e'
         );
+        
+        // micks1 사용자의 견적서가 있는 프로젝트인지 확인하고 로그 출력 (legacy ID도 확인)
+        if (project.contractor_quotes?.some((quote: any) => 
+            quote.contractor_id === contractorId || 
+            quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e')) {
+          console.log('💡 내가 견적서를 제출한 프로젝트 발견:', {
+            projectId: project.id,
+            projectStatus: project.status,
+            myQuote,
+            contractorId,
+            legacyIdFound: project.contractor_quotes?.some((quote: any) => 
+              quote.contractor_id === '58ead562-2045-4d14-8522-53728f72537e')
+          });
+        }
         
         // 프로젝트 상태 계산
+        const calculatedStatus = calculateProjectStatus({
+          ...project,
+          site_visit_application: myLatestSiteVisit,
+          contractor_quote: myQuote
+        }, contractorId);
+        
         const processedProject: Project = {
           ...project,
           site_visit_application: myLatestSiteVisit, // 가장 최근 신청 사용
           contractor_quote: myQuote,
           site_visit_applications: project.site_visit_applications, // 전체 배열 유지
-          projectStatus: calculateProjectStatus({
-            ...project,
-            site_visit_application: myLatestSiteVisit,
-            contractor_quote: myQuote
-          }, contractorId)
+          projectStatus: calculatedStatus
         };
+        
+        // 견적서를 제출한 프로젝트의 상태 로그
+        if (myQuote) {
+          console.log('📋 견적서 제출 프로젝트 상태 계산:', {
+            projectId: project.id,
+            originalStatus: project.status,
+            calculatedStatus,
+            quoteStatus: myQuote.status
+          });
+        }
         
         // 특정 프로젝트 디버깅
         if (project.id === '58ead562-2045-4d14-8522-53728f72537e' || 
@@ -241,17 +271,24 @@ export default function IntegratedContractorDashboard() {
         }
 
         // 업체 정보 확인
+        console.log('🔍 사용자 정보:', { userId: user.id, email: user.email })
+        
         const { data: contractorInfo, error: contractorError } = await supabase
           .from('contractors')
           .select('id, company_name, contact_name, status')
           .eq('user_id', user.id)
           .single()
 
+        console.log('🏢 업체 정보 조회 결과:', { contractorInfo, contractorError })
+
         if (contractorError || !contractorInfo) {
+          console.error('❌ 업체 정보 없음:', contractorError)
           toast.error('업체 권한이 필요합니다')
           router.push('/')
           return
         }
+
+        console.log('✅ 업체 인증 성공:', contractorInfo)
         
         setContractorData(contractorInfo)
         

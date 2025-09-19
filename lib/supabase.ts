@@ -63,14 +63,14 @@ export const useAuth = async () => {
 
   return { 
     user, 
-    role: userData?.role as UserRole || 'customer', 
+    role: (userData as any)?.role as UserRole || 'customer', 
     error: null 
   }
 }
 
 // Function to update user role (admin only)
 export const updateUserRole = async (userId: string, newRole: UserRole) => {
-  const { data, error } = await supabase.rpc('update_user_role', {
+  const { data, error } = await (supabase as any).rpc('update_user_role', {
     user_id: userId,
     new_role: newRole
   })
@@ -80,7 +80,7 @@ export const updateUserRole = async (userId: string, newRole: UserRole) => {
 
 // Function to check if user is admin
 export const isAdmin = async (userId?: string) => {
-  const { data, error } = await supabase.rpc('is_admin', {
+  const { data, error } = await (supabase as any).rpc('is_admin', {
     user_id: userId
   })
 
@@ -89,7 +89,7 @@ export const isAdmin = async (userId?: string) => {
 
 // Function to get contractor profile
 export const getContractorProfile = async (userId?: string) => {
-  const { data, error } = await supabase.rpc('get_contractor_profile', {
+  const { data, error } = await (supabase as any).rpc('get_contractor_profile', {
     user_id: userId
   })
 
@@ -160,7 +160,7 @@ export const db = {
   // Quotes
   quotes: {
     create: async (quoteData: Database['public']['Tables']['quotes']['Insert']) => {
-      return await supabase.from('quotes').insert(quoteData).select()
+      return await (supabase as any).from('quotes').insert(quoteData).select()
     },
     getByCustomer: async (customerId: string) => {
       return await supabase.from('quotes').select('*').eq('customer_id', customerId)
@@ -169,14 +169,14 @@ export const db = {
       return await supabase.from('quotes').select('*').eq('contractor_id', contractorId)
     },
     update: async (id: string, updates: Database['public']['Tables']['quotes']['Update']) => {
-      return await supabase.from('quotes').update(updates).eq('id', id).select()
+      return await (supabase as any).from('quotes').update(updates).eq('id', id).select()
     }
   },
 
   // Temp quotes
   tempQuotes: {
     create: async (tempQuoteData: Database['public']['Tables']['temp_quotes']['Insert']) => {
-      return await supabase.from('temp_quotes').insert(tempQuoteData).select()
+      return await (supabase as any).from('temp_quotes').insert(tempQuoteData).select()
     },
     getByCustomer: async (customerId: string) => {
       return await supabase.from('temp_quotes').select('*').eq('customer_id', customerId)

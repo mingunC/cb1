@@ -1,7 +1,7 @@
 // ============================================
 // 3. lib/project-status.ts - 상태 관리 유틸
 // ============================================
-import type { ProjectStatus } from '@/types'
+// import type { ProjectStatus } from '@/types'
 
 export const PROJECT_STATUS = {
   PENDING: 'pending',
@@ -14,7 +14,7 @@ export const PROJECT_STATUS = {
   CANCELLED: 'cancelled'
 } as const
 
-export const STATUS_LABELS: Record<ProjectStatus, string> = {
+export const STATUS_LABELS: Record<string, string> = {
   'pending': '대기중',
   'approved': '승인됨',
   'site-visit-pending': '현장방문 대기',
@@ -25,7 +25,7 @@ export const STATUS_LABELS: Record<ProjectStatus, string> = {
   'cancelled': '취소'
 }
 
-export const STATUS_COLORS: Record<ProjectStatus, string> = {
+export const STATUS_COLORS: Record<string, string> = {
   'pending': 'bg-gray-100 text-gray-800',
   'approved': 'bg-green-100 text-green-800',
   'site-visit-pending': 'bg-blue-100 text-blue-800',
@@ -37,7 +37,7 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
 }
 
 // 상태 전환 규칙
-export const STATUS_FLOW: Record<ProjectStatus, ProjectStatus[]> = {
+export const STATUS_FLOW: Record<string, string[]> = {
   'pending': ['approved', 'cancelled'],
   'approved': ['site-visit-pending', 'cancelled'],
   'site-visit-pending': ['site-visit-completed', 'cancelled'],

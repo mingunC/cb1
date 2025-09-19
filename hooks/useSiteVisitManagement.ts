@@ -1,6 +1,6 @@
 // hooks/useSiteVisitManagement.ts
 import { useCallback, useState } from 'react'
-import { createBrowserClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@/lib/supabase/clients'
 
 export const useSiteVisitManagement = () => {
   const [isLoading, setIsLoading] = useState(false)

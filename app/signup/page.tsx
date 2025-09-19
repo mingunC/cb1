@@ -22,7 +22,6 @@ export default function SignupPage() {
   })
   
   const router = useRouter()
-  const { signUp } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +58,11 @@ export default function SignupPage() {
     }
 
     try {
-      const { data, error } = await signUp(formData.email, formData.password)
+      const supabase = createBrowserClient()
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      })
       
       console.log('Signup result:', { data, error }) // 디버깅용
       

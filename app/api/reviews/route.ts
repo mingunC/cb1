@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 고객이 해당 견적서의 소유자인지 확인
-    if (quoteData.quote_requests.customer_id !== user.id) {
+    if ((quoteData.quote_requests as any)?.customer_id !== user.id) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
     }
 

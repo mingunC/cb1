@@ -9,8 +9,6 @@ export default function AuthTestPage() {
   const [session, setSession] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   
-  const { getUser } = useAuth()
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -23,7 +21,7 @@ export default function AuthTestPage() {
         setSession(session)
         
         // 현재 사용자 확인
-        const { user, error: userError } = await getUser()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
         console.log('Current user:', user)
         console.log('User error:', userError)
         setUser(user)

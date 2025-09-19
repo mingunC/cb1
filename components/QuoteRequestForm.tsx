@@ -349,7 +349,7 @@ export default function QuoteRequestForm() {
                           name="projectTypes"
                           value={type.value}
                           checked={formData.projectTypes.includes(type.value)}
-                          onChange={() => handleProjectTypeChange(type.value, type.exclusive)}
+                          onChange={() => handleProjectTypeChange(type.value, false)}
                           className="sr-only"
                         />
                         <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
@@ -377,7 +377,7 @@ export default function QuoteRequestForm() {
                             name="projectTypes"
                             value={type.value}
                             checked={formData.projectTypes.includes(type.value)}
-                            onChange={() => handleProjectTypeChange(type.value, type.exclusive)}
+                            onChange={() => handleProjectTypeChange(type.value, false)}
                             className="sr-only"
                           />
                           <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${

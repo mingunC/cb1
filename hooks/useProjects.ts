@@ -3,10 +3,8 @@
 // ============================================
 import { useState, useCallback, useEffect } from 'react'
 import { ProjectService } from '@/services/project.service'
-import type { Project } from '@/types'
-
 export const useProjects = (contractorId: string) => {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [offset, setOffset] = useState(0)

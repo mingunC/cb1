@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest) {
       .eq('id', id)
       .single()
 
-    if (projectError || !project || project.contractors.user_id !== user.id) {
+    if (projectError || !project || (project.contractors as any)?.user_id !== user.id) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
     }
 
@@ -270,7 +270,7 @@ export async function DELETE(request: NextRequest) {
       .eq('id', projectId)
       .single()
 
-    if (projectError || !project || project.contractors.user_id !== user.id) {
+    if (projectError || !project || (project.contractors as any)?.user_id !== user.id) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
     }
 

@@ -144,7 +144,7 @@ export default function MyQuotesPage() {
       
       const supabase = createBrowserClient()
       
-      // quote_requests를 조회하는 부분을 찾아서
+      // quote_requests와 contractor_quotes를 한 번에 가져오기
       const { data: quotesData, error: quotesError } = await supabase
         .from('quote_requests')
         .select(`
@@ -160,23 +160,7 @@ export default function MyQuotesPage() {
             status,
             created_at,
             updated_at,
-            contractors (
-              id,
-              company_name,
-              contact_name,
-              phone,
-              email
-            )
-          ),
-          site_visit_applications (
-            id,
-            contractor_id,
-            status,
-            notes,
-            applied_at,
-            created_at,
-            updated_at,
-            contractors (
+            contractors!contractor_quotes_contractor_id_fkey (
               id,
               company_name,
               contact_name,
@@ -201,15 +185,17 @@ export default function MyQuotesPage() {
       if (quotesData && quotesData.length > 0) {
         console.log('First quote data:', quotesData[0])
         console.log('Project status:', quotesData[0].status)
+        
+        // contractor_quotes 구조 확인
+        if (quotesData[0].contractor_quotes && quotesData[0].contractor_quotes.length > 0) {
+          console.log('First contractor quote:', quotesData[0].contractor_quotes[0])
+          console.log('Contractor data:', quotesData[0].contractor_quotes[0].contractors)
+        }
       } else {
         console.log('No quotes found for this customer')
       }
 
-      // contractor 정보는 이제 첫 번째 쿼리에서 직접 가져오므로 별도 조회 불필요
       setQuotes(quotesData || [])
-
-      // contractorQuotes는 이제 첫 번째 쿼리에서 관계를 통해 가져오므로 별도 설정 불필요
-      // 기존 contractorQuotes 상태는 호환성을 위해 빈 배열로 설정
       setContractorQuotes([])
       
     } catch (error) {
@@ -318,9 +304,9 @@ export default function MyQuotesPage() {
       // 선택된 업체 정보 가져오기 (로컬 데이터에서)
       const selectedQuote = quotes.find(q => q.id === projectId)
       const selectedContractorQuote = selectedQuote?.contractor_quotes?.find(cq => cq.id === contractorQuoteId)
-      const contractorInfo = selectedContractorQuote?.contractor?.company_name || '선택된 업체'
-      const contactName = selectedContractorQuote?.contractor?.contact_name || ''
-      const phoneNumber = selectedContractorQuote?.contractor?.phone || '등록된 전화번호'
+      const contractorInfo = selectedContractorQuote?.contractors?.company_name || '선택된 업체'
+      const contactName = selectedContractorQuote?.contractors?.contact_name || ''
+      const phoneNumber = selectedContractorQuote?.contractors?.phone || '등록된 전화번호'
 
       alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
       
@@ -679,10 +665,10 @@ export default function MyQuotesPage() {
                             <div key={contractorQuote.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                               <div className="mb-3">
                                 <h4 className="font-semibold text-lg text-gray-900">
-                                  {contractorQuote.contractor?.company_name || '업체명 없음'}
+                                  {contractorQuote.contractors?.company_name || '업체명 없음'}
                                 </h4>
                                 <p className="text-sm text-gray-600">
-                                  담당자: {contractorQuote.contractor?.contact_name || '담당자 정보 없음'}
+                                  담당자: {contractorQuote.contractors?.contact_name || '담당자 정보 없음'}
                                 </p>
                               </div>
                               
@@ -709,7 +695,7 @@ export default function MyQuotesPage() {
                                       ✓ 선택된 업체
                                     </div>
                                     <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
-                                      📞 {contractorQuote.contractor?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
+                                      📞 {contractorQuote.contractors?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
                                     </div>
                                   </div>
                                 ) : contractorQuote.status === 'rejected' ? (

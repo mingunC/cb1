@@ -26,7 +26,6 @@ export default function ContractorSignupPage() {
   })
   
   const router = useRouter()
-  const { signUp } = useAuth()
 
   // 전문분야 옵션
   const specialtyOptions = [
@@ -69,15 +68,19 @@ export default function ContractorSignupPage() {
     }
 
     try {
-      // 업체로 회원가입 (role: 'contractor')
-      const { data, error } = await signUp(formData.email, formData.password, 'contractor')
+      const supabase = createBrowserClient()
+      
+      // 업체로 회원가입
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      })
       
       if (error) {
         setError(error.message)
       } else if (data.user) {
         // 업체 프로필 정보를 contractors 테이블에 직접 저장 (users 테이블에는 저장하지 않음)
         try {
-          const supabase = createBrowserClient()
           const { error: contractorError } = await supabase
             .from('contractors')
             .insert({
@@ -88,7 +91,7 @@ export default function ContractorSignupPage() {
               email: formData.email,
               address: formData.address,
               status: 'active',
-              specialties: JSON.stringify(formData.specialties)::jsonb,
+              specialties: JSON.stringify(formData.specialties),
               years_experience: 0,
               portfolio_count: 0,
               rating: 0.0,
