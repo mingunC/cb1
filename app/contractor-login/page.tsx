@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react'
@@ -25,34 +25,42 @@ export default function ContractorLoginPage() {
   
   const router = useRouter()
   const supabase = createBrowserClient() // Google OAuth용
+  const hasCheckedSession = useRef(false) // 세션 체크 여부 추적
 
   // 업체 세션 체크 및 자동 리다이렉트
   useEffect(() => {
+    // 이미 체크했으면 다시 실행하지 않음
+    if (hasCheckedSession.current) return
+    hasCheckedSession.current = true
+
     const checkContractorSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         
-        if (session) {
-          console.log('Existing contractor session found:', session.user.email)
-          
-          // 새로운 auth.ts의 getCurrentUser 함수 사용
-          const userInfo = await getCurrentUser()
-          
-          if (userInfo.user && userInfo.userType === 'contractor' && userInfo.contractorData) {
-            console.log('Valid contractor session, redirecting to contractor dashboard')
-            toast.success(`${userInfo.contractorData.company_name} 계정으로 로그인되었습니다`)
-            router.push('/contractor')
-          } else if (userInfo.user && userInfo.userType !== 'contractor') {
-            // 업체가 아닌 사용자가 업체 로그인 페이지에 있는 경우
-            console.log('Non-contractor user on contractor login page')
-            if (userInfo.userType === 'admin') {
-              toast.info('관리자 계정입니다. 관리자 페이지로 이동합니다.')
-              router.push('/admin')
-            } else {
-              toast.info('일반 고객 계정입니다. 홈페이지로 이동합니다.')
-              router.push('/')
-            }
-          }
+        if (!session) {
+          // 세션이 없으면 로그인 페이지 유지
+          return
+        }
+
+        console.log('Existing session found:', session.user.email)
+        
+        // 새로운 auth.ts의 getCurrentUser 함수 사용
+        const userInfo = await getCurrentUser()
+        
+        if (userInfo.user && userInfo.userType === 'contractor' && userInfo.contractorData) {
+          console.log('Valid contractor session, redirecting to contractor dashboard')
+          toast.success(`${userInfo.contractorData.company_name} 계정으로 이미 로그인되어 있습니다`)
+          router.push('/contractor')
+        } else if (userInfo.user && userInfo.userType === 'admin') {
+          // 관리자가 업체 로그인 페이지에 있는 경우
+          console.log('Admin user on contractor login page')
+          toast.info('관리자 계정입니다. 관리자 페이지로 이동합니다.')
+          router.push('/admin')
+        } else if (userInfo.user && userInfo.userType === 'customer') {
+          // 일반 고객이 업체 로그인 페이지에 있는 경우
+          console.log('Customer user on contractor login page')
+          // 고객은 로그인 상태를 유지하고 업체 로그인 페이지에 머물 수 있음
+          // 업체 전환을 원할 수 있으므로 리다이렉트하지 않음
         }
       } catch (error) {
         console.error('Contractor session check error:', error)
@@ -91,12 +99,14 @@ export default function ContractorLoginPage() {
 
       if (!result.success) {
         setError(result.error || '로그인에 실패했습니다.')
+        setIsLoading(false)
         return
       }
 
       // 업체 계정 확인
       if (result.userType !== 'contractor') {
         setError('업체 계정이 아닙니다. 업체 회원가입을 해주세요.')
+        setIsLoading(false)
         return
       }
 
@@ -128,12 +138,12 @@ export default function ContractorLoginPage() {
         console.error('Google login error:', googleError)
         setError('Google 로그인에 실패했습니다.')
         toast.error('Google 로그인에 실패했습니다')
+        setIsLoading(false)
       }
     } catch (err) {
       console.error('Google sign in error:', err)
       setError('Google 로그인 중 오류가 발생했습니다.')
       toast.error('Google 로그인 중 오류가 발생했습니다')
-    } finally {
       setIsLoading(false)
     }
   }, [supabase])
