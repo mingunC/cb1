@@ -352,17 +352,29 @@ export function checkPathPermission(
   redirectTo?: string;
   reason?: string;
 } {
-  // 공개 경로
-  const publicPaths = ['/', '/pros', '/portfolio', '/events', '/quote-request'];
-  if (publicPaths.includes(pathname) || pathname.startsWith('/api/')) {
+  // 인증 관련 공개 경로 (로그인/회원가입)
+  const authPaths = ['/login', '/signup', '/contractor-login', '/contractor-signup', '/forgot-password'];
+  if (authPaths.includes(pathname)) {
     return { allowed: true };
   }
 
-  // 인증이 필요한 경로
-  const authRequiredPaths = ['/admin', '/contractor', '/my-quotes', '/approved-projects', '/compare-quotes'];
-  const needsAuth = authRequiredPaths.some(path => pathname.startsWith(path));
+  // 일반 공개 경로
+  const publicPaths = ['/', '/pros', '/portfolio', '/events', '/quote-request'];
+  if (publicPaths.includes(pathname) || pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
+    return { allowed: true };
+  }
 
-  if (needsAuth && !userType) {
+  // 인증이 필요한 경로들
+  const needsAuth = !userType && (
+    pathname.startsWith('/admin') ||
+    pathname === '/contractor' || // 정확히 /contractor 경로만
+    pathname.startsWith('/contractor/') || // /contractor/ 로 시작하는 하위 경로들
+    pathname.startsWith('/my-quotes') ||
+    pathname.startsWith('/approved-projects') ||
+    pathname.startsWith('/compare-quotes')
+  );
+
+  if (needsAuth) {
     return { 
       allowed: false, 
       redirectTo: '/login',
@@ -381,8 +393,10 @@ export function checkPathPermission(
     }
   }
 
-  // 업체 전용 경로
-  if (pathname.startsWith('/contractor')) {
+  // 업체 전용 경로 (/contractor 로 시작하지만 로그인 페이지는 제외)
+  if ((pathname === '/contractor' || pathname.startsWith('/contractor/')) && 
+      !pathname.includes('login') && 
+      !pathname.includes('signup')) {
     if (!isContractor) {
       return { 
         allowed: false, 
