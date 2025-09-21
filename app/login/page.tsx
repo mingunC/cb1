@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
@@ -31,37 +31,48 @@ export default function LoginPage() {
     email: '',
     password: ''
   })
+  
+  // 세션 체크 여부 추적
+  const hasCheckedSession = useRef(false)
 
   // 세션 체크 및 자동 리다이렉트
   useEffect(() => {
+    // 이미 체크했으면 다시 실행하지 않음
+    if (hasCheckedSession.current) return
+    hasCheckedSession.current = true
+
     const checkExistingSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         
-        if (session) {
-          console.log('Existing session found:', session.user.email)
+        if (!session) {
+          // 세션이 없으면 로그인 페이지 유지
+          return
+        }
+
+        console.log('Existing session found:', session.user.email)
+        
+        // 새로운 auth.ts의 getCurrentUser 함수 사용
+        const userInfo = await getCurrentUser()
+        
+        if (userInfo.user && userInfo.userType) {
+          // 사용자 타입별 리다이렉트
+          let redirectTo = '/'
           
-          // 새로운 auth.ts의 getCurrentUser 함수 사용
-          const userInfo = await getCurrentUser()
-          
-          if (userInfo.user && userInfo.userType) {
-            // 사용자 타입별 리다이렉트 (현재 프로젝트 구조에 맞게)
-            let redirectTo = '/'
-            
-            if (userInfo.userType === 'admin') {
-              redirectTo = '/admin'
-              toast.success('관리자 계정으로 로그인되었습니다')
-            } else if (userInfo.userType === 'contractor' && userInfo.contractorData) {
-              redirectTo = '/contractor'
-              toast.success(`${userInfo.contractorData.company_name} 계정으로 로그인되었습니다`)
-            } else {
-              redirectTo = '/'
-              toast.success('로그인되었습니다')
-            }
-            
-            console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
-            router.push(redirectTo)
+          if (userInfo.userType === 'admin') {
+            redirectTo = '/admin'
+            toast.success('관리자 계정으로 로그인되어 있습니다')
+          } else if (userInfo.userType === 'contractor' && userInfo.contractorData) {
+            redirectTo = '/contractor'
+            toast.success(`${userInfo.contractorData.company_name} 계정으로 로그인되어 있습니다`)
+          } else {
+            redirectTo = '/'
+            toast.success('로그인되어 있습니다')
           }
+          
+          console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
+          // window.location.href 사용하여 강제 리다이렉션
+          window.location.href = redirectTo
         }
       } catch (error) {
         console.error('Session check error:', error)
@@ -70,7 +81,7 @@ export default function LoginPage() {
     }
 
     checkExistingSession()
-  }, [router, supabase]) // dependency array 추가
+  }, [supabase])
 
 
   // 로그인 처리
@@ -115,15 +126,19 @@ export default function LoginPage() {
         toast.success('로그인되었습니다')
       }
       
-      // 사용자 타입별 리다이렉트 (성공 시 로딩 상태 유지)
-      router.push(result.redirectTo || '/')
+      // window.location.href 사용하여 강제 리다이렉션
+      const redirectTo = result.redirectTo || '/'
+      console.log('Redirecting to:', redirectTo)
+      setTimeout(() => {
+        window.location.href = redirectTo
+      }, 100)
 
     } catch (error: any) {
       console.error('Unexpected error during login:', error)
       setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
       setIsLoading(false)
     }
-  }, [formData, router])
+  }, [formData])
 
   // Google 로그인 처리
   const handleGoogleSignIn = useCallback(async () => {
