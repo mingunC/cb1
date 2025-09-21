@@ -50,12 +50,15 @@ export default function ContractorLoginPage() {
         if (userInfo.user && userInfo.userType === 'contractor' && userInfo.contractorData) {
           console.log('Valid contractor session, redirecting to contractor dashboard')
           toast.success(`${userInfo.contractorData.company_name} 계정으로 이미 로그인되어 있습니다`)
-          router.push('/contractor')
+          // window.location.href 사용하여 강제 리다이렉션
+          window.location.href = '/contractor'
+          return
         } else if (userInfo.user && userInfo.userType === 'admin') {
           // 관리자가 업체 로그인 페이지에 있는 경우
           console.log('Admin user on contractor login page')
           toast.info('관리자 계정입니다. 관리자 페이지로 이동합니다.')
-          router.push('/admin')
+          window.location.href = '/admin'
+          return
         } else if (userInfo.user && userInfo.userType === 'customer') {
           // 일반 고객이 업체 로그인 페이지에 있는 경우
           console.log('Customer user on contractor login page')
@@ -113,14 +116,18 @@ export default function ContractorLoginPage() {
       // 로그인 성공
       console.log('Contractor login successful:', result.user?.email)
       toast.success(`${result.contractorData?.company_name} 계정으로 로그인되었습니다`)
-      router.push('/contractor')
+      
+      // window.location.href 사용하여 강제 리다이렉션
+      setTimeout(() => {
+        window.location.href = '/contractor'
+      }, 100)
       
     } catch (err: any) {
       console.error('Unexpected error during login:', err)
       setError('로그인 중 오류가 발생했습니다.')
       setIsLoading(false)
     }
-  }, [formData, router])
+  }, [formData])
 
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
