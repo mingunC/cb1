@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react'
-import { signIn } from '@/lib/auth'
+import { signIn, getCurrentUser } from '@/lib/auth'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
@@ -25,6 +25,43 @@ export default function ContractorLoginPage() {
   
   const router = useRouter()
   const supabase = createBrowserClient() // Google OAuth용
+
+  // 업체 세션 체크 및 자동 리다이렉트
+  useEffect(() => {
+    const checkContractorSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session) {
+          console.log('Existing contractor session found:', session.user.email)
+          
+          // 새로운 auth.ts의 getCurrentUser 함수 사용
+          const userInfo = await getCurrentUser()
+          
+          if (userInfo.user && userInfo.userType === 'contractor' && userInfo.contractorData) {
+            console.log('Valid contractor session, redirecting to contractor dashboard')
+            toast.success(`${userInfo.contractorData.company_name} 계정으로 로그인되었습니다`)
+            router.push('/contractor')
+          } else if (userInfo.user && userInfo.userType !== 'contractor') {
+            // 업체가 아닌 사용자가 업체 로그인 페이지에 있는 경우
+            console.log('Non-contractor user on contractor login page')
+            if (userInfo.userType === 'admin') {
+              toast.info('관리자 계정입니다. 관리자 페이지로 이동합니다.')
+              router.push('/admin')
+            } else {
+              toast.info('일반 고객 계정입니다. 홈페이지로 이동합니다.')
+              router.push('/')
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Contractor session check error:', error)
+        // 에러 발생 시 조용히 처리
+      }
+    }
+
+    checkContractorSession()
+  }, [router, supabase])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
-import { signIn } from '@/lib/auth'
+import { signIn, getCurrentUser } from '@/lib/auth'
+import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
 // 타입 정의
@@ -20,6 +21,7 @@ interface LoginError {
 
 export default function LoginPage() {
   const router = useRouter()
+  const supabase = createBrowserClient()
   
   // 상태 관리
   const [showPassword, setShowPassword] = useState(false)
@@ -29,6 +31,46 @@ export default function LoginPage() {
     email: '',
     password: ''
   })
+
+  // 세션 체크 및 자동 리다이렉트
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session) {
+          console.log('Existing session found:', session.user.email)
+          
+          // 새로운 auth.ts의 getCurrentUser 함수 사용
+          const userInfo = await getCurrentUser()
+          
+          if (userInfo.user && userInfo.userType) {
+            // 사용자 타입별 리다이렉트 (현재 프로젝트 구조에 맞게)
+            let redirectTo = '/'
+            
+            if (userInfo.userType === 'admin') {
+              redirectTo = '/admin'
+              toast.success('관리자 계정으로 로그인되었습니다')
+            } else if (userInfo.userType === 'contractor' && userInfo.contractorData) {
+              redirectTo = '/contractor'
+              toast.success(`${userInfo.contractorData.company_name} 계정으로 로그인되었습니다`)
+            } else {
+              redirectTo = '/'
+              toast.success('로그인되었습니다')
+            }
+            
+            console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
+            router.push(redirectTo)
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error)
+        // 에러 발생 시 조용히 처리 (로그인 페이지 그대로 유지)
+      }
+    }
+
+    checkExistingSession()
+  }, [router, supabase]) // dependency array 추가
 
 
   // 로그인 처리
