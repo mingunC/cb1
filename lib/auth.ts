@@ -12,6 +12,7 @@ export interface AuthResult {
   success: boolean;
   user?: any;
   userType?: 'customer' | 'contractor' | 'admin';
+  userData?: any;
   contractorData?: any;
   error?: string;
   redirectTo?: string;
@@ -48,7 +49,7 @@ export async function signIn(credentials: AuthCredentials): Promise<AuthResult> 
       return { success: false, error: '로그인에 실패했습니다.' };
     }
 
-    // 2. 사용자 타입 확인
+    // 2. 사용자 타입 확인 (개선된 로직)
     const userTypeResult = await getUserTypeAndData(data.user.id);
     
     if (!userTypeResult.success) {
@@ -63,6 +64,7 @@ export async function signIn(credentials: AuthCredentials): Promise<AuthResult> 
       success: true,
       user: data.user,
       userType: userTypeResult.userType,
+      userData: userTypeResult.userData,
       contractorData: userTypeResult.contractorData,
       redirectTo: getRedirectPath(userTypeResult.userType, userTypeResult.contractorData)
     };
@@ -73,6 +75,109 @@ export async function signIn(credentials: AuthCredentials): Promise<AuthResult> 
       success: false, 
       error: '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' 
     };
+  }
+}
+
+// 사용자 타입과 관련 데이터 조회 (개선된 버전)
+async function getUserTypeAndData(userId: string): Promise<{
+  success: boolean;
+  userType?: 'customer' | 'contractor' | 'admin';
+  userData?: any;
+  contractorData?: any;
+  error?: string;
+}> {
+  const supabase = createBrowserClient();
+
+  try {
+    // 1. 먼저 contractors 테이블 확인 (업체 우선)
+    const { data: contractorData, error: contractorError } = await supabase
+      .from('contractors')
+      .select('id, company_name, contact_name, phone, address, status')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    // contractors 테이블에 있으면 업체로 처리
+    if (contractorData && !contractorError) {
+      console.log('User is a contractor:', contractorData.company_name);
+      
+      if (contractorData.status && contractorData.status !== 'active') {
+        return { 
+          success: false, 
+          error: '업체 계정이 비활성화되어 있습니다. 관리자에게 문의해주세요.' 
+        };
+      }
+
+      return {
+        success: true,
+        userType: 'contractor',
+        contractorData,
+        userData: null
+      };
+    }
+
+    // 2. contractors 테이블에 없으면 users 테이블 확인
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userData && !userError) {
+      console.log('User type from users table:', userData.user_type);
+      
+      return {
+        success: true,
+        userType: userData.user_type || 'customer',
+        userData,
+        contractorData: null
+      };
+    }
+
+    // 3. 둘 다 없으면 기본값 (customer)
+    console.log('User not found in either table, defaulting to customer');
+    return {
+      success: true,
+      userType: 'customer',
+      userData: null,
+      contractorData: null
+    };
+
+  } catch (error: any) {
+    console.error('getUserTypeAndData error:', error);
+    return { success: false, error: '사용자 정보 조회 중 오류가 발생했습니다.' };
+  }
+}
+
+// 현재 사용자 정보 조회 (개선된 버전)
+export async function getCurrentUser(): Promise<{
+  success: boolean;
+  user: any | null;
+  userType?: 'customer' | 'contractor' | 'admin';
+  userData?: any;
+  contractorData?: any;
+}> {
+  const supabase = createBrowserClient();
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      return { success: false, user: null };
+    }
+
+    const userTypeResult = await getUserTypeAndData(user.id);
+    
+    return {
+      success: userTypeResult.success,
+      user,
+      userType: userTypeResult.userType,
+      userData: userTypeResult.userData,
+      contractorData: userTypeResult.contractorData
+    };
+
+  } catch (error) {
+    console.error('getCurrentUser error:', error);
+    return { success: false, user: null };
   }
 }
 
@@ -96,6 +201,7 @@ export async function signInServer(credentials: AuthCredentials): Promise<AuthRe
       success: true,
       user: data.user,
       userType: userTypeResult.userType,
+      userData: userTypeResult.userData,
       contractorData: userTypeResult.contractorData,
       redirectTo: getRedirectPath(userTypeResult.userType, userTypeResult.contractorData)
     };
@@ -106,114 +212,54 @@ export async function signInServer(credentials: AuthCredentials): Promise<AuthRe
   }
 }
 
-// 사용자 타입과 관련 데이터 조회 (클라이언트)
-async function getUserTypeAndData(userId: string): Promise<{
-  success: boolean;
-  userType?: 'customer' | 'contractor' | 'admin';
-  contractorData?: any;
-  error?: string;
-}> {
-  const supabase = createBrowserClient();
-
-  try {
-    // 1. users 테이블에서 user_type 확인
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', userId)
-      .single();
-
-    if (userError && userError.code !== 'PGRST116') { // Not found 에러가 아닌 경우
-      console.error('User type query error:', userError);
-      return { success: false, error: '사용자 정보 조회 실패' };
-    }
-
-    const userType = userData?.user_type || 'customer';
-
-    // 2. 업체인 경우 contractors 테이블에서 추가 정보 조회
-    if (userType === 'contractor') {
-      const { data: contractorData, error: contractorError } = await supabase
-        .from('contractors')
-        .select('id, company_name, contact_name, status')
-        .eq('user_id', userId)
-        .single();
-
-      if (contractorError) {
-        console.error('Contractor data query error:', contractorError);
-        return { 
-          success: false, 
-          error: '업체 정보를 찾을 수 없습니다. 업체 회원가입이 필요할 수 있습니다.' 
-        };
-      }
-
-      if (contractorData.status !== 'active') {
-        return { 
-          success: false, 
-          error: '업체 계정이 비활성화되어 있습니다. 관리자에게 문의해주세요.' 
-        };
-      }
-
-      return {
-        success: true,
-        userType: 'contractor',
-        contractorData
-      };
-    }
-
-    // 3. 관리자 확인
-    if (userType === 'admin') {
-      return {
-        success: true,
-        userType: 'admin'
-      };
-    }
-
-    // 4. 일반 고객
-    return {
-      success: true,
-      userType: 'customer'
-    };
-
-  } catch (error: any) {
-    console.error('getUserTypeAndData error:', error);
-    return { success: false, error: '사용자 정보 조회 중 오류가 발생했습니다.' };
-  }
-}
-
-// 서버 사이드 사용자 타입 조회
+// 서버 사이드 사용자 타입 조회 (개선된 버전)
 async function getUserTypeAndDataServer(userId: string): Promise<{
   success: boolean;
   userType?: 'customer' | 'contractor' | 'admin';
+  userData?: any;
   contractorData?: any;
 }> {
   const supabase = createServerClient();
 
   try {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', userId)
-      .single();
+    // 1. 먼저 contractors 테이블 확인
+    const { data: contractorData } = await supabase
+      .from('contractors')
+      .select('id, company_name, contact_name, status')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    const userType = userData?.user_type || 'customer';
-
-    if (userType === 'contractor') {
-      const { data: contractorData } = await supabase
-        .from('contractors')
-        .select('id, company_name, contact_name, status')
-        .eq('user_id', userId)
-        .single();
-
+    if (contractorData) {
       return {
         success: true,
         userType: 'contractor',
-        contractorData
+        contractorData,
+        userData: null
       };
     }
 
+    // 2. users 테이블 확인
+    const { data: userData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userData) {
+      return {
+        success: true,
+        userType: userData.user_type || 'customer',
+        userData,
+        contractorData: null
+      };
+    }
+
+    // 3. 기본값
     return {
       success: true,
-      userType
+      userType: 'customer',
+      userData: null,
+      contractorData: null
     };
 
   } catch (error) {
@@ -232,39 +278,6 @@ function getRedirectPath(userType?: string, contractorData?: any): string {
     case 'customer':
     default:
       return '/';
-  }
-}
-
-// 현재 사용자 정보 조회 (클라이언트)
-export async function getCurrentUser(): Promise<{
-  user: any | null;
-  userType?: 'customer' | 'contractor' | 'admin';
-  contractorData?: any;
-}> {
-  const supabase = createBrowserClient();
-
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (error || !user) {
-      return { user: null };
-    }
-
-    const userTypeResult = await getUserTypeAndData(user.id);
-    
-    if (!userTypeResult.success) {
-      return { user };
-    }
-
-    return {
-      user,
-      userType: userTypeResult.userType,
-      contractorData: userTypeResult.contractorData
-    };
-
-  } catch (error) {
-    console.error('getCurrentUser error:', error);
-    return { user: null };
   }
 }
 
@@ -288,7 +301,7 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
   }
 }
 
-// 미들웨어용 사용자 정보 조회
+// 미들웨어용 사용자 정보 조회 (개선된 버전)
 export async function getUserForMiddleware(
   req: NextRequest, 
   res: NextResponse
@@ -307,31 +320,35 @@ export async function getUserForMiddleware(
       return { session: null, isContractor: false, isAdmin: false };
     }
 
-    // 사용자 타입 조회
+    // 1. contractors 테이블 먼저 확인
+    const { data: contractorData } = await supabase
+      .from('contractors')
+      .select('id, status')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (contractorData) {
+      return {
+        session,
+        userType: 'contractor',
+        isContractor: contractorData.status === 'active',
+        isAdmin: false
+      };
+    }
+
+    // 2. users 테이블 확인
     const { data: userData } = await supabase
       .from('users')
       .select('user_type')
       .eq('id', session.user.id)
-      .single();
+      .maybeSingle();
 
     const userType = userData?.user_type || 'customer';
-
-    // 업체인 경우 추가 확인
-    let isContractor = userType === 'contractor';
-    if (userType === 'contractor' || !userData) {
-      const { data: contractorData } = await supabase
-        .from('contractors')
-        .select('id, status')
-        .eq('user_id', session.user.id)
-        .single();
-
-      isContractor = !!(contractorData && contractorData.status === 'active');
-    }
 
     return {
       session,
       userType,
-      isContractor,
+      isContractor: false,
       isAdmin: userType === 'admin'
     };
 
