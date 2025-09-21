@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { signIn } from '@/lib/auth'
 import { createBrowserClient } from '@/lib/supabase/clients'
@@ -14,7 +13,6 @@ interface FormData {
 }
 
 export default function LoginPage() {
-  const router = useRouter()
   const supabase = createBrowserClient()
   
   const [showPassword, setShowPassword] = useState(false)
@@ -25,7 +23,6 @@ export default function LoginPage() {
     password: ''
   })
 
-  // 로그인 처리
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -52,13 +49,13 @@ export default function LoginPage() {
       // 로그인 성공
       toast.success('로그인되었습니다')
       
-      // 타입별 리다이렉션
+      // window.location.href로 강제 이동
       if (result.userType === 'contractor') {
-        router.push('/contractor')
+        window.location.href = '/contractor'
       } else if (result.userType === 'admin') {
-        router.push('/admin')
+        window.location.href = '/admin'
       } else {
-        router.push('/')
+        window.location.href = '/'
       }
 
     } catch (error: any) {
@@ -68,7 +65,6 @@ export default function LoginPage() {
     }
   }
 
-  // Google 로그인
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     setError('')
