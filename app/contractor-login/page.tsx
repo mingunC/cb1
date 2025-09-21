@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react'
 import { signIn } from '@/lib/auth'
 import { createBrowserClient } from '@/lib/supabase/clients'
@@ -14,7 +13,6 @@ interface FormData {
 }
 
 export default function ContractorLoginPage() {
-  const router = useRouter()
   const supabase = createBrowserClient()
   
   const [showPassword, setShowPassword] = useState(false)
@@ -55,9 +53,9 @@ export default function ContractorLoginPage() {
         return
       }
 
-      // 로그인 성공
+      // 로그인 성공 - window.location.href로 강제 이동
       toast.success(`${result.contractorData?.company_name} 계정으로 로그인되었습니다`)
-      router.push('/contractor')
+      window.location.href = '/contractor'
       
     } catch (err: any) {
       console.error('Login error:', err)
