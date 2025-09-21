@@ -102,6 +102,7 @@ export default function LoginPage() {
 
       if (!result.success) {
         setError(result.error || '로그인에 실패했습니다.')
+        setIsLoading(false)
         return
       }
 
@@ -145,17 +146,14 @@ export default function LoginPage() {
         console.error('Google login error:', googleError)
         setError('Google 로그인에 실패했습니다.')
         toast.error('Google 로그인에 실패했습니다')
+        setIsLoading(false)
       }
       // Google OAuth는 리다이렉트 방식이므로 성공 시 setIsLoading(false) 호출하지 않음
     } catch (error) {
       console.error('Google sign in error:', error)
       setError('Google 로그인 중 오류가 발생했습니다.')
       toast.error('Google 로그인 중 오류가 발생했습니다')
-    } finally {
-      // Google OAuth 에러 발생 시에만 로딩 상태 해제 (성공 시는 리다이렉트로 페이지 이동)
-      if (googleError || error) {
-        setIsLoading(false)
-      }
+      setIsLoading(false)
     }
   }, [supabase])
 
