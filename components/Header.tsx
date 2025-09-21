@@ -139,19 +139,24 @@ export default function Header() {
       const supabase = createBrowserClient()
       
       // 특정 사용자 디버깅
-      if (email === 'mgc202077@gmail.com') {
-        console.log('🔍 mgc202077@gmail.com 사용자 프로필 로드 시작:', { userId, email })
+      if (email === 'mgc202077@gmail.com' || email === 'micks1@me.com') {
+        console.log('🔍 사용자 프로필 로드 시작:', { userId, email })
       }
       
-      // 1. 먼저 업체인지 확인
-      const { data: contractorData } = await supabase
+      // 1. 먼저 업체인지 확인 (contractors 테이블 우선)
+      const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, contact_name')
         .eq('user_id', userId)
         .maybeSingle()
 
-      if (email === 'mgc202077@gmail.com') {
-        console.log('🔍 contractors 테이블 조회 결과:', { contractorData })
+      // contractors 테이블 조회 에러 무시 (404는 정상)
+      if (contractorError && contractorError.code !== 'PGRST116') {
+        console.error('Contractor query error:', contractorError)
+      }
+
+      if (email === 'mgc202077@gmail.com' || email === 'micks1@me.com') {
+        console.log('🔍 contractors 테이블 조회 결과:', { contractorData, error: contractorError })
       }
 
       if (contractorData && isMounted.current) {
@@ -164,7 +169,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
-        if (email === 'mgc202077@gmail.com') {
+        if (email === 'mgc202077@gmail.com' || email === 'micks1@me.com') {
           console.log('✅ 업체로 인식됨:', { finalDisplayName })
         }
         
@@ -172,15 +177,20 @@ export default function Header() {
         return
       }
 
-      // 2. 일반 사용자 정보 확인
-      const { data: userData } = await supabase
+      // 2. contractors에 없을 때만 users 테이블 확인
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_type, first_name, last_name')
         .eq('id', userId)
         .maybeSingle()
 
-      if (email === 'mgc202077@gmail.com') {
-        console.log('🔍 users 테이블 조회 결과:', { userData })
+      // users 테이블 조회 에러도 무시 (404는 정상)
+      if (userError && userError.code !== 'PGRST116') {
+        console.error('Users query error:', userError)
+      }
+
+      if (email === 'mgc202077@gmail.com' || email === 'micks1@me.com') {
+        console.log('🔍 users 테이블 조회 결과:', { userData, error: userError })
       }
 
       if (userData && isMounted.current) {
@@ -206,13 +216,13 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', userData.user_type)
         
-        if (email === 'mgc202077@gmail.com') {
+        if (email === 'mgc202077@gmail.com' || email === 'micks1@me.com') {
           console.log('✅ 일반 사용자로 인식됨:', { userData, finalDisplayName })
         }
         
         profileLoadedRef.current = true
       } else if (isMounted.current) {
-        // 기본값 설정
+        // 둘 다 없으면 기본값 설정 (신규 사용자)
         setUserProfile({ user_type: 'customer' })
         setContractorProfile(null)
         const finalDisplayName = email?.split('@')[0] || 'User'
@@ -222,7 +232,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
         
-        if (email === 'mgc202077@gmail.com') {
+        if (email === 'mgc202077@gmail.com' || email === 'micks1@me.com') {
           console.log('⚠️ 기본값으로 설정됨 (customer):', { finalDisplayName })
         }
         
