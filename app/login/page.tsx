@@ -31,14 +31,15 @@ export default function LoginPage() {
     email: '',
     password: ''
   })
+  const [isRedirecting, setIsRedirecting] = useState(false)
   
   // 세션 체크 여부 추적
   const hasCheckedSession = useRef(false)
 
   // 세션 체크 및 자동 리다이렉트
   useEffect(() => {
-    // 이미 체크했으면 다시 실행하지 않음
-    if (hasCheckedSession.current) return
+    // 이미 체크했거나 리다이렉팅 중이면 다시 실행하지 않음
+    if (hasCheckedSession.current || isRedirecting) return
     hasCheckedSession.current = true
 
     const checkExistingSession = async () => {
@@ -51,6 +52,7 @@ export default function LoginPage() {
         }
 
         console.log('Existing session found:', session.user.email)
+        setIsRedirecting(true)
         
         // 새로운 auth.ts의 getCurrentUser 함수 사용
         const userInfo = await getCurrentUser()
@@ -71,17 +73,18 @@ export default function LoginPage() {
           }
           
           console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
-          // window.location.href 사용하여 강제 리다이렉션
-          window.location.href = redirectTo
+          // 즉시 리다이렉션
+          window.location.replace(redirectTo)
+          return
         }
       } catch (error) {
         console.error('Session check error:', error)
-        // 에러 발생 시 조용히 처리 (로그인 페이지 그대로 유지)
+        setIsRedirecting(false)
       }
     }
 
     checkExistingSession()
-  }, [supabase])
+  }, [supabase, isRedirecting])
 
 
   // 로그인 처리
@@ -119,6 +122,7 @@ export default function LoginPage() {
 
       // 로그인 성공
       console.log('Login successful:', result.user?.email)
+      setIsRedirecting(true)
       
       if (result.userType === 'contractor' && result.contractorData) {
         toast.success(`${result.contractorData.company_name} 계정으로 로그인되었습니다`)
@@ -126,17 +130,16 @@ export default function LoginPage() {
         toast.success('로그인되었습니다')
       }
       
-      // window.location.href 사용하여 강제 리다이렉션
+      // 즉시 리다이렉션
       const redirectTo = result.redirectTo || '/'
       console.log('Redirecting to:', redirectTo)
-      setTimeout(() => {
-        window.location.href = redirectTo
-      }, 100)
+      window.location.replace(redirectTo)
 
     } catch (error: any) {
       console.error('Unexpected error during login:', error)
       setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
       setIsLoading(false)
+      setIsRedirecting(false)
     }
   }, [formData])
 
@@ -188,6 +191,18 @@ export default function LoginPage() {
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword(prev => !prev)
   }, [])
+
+  // 리다이렉팅 중이면 로딩 화면 표시
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">페이지 이동 중...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
