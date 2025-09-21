@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react'
+import { signIn } from '@/lib/auth'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
@@ -23,7 +24,7 @@ export default function ContractorLoginPage() {
   })
   
   const router = useRouter()
-  const supabase = createBrowserClient()
+  const supabase = createBrowserClient() // Google OAuth용
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,64 +46,34 @@ export default function ContractorLoginPage() {
     setError('')
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email.trim().toLowerCase(),
+      // 새로운 통합 로그인 함수 사용
+      const result = await signIn({
+        email: formData.email,
         password: formData.password
       })
-      
-      if (signInError) {
-        console.error('Login error:', signInError)
-        
-        // 에러 메시지 한글화
-        if (signInError.message.includes('Invalid login credentials')) {
-          setError('이메일 또는 비밀번호가 올바르지 않습니다.')
-        } else if (signInError.message.includes('Email not confirmed')) {
-          setError('이메일 인증이 필요합니다.')
-        } else if (signInError.message.includes('Too many requests')) {
-          setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
-        } else {
-          setError('로그인에 실패했습니다. 다시 시도해주세요.')
-        }
+
+      if (!result.success) {
+        setError(result.error || '로그인에 실패했습니다.')
         return
       }
 
-      if (!data.user) {
-        setError('로그인에 실패했습니다. 다시 시도해주세요.')
-        return
-      }
-
-      console.log('Login successful:', data.user.email)
-      
-      // contractors 테이블에서 업체 정보 확인
-      const { data: contractorData } = await supabase
-        .from('contractors')
-        .select('id, company_name, status')
-        .eq('user_id', data.user.id)
-        .single()
-
-      if (!contractorData) {
+      // 업체 계정 확인
+      if (result.userType !== 'contractor') {
         setError('업체 계정이 아닙니다. 업체 회원가입을 해주세요.')
-        await supabase.auth.signOut()
         return
       }
 
-      if (contractorData.status !== 'active') {
-        setError('계정이 비활성화되어 있습니다.')
-        await supabase.auth.signOut()
-        return
-      }
-
-      // 로그인 성공 시 업체 대시보드로 리다이렉트
-      toast.success(`${contractorData.company_name} 계정으로 로그인되었습니다`)
+      // 로그인 성공
+      console.log('Contractor login successful:', result.user?.email)
+      toast.success(`${result.contractorData?.company_name} 계정으로 로그인되었습니다`)
       router.push('/contractor')
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Unexpected error during login:', err)
       setError('로그인 중 오류가 발생했습니다.')
-    } finally {
       setIsLoading(false)
     }
-  }, [formData, supabase, router])
+  }, [formData, router])
 
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)

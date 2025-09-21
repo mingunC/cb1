@@ -1,0 +1,287 @@
+import { createBrowserClient } from '@/lib/supabase/clients';
+import { createServerClient } from '@/lib/supabase/server-clients';
+
+export interface AuthCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthResult {
+  success: boolean;
+  user?: any;
+  userType?: 'customer' | 'contractor' | 'admin';
+  contractorData?: any;
+  error?: string;
+  redirectTo?: string;
+}
+
+// 클라이언트 사이드 로그인
+export async function signIn(credentials: AuthCredentials): Promise<AuthResult> {
+  const supabase = createBrowserClient();
+  
+  try {
+    // 1. Supabase 인증
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: credentials.email.trim().toLowerCase(),
+      password: credentials.password,
+    });
+
+    if (error) {
+      console.error('Authentication error:', error);
+      
+      // 에러 메시지 한글화
+      let errorMessage = '로그인에 실패했습니다.';
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = '이메일 인증이 필요합니다. 이메일을 확인해주세요.';
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+      }
+      
+      return { success: false, error: errorMessage };
+    }
+
+    if (!data.user) {
+      return { success: false, error: '로그인에 실패했습니다.' };
+    }
+
+    // 2. 사용자 타입 확인
+    const userTypeResult = await getUserTypeAndData(data.user.id);
+    
+    if (!userTypeResult.success) {
+      return { 
+        success: false, 
+        error: userTypeResult.error || '사용자 정보를 불러올 수 없습니다.' 
+      };
+    }
+
+    // 3. 성공 응답
+    return {
+      success: true,
+      user: data.user,
+      userType: userTypeResult.userType,
+      contractorData: userTypeResult.contractorData,
+      redirectTo: getRedirectPath(userTypeResult.userType, userTypeResult.contractorData)
+    };
+
+  } catch (error: any) {
+    console.error('Unexpected error during login:', error);
+    return { 
+      success: false, 
+      error: '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' 
+    };
+  }
+}
+
+// 서버 사이드 로그인 (API 라우트용)
+export async function signInServer(credentials: AuthCredentials): Promise<AuthResult> {
+  const supabase = createServerClient();
+  
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: credentials.email.trim().toLowerCase(),
+      password: credentials.password,
+    });
+
+    if (error || !data.user) {
+      return { success: false, error: 'Authentication failed' };
+    }
+
+    const userTypeResult = await getUserTypeAndDataServer(data.user.id);
+    
+    return {
+      success: true,
+      user: data.user,
+      userType: userTypeResult.userType,
+      contractorData: userTypeResult.contractorData,
+      redirectTo: getRedirectPath(userTypeResult.userType, userTypeResult.contractorData)
+    };
+
+  } catch (error: any) {
+    console.error('Server login error:', error);
+    return { success: false, error: 'Internal server error' };
+  }
+}
+
+// 사용자 타입과 관련 데이터 조회 (클라이언트)
+async function getUserTypeAndData(userId: string): Promise<{
+  success: boolean;
+  userType?: 'customer' | 'contractor' | 'admin';
+  contractorData?: any;
+  error?: string;
+}> {
+  const supabase = createBrowserClient();
+
+  try {
+    // 1. users 테이블에서 user_type 확인
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', userId)
+      .single();
+
+    if (userError && userError.code !== 'PGRST116') { // Not found 에러가 아닌 경우
+      console.error('User type query error:', userError);
+      return { success: false, error: '사용자 정보 조회 실패' };
+    }
+
+    const userType = userData?.user_type || 'customer';
+
+    // 2. 업체인 경우 contractors 테이블에서 추가 정보 조회
+    if (userType === 'contractor') {
+      const { data: contractorData, error: contractorError } = await supabase
+        .from('contractors')
+        .select('id, company_name, contact_name, status')
+        .eq('user_id', userId)
+        .single();
+
+      if (contractorError) {
+        console.error('Contractor data query error:', contractorError);
+        return { 
+          success: false, 
+          error: '업체 정보를 찾을 수 없습니다. 업체 회원가입이 필요할 수 있습니다.' 
+        };
+      }
+
+      if (contractorData.status !== 'active') {
+        return { 
+          success: false, 
+          error: '업체 계정이 비활성화되어 있습니다. 관리자에게 문의해주세요.' 
+        };
+      }
+
+      return {
+        success: true,
+        userType: 'contractor',
+        contractorData
+      };
+    }
+
+    // 3. 관리자 확인
+    if (userType === 'admin') {
+      return {
+        success: true,
+        userType: 'admin'
+      };
+    }
+
+    // 4. 일반 고객
+    return {
+      success: true,
+      userType: 'customer'
+    };
+
+  } catch (error: any) {
+    console.error('getUserTypeAndData error:', error);
+    return { success: false, error: '사용자 정보 조회 중 오류가 발생했습니다.' };
+  }
+}
+
+// 서버 사이드 사용자 타입 조회
+async function getUserTypeAndDataServer(userId: string): Promise<{
+  success: boolean;
+  userType?: 'customer' | 'contractor' | 'admin';
+  contractorData?: any;
+}> {
+  const supabase = createServerClient();
+
+  try {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', userId)
+      .single();
+
+    const userType = userData?.user_type || 'customer';
+
+    if (userType === 'contractor') {
+      const { data: contractorData } = await supabase
+        .from('contractors')
+        .select('id, company_name, contact_name, status')
+        .eq('user_id', userId)
+        .single();
+
+      return {
+        success: true,
+        userType: 'contractor',
+        contractorData
+      };
+    }
+
+    return {
+      success: true,
+      userType
+    };
+
+  } catch (error) {
+    console.error('Server getUserTypeAndData error:', error);
+    return { success: false };
+  }
+}
+
+// 사용자 타입에 따른 리다이렉트 경로 결정
+function getRedirectPath(userType?: string, contractorData?: any): string {
+  switch (userType) {
+    case 'admin':
+      return '/admin';
+    case 'contractor':
+      return '/contractor';
+    case 'customer':
+    default:
+      return '/';
+  }
+}
+
+// 현재 사용자 정보 조회 (클라이언트)
+export async function getCurrentUser(): Promise<{
+  user: any | null;
+  userType?: 'customer' | 'contractor' | 'admin';
+  contractorData?: any;
+}> {
+  const supabase = createBrowserClient();
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      return { user: null };
+    }
+
+    const userTypeResult = await getUserTypeAndData(user.id);
+    
+    if (!userTypeResult.success) {
+      return { user };
+    }
+
+    return {
+      user,
+      userType: userTypeResult.userType,
+      contractorData: userTypeResult.contractorData
+    };
+
+  } catch (error) {
+    console.error('getCurrentUser error:', error);
+    return { user: null };
+  }
+}
+
+// 로그아웃
+export async function signOut(): Promise<{ success: boolean; error?: string }> {
+  const supabase = createBrowserClient();
+
+  try {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Sign out error:', error);
+      return { success: false, error: '로그아웃 중 오류가 발생했습니다.' };
+    }
+
+    return { success: true };
+
+  } catch (error: any) {
+    console.error('Unexpected sign out error:', error);
+    return { success: false, error: '로그아웃 중 오류가 발생했습니다.' };
+  }
+}

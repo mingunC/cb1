@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
-import { createBrowserClient } from '@/lib/supabase/clients'
+import { signIn } from '@/lib/auth'
 import { toast } from 'react-hot-toast'
 
 // 타입 정의
@@ -20,7 +20,6 @@ interface LoginError {
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = createBrowserClient()
   
   // 상태 관리
   const [showPassword, setShowPassword] = useState(false)
@@ -31,42 +30,6 @@ export default function LoginPage() {
     password: ''
   })
 
-  // 사용자 타입별 리다이렉트 처리
-  const handleUserRedirect = useCallback(async (userId: string, email: string) => {
-    try {
-      // 1. contractors 테이블 확인 (업체)
-      const { data: contractorData } = await supabase
-        .from('contractors')
-        .select('id')
-        .eq('user_id', userId)
-        .single()
-
-      if (contractorData) {
-        console.log('Contractor user detected, redirecting to contractor dashboard')
-        toast.success('업체 계정으로 로그인되었습니다')
-        router.push('/contractor')
-        return
-      }
-
-      // 2. 관리자 이메일 확인
-      if (email === 'cmgg919@gmail.com') {
-        console.log('Admin user detected, redirecting to admin dashboard')
-        toast.success('관리자 계정으로 로그인되었습니다')
-        router.push('/admin')
-        return
-      }
-
-      // 3. 일반 고객
-      console.log('Customer user detected, redirecting to home')
-      toast.success('로그인되었습니다')
-      router.push('/')
-      
-    } catch (error) {
-      console.error('Redirect error:', error)
-      toast.error('리다이렉트 중 오류가 발생했습니다')
-      router.push('/')
-    }
-  }, [supabase, router])
 
   // 로그인 처리
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -87,52 +50,37 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
-    let shouldKeepLoading = false
 
     try {
-      // Supabase 로그인
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email.trim().toLowerCase(),
+      // 새로운 통합 로그인 함수 사용
+      const result = await signIn({
+        email: formData.email,
         password: formData.password
       })
 
-      if (signInError) {
-        console.error('Login error:', signInError)
-        
-        // 에러 메시지 한글화
-        if (signInError.message.includes('Invalid login credentials')) {
-          setError('이메일 또는 비밀번호가 올바르지 않습니다.')
-        } else if (signInError.message.includes('Email not confirmed')) {
-          setError('이메일 인증이 필요합니다. 이메일을 확인해주세요.')
-        } else if (signInError.message.includes('Too many requests')) {
-          setError('너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.')
-        } else {
-          setError('로그인에 실패했습니다. 다시 시도해주세요.')
-        }
+      if (!result.success) {
+        setError(result.error || '로그인에 실패했습니다.')
         return
       }
 
-      if (!data.user) {
-        setError('로그인에 실패했습니다. 다시 시도해주세요.')
-        return
-      }
-
-      console.log('Login successful:', data.user.email)
+      // 로그인 성공
+      console.log('Login successful:', result.user?.email)
       
-      // 사용자 타입별 리다이렉트
-      // 성공 시에는 setIsLoading(false)를 호출하지 않음 - 페이지 이동될 때까지 로딩 유지
-      shouldKeepLoading = true
-      await handleUserRedirect(data.user.id, data.user.email || '')
+      if (result.userType === 'contractor' && result.contractorData) {
+        toast.success(`${result.contractorData.company_name} 계정으로 로그인되었습니다`)
+      } else {
+        toast.success('로그인되었습니다')
+      }
+      
+      // 사용자 타입별 리다이렉트 (성공 시 로딩 상태 유지)
+      router.push(result.redirectTo || '/')
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Unexpected error during login:', error)
       setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-    } finally {
-      if (!shouldKeepLoading) {
-        setIsLoading(false)
-      }
+      setIsLoading(false)
     }
-  }, [formData, supabase, handleUserRedirect])
+  }, [formData, router])
 
   // Google 로그인 처리
   const handleGoogleSignIn = useCallback(async () => {
