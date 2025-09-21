@@ -1,12 +1,16 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
-export default function AuthCallback() {
+function AuthCallbackContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createBrowserClient()
+  
+  // URL 파라미터에서 type 확인 (contractor 여부)
+  const loginType = searchParams.get('type')
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -36,20 +40,55 @@ export default function AuthCallback() {
             }
           }
           
-          // 관리자 권한 확인 후 리다이렉트
+          // 업체 로그인 타입인 경우
+          if (loginType === 'contractor') {
+            // 업체 여부 확인
+            const { data: contractorData } = await supabase
+              .from('contractors')
+              .select('id, company_name')
+              .eq('user_id', session.user.id)
+              .maybeSingle()
+            
+            if (contractorData) {
+              console.log('Contractor login successful:', contractorData.company_name)
+              router.push('/contractor')
+              return
+            } else {
+              console.log('Not a contractor, redirecting to contractor signup')
+              router.push('/contractor-signup?message=not_contractor')
+              return
+            }
+          }
+          
+          // 일반 로그인 처리
           try {
-            const { data: userData, error: queryError } = await supabase
+            // 먼저 업체인지 확인
+            const { data: contractorData } = await supabase
+              .from('contractors')
+              .select('id')
+              .eq('user_id', session.user.id)
+              .maybeSingle()
+            
+            if (contractorData) {
+              // 업체면 업체 대시보드로
+              console.log('Contractor user, redirecting to contractor dashboard')
+              router.push('/contractor')
+              return
+            }
+            
+            // 일반 사용자 타입 확인
+            const { data: userData } = await supabase
               .from('users')
               .select('user_type')
               .eq('id', session.user.id)
               .single()
             
-            if (!queryError && userData?.user_type === 'admin') {
-              // 관리자면 대시보드로 리다이렉트
-              console.log('Admin user, redirecting to dashboard')
+            if (userData?.user_type === 'admin') {
+              // 관리자면 관리자 대시보드로
+              console.log('Admin user, redirecting to admin dashboard')
               router.push('/admin')
             } else {
-              // 일반 사용자면 홈페이지로 리다이렉트
+              // 일반 사용자면 홈페이지로
               console.log('Regular user, redirecting to home')
               router.push('/')
             }
@@ -60,7 +99,8 @@ export default function AuthCallback() {
           }
         } else {
           // 세션이 없으면 로그인 페이지로
-          router.push('/login')
+          const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
+          router.push(redirectTo)
         }
       } catch (err) {
         console.error('Unexpected error:', err)
@@ -69,7 +109,7 @@ export default function AuthCallback() {
     }
 
     handleAuthCallback()
-  }, [router, supabase])
+  }, [router, supabase, loginType])
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -78,5 +118,20 @@ export default function AuthCallback() {
         <p className="mt-4 text-gray-600">로그인 처리 중...</p>
       </div>
     </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   )
 }
