@@ -49,14 +49,16 @@ export default function LoginPage() {
       // 로그인 성공
       toast.success('로그인되었습니다')
       
-      // window.location.href로 강제 이동
-      if (result.userType === 'contractor') {
-        window.location.href = '/contractor'
-      } else if (result.userType === 'admin') {
-        window.location.href = '/admin'
-      } else {
-        window.location.href = '/'
-      }
+      // window.location.replace로 강제 이동 (히스토리 대체)
+      setTimeout(() => {
+        if (result.userType === 'contractor') {
+          window.location.replace('/contractor')
+        } else if (result.userType === 'admin') {
+          window.location.replace('/admin')
+        } else {
+          window.location.replace('/')
+        }
+      }, 100) // 토스트 메시지를 보여주기 위한 짧은 지연
 
     } catch (error: any) {
       console.error('Login error:', error)
