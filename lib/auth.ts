@@ -1,5 +1,7 @@
 import { createBrowserClient } from '@/lib/supabase/clients';
 import { createServerClient } from '@/lib/supabase/server-clients';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import type { NextRequest, NextResponse } from 'next/server';
 
 export interface AuthCredentials {
   email: string;
@@ -284,4 +286,111 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
     console.error('Unexpected sign out error:', error);
     return { success: false, error: '로그아웃 중 오류가 발생했습니다.' };
   }
+}
+
+// 미들웨어용 사용자 정보 조회
+export async function getUserForMiddleware(
+  req: NextRequest, 
+  res: NextResponse
+): Promise<{
+  session: any | null;
+  userType?: 'customer' | 'contractor' | 'admin';
+  isContractor: boolean;
+  isAdmin: boolean;
+}> {
+  try {
+    const supabase = createMiddlewareClient({ req, res });
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return { session: null, isContractor: false, isAdmin: false };
+    }
+
+    // 사용자 타입 조회
+    const { data: userData } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', session.user.id)
+      .single();
+
+    const userType = userData?.user_type || 'customer';
+
+    // 업체인 경우 추가 확인
+    let isContractor = userType === 'contractor';
+    if (userType === 'contractor' || !userData) {
+      const { data: contractorData } = await supabase
+        .from('contractors')
+        .select('id, status')
+        .eq('user_id', session.user.id)
+        .single();
+
+      isContractor = !!(contractorData && contractorData.status === 'active');
+    }
+
+    return {
+      session,
+      userType,
+      isContractor,
+      isAdmin: userType === 'admin'
+    };
+
+  } catch (error) {
+    console.error('getUserForMiddleware error:', error);
+    return { session: null, isContractor: false, isAdmin: false };
+  }
+}
+
+// 경로별 권한 확인
+export function checkPathPermission(
+  pathname: string,
+  userType?: string,
+  isContractor: boolean = false,
+  isAdmin: boolean = false
+): {
+  allowed: boolean;
+  redirectTo?: string;
+  reason?: string;
+} {
+  // 공개 경로
+  const publicPaths = ['/', '/pros', '/portfolio', '/events', '/quote-request'];
+  if (publicPaths.includes(pathname) || pathname.startsWith('/api/')) {
+    return { allowed: true };
+  }
+
+  // 인증이 필요한 경로
+  const authRequiredPaths = ['/admin', '/contractor', '/my-quotes', '/approved-projects', '/compare-quotes'];
+  const needsAuth = authRequiredPaths.some(path => pathname.startsWith(path));
+
+  if (needsAuth && !userType) {
+    return { 
+      allowed: false, 
+      redirectTo: '/login',
+      reason: 'Authentication required'
+    };
+  }
+
+  // 관리자 전용 경로
+  if (pathname.startsWith('/admin')) {
+    if (!isAdmin) {
+      return { 
+        allowed: false, 
+        redirectTo: '/',
+        reason: 'Admin access required'
+      };
+    }
+  }
+
+  // 업체 전용 경로
+  if (pathname.startsWith('/contractor')) {
+    if (!isContractor) {
+      return { 
+        allowed: false, 
+        redirectTo: '/contractor-signup',
+        reason: 'Contractor access required'
+      };
+    }
+  }
+
+  return { allowed: true };
 }
