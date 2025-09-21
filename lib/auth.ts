@@ -116,36 +116,20 @@ async function getUserTypeAndData(userId: string): Promise<{
   const supabase = createBrowserClient();
 
   try {
-    // 1. users 테이블에서 user_type 확인
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', userId)
-      .single();
+    // 1. 먼저 업체인지 확인 (contractors 테이블만 확인)
+    const { data: contractorData, error: contractorError } = await supabase
+      .from('contractors')
+      .select('id, company_name, contact_name, status')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (userError && userError.code !== 'PGRST116') { // Not found 에러가 아닌 경우
-      console.error('User type query error:', userError);
-      return { success: false, error: '사용자 정보 조회 실패' };
+    if (contractorError) {
+      console.error('Contractor data query error:', contractorError);
+      return { success: false, error: '업체 정보 조회 실패' };
     }
 
-    const userType = userData?.user_type || 'customer';
-
-    // 2. 업체인 경우 contractors 테이블에서 추가 정보 조회
-    if (userType === 'contractor') {
-      const { data: contractorData, error: contractorError } = await supabase
-        .from('contractors')
-        .select('id, company_name, contact_name, status')
-        .eq('user_id', userId)
-        .single();
-
-      if (contractorError) {
-        console.error('Contractor data query error:', contractorError);
-        return { 
-          success: false, 
-          error: '업체 정보를 찾을 수 없습니다. 업체 회원가입이 필요할 수 있습니다.' 
-        };
-      }
-
+    if (contractorData) {
+      // 업체 상태 확인
       if (contractorData.status !== 'active') {
         return { 
           success: false, 
@@ -160,15 +144,27 @@ async function getUserTypeAndData(userId: string): Promise<{
       };
     }
 
-    // 3. 관리자 확인
-    if (userType === 'admin') {
+    // 2. 일반 사용자 확인 (users 테이블 - customer, admin만)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userError) {
+      console.error('User type query error:', userError);
+      return { success: false, error: '사용자 정보 조회 실패' };
+    }
+
+    if (userData && userData.user_type !== 'contractor') {
+      // users 테이블에는 customer와 admin만 있어야 함
       return {
         success: true,
-        userType: 'admin'
+        userType: userData.user_type as 'customer' | 'admin'
       };
     }
 
-    // 4. 일반 고객
+    // 3. 어느 테이블에도 없으면 기본 customer
     return {
       success: true,
       userType: 'customer'
@@ -189,21 +185,14 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
   const supabase = createServerClient();
 
   try {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', userId)
-      .single();
+    // 1. 먼저 업체인지 확인 (contractors 테이블만 확인)
+    const { data: contractorData, error: contractorError } = await supabase
+      .from('contractors')
+      .select('id, company_name, contact_name, status')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    const userType = userData?.user_type || 'customer';
-
-    if (userType === 'contractor') {
-      const { data: contractorData } = await supabase
-        .from('contractors')
-        .select('id, company_name, contact_name, status')
-        .eq('user_id', userId)
-        .single();
-
+    if (contractorData && contractorData.status === 'active') {
       return {
         success: true,
         userType: 'contractor',
@@ -211,9 +200,24 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
       };
     }
 
+    // 2. 일반 사용자 확인 (users 테이블 - customer, admin만)
+    const { data: userData } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userData && userData.user_type !== 'contractor') {
+      return {
+        success: true,
+        userType: userData.user_type as 'customer' | 'admin'
+      };
+    }
+
+    // 3. 기본값
     return {
       success: true,
-      userType
+      userType: 'customer'
     };
 
   } catch (error) {
