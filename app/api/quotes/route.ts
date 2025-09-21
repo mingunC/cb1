@@ -119,7 +119,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: 이메일 알림 발송 (Mailgun 연동)
+    // TODO: 이메일 알림 발송 - 새로운 email-service.ts 사용
+    // 예시: import { sendEmail } from '@/lib/email-service'
     // TODO: 관리자에게 알림
 
     return NextResponse.json({

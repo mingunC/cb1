@@ -12,6 +12,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 # Mailgun Configuration
 MAILGUN_API_KEY=your_mailgun_api_key
 MAILGUN_DOMAIN=your_mailgun_domain
+MAILGUN_DOMAIN_URL=https://api.mailgun.net
 
 # Next.js Configuration
 NEXTAUTH_SECRET=your_nextauth_secret
