@@ -71,6 +71,7 @@ export default function LoginPage() {
   // 로그인 처리
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     
     // 유효성 검사
     if (!formData.email || !formData.password) {
@@ -86,7 +87,7 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
-    setError('')
+    let shouldKeepLoading = false
 
     try {
       // Supabase 로그인
@@ -108,13 +109,11 @@ export default function LoginPage() {
         } else {
           setError('로그인에 실패했습니다. 다시 시도해주세요.')
         }
-        setIsLoading(false) // 에러 발생 시에만 로딩 상태 해제
         return
       }
 
       if (!data.user) {
         setError('로그인에 실패했습니다. 다시 시도해주세요.')
-        setIsLoading(false) // 에러 발생 시에만 로딩 상태 해제
         return
       }
 
@@ -122,12 +121,16 @@ export default function LoginPage() {
       
       // 사용자 타입별 리다이렉트
       // 성공 시에는 setIsLoading(false)를 호출하지 않음 - 페이지 이동될 때까지 로딩 유지
+      shouldKeepLoading = true
       await handleUserRedirect(data.user.id, data.user.email || '')
 
     } catch (error) {
       console.error('Unexpected error during login:', error)
       setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-      setIsLoading(false) // 예외 발생 시에만 로딩 상태 해제
+    } finally {
+      if (!shouldKeepLoading) {
+        setIsLoading(false)
+      }
     }
   }, [formData, supabase, handleUserRedirect])
 
@@ -152,14 +155,17 @@ export default function LoginPage() {
         console.error('Google login error:', googleError)
         setError('Google 로그인에 실패했습니다.')
         toast.error('Google 로그인에 실패했습니다')
-        setIsLoading(false) // 에러 발생 시에만 로딩 상태 해제
       }
       // Google OAuth는 리다이렉트 방식이므로 성공 시 setIsLoading(false) 호출하지 않음
     } catch (error) {
       console.error('Google sign in error:', error)
       setError('Google 로그인 중 오류가 발생했습니다.')
       toast.error('Google 로그인 중 오류가 발생했습니다')
-      setIsLoading(false) // 예외 발생 시에만 로딩 상태 해제
+    } finally {
+      // Google OAuth 에러 발생 시에만 로딩 상태 해제 (성공 시는 리다이렉트로 페이지 이동)
+      if (googleError || error) {
+        setIsLoading(false)
+      }
     }
   }, [supabase])
 

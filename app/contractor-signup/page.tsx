@@ -41,7 +41,6 @@ export default function ContractorSignupPage() {
     // 비밀번호 확인
     if (formData.password !== formData.confirmPassword) {
       setError('비밀번호가 일치하지 않습니다.')
-      setIsLoading(false)
       return
     }
 
@@ -56,14 +55,12 @@ export default function ContractorSignupPage() {
 
     if (!Object.values(passwordRequirements).every(req => req)) {
       setError('비밀번호 요구사항을 모두 충족해야 합니다.')
-      setIsLoading(false)
       return
     }
 
     // 필수 필드 확인
     if (!formData.businessName || !formData.contactName || !formData.phone || !formData.address || formData.specialties.length === 0) {
       setError('모든 필드를 입력하고 최소 하나의 전문분야를 선택해주세요.')
-      setIsLoading(false)
       return
     }
 

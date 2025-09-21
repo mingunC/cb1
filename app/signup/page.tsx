@@ -31,14 +31,12 @@ export default function SignupPage() {
     // 비밀번호 확인
     if (formData.password !== formData.confirmPassword) {
       setError('비밀번호가 일치하지 않습니다.')
-      setIsLoading(false)
       return
     }
 
     // 필수 필드 확인
     if (!formData.firstName || !formData.lastName || !formData.mobileNumber) {
       setError('모든 필드를 입력해주세요.')
-      setIsLoading(false)
       return
     }
 
@@ -53,7 +51,6 @@ export default function SignupPage() {
 
     if (!Object.values(passwordRequirements).every(req => req)) {
       setError('비밀번호 요구사항을 모두 충족해야 합니다.')
-      setIsLoading(false)
       return
     }
 
