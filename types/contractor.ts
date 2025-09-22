@@ -10,6 +10,18 @@ export type ProjectStatus =
   | 'completed'            // 완료됨
   | 'cancelled'            // 취소됨
 
+// 고객 정보 인터페이스
+export interface CustomerInfo {
+  id: string
+  email: string
+  raw_user_meta_data?: {
+    full_name?: string
+    name?: string
+    avatar_url?: string
+    phone?: string
+  }
+}
+
 // 프로젝트 인터페이스
 export interface Project {
   id: string
@@ -30,11 +42,13 @@ export interface Project {
   updated_at: string
 
   // 관계 데이터
+  customer?: CustomerInfo  // 고객 정보 추가
   site_visit_application?: {
     id: string
     contractor_id: string
     is_cancelled: boolean
     applied_at: string
+    status?: string
   }
   contractor_quote?: {
     id: string

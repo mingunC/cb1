@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
-import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
+import type { Project, ProjectStatus, ContractorData, CustomerInfo } from '@/types/contractor'
 import { calculateProjectStatus } from '@/lib/contractor/projectHelpers'
 import StatusBadge from '@/components/contractor/StatusBadge'
 import ProjectFilters from '@/components/contractor/ProjectFilters'
@@ -37,16 +37,23 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 먼저 프로젝트만 가져오기
+      // 고객 정보를 포함하여 프로젝트 데이터 가져오기
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select('*')
+        .select(`
+          *,
+          customer:customer_id (
+            id,
+            email,
+            raw_user_meta_data
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(50)
       
       if (projectsError) throw projectsError
       
-      console.log('Projects data:', projectsData)
+      console.log('Projects data with customer info:', projectsData)
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
@@ -176,24 +183,24 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     )
   }
   
-  // 프로젝트 카드를 렌더링하는 간단한 컴포넌트
-  const SimpleProjectCard = ({ project }: { project: Project }) => {
+  // 심플하고 모던한 프로젝트 카드 컴포넌트
+  const SimpleModernCard = ({ project }: { project: Project }) => {
     const getStatusBadge = () => {
-      const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
-        'pending': { label: '대기중', color: 'bg-gray-100 text-gray-700' },
-        'approved': { label: '승인됨', color: 'bg-green-100 text-green-700' },
-        'site-visit-applied': { label: '현장방문 신청', color: 'bg-blue-100 text-blue-700' },
-        'site-visit-completed': { label: '현장방문 완료', color: 'bg-indigo-100 text-indigo-700' },
-        'quoted': { label: '견적서 제출', color: 'bg-purple-100 text-purple-700' },
-        'selected': { label: '✅ 선택됨', color: 'bg-green-500 text-white font-bold' },
-        'not-selected': { label: '❌ 미선택', color: 'bg-red-100 text-red-700' },
-        'completed': { label: '완료', color: 'bg-gray-500 text-white' },
-        'cancelled': { label: '취소됨', color: 'bg-gray-300 text-gray-600' }
+      const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
+        'pending': { label: '대기중', className: 'bg-gray-100 text-gray-700' },
+        'approved': { label: '승인됨', className: 'bg-blue-100 text-blue-700' },
+        'site-visit-applied': { label: '현장방문 신청', className: 'bg-blue-100 text-blue-700' },
+        'site-visit-completed': { label: '현장방문 완료', className: 'bg-blue-100 text-blue-700' },
+        'quoted': { label: '견적 제출', className: 'bg-blue-100 text-blue-700' },
+        'selected': { label: '선택됨', className: 'bg-green-100 text-green-700' },
+        'not-selected': { label: '미선택', className: 'bg-gray-100 text-gray-700' },
+        'completed': { label: '완료', className: 'bg-gray-500 text-white' },
+        'cancelled': { label: '취소됨', className: 'bg-gray-100 text-gray-700' }
       }
       
       const config = statusConfig[project.projectStatus || 'pending']
       return (
-        <span className={`px-3 py-1 rounded-full text-xs ${config.color}`}>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.className}`}>
           {config.label}
         </span>
       )
@@ -201,34 +208,43 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     
     // 프로젝트 타입 표시
     const getProjectTypeLabel = () => {
-      if (project.project_type === 'full') return '전체 리노베이션'
-      if (project.project_type === 'partial') return '부분 리노베이션'
-      if (project.project_type === 'kitchen') return '주방 리모델링'
-      if (project.project_type === 'bathroom') return '욕실 리모델링'
-      if (project.project_type === 'basement') return '지하실 마감'
-      if (project.project_type === 'other') return '기타'
-      return '전체 리노베이션' // 기본값
+      const typeMap: Record<string, string> = {
+        'full': '전체 리노베이션',
+        'partial': '부분 리노베이션', 
+        'kitchen': '주방',
+        'bathroom': '욕실',
+        'basement': '지하실',
+        'other': '기타'
+      }
+      return typeMap[project.project_type || 'other'] || '전체 리노베이션'
     }
     
     // 공간 타입 표시
     const getSpaceTypeLabel = () => {
-      if (project.space_type === 'detached') return 'Detached House'
-      if (project.space_type === 'town_house') return 'Town House'
-      if (project.space_type === 'condo') return 'Condo'
-      if (project.space_type === 'semi_detached') return 'Semi-Detached'
-      return 'House' // 기본값
+      const spaceMap: Record<string, string> = {
+        'detached': 'Detached House',
+        'town_house': 'Town House', 
+        'condo': 'Condo',
+        'semi_detached': 'Semi-Detached'
+      }
+      return spaceMap[project.space_type || 'detached'] || 'Detached House'
     }
     
     // 예산 표시
     const getBudgetLabel = () => {
+      const budgetMap: Record<string, string> = {
+        'under_50k': '$50,000 미만',
+        '50k_100k': '$50,000 - $100,000',
+        '100k_200k': '$100,000 - $200,000', 
+        '200k_500k': '$200,000 - $500,000',
+        'over_500k': '$500,000 이상'
+      }
+      
       const budget = project.budget
-      if (budget === 'under_50k') return '5만불 미만'
-      if (budget === '50k_100k') return '5-10만불'
-      if (budget === '100k_200k') return '10-20만불'
-      if (budget === '200k_500k') return '20-50만불'
-      if (budget === 'over_500k') return '50만불 이상'
-      if (typeof budget === 'number') return `$${budget.toLocaleString()}`
-      return '미정'
+      if (typeof budget === 'number') {
+        return `$${budget.toLocaleString()}`
+      }
+      return budgetMap[budget] || '미정'
     }
     
     // 날짜 포맷
@@ -238,46 +254,104 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         const date = new Date(dateStr)
         return date.toLocaleDateString('ko-KR', { 
           year: 'numeric',
-          month: 'short',
+          month: 'numeric', 
           day: 'numeric'
         })
       } catch {
-        return dateStr
+        return '즉시 시작'
       }
     }
     
+    // 고객 정보 추출
+    const getCustomerInfo = () => {
+      const customer = project.customer
+      if (!customer) return { name: '고객 정보 없음', email: '이메일 없음', phone: '' }
+      
+      const metaData = customer.raw_user_meta_data || {}
+      const name = metaData.full_name || metaData.name || customer.email?.split('@')[0] || '고객'
+      const email = customer.email || '이메일 없음'
+      const phone = metaData.phone || ''
+      
+      return { name, email, phone }
+    }
+
+    const customerInfo = getCustomerInfo()
+    
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+        {/* 카드 헤더 */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-bold text-gray-900">
               {getSpaceTypeLabel()}
             </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              {getProjectTypeLabel()}
-            </p>
-            <p className="text-sm text-gray-500">
-              예산: {getBudgetLabel()}
-            </p>
-          </div>
-          {getStatusBadge()}
-        </div>
-        
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center text-gray-600">
-            <Calendar className="w-4 h-4 mr-2" />
-            방문 희망일: {formatDate(project.preferred_date)}
-          </div>
-          <div className="flex items-center text-gray-600">
-            <MapPin className="w-4 h-4 mr-2" />
-            {project.address || project.city || '주소 미입력'}
+            {getStatusBadge()}
           </div>
           
-          {/* 요구사항 표시 */}
+          {/* 고객 정보 */}
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                {customerInfo.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-900 mb-1">{customerInfo.name}</div>
+                <div className="text-sm text-gray-600 truncate mb-1">{customerInfo.email}</div>
+                {customerInfo.phone && (
+                  <div className="text-sm text-gray-600">{customerInfo.phone}</div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* 프로젝트 타입 태그 */}
+          <div className="mb-4">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+              {getProjectTypeLabel()}
+            </span>
+          </div>
+          
+          {/* 예산 */}
+          <div className="text-lg font-bold text-gray-900">
+            예산: {getBudgetLabel()}
+          </div>
+        </div>
+        
+        {/* 카드 바디 */}
+        <div className="p-6 space-y-4">
+          {/* 기본 정보 그리드 */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500 font-medium block mb-1">일정</span>
+              <span className="text-gray-900">
+                {formatDate(project.preferred_date)}
+              </span>
+            </div>
+            
+            <div>
+              <span className="text-gray-500 font-medium block mb-1">등록일</span>
+              <span className="text-gray-900">
+                {formatDate(project.created_at)}
+              </span>
+            </div>
+          </div>
+          
+          {/* 주소 */}
+          <div>
+            <span className="text-gray-500 font-medium text-sm block mb-1">위치</span>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <span className="text-gray-900 text-sm">
+                {project.address || project.city || '주소 미입력'}
+              </span>
+            </div>
+          </div>
+          
+          {/* 요구사항 */}
           {project.requirements && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-gray-500">요구사항:</p>
-              <p className="text-sm text-gray-700 line-clamp-2">
+            <div>
+              <span className="text-gray-500 font-medium text-sm block mb-2">요구사항:</span>
+              <p className="text-gray-700 text-sm line-clamp-3 leading-relaxed">
                 {project.requirements}
               </p>
             </div>
@@ -285,61 +359,68 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 견적 정보 */}
           {project.contractor_quote && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-sm font-medium">
-                제출 견적: ${project.contractor_quote.price?.toLocaleString()}
-              </p>
-              {project.contractor_quote.status && (
-                <p className="text-xs text-gray-500 mt-1">
-                  상태: {project.contractor_quote.status}
-                </p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-900">제출 견적:</span>
+                <span className="text-lg font-bold text-gray-900">
+                  ${project.contractor_quote.price?.toLocaleString()}
+                </span>
+              </div>
+              {project.contractor_quote.status === 'accepted' && (
+                <div className="mt-2">
+                  <span className="text-sm text-green-600 font-medium">✓ 고객이 선택했습니다</span>
+                </div>
               )}
             </div>
           )}
           
           {/* 현장방문 정보 */}
           {project.site_visit_application && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-sm text-blue-600">
+            <div className="text-sm">
+              <span className="text-blue-600 font-medium">
                 현장방문 {project.site_visit_application.status === 'completed' ? '완료' : '신청됨'}
-              </p>
+              </span>
             </div>
           )}
         </div>
         
-        <div className="mt-4 flex gap-2 flex-wrap">
-          {/* 상태에 따른 액션 버튼 */}
+        {/* 카드 푸터 - 액션 버튼 */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          {/* 상태별 액션 버튼 */}
           {project.projectStatus === 'selected' && (
-            <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium">
-              고객이 선택함 ✅
-            </button>
+            <div className="w-full text-center py-3 bg-green-600 text-white rounded-lg font-medium text-sm">
+              ✓ 고객이 선택했습니다
+            </div>
           )}
+          
           {project.projectStatus === 'not-selected' && (
-            <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded text-sm">
-              다른 업체 선택됨
-            </button>
+            <div className="w-full text-center py-3 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm">
+              다른 업체가 선택됨
+            </div>
           )}
+          
           {project.projectStatus === 'approved' && !project.site_visit_application && (
             <button 
               onClick={() => console.log('Apply for site visit')}
-              className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
             >
               현장방문 신청
             </button>
           )}
+          
           {project.projectStatus === 'site-visit-completed' && !project.contractor_quote && (
             <button 
               onClick={() => console.log('Submit quote')}
-              className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
             >
               견적서 작성
             </button>
           )}
           
-          {/* 디버그 정보 (개발 중 확인용) */}
+          {/* 디버그 정보 */}
           {project.selected_contractor_id && (
-            <div className="text-xs text-gray-400 w-full mt-2">
-              선택된 업체: {project.selected_contractor_id === contractorData?.id ? '✅ 나' : '다른 업체'}
+            <div className="text-xs text-gray-400 mt-3 text-center">
+              등록된 견적: {project.contractor_quote ? '✓' : '✗'}
             </div>
           )}
         </div>
@@ -352,23 +433,25 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       {/* 헤더 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-12">
+          <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/')}
-                className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
+                className="flex items-center text-gray-600 hover:text-gray-900 mr-6 transition-colors duration-200"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                홈으로
+                <span className="font-medium">홈으로</span>
               </button>
-              <h1 className="text-lg font-semibold text-gray-900">
-                {contractorData?.company_name || '업체 대시보드'}
-              </h1>
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  {contractorData?.company_name || '업체 대시보드'}
+                </h1>
+              </div>
             </div>
             <button
               onClick={refreshData}
               disabled={isRefreshing}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               새로고침
@@ -385,20 +468,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <nav className="flex space-x-8 px-6">
               <button
                 onClick={() => setActiveTab('projects')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   activeTab === 'projects'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 프로젝트 관리
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   activeTab === 'portfolio'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 포트폴리오 관리
@@ -429,9 +512,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 </div>
               ) : (
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {filteredProjects.map((project) => (
-                      <SimpleProjectCard key={project.id} project={project} />
+                      <SimpleModernCard key={project.id} project={project} />
                     ))}
                   </div>
                 </div>
@@ -443,6 +526,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         {/* 포트폴리오 탭 */}
         {activeTab === 'portfolio' && contractorData && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                포트폴리오 관리
+              </h3>
+            </div>
             <div className="p-6">
               <PortfolioManager 
                 contractorId={contractorData.id}
