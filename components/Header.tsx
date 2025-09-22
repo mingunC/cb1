@@ -47,18 +47,16 @@ export default function Header() {
   
   // 상태 추적을 위한 ref
   const isMounted = useRef(true)
-  const profileLoadedRef = useRef(false)
   const authListenerSetupRef = useRef(false)
+  const currentUserId = useRef<string | null>(null) // 현재 로드된 사용자 ID 추적
 
   useEffect(() => {
     isMounted.current = true
-    profileLoadedRef.current = false
     
     loadUserData()
     
     return () => {
       isMounted.current = false
-      profileLoadedRef.current = false
     }
   }, [])
 
@@ -112,19 +110,24 @@ export default function Header() {
         // INITIAL_SESSION은 무시 (이미 loadUserData에서 처리)
         if (event === 'INITIAL_SESSION') return
         
+        // TOKEN_REFRESHED는 프로필을 다시 로드하지 않음
+        if (event === 'TOKEN_REFRESHED') {
+          // 토큰만 갱신되고 사용자는 동일하므로 무시
+          return
+        }
+        
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
-          profileLoadedRef.current = false // 프로필 재로드 필요
+          currentUserId.current = null // 새 사용자이므로 리셋
           await loadUserProfile(session.user.id, session.user.email)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setUserProfile(null)
           setContractorProfile(null)
           setDisplayName('')
-          profileLoadedRef.current = false
+          currentUserId.current = null
           setIsUserDropdownOpen(false)
         }
-        // TOKEN_REFRESHED는 무시
       }
     )
     
@@ -132,27 +135,25 @@ export default function Header() {
   }
 
   const loadUserProfile = async (userId: string, email?: string | null) => {
-    // 이미 로드되었으면 스킵
-    if (profileLoadedRef.current) return
+    // 이미 같은 사용자의 프로필이 로드되었으면 스킵
+    if (currentUserId.current === userId) {
+      console.log('프로필 이미 로드됨:', userId)
+      return
+    }
     
     try {
       const supabase = createBrowserClient()
       
-      // 특정 사용자 디버깅
-      if (email === 'mgc202077@gmail.com') {
-        console.log('🔍 mgc202077@gmail.com 사용자 프로필 로드 시작:', { userId, email })
-      }
+      console.log('🔍 사용자 프로필 로드 시작:', { userId, email })
       
       // 1. 먼저 업체인지 확인
-      const { data: contractorData } = await supabase
+      const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, contact_name')
         .eq('user_id', userId)
         .maybeSingle()
 
-      if (email === 'mgc202077@gmail.com') {
-        console.log('🔍 contractors 테이블 조회 결과:', { contractorData })
-      }
+      console.log('🔍 contractors 테이블 조회 결과:', { contractorData, error: contractorError })
 
       if (contractorData && isMounted.current) {
         setContractorProfile(contractorData)
@@ -164,24 +165,20 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
-        if (email === 'mgc202077@gmail.com') {
-          console.log('✅ 업체로 인식됨:', { finalDisplayName })
-        }
+        console.log('✅ 업체로 인식됨:', { finalDisplayName })
         
-        profileLoadedRef.current = true
+        currentUserId.current = userId // 로드 완료 표시
         return
       }
 
       // 2. 일반 사용자 정보 확인
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_type, first_name, last_name')
         .eq('id', userId)
         .maybeSingle()
 
-      if (email === 'mgc202077@gmail.com') {
-        console.log('🔍 users 테이블 조회 결과:', { userData })
-      }
+      console.log('🔍 users 테이블 조회 결과:', { userData, error: userError })
 
       if (userData && isMounted.current) {
         setUserProfile(userData)
@@ -206,11 +203,9 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', userData.user_type)
         
-        if (email === 'mgc202077@gmail.com') {
-          console.log('✅ 일반 사용자로 인식됨:', { userData, finalDisplayName })
-        }
+        console.log('✅ 일반 사용자로 인식됨:', { userData, finalDisplayName })
         
-        profileLoadedRef.current = true
+        currentUserId.current = userId // 로드 완료 표시
       } else if (isMounted.current) {
         // 기본값 설정
         setUserProfile({ user_type: 'customer' })
@@ -222,18 +217,16 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
         
-        if (email === 'mgc202077@gmail.com') {
-          console.log('⚠️ 기본값으로 설정됨 (customer):', { finalDisplayName })
-        }
+        console.log('⚠️ 기본값으로 설정됨 (customer):', { finalDisplayName })
         
-        profileLoadedRef.current = true
+        currentUserId.current = userId // 로드 완료 표시
       }
       
     } catch (error) {
       console.error('Error loading profile:', error)
       if (isMounted.current) {
         setDisplayName(email?.split('@')[0] || 'User')
-        profileLoadedRef.current = true
+        currentUserId.current = userId // 에러가 나도 로드 완료로 표시
       }
     }
   }
@@ -268,7 +261,7 @@ export default function Header() {
       setUserProfile(null)
       setContractorProfile(null)
       setDisplayName('')
-      profileLoadedRef.current = false
+      currentUserId.current = null // 사용자 ID 리셋
       setIsUserDropdownOpen(false)
       console.log('✅ UI 상태 즉시 초기화 완료')
       
@@ -308,7 +301,7 @@ export default function Header() {
       setUserProfile(null)
       setContractorProfile(null)
       setDisplayName('')
-      profileLoadedRef.current = false
+      currentUserId.current = null
       setIsUserDropdownOpen(false)
       
       // localStorage 캐시 클리어
@@ -362,12 +355,6 @@ export default function Header() {
     
     // 로딩 중이면 캐시된 이름 반환
     if (isLoading) {
-      const cachedName = getCachedUserName()
-      return cachedName || '...'
-    }
-    
-    // 프로필이 로드되지 않았으면 캐시된 이름 반환
-    if (!profileLoadedRef.current) {
       const cachedName = getCachedUserName()
       return cachedName || '...'
     }
@@ -552,7 +539,7 @@ export default function Header() {
                     {user ? (
                       <div className="space-y-2">
                         <div className="text-center text-sm text-gray-600 py-2">
-                          {profileLoadedRef.current ? (
+                          {currentUserId.current ? (
                             <>
                               <div className="font-medium text-gray-900">
                                 {getDisplayName()}
