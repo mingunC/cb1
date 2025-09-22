@@ -212,7 +212,7 @@ export async function signInServer(credentials: AuthCredentials): Promise<AuthRe
   }
 }
 
-// 서버 사이드 사용자 타입 조회 (개선된 버전)
+// 서버 사이드 사용자 타입 조회
 async function getUserTypeAndDataServer(userId: string): Promise<{
   success: boolean;
   userType?: 'customer' | 'contractor' | 'admin';
@@ -222,14 +222,14 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
   const supabase = createServerClient();
 
   try {
-    // 1. 먼저 contractors 테이블 확인
-    const { data: contractorData } = await supabase
+    // 1. 먼저 업체인지 확인 (contractors 테이블만 확인)
+    const { data: contractorData, error: contractorError } = await supabase
       .from('contractors')
       .select('id, company_name, contact_name, status')
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (contractorData) {
+    if (contractorData && contractorData.status === 'active') {
       return {
         success: true,
         userType: 'contractor',
@@ -238,28 +238,24 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
       };
     }
 
-    // 2. users 테이블 확인
+    // 2. 일반 사용자 확인 (users 테이블 - customer, admin만)
     const { data: userData } = await supabase
       .from('users')
-      .select('*')
+      .select('user_type')
       .eq('id', userId)
       .maybeSingle();
 
-    if (userData) {
+    if (userData && userData.user_type !== 'contractor') {
       return {
         success: true,
-        userType: userData.user_type || 'customer',
-        userData,
-        contractorData: null
+        userType: userData.user_type as 'customer' | 'admin'
       };
     }
 
     // 3. 기본값
     return {
       success: true,
-      userType: 'customer',
-      userData: null,
-      contractorData: null
+      userType: 'customer'
     };
 
   } catch (error) {

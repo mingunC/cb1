@@ -34,9 +34,6 @@ import {
   useProjectFilter 
 } from '@/hooks/useContractor'
 
-
-
-
 export default function IntegratedContractorDashboard() {
   const router = useRouter()
   
@@ -201,14 +198,21 @@ export default function IntegratedContractorDashboard() {
   useEffect(() => {
     const initializeData = async () => {
       try {
+        console.log('🔍 Contractor dashboard initializing...')
         setIsLoading(true)
         const supabase = createBrowserClient()
         
-        // 현재 세션 확인
+        // 세션 확인
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        console.log('📋 Session check:', { 
+          hasSession: !!session, 
+          userId: session?.user?.id,
+          email: session?.user?.email,
+          error: sessionError 
+        })
         
-        if (sessionError || !session?.user) {
-          console.log('인증 실패 - 로그인 페이지로 이동')
+        if (sessionError || !session) {
+          console.log('❌ No session found, redirecting to login')
           router.push('/contractor-login')
           return
         }
@@ -222,27 +226,35 @@ export default function IntegratedContractorDashboard() {
           .eq('user_id', session.user.id)
           .single()
 
+        console.log('🏢 Contractor info:', { 
+          found: !!contractorInfo, 
+          data: contractorInfo,
+          error: contractorError 
+        })
+
         if (contractorError || !contractorInfo) {
-          console.error('업체 정보 없음:', contractorError)
+          console.error('❌ No contractor info found:', contractorError)
           toast.error('업체 권한이 필요합니다')
           router.push('/contractor-signup')
           return
         }
 
+        // 업체 상태 확인
         if (contractorInfo.status !== 'active') {
+          console.error('⚠️ Contractor not active:', contractorInfo.status)
           toast.error('업체 계정이 비활성화되어 있습니다. 관리자에게 문의해주세요.')
           router.push('/')
           return
         }
         
-        console.log('업체 인증 성공:', contractorInfo.company_name)
+        console.log('✅ Contractor authenticated:', contractorInfo.company_name)
         setContractorData(contractorInfo)
         
         // 초기 데이터 로드
         await fetchProjectsData(contractorInfo.id, 0, false)
         
       } catch (error) {
-        console.error('초기화 오류:', error)
+        console.error('🔥 Initialization error:', error)
         toast.error('시스템 오류가 발생했습니다')
         router.push('/contractor-login')
       } finally {
@@ -271,7 +283,7 @@ export default function IntegratedContractorDashboard() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [router])
+  }, [router, fetchProjectsData])
 
   // 새로고침 함수
   const refreshData = useCallback(async () => {
@@ -536,7 +548,7 @@ export default function IntegratedContractorDashboard() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
+          <p className="mt-4 text-gray-600">업체 정보를 확인하는 중...</p>
         </div>
       </div>
     )
@@ -558,7 +570,9 @@ export default function IntegratedContractorDashboard() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 홈으로
               </button>
-              <h1 className="text-lg font-semibold text-gray-900">내 견적 관리</h1>
+              <h1 className="text-lg font-semibold text-gray-900">
+                {contractorData ? `${contractorData.company_name} - 견적 관리` : '내 견적 관리'}
+              </h1>
             </div>
             <button
               onClick={refreshData}
