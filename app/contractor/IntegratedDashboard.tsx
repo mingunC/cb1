@@ -37,19 +37,19 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 전체 프로젝트와 관련 데이터를 함께 조회
+      // 전체 프로젝트와 관련 데이터를 함께 조회 (foreign key 명시)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select(`
           *,
-          site_visit_applications (
+          site_visit_applications!site_visit_applications_project_id_fkey (
             id,
             contractor_id,
             status,
             applied_at,
             is_cancelled
           ),
-          contractor_quotes (
+          contractor_quotes!contractor_quotes_project_id_fkey (
             id,
             contractor_id,
             price,
@@ -121,9 +121,84 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       })
       
       setProjects(processedProjects)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load projects:', err)
-      setError('프로젝트를 불러오는데 실패했습니다')
+      
+      // foreign key 오류 시 더 간단한 쿼리로 재시도
+      if (err.code === 'PGRST201') {
+        try {
+          const supabase = createBrowserClient()
+          
+          // 먼저 프로젝트만 가져오기
+          const { data: projectsData, error: projectsError } = await supabase
+            .from('quote_requests')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50)
+          
+          if (projectsError) throw projectsError
+          
+          // 각 프로젝트에 대해 개별적으로 관련 데이터 조회
+          const processedProjects = await Promise.all(
+            (projectsData || []).map(async (project) => {
+              // 현장방문 신청 조회
+              const { data: siteVisits } = await supabase
+                .from('site_visit_applications')
+                .select('*')
+                .eq('project_id', project.id)
+                .eq('contractor_id', contractorData.id)
+              
+              // 견적서 조회
+              const { data: quotes } = await supabase
+                .from('contractor_quotes')
+                .select('*')
+                .eq('project_id', project.id)
+                .eq('contractor_id', contractorData.id)
+              
+              const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
+              const myQuote = quotes?.[0]
+              
+              // 프로젝트 상태 결정
+              let projectStatus: ProjectStatus = 'pending'
+              
+              const isMyQuoteSelected = project.selected_contractor_id === contractorData.id
+              const hasSelectedContractor = !!project.selected_contractor_id
+              
+              if (project.status === 'cancelled') {
+                projectStatus = 'cancelled'
+              } else if (project.status === 'completed') {
+                projectStatus = 'completed'
+              } else if (isMyQuoteSelected) {
+                projectStatus = 'selected'
+              } else if (hasSelectedContractor && !isMyQuoteSelected) {
+                projectStatus = 'not-selected'
+              } else if (myQuote) {
+                projectStatus = 'quoted'
+              } else if (mySiteVisit && mySiteVisit.status === 'completed') {
+                projectStatus = 'site-visit-completed'
+              } else if (mySiteVisit) {
+                projectStatus = 'site-visit-applied'
+              } else if (project.status === 'approved') {
+                projectStatus = 'approved'
+              }
+              
+              return {
+                ...project,
+                site_visit_application: mySiteVisit,
+                contractor_quote: myQuote,
+                projectStatus
+              }
+            })
+          )
+          
+          setProjects(processedProjects)
+        } catch (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError)
+          setError('프로젝트를 불러오는데 실패했습니다')
+        }
+      } else {
+        setError('프로젝트를 불러오는데 실패했습니다')
+      }
     } finally {
       setIsLoading(false)
     }
