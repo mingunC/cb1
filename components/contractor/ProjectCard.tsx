@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle } from 'lucide-react'
+import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, User } from 'lucide-react'
 import { Project } from '@/types/contractor'
 import { BUDGET_LABELS, TIMELINE_LABELS } from '@/constants/contractor'
 import { 
@@ -39,11 +39,24 @@ const ProjectCard = React.memo(({
   const siteVisitMissed = isSiteVisitMissed(project, contractorId)
   const canApply = canApplySiteVisit(project)
 
+  // 고객 이름 가져오기
+  const getCustomerName = () => {
+    if (!project.customer) return null
+    const { first_name, last_name } = project.customer
+    if (first_name || last_name) {
+      return `${first_name || ''} ${last_name || ''}`.trim()
+    }
+    return null
+  }
+
+  const customerName = getCustomerName()
+
   // 디버깅 로그
   debugLog('🔴 현장방문 버튼 조건:', {
     projectId: project.id,
     projectStatus: project.status,
-    canApply
+    canApply,
+    customer: customerName
   })
 
   return (
@@ -56,6 +69,14 @@ const ProjectCard = React.memo(({
           </h4>
           <StatusBadge status={project.projectStatus!} />
         </div>
+
+        {/* 고객 이름 표시 */}
+        {customerName && (
+          <div className="flex items-center text-sm text-gray-600 mb-2">
+            <User className="h-4 w-4 mr-1.5 flex-shrink-0" />
+            <span className="truncate">{customerName}</span>
+          </div>
+        )}
         
         {/* 프로젝트 타입 배지들 */}
         <div className="flex flex-wrap gap-2 mb-3">
