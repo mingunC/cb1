@@ -29,7 +29,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
   
-  // 프로젝트 데이터 로드 함수 - 고객 정보를 별도로 가져오기
+  // 프로젝트 데이터 로드 함수 - 개별 고객 정보 조회
   const loadProjects = useCallback(async () => {
     if (!contractorData) return
     
@@ -46,46 +46,32 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       if (projectsError) throw projectsError
       
-      console.log('📊 Projects data:', projectsData)
-      
-      // 고객 ID 목록 추출
-      const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean))]
-      console.log('👥 Customer IDs to fetch:', customerIds)
-      
-      // 고객 정보 한번에 가져오기
-      let customersMap: Record<string, any> = {}
-      if (customerIds.length > 0) {
-        console.log('🔍 Fetching customer data for IDs:', customerIds)
-        const { data: customersData, error: customersError } = await supabase
-          .from('users')
-          .select('id, first_name, last_name, email, phone')
-          .in('id', customerIds)
-        
-        console.log('📥 Customer query result:', { 
-          data: customersData, 
-          error: customersError,
-          count: customersData?.length 
-        })
-        
-        if (customersError) {
-          console.error('❌ Error fetching customers:', customersError)
-        } else if (customersData && customersData.length > 0) {
-          // 고객 데이터를 맵으로 변환
-          customersMap = customersData.reduce((acc, customer) => {
-            acc[customer.id] = customer
-            return acc
-          }, {} as Record<string, any>)
-          console.log('✅ Customers map created:', customersMap)
-        } else {
-          console.log('⚠️ No customer data found for IDs:', customerIds)
-        }
-      } else {
-        console.log('⚠️ No customer IDs found in projects')
-      }
+      console.log('Projects data:', projectsData)
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
         (projectsData || []).map(async (project) => {
+          // 고객 정보 개별 조회 (에러 방지)
+          let customerInfo = null
+          if (project.customer_id) {
+            try {
+              const { data: customerData, error: customerError } = await supabase
+                .from('users')
+                .select('id, first_name, last_name, email, phone')
+                .eq('id', project.customer_id)
+                .single()
+              
+              if (!customerError && customerData) {
+                customerInfo = customerData
+                console.log(`고객 정보 조회 성공 for customer_id: ${project.customer_id}`, customerData)
+              } else if (customerError) {
+                console.log(`고객 정보 조회 실패:`, customerError, `for customer_id: ${project.customer_id}`)
+              }
+            } catch (err) {
+              console.log('고객 정보 조회 중 에러:', err)
+            }
+          }
+          
           // 현장방문 신청 조회
           const { data: siteVisits } = await supabase
             .from('site_visit_applications')
@@ -127,19 +113,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'approved'
           }
           
-          // 고객 정보 매핑
-          const customerInfo = customersMap[project.customer_id] || null
-          
-          console.log(`📌 Project ${project.id} details:`, {
+          console.log(`Project ${project.id} with customer:`, {
             customer: customerInfo,
-            customer_id: project.customer_id,
-            customer_exists: !!customerInfo,
-            customer_name: customerInfo ? `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() : 'No customer',
-            project_type: project.project_types,
-            space_type: project.space_type,
-            budget: project.budget,
-            status: project.status,
-            projectStatus
+            customer_name: customerInfo ? `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() : 'No customer'
           })
           
           return {
@@ -152,15 +128,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         })
       )
       
-      console.log('✨ Final processed projects:', processedProjects.map(p => ({
-        id: p.id,
-        customer: p.customer,
-        customer_id: p.customer_id
-      })))
-      
       setProjects(processedProjects)
     } catch (err: any) {
-      console.error('❌ Failed to load projects:', err)
+      console.error('Failed to load projects:', err)
       setError('프로젝트를 불러오는데 실패했습니다')
     } finally {
       setIsLoading(false)
@@ -247,23 +217,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     
     // 고객 이름 표시
     const getCustomerName = () => {
-      console.log('🔍 Getting customer name for project:', {
-        projectId: project.id,
-        customer: project.customer,
-        customer_id: project.customer_id
-      })
-      
-      if (!project.customer) {
-        return '고객 정보 없음'
-      }
-      
+      if (!project.customer) return '고객 정보 없음'
       const { first_name, last_name } = project.customer
       if (first_name || last_name) {
-        const fullName = `${first_name || ''} ${last_name || ''}`.trim()
-        console.log('✅ Customer name found:', fullName)
-        return fullName
+        return `${first_name || ''} ${last_name || ''}`.trim()
       }
-      
       return '이름 미입력'
     }
     
