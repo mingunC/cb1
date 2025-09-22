@@ -42,29 +42,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         .from('quote_requests')
         .select(`
           *,
-          site_visit_applications!site_visit_applications_project_id_fkey (
+          site_visit_applications (
             id,
             contractor_id,
             status,
             applied_at,
-            is_cancelled,
-            cancelled_at,
-            cancelled_by,
-            contractors!site_visit_applications_contractor_id_fkey (
-              id,
-              company_name,
-              contact_name
-            )
+            is_cancelled
           ),
-          contractor_quotes!contractor_quotes_project_id_fkey (
+          contractor_quotes (
             id,
             contractor_id,
             price,
             description,
-            pdf_url,
             status,
-            created_at,
-            is_selected
+            created_at
           )
         `)
         .order('created_at', { ascending: false })
@@ -86,13 +77,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           (quote: any) => quote.contractor_id === contractorData.id
         )
         
-        // 선택된 견적이 있는지 확인
-        const hasSelectedQuote = project.contractor_quotes?.some(
-          (quote: any) => quote.is_selected === true
-        )
-        
-        // 내 견적이 선택되었는지 확인
-        const isMyQuoteSelected = myQuote?.is_selected === true
+        // 선택된 업체 ID 확인 (selected_contractor_id 필드가 있다면)
+        const isMyQuoteSelected = project.selected_contractor_id === contractorData.id
+        const hasSelectedContractor = !!project.selected_contractor_id
         
         // 프로젝트 상태 결정
         let projectStatus: ProjectStatus = 'pending'
@@ -103,7 +90,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           projectStatus = 'completed'
         } else if (isMyQuoteSelected) {
           projectStatus = 'selected'
-        } else if (hasSelectedQuote && !isMyQuoteSelected) {
+        } else if (hasSelectedContractor && !isMyQuoteSelected) {
           projectStatus = 'not-selected'
         } else if (myQuote) {
           projectStatus = 'quoted'
@@ -118,9 +105,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         console.log(`Project ${project.id} status:`, {
           projectStatus,
           isMyQuoteSelected,
-          hasSelectedQuote,
+          hasSelectedContractor,
+          selected_contractor_id: project.selected_contractor_id,
           myQuote,
-          mySiteVisit
+          mySiteVisit,
+          projectRawStatus: project.status
         })
         
         return {
@@ -218,14 +207,32 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       )
     }
     
+    // 프로젝트 타입 표시
+    const getProjectTypeLabel = () => {
+      if (project.project_type === 'full') return '전체 리노베이션'
+      if (project.project_type === 'partial') return '부분 리노베이션'
+      return project.project_type || 'Unknown'
+    }
+    
+    // 공간 타입 표시
+    const getSpaceTypeLabel = () => {
+      if (project.space_type === 'house') return 'Detached House'
+      if (project.space_type === 'townhouse') return 'Town House'
+      if (project.space_type === 'condo') return 'Condo'
+      return project.space_type || 'Unknown'
+    }
+    
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              {project.project_type === 'full' ? 'Town House' : 'Detached House'}
+              {getSpaceTypeLabel()}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
+              {getProjectTypeLabel()}
+            </p>
+            <p className="text-sm text-gray-500">
               예산: ${project.budget?.toLocaleString() || '미정'}
             </p>
           </div>
@@ -241,6 +248,16 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <MapPin className="w-4 h-4 mr-2" />
             {project.address || '주소 미입력'}
           </div>
+          
+          {/* 요구사항 표시 */}
+          {project.requirements && (
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-xs text-gray-500">요구사항:</p>
+              <p className="text-sm text-gray-700 line-clamp-2">
+                {project.requirements}
+              </p>
+            </div>
+          )}
           
           {project.contractor_quote && (
             <div className="mt-3 pt-3 border-t">
@@ -262,9 +279,25 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               다른 업체 선택됨
             </button>
           )}
+          {project.projectStatus === 'approved' && !project.site_visit_application && (
+            <button 
+              onClick={() => console.log('Apply for site visit')}
+              className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+            >
+              현장방문 신청
+            </button>
+          )}
+          {project.projectStatus === 'site-visit-completed' && !project.contractor_quote && (
+            <button 
+              onClick={() => console.log('Submit quote')}
+              className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
+            >
+              견적서 작성
+            </button>
+          )}
           <button 
             onClick={() => console.log('View details:', project)}
-            className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+            className="px-4 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
           >
             상세보기
           </button>
@@ -310,12 +343,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
               <button
-                onClick={() => setActiveTab('projects')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'projects'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                onClick={() => setActiveTab('projects')}`}
               >
                 프로젝트 관리
               </button>
