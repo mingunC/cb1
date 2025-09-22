@@ -29,7 +29,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
   
-  // 프로젝트 데이터 로드 함수 - 고객 정보와 함께 가져오기
+  // 프로젝트 데이터 로드 함수 - 고객 정보를 별도로 가져오기
   const loadProjects = useCallback(async () => {
     if (!contractorData) return
     
@@ -37,25 +37,39 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 프로젝트와 고객 정보를 함께 가져오기
+      // 먼저 프로젝트 데이터 가져오기
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select(`
-          *,
-          users!customer_id (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50)
       
       if (projectsError) throw projectsError
       
-      console.log('Projects data with customers:', projectsData)
+      console.log('Projects data:', projectsData)
+      
+      // 고객 ID 목록 추출
+      const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean))]
+      
+      // 고객 정보 한번에 가져오기
+      let customersMap: Record<string, any> = {}
+      if (customerIds.length > 0) {
+        const { data: customersData, error: customersError } = await supabase
+          .from('users')
+          .select('id, first_name, last_name, email, phone')
+          .in('id', customerIds)
+        
+        if (customersError) {
+          console.error('Error fetching customers:', customersError)
+        } else if (customersData) {
+          // 고객 데이터를 맵으로 변환
+          customersMap = customersData.reduce((acc, customer) => {
+            acc[customer.id] = customer
+            return acc
+          }, {} as Record<string, any>)
+          console.log('Customers map:', customersMap)
+        }
+      }
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
@@ -101,21 +115,22 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'approved'
           }
           
+          // 고객 정보 매핑
+          const customerInfo = customersMap[project.customer_id] || null
+          
           console.log(`Project ${project.id} details:`, {
-            customer: project.users,
+            customer: customerInfo,
+            customer_id: project.customer_id,
             project_type: project.project_type,
             space_type: project.space_type,
             budget: project.budget,
             status: project.status,
-            selected_contractor_id: project.selected_contractor_id,
-            myContractorId: contractorData.id,
-            isMyQuoteSelected,
             projectStatus
           })
           
           return {
             ...project,
-            customer: project.users, // 고객 정보 추가
+            customer: customerInfo, // 고객 정보 추가
             site_visit_application: mySiteVisit,
             contractor_quote: myQuote,
             projectStatus
@@ -222,13 +237,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     
     // 프로젝트 타입 표시
     const getProjectTypeLabel = () => {
-      if (project.project_type === 'full') return '전체 리노베이션'
-      if (project.project_type === 'partial') return '부분 리노베이션'
-      if (project.project_type === 'kitchen') return '주방 리모델링'
-      if (project.project_type === 'bathroom') return '욕실 리모델링'
-      if (project.project_type === 'basement') return '지하실 마감'
-      if (project.project_type === 'other') return '기타'
-      
       // project_types 배열 처리
       if (project.project_types && project.project_types.length > 0) {
         return project.project_types.map(type => {
@@ -238,11 +246,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           if (type === 'bathroom') return '욕실'
           if (type === 'basement') return '지하실'
           if (type === 'painting') return '페인팅'
+          if (type === 'flooring') return '바닥재'
           return type
         }).join(', ')
       }
       
-      return '전체 리노베이션' // 기본값
+      return '리노베이션' // 기본값
     }
     
     // 공간 타입 표시
