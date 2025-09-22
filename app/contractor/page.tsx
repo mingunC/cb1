@@ -10,17 +10,16 @@ export default function ContractorPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [contractorData, setContractorData] = useState<any>(null)
   const router = useRouter()
-  const checkCompleted = useRef(false) // 중복 체크 방지
+  const checkCompleted = useRef(false)
 
   useEffect(() => {
-    // 이미 체크가 완료되었으면 재실행하지 않음
     if (checkCompleted.current) {
       return
     }
 
     const checkAuth = async () => {
       console.log('🚀 Contractor page auth check starting...')
-      checkCompleted.current = true // 체크 시작 표시
+      checkCompleted.current = true
       
       try {
         const supabase = createBrowserClient()
@@ -38,7 +37,6 @@ export default function ContractorPage() {
         if (!session) {
           console.log('❌ No session found, redirecting to login')
           setIsLoading(false)
-          // setTimeout으로 리다이렉션 지연
           setTimeout(() => {
             router.push('/contractor-login')
           }, 100)
@@ -55,6 +53,7 @@ export default function ContractorPage() {
         console.log('🏢 Contractor lookup:', {
           found: !!contractor,
           data: contractor,
+          status: contractor?.status,
           error: contractorError
         })
         
@@ -67,8 +66,19 @@ export default function ContractorPage() {
           return
         }
         
-        if (contractor.status !== 'active') {
-          console.log('⚠️ Contractor not active')
+        // status 체크를 일시적으로 비활성화하거나 완화
+        // if (contractor.status !== 'active') {
+        //   console.log('⚠️ Contractor not active, status:', contractor.status)
+        //   setIsLoading(false)
+        //   setTimeout(() => {
+        //     router.push('/')
+        //   }, 100)
+        //   return
+        // }
+        
+        // status가 없거나 pending이어도 일단 허용
+        if (contractor.status === 'suspended' || contractor.status === 'banned') {
+          console.log('⚠️ Contractor suspended or banned')
           setIsLoading(false)
           setTimeout(() => {
             router.push('/')
@@ -91,7 +101,7 @@ export default function ContractorPage() {
     }
     
     checkAuth()
-  }, []) // 빈 dependency array - router 제거
+  }, [])
 
   // 로딩 중
   if (isLoading) {
@@ -105,7 +115,7 @@ export default function ContractorPage() {
     )
   }
   
-  // 인증되지 않은 경우 (리다이렉션 전 잠시 표시)
+  // 인증되지 않은 경우
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
