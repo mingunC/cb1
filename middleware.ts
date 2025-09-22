@@ -6,6 +6,12 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const { pathname } = req.nextUrl;
 
+  // 임시로 /contractor 경로에 대해서는 미들웨어를 건너뛰기
+  if (pathname === '/contractor' || pathname.startsWith('/contractor/')) {
+    console.log(`⚠️ Middleware BYPASSED for contractor path: ${pathname}`);
+    return res;
+  }
+
   try {
     // 사용자 정보 조회
     const { session, userType, isContractor, isAdmin } = await getUserForMiddleware(req, res);
@@ -40,7 +46,7 @@ export async function middleware(req: NextRequest) {
     console.error('Middleware error:', error);
     
     // 에러 발생 시 보호된 경로는 로그인 페이지로 리다이렉트
-    const protectedPaths = ['/admin', '/contractor', '/my-quotes'];
+    const protectedPaths = ['/admin', '/my-quotes'];
     if (protectedPaths.some(path => pathname.startsWith(path))) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
