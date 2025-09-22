@@ -314,20 +314,37 @@ export async function getUserForMiddleware(
   try {
     const supabase = createMiddlewareClient({ req, res });
     
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('미들웨어 세션 오류:', sessionError);
+      return { session: null, isContractor: false, isAdmin: false };
+    }
     
     if (!session) {
       return { session: null, isContractor: false, isAdmin: false };
     }
 
+    console.log('미들웨어 세션 확인됨:', session.user.email);
+
     // 1. contractors 테이블 먼저 확인
-    const { data: contractorData } = await supabase
+    const { data: contractorData, error: contractorError } = await supabase
       .from('contractors')
       .select('id, status')
       .eq('user_id', session.user.id)
       .maybeSingle();
 
+    if (contractorError) {
+      console.error('미들웨어 contractor 조회 오류:', contractorError);
+    }
+
     if (contractorData) {
+      console.log('미들웨어 contractor 발견:', {
+        id: contractorData.id,
+        status: contractorData.status,
+        isActive: contractorData.status === 'active'
+      });
+      
       return {
         session,
         userType: 'contractor',
@@ -337,17 +354,22 @@ export async function getUserForMiddleware(
     }
 
     // 2. users 테이블 확인
-    const { data: userData } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('user_type')
       .eq('id', session.user.id)
       .maybeSingle();
 
+    if (userError) {
+      console.error('미들웨어 user 조회 오류:', userError);
+    }
+
     const userType = userData?.user_type || 'customer';
+    console.log('미들웨어 user 타입:', userType);
 
     return {
       session,
-      userType,
+      userType: userType as 'customer' | 'admin',
       isContractor: false,
       isAdmin: userType === 'admin'
     };

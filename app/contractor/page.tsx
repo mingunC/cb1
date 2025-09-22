@@ -203,27 +203,39 @@ export default function IntegratedContractorDashboard() {
       try {
         setIsLoading(true)
         const supabase = createBrowserClient()
-        const { data: { user }, error } = await supabase.auth.getUser()
         
-        if (error || !user) {
-          router.push('/login')
+        // 현재 세션 확인
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError || !session?.user) {
+          console.log('인증 실패 - 로그인 페이지로 이동')
+          router.push('/contractor-login')
           return
         }
+
+        console.log('세션 확인됨:', session.user.email)
 
         // 업체 정보 확인
         const { data: contractorInfo, error: contractorError } = await supabase
           .from('contractors')
           .select('id, company_name, contact_name, status')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .single()
 
         if (contractorError || !contractorInfo) {
           console.error('업체 정보 없음:', contractorError)
           toast.error('업체 권한이 필요합니다')
+          router.push('/contractor-signup')
+          return
+        }
+
+        if (contractorInfo.status !== 'active') {
+          toast.error('업체 계정이 비활성화되어 있습니다. 관리자에게 문의해주세요.')
           router.push('/')
           return
         }
         
+        console.log('업체 인증 성공:', contractorInfo.company_name)
         setContractorData(contractorInfo)
         
         // 초기 데이터 로드
@@ -232,12 +244,33 @@ export default function IntegratedContractorDashboard() {
       } catch (error) {
         console.error('초기화 오류:', error)
         toast.error('시스템 오류가 발생했습니다')
+        router.push('/contractor-login')
       } finally {
         setIsLoading(false)
       }
     }
 
     initializeData()
+
+    // 인증 상태 변경 리스너 추가
+    const supabase = createBrowserClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('인증 상태 변경:', event, session?.user?.email)
+        
+        if (event === 'SIGNED_OUT') {
+          // 로그아웃 시 로그인 페이지로 이동
+          router.push('/contractor-login')
+        } else if (event === 'SIGNED_IN' && session) {
+          // 로그인 시 페이지 새로고침 (데이터 재로드)
+          window.location.reload()
+        }
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [router])
 
   // 새로고침 함수
