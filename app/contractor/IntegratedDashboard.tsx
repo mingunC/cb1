@@ -48,22 +48,35 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       console.log('Projects data:', projectsData?.[0]) // 첫 번째 프로젝트 데이터 구조 확인
       
-      // 각 프로젝트에 대해 관련 데이터 조회
-      const processedProjects = await Promise.all(
-        (projectsData || []).map(async (project) => {
-          // 현장방문 신청 조회
-          const { data: siteVisits } = await supabase
-            .from('site_visit_applications')
-            .select('*')
-            .eq('project_id', project.id)
-            .eq('contractor_id', contractorData.id)
-          
-          // 견적서 조회
-          const { data: quotes } = await supabase
-            .from('contractor_quotes')
-            .select('*')
-            .eq('project_id', project.id)
-            .eq('contractor_id', contractorData.id)
+        // 각 프로젝트에 대해 관련 데이터 조회
+        const processedProjects = await Promise.all(
+          (projectsData || []).map(async (project) => {
+            // 고객 정보 조회
+            const { data: customerData, error: customerError } = await supabase
+              .from('users')
+              .select('email, raw_user_meta_data')
+              .eq('id', project.customer_id)
+              .single()
+            
+            if (customerError) {
+              console.log('고객 정보 조회 실패:', customerError, 'for customer_id:', project.customer_id)
+            } else {
+              console.log('고객 정보 조회 성공:', customerData)
+            }
+            
+            // 현장방문 신청 조회
+            const { data: siteVisits } = await supabase
+              .from('site_visit_applications')
+              .select('*')
+              .eq('project_id', project.id)
+              .eq('contractor_id', contractorData.id)
+            
+            // 견적서 조회
+            const { data: quotes } = await supabase
+              .from('contractor_quotes')
+              .select('*')
+              .eq('project_id', project.id)
+              .eq('contractor_id', contractorData.id)
           
           const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
           const myQuote = quotes?.[0]
@@ -92,12 +105,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'approved'
           }
           
-          return {
-            ...project,
-            site_visit_application: mySiteVisit,
-            contractor_quote: myQuote,
-            projectStatus
-          }
+            return {
+              ...project,
+              customer: customerData,
+              site_visit_application: mySiteVisit,
+              contractor_quote: myQuote,
+              projectStatus
+            }
         })
       )
       
@@ -188,17 +202,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       )
     }
     
-    // 프로젝트 타입 표시
+    // 프로젝트 타입 표시 - 배열 처리
     const getProjectTypeLabel = () => {
-      const typeMap: Record<string, string> = {
-        'full': '전체 리노베이션',
-        'partial': '부분 리노베이션', 
-        'kitchen': '주방',
-        'bathroom': '욕실',
-        'basement': '지하실',
-        'other': '기타'
+      if (Array.isArray(project.project_types)) {
+        const types = project.project_types.map(type => {
+          if (type === 'bathroom') return '욕실'
+          if (type === 'kitchen') return '주방'
+          if (type === 'flooring') return '바닥'
+          if (type === 'painting') return '페인팅'
+          if (type === 'basement') return '지하실'
+          return type
+        })
+        return types.join(', ')
       }
-      return typeMap[project.project_type || 'other'] || '전체 리노베이션'
+      return '리노베이션'
     }
     
     // 공간 타입 표시
@@ -244,165 +261,153 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
     }
     
-    // 고객 정보 추출 - 임시로 기본값 사용
-    const getCustomerInfo = () => {
-      // 현재는 고객 정보를 조인하지 않으므로 기본값 사용
-      const customerId = project.customer_id || 'unknown'
-      const shortId = customerId.slice(0, 8)
-      
-      return { 
-        name: `고객 ${shortId}`, 
-        email: '이메일 정보 없음', 
-        phone: '' 
-      }
+    // 주소 표시 개선
+    const getAddress = () => {
+      const parts = []
+      if (project.full_address) parts.push(project.full_address)
+      if (project.postal_code) parts.push(project.postal_code)
+      return parts.length > 0 ? parts.join(', ') : '주소 미입력'
     }
 
-    const customerInfo = getCustomerInfo()
-    
+    // 고객 정보 표시
+    const getCustomerInfo = () => {
+      if (project.customer) {
+        // 1. raw_user_meta_data에서 이름 찾기
+        const metaData = project.customer.raw_user_meta_data
+        if (metaData?.full_name) {
+          return metaData.full_name
+        }
+        if (metaData?.name) {
+          return metaData.name
+        }
+        
+        // 2. 이메일에서 사용자명 추출
+        if (project.customer.email) {
+          const emailName = project.customer.email.split('@')[0]
+          return `${emailName}님`
+        }
+      }
+      
+      // 3. fallback: customer_id 짧게 표시
+      if (project.customer_id) {
+        return `고객 ${project.customer_id.substring(0, 8)}`
+      }
+      
+      return '고객 정보 없음'
+    }
+
     return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-        {/* 카드 헤더 */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-bold text-gray-900">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
               {getSpaceTypeLabel()}
             </h3>
-            {getStatusBadge()}
-          </div>
-          
-          {/* 고객 정보 */}
-          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                {customerInfo.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-gray-900 mb-1">{customerInfo.name}</div>
-                <div className="text-sm text-gray-600 truncate mb-1">{customerInfo.email}</div>
-                {customerInfo.phone && (
-                  <div className="text-sm text-gray-600">{customerInfo.phone}</div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* 프로젝트 타입 태그 */}
-          <div className="mb-4">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+            <p className="text-sm text-gray-500 mt-1">
               {getProjectTypeLabel()}
-            </span>
+            </p>
+            <p className="text-sm text-gray-500">
+              예산: {getBudgetLabel()}
+            </p>
           </div>
-          
-          {/* 예산 */}
-          <div className="text-lg font-bold text-gray-900">
-            예산: {getBudgetLabel()}
-          </div>
+          {getStatusBadge()}
         </div>
         
-        {/* 카드 바디 */}
-        <div className="p-6 space-y-4">
-          {/* 기본 정보 그리드 */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500 font-medium block mb-1">일정</span>
-              <span className="text-gray-900">
-                {formatDate(project.preferred_date)}
-              </span>
-            </div>
-            
-            <div>
-              <span className="text-gray-500 font-medium block mb-1">등록일</span>
-              <span className="text-gray-900">
-                {formatDate(project.created_at)}
-              </span>
-            </div>
+        <div className="space-y-2 text-sm">
+          {/* 고객 정보 */}
+          <div className="text-gray-600">
+            <span className="font-medium">{getCustomerInfo()}</span>
           </div>
           
-          {/* 주소 */}
-          <div>
-            <span className="text-gray-500 font-medium text-sm block mb-1">위치</span>
-            <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-              <span className="text-gray-900 text-sm">
-                {project.address || project.city || '주소 미입력'}
-              </span>
-            </div>
+          <div className="flex items-center text-gray-600">
+            <Calendar className="w-4 h-4 mr-2" />
+            방문일: {formatDate(project.visit_date || project.preferred_date)}
           </div>
           
-          {/* 요구사항 */}
-          {project.requirements && (
-            <div>
-              <span className="text-gray-500 font-medium text-sm block mb-2">요구사항:</span>
-              <p className="text-gray-700 text-sm line-clamp-3 leading-relaxed">
-                {project.requirements}
+          <div className="flex items-start text-gray-600">
+            <MapPin className="w-4 h-4 mr-2 mt-0.5" />
+            <span className="flex-1">{getAddress()}</span>
+          </div>
+          
+          {/* 타임라인 */}
+          {project.timeline && (
+            <div className="text-gray-600">
+              <span className="text-xs">일정: {
+                project.timeline === '1_month' ? '1개월 이내' :
+                project.timeline === '3_months' ? '3개월 이내' :
+                project.timeline === '6_months' ? '6개월 이내' :
+                project.timeline
+              }</span>
+            </div>
+          )}
+          
+          {/* 프로젝트 설명 */}
+          {project.description && (
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-xs text-gray-500">요구사항:</p>
+              <p className="text-sm text-gray-700 line-clamp-2">
+                {project.description}
               </p>
             </div>
           )}
           
           {/* 견적 정보 */}
           {project.contractor_quote && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-900">제출 견적:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  ${project.contractor_quote.price?.toLocaleString()}
-                </span>
-              </div>
-              {project.contractor_quote.status === 'accepted' && (
-                <div className="mt-2">
-                  <span className="text-sm text-green-600 font-medium">✓ 고객이 선택했습니다</span>
-                </div>
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-sm font-medium">
+                제출 견적: ${project.contractor_quote.price?.toLocaleString()}
+              </p>
+              {project.contractor_quote.status && (
+                <p className="text-xs text-gray-500 mt-1">
+                  상태: {project.contractor_quote.status}
+                </p>
               )}
             </div>
           )}
           
           {/* 현장방문 정보 */}
           {project.site_visit_application && (
-            <div className="text-sm">
-              <span className="text-blue-600 font-medium">
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-sm text-blue-600">
                 현장방문 {project.site_visit_application.status === 'completed' ? '완료' : '신청됨'}
-              </span>
+              </p>
             </div>
           )}
         </div>
         
-        {/* 카드 푸터 - 액션 버튼 */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-          {/* 상태별 액션 버튼 */}
+        <div className="mt-4 flex gap-2 flex-wrap">
+          {/* 상태에 따른 액션 버튼 */}
           {project.projectStatus === 'selected' && (
-            <div className="w-full text-center py-3 bg-green-600 text-white rounded-lg font-medium text-sm">
-              ✓ 고객이 선택했습니다
-            </div>
+            <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium">
+              고객이 선택함 ✅
+            </button>
           )}
-          
           {project.projectStatus === 'not-selected' && (
-            <div className="w-full text-center py-3 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm">
-              다른 업체가 선택됨
-            </div>
+            <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded text-sm">
+              다른 업체 선택됨
+            </button>
           )}
-          
           {project.projectStatus === 'approved' && !project.site_visit_application && (
             <button 
               onClick={() => console.log('Apply for site visit')}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+              className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
             >
               현장방문 신청
             </button>
           )}
-          
           {project.projectStatus === 'site-visit-completed' && !project.contractor_quote && (
             <button 
               onClick={() => console.log('Submit quote')}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+              className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
             >
               견적서 작성
             </button>
           )}
           
-          {/* 디버그 정보 */}
+          {/* 디버그 정보 (개발 중 확인용) */}
           {project.selected_contractor_id && (
-            <div className="text-xs text-gray-400 mt-3 text-center">
-              등록된 견적: {project.contractor_quote ? '✓' : '✗'}
+            <div className="text-xs text-gray-400 w-full mt-2">
+              선택된 업체: {project.selected_contractor_id === contractorData?.id ? '✅ 나' : '다른 업체'}
             </div>
           )}
         </div>
