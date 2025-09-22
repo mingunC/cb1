@@ -29,6 +29,15 @@ export interface Project {
   created_at: string
   updated_at: string
 
+  // 고객 정보 추가
+  customer?: {
+    id: string
+    first_name: string | null
+    last_name: string | null
+    email: string
+    phone: string | null
+  }
+
   // 관계 데이터
   site_visit_application?: {
     id: string
