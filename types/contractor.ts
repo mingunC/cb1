@@ -30,6 +30,13 @@ export interface Project {
   updated_at: string
 
   // 관계 데이터
+  customer?: {
+    id: string
+    first_name: string | null
+    last_name: string | null
+    email: string
+    phone?: string | null
+  }
   site_visit_application?: {
     id: string
     contractor_id: string
