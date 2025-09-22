@@ -49,6 +49,7 @@ export default function Header() {
   const isMounted = useRef(true)
   const authListenerSetupRef = useRef(false)
   const currentUserId = useRef<string | null>(null) // 현재 로드된 사용자 ID 추적
+  const loadingProfileRef = useRef(false) // 프로필 로딩 중 추적
 
   useEffect(() => {
     isMounted.current = true
@@ -57,6 +58,7 @@ export default function Header() {
     
     return () => {
       isMounted.current = false
+      authListenerSetupRef.current = false // cleanup 시 리스너도 리셋
     }
   }, [])
 
@@ -102,44 +104,57 @@ export default function Header() {
   const setupAuthListener = () => {
     if (authListenerSetupRef.current) return
     
+    authListenerSetupRef.current = true // 먼저 설정하여 중복 방지
+    
     const supabase = createBrowserClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted.current) return
         
-        // INITIAL_SESSION은 무시 (이미 loadUserData에서 처리)
-        if (event === 'INITIAL_SESSION') return
+        // INITIAL_SESSION과 TOKEN_REFRESHED는 무시
+        if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          return
+        }
         
         if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user)
-          currentUserId.current = null // 새 사용자이므로 리셋
-          await loadUserProfile(session.user.id, session.user.email)
+          // 새로운 사용자가 로그인한 경우에만 프로필 로드
+          if (currentUserId.current !== session.user.id) {
+            setUser(session.user)
+            currentUserId.current = null // 리셋하여 새로 로드하도록
+            await loadUserProfile(session.user.id, session.user.email)
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setUserProfile(null)
           setContractorProfile(null)
           setDisplayName('')
           currentUserId.current = null
+          loadingProfileRef.current = false
           setIsUserDropdownOpen(false)
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // 토큰 리프레시 시에는 사용자 정보를 다시 로드하지 않음
-          // 이미 로드된 사용자와 같은 경우 무시
-          if (currentUserId.current === session.user.id) {
-            return
-          }
         }
       }
     )
     
-    authListenerSetupRef.current = true
+    // Cleanup 함수에서 구독 해제
+    return () => {
+      subscription.unsubscribe()
+    }
   }
 
   const loadUserProfile = async (userId: string, email?: string | null) => {
+    // 이미 로딩 중이면 스킵
+    if (loadingProfileRef.current) {
+      console.log('프로필 로딩 중, 스킵:', userId)
+      return
+    }
+    
     // 이미 같은 사용자의 프로필이 로드되었으면 스킵
     if (currentUserId.current === userId) {
       console.log('프로필 이미 로드됨:', userId)
       return
     }
+    
+    loadingProfileRef.current = true // 로딩 시작
     
     try {
       const supabase = createBrowserClient()
@@ -174,6 +189,7 @@ export default function Header() {
         console.log('✅ 업체로 인식됨:', { finalDisplayName })
         
         currentUserId.current = userId // 로드 완료 표시
+        loadingProfileRef.current = false // 로딩 종료
         return
       }
 
@@ -216,22 +232,20 @@ export default function Header() {
         
         console.log('✅ 일반 사용자로 인식됨:', { userData, finalDisplayName })
         
-        currentUserId.current = userId // 로드 완료 표시
       } else if (isMounted.current) {
-        // 둘 다 없으면 기본값 설정 (신규 사용자)
+        // 기본값 설정
         setUserProfile({ user_type: 'customer' })
         setContractorProfile(null)
         const finalDisplayName = email?.split('@')[0] || 'User'
         setDisplayName(finalDisplayName)
         
-        // localStorage에 캐시 저장
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
         
         console.log('⚠️ 기본값으로 설정됨 (customer):', { finalDisplayName })
-        
-        currentUserId.current = userId // 로드 완료 표시
       }
+      
+      currentUserId.current = userId // 로드 완료 표시
       
     } catch (error) {
       console.error('Error loading profile:', error)
@@ -239,6 +253,8 @@ export default function Header() {
         setDisplayName(email?.split('@')[0] || 'User')
         currentUserId.current = userId // 에러가 나도 로드 완료로 표시
       }
+    } finally {
+      loadingProfileRef.current = false // 로딩 종료
     }
   }
 
