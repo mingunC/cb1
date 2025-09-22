@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -29,7 +29,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
   
-  // 프로젝트 데이터 로드 함수 - 간단한 쿼리로 시작
+  // 프로젝트 데이터 로드 함수 - 고객 정보와 함께 가져오기
   const loadProjects = useCallback(async () => {
     if (!contractorData) return
     
@@ -37,16 +37,25 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 먼저 프로젝트만 가져오기
+      // 프로젝트와 고객 정보를 함께 가져오기
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select('*')
+        .select(`
+          *,
+          users!customer_id (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(50)
       
       if (projectsError) throw projectsError
       
-      console.log('Projects data:', projectsData)
+      console.log('Projects data with customers:', projectsData)
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
@@ -93,6 +102,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           }
           
           console.log(`Project ${project.id} details:`, {
+            customer: project.users,
             project_type: project.project_type,
             space_type: project.space_type,
             budget: project.budget,
@@ -105,6 +115,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           return {
             ...project,
+            customer: project.users, // 고객 정보 추가
             site_visit_application: mySiteVisit,
             contractor_quote: myQuote,
             projectStatus
@@ -199,6 +210,16 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       )
     }
     
+    // 고객 이름 표시
+    const getCustomerName = () => {
+      if (!project.customer) return '고객 정보 없음'
+      const { first_name, last_name } = project.customer
+      if (first_name || last_name) {
+        return `${first_name || ''} ${last_name || ''}`.trim()
+      }
+      return '이름 미입력'
+    }
+    
     // 프로젝트 타입 표시
     const getProjectTypeLabel = () => {
       if (project.project_type === 'full') return '전체 리노베이션'
@@ -207,26 +228,42 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       if (project.project_type === 'bathroom') return '욕실 리모델링'
       if (project.project_type === 'basement') return '지하실 마감'
       if (project.project_type === 'other') return '기타'
+      
+      // project_types 배열 처리
+      if (project.project_types && project.project_types.length > 0) {
+        return project.project_types.map(type => {
+          if (type === 'full_renovation') return '전체 리노베이션'
+          if (type === 'partial_renovation') return '부분 리노베이션'
+          if (type === 'kitchen') return '주방'
+          if (type === 'bathroom') return '욕실'
+          if (type === 'basement') return '지하실'
+          if (type === 'painting') return '페인팅'
+          return type
+        }).join(', ')
+      }
+      
       return '전체 리노베이션' // 기본값
     }
     
     // 공간 타입 표시
     const getSpaceTypeLabel = () => {
-      if (project.space_type === 'detached') return 'Detached House'
+      if (project.space_type === 'detached_house') return 'Detached House'
       if (project.space_type === 'town_house') return 'Town House'
       if (project.space_type === 'condo') return 'Condo'
       if (project.space_type === 'semi_detached') return 'Semi-Detached'
+      if (project.space_type === 'commercial') return 'Commercial'
       return 'House' // 기본값
     }
     
     // 예산 표시
     const getBudgetLabel = () => {
       const budget = project.budget
-      if (budget === 'under_50k') return '5만불 미만'
-      if (budget === '50k_100k') return '5-10만불'
-      if (budget === '100k_200k') return '10-20만불'
-      if (budget === '200k_500k') return '20-50만불'
-      if (budget === 'over_500k') return '50만불 이상'
+      if (budget === 'under_50k') return '$50,000 미만'
+      if (budget === '50k_100k') return '$50,000 - $100,000'
+      if (budget === 'over_100k') return '$100,000 이상'
+      if (budget === '100k_200k') return '$100,000 - $200,000'
+      if (budget === '200k_500k') return '$200,000 - $500,000'
+      if (budget === 'over_500k') return '$500,000 이상'
       if (typeof budget === 'number') return `$${budget.toLocaleString()}`
       return '미정'
     }
@@ -246,6 +283,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
     }
     
+    // 방문 날짜 가져오기
+    const getVisitDate = () => {
+      if (project.visit_dates && project.visit_dates.length > 0) {
+        return formatDate(project.visit_dates[0])
+      }
+      if (project.visit_date) {
+        return formatDate(project.visit_date)
+      }
+      return '미정'
+    }
+    
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex justify-between items-start mb-4">
@@ -253,6 +301,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <h3 className="text-lg font-semibold text-gray-900">
               {getSpaceTypeLabel()}
             </h3>
+            {/* 고객 이름 표시 */}
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <User className="w-4 h-4 mr-1" />
+              <span>{getCustomerName()}</span>
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               {getProjectTypeLabel()}
             </p>
@@ -266,19 +319,19 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         <div className="space-y-2 text-sm">
           <div className="flex items-center text-gray-600">
             <Calendar className="w-4 h-4 mr-2" />
-            방문 희망일: {formatDate(project.preferred_date)}
+            방문 희망일: {getVisitDate()}
           </div>
           <div className="flex items-center text-gray-600">
             <MapPin className="w-4 h-4 mr-2" />
-            {project.address || project.city || '주소 미입력'}
+            {project.full_address || project.postal_code || '주소 미입력'}
           </div>
           
           {/* 요구사항 표시 */}
-          {project.requirements && (
+          {project.description && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-xs text-gray-500">요구사항:</p>
               <p className="text-sm text-gray-700 line-clamp-2">
-                {project.requirements}
+                {project.description}
               </p>
             </div>
           )}
@@ -334,13 +387,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             >
               견적서 작성
             </button>
-          )}
-          
-          {/* 디버그 정보 (개발 중 확인용) */}
-          {project.selected_contractor_id && (
-            <div className="text-xs text-gray-400 w-full mt-2">
-              선택된 업체: {project.selected_contractor_id === contractorData?.id ? '✅ 나' : '다른 업체'}
-            </div>
           )}
         </div>
       </div>
