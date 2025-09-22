@@ -37,23 +37,16 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 고객 정보를 포함하여 프로젝트 데이터 가져오기
+      // 먼저 프로젝트만 가져오기 (customer 조인 제거)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select(`
-          *,
-          customer:customer_id (
-            id,
-            email,
-            raw_user_meta_data
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50)
       
       if (projectsError) throw projectsError
       
-      console.log('Projects data with customer info:', projectsData)
+      console.log('Projects data:', projectsData?.[0]) // 첫 번째 프로젝트 데이터 구조 확인
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
@@ -98,17 +91,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           } else if (project.status === 'approved') {
             projectStatus = 'approved'
           }
-          
-          console.log(`Project ${project.id} details:`, {
-            project_type: project.project_type,
-            space_type: project.space_type,
-            budget: project.budget,
-            status: project.status,
-            selected_contractor_id: project.selected_contractor_id,
-            myContractorId: contractorData.id,
-            isMyQuoteSelected,
-            projectStatus
-          })
           
           return {
             ...project,
@@ -262,17 +244,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
     }
     
-    // 고객 정보 추출
+    // 고객 정보 추출 - 임시로 기본값 사용
     const getCustomerInfo = () => {
-      const customer = project.customer
-      if (!customer) return { name: '고객 정보 없음', email: '이메일 없음', phone: '' }
+      // 현재는 고객 정보를 조인하지 않으므로 기본값 사용
+      const customerId = project.customer_id || 'unknown'
+      const shortId = customerId.slice(0, 8)
       
-      const metaData = customer.raw_user_meta_data || {}
-      const name = metaData.full_name || metaData.name || customer.email?.split('@')[0] || '고객'
-      const email = customer.email || '이메일 없음'
-      const phone = metaData.phone || ''
-      
-      return { name, email, phone }
+      return { 
+        name: `고객 ${shortId}`, 
+        email: '이메일 정보 없음', 
+        phone: '' 
+      }
     }
 
     const customerInfo = getCustomerInfo()
