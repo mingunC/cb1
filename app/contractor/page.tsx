@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import IntegratedContractorDashboard from './IntegratedDashboard'
@@ -10,10 +10,17 @@ export default function ContractorPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [contractorData, setContractorData] = useState<any>(null)
   const router = useRouter()
+  const checkCompleted = useRef(false) // 중복 체크 방지
 
   useEffect(() => {
+    // 이미 체크가 완료되었으면 재실행하지 않음
+    if (checkCompleted.current) {
+      return
+    }
+
     const checkAuth = async () => {
       console.log('🚀 Contractor page auth check starting...')
+      checkCompleted.current = true // 체크 시작 표시
       
       try {
         const supabase = createBrowserClient()
@@ -30,7 +37,11 @@ export default function ContractorPage() {
         
         if (!session) {
           console.log('❌ No session found, redirecting to login')
-          router.push('/contractor-login')
+          setIsLoading(false)
+          // setTimeout으로 리다이렉션 지연
+          setTimeout(() => {
+            router.push('/contractor-login')
+          }, 100)
           return
         }
         
@@ -49,31 +60,39 @@ export default function ContractorPage() {
         
         if (!contractor) {
           console.log('❌ Not a contractor, redirecting to signup')
-          router.push('/contractor-signup')
+          setIsLoading(false)
+          setTimeout(() => {
+            router.push('/contractor-signup')
+          }, 100)
           return
         }
         
         if (contractor.status !== 'active') {
           console.log('⚠️ Contractor not active')
-          router.push('/')
+          setIsLoading(false)
+          setTimeout(() => {
+            router.push('/')
+          }, 100)
           return
         }
         
         console.log('✅ Authentication successful, rendering dashboard')
         setContractorData(contractor)
         setIsAuthenticated(true)
+        setIsLoading(false)
         
       } catch (error) {
         console.error('🔥 Auth check error:', error)
-        router.push('/contractor-login')
-      } finally {
         setIsLoading(false)
+        setTimeout(() => {
+          router.push('/contractor-login')
+        }, 100)
       }
     }
     
     checkAuth()
-  }, [router])
-  
+  }, []) // 빈 dependency array - router 제거
+
   // 로딩 중
   if (isLoading) {
     return (
