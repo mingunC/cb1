@@ -28,6 +28,7 @@ export interface Project {
   status_detail?: string
   created_at: string
   updated_at: string
+  selected_contractor_id?: string // 선택된 업체 ID 추가
 
   // 고객 정보 추가
   customer?: {
@@ -44,6 +45,7 @@ export interface Project {
     contractor_id: string
     is_cancelled: boolean
     applied_at: string
+    status?: string
   }
   contractor_quote?: {
     id: string
