@@ -1,25 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import IntegratedContractorDashboard from './IntegratedDashboard'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [contractorData, setContractorData] = useState<any>(null)
   const router = useRouter()
-  const checkCompleted = useRef(false)
 
   useEffect(() => {
-    if (checkCompleted.current) {
-      return
-    }
-
     const checkAuth = async () => {
       console.log('🚀 Contractor page auth check starting...')
-      checkCompleted.current = true
       
       try {
         const supabase = createBrowserClient()
@@ -36,10 +29,7 @@ export default function ContractorPage() {
         
         if (!session) {
           console.log('❌ No session found, redirecting to login')
-          setIsLoading(false)
-          setTimeout(() => {
-            router.push('/contractor-login')
-          }, 100)
+          router.push('/contractor-login')
           return
         }
         
@@ -59,49 +49,29 @@ export default function ContractorPage() {
         
         if (!contractor) {
           console.log('❌ Not a contractor, redirecting to signup')
-          setIsLoading(false)
-          setTimeout(() => {
-            router.push('/contractor-signup')
-          }, 100)
-          return
-        }
-        
-        // status 체크를 일시적으로 비활성화하거나 완화
-        // if (contractor.status !== 'active') {
-        //   console.log('⚠️ Contractor not active, status:', contractor.status)
-        //   setIsLoading(false)
-        //   setTimeout(() => {
-        //     router.push('/')
-        //   }, 100)
-        //   return
-        // }
-        
-        // status가 없거나 pending이어도 일단 허용
-        if (contractor.status === 'suspended' || contractor.status === 'banned') {
-          console.log('⚠️ Contractor suspended or banned')
-          setIsLoading(false)
-          setTimeout(() => {
-            router.push('/')
-          }, 100)
+          router.push('/contractor-signup')
           return
         }
         
         console.log('✅ Authentication successful, rendering dashboard')
+        console.log('📊 Contractor data for dashboard:', {
+          contractor,
+          userId: session.user.id,
+          id: contractor.id
+        })
+        
         setContractorData(contractor)
         setIsAuthenticated(true)
         setIsLoading(false)
         
       } catch (error) {
         console.error('🔥 Auth check error:', error)
-        setIsLoading(false)
-        setTimeout(() => {
-          router.push('/contractor-login')
-        }, 100)
+        router.push('/contractor-login')
       }
     }
     
     checkAuth()
-  }, [])
+  }, [router])
 
   // 로딩 중
   if (isLoading) {
@@ -116,7 +86,7 @@ export default function ContractorPage() {
   }
   
   // 인증되지 않은 경우
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !contractorData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -126,6 +96,8 @@ export default function ContractorPage() {
     )
   }
   
-  // 인증된 경우 대시보드 렌더링
-  return <IntegratedContractorDashboard initialContractorData={contractorData} />
+  // 인증된 경우 - 동적 import로 대시보드 로드
+  const IntegratedDashboard = require('./IntegratedDashboard').default
+  
+  return <IntegratedDashboard initialContractorData={contractorData} />
 }
