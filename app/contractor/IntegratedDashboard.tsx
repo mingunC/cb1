@@ -533,7 +533,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           {project.projectStatus === 'selected' && (
             <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default">
-              프로젝트 진행중 => 고객의 정보가 메일로 전송됩니다.
+              고객의 정보가 입력하신 메일로 전송됩니다.
             </button>
           )}
         </div>
