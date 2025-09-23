@@ -27,7 +27,7 @@ export default function ContractorLoginPage() {
   const supabase = createBrowserClient() // Google OAuth용
   const hasCheckedSession = useRef(false) // 세션 체크 여부 추적
 
-  // 업체 세션 체크 및 자동 리다이렉트
+  // 업체 세션 체크 및 자동 리다이렉트 (조건부)
   useEffect(() => {
     // 이미 체크했으면 다시 실행하지 않음
     if (hasCheckedSession.current) return
@@ -35,6 +35,15 @@ export default function ContractorLoginPage() {
 
     const checkContractorSession = async () => {
       try {
+        // URL 파라미터로 redirect=true가 있을 때만 자동 리다이렉션 시도
+        const urlParams = new URLSearchParams(window.location.search)
+        const forceRedirect = urlParams.get('redirect') === 'true'
+        
+        if (!forceRedirect) {
+          console.log('Auto-redirect disabled. Use ?redirect=true to enable automatic redirection.')
+          return
+        }
+
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!session) {

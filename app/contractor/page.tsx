@@ -49,8 +49,25 @@ export default function ContractorPage() {
         })
         
         if (!contractor) {
-          console.log('❌ Not a contractor, redirecting to signup')
-          router.push('/contractor-signup')
+          console.log('❌ Not a contractor, checking user type...')
+          
+          // users 테이블에서 user_type 확인
+          const { data: userData } = await supabase
+            .from('users')
+            .select('user_type')
+            .eq('id', session.user.id)
+            .maybeSingle()
+          
+          if (userData?.user_type === 'contractor') {
+            // users 테이블에는 contractor로 등록되어 있지만
+            // contractors 테이블에는 데이터가 없는 경우
+            console.log('⚠️ User is marked as contractor but no contractor data found')
+            router.push('/contractor-signup?error=missing_contractor_data')
+          } else {
+            // 일반 사용자인 경우
+            console.log('❌ Not a contractor user')
+            router.push('/contractor-signup')
+          }
           return
         }
         

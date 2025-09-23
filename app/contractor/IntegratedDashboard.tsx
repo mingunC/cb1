@@ -533,7 +533,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           {project.projectStatus === 'selected' && (
             <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default">
-              프로젝트 진행 중
+              프로젝트 진행중 => 고객의 정보가 메일로 전송됩니다.
             </button>
           )}
         </div>
@@ -684,7 +684,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 </div>
               ) : (
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProjects.map((project) => (
                       <SimpleProjectCard key={project.id} project={project} />
                     ))}
