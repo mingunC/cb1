@@ -28,7 +28,8 @@ export interface Project {
   status_detail?: string
   created_at: string
   updated_at: string
-  selected_contractor_id?: string // 선택된 업체 ID 추가
+  selected_contractor_id?: string // 선택된 업체 ID
+  selected_quote_id?: string // 선택된 견적서 ID
 
   // 고객 정보 추가
   customer?: {
