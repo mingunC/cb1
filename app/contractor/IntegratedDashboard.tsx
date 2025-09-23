@@ -20,7 +20,7 @@ interface Props {
 export default function IntegratedContractorDashboard({ initialContractorData }: Props) {
   const router = useRouter()
   
-  // 상태 관리
+  // 상태 관리 - initialContractorData를 바로 사용
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -31,13 +31,19 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 프로젝트 데이터 로드 함수 - 개별 고객 정보 조회
   const loadProjects = useCallback(async () => {
-    if (!contractorData) return
+    if (!contractorData || !contractorData.id) {
+      console.error('No contractor data available')
+      return
+    }
     
     try {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      console.log('Loading projects for contractor:', contractorData.id)
+      console.log('Loading projects for contractor:', {
+        contractorId: contractorData.id,
+        companyName: contractorData.company_name
+      })
       
       // 먼저 프로젝트 데이터 가져오기 (selected_contractor_id 포함)
       const { data: projectsData, error: projectsError } = await supabase
@@ -51,7 +57,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         throw projectsError
       }
       
-      console.log('Projects data with selected_contractor_id:', projectsData)
+      console.log('Projects data loaded:', projectsData?.length, 'projects')
       
       // 모든 고객 ID 수집
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
@@ -69,7 +75,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             acc[customer.id] = customer
             return acc
           }, {})
-          console.log('Customers data loaded:', customersMap)
+          console.log('Customers data loaded:', Object.keys(customersMap).length, 'customers')
         } else {
           console.log('Failed to load customers:', customersError)
         }
@@ -104,14 +110,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           // 고객 정보 매핑
           const customerInfo = customersMap[project.customer_id] || null
           
-          // 현장방문 신청 조회
+          // 현장방문 신청 조회 - contractorData.id 사용
           const { data: siteVisits } = await supabase
             .from('site_visit_applications')
             .select('*')
             .eq('project_id', project.id)
             .eq('contractor_id', contractorData.id)
           
-          // 견적서 조회
+          // 견적서 조회 - contractorData.id 사용
           const { data: quotes } = await supabase
             .from('contractor_quotes')
             .select('*')
@@ -154,14 +160,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'approved'
           }
           
-          console.log(`Project ${project.id}:`, {
-            customer: customerInfo ? `${customerInfo.first_name} ${customerInfo.last_name}` : 'No customer',
-            selectedContractorId,
-            myContractorId: contractorData.id,
-            isSelected: isMyQuoteSelected,
-            projectStatus
-          })
-          
           return {
             ...project,
             customer: customerInfo,
@@ -172,6 +170,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           }
         })
       )
+      
+      console.log('Processed projects:', {
+        total: processedProjects.length,
+        withQuotes: processedProjects.filter(p => p.contractor_quote).length,
+        withSiteVisits: processedProjects.filter(p => p.site_visit_application).length,
+        selected: processedProjects.filter(p => p.projectStatus === 'selected').length,
+        notSelected: processedProjects.filter(p => p.projectStatus === 'not-selected').length
+      })
       
       setProjects(processedProjects)
     } catch (err: any) {
@@ -184,7 +190,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 초기 데이터 로드
   useEffect(() => {
-    if (contractorData) {
+    if (contractorData && contractorData.id) {
       loadProjects()
     }
   }, [contractorData, loadProjects])
@@ -436,7 +442,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           {project.projectStatus === 'not-selected' && (
             <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded text-sm">
-              {selectedContractorName}이(가) 선택됨
+              {selectedContractorName || '다른 업체'}이(가) 선택됨
             </button>
           )}
           {project.projectStatus === 'approved' && !project.site_visit_application && (
