@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import IntegratedContractorDashboard from './IntegratedDashboard2'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -96,8 +97,6 @@ export default function ContractorPage() {
     )
   }
   
-  // 인증된 경우 - 동적 import로 대시보드 로드
-  const IntegratedDashboard = require('./IntegratedDashboard').default
-  
-  return <IntegratedDashboard initialContractorData={contractorData} />
+  // 인증된 경우 - 새 대시보드 컴포넌트 사용
+  return <IntegratedContractorDashboard initialContractorData={contractorData} />
 }
