@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import IntegratedContractorDashboard from './IntegratedDashboard'
+import IntegratedDashboard from './IntegratedDashboard'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -87,6 +87,11 @@ export default function ContractorPage() {
         }
         
         console.log('✅ Authentication successful, rendering dashboard')
+        console.log('📊 Contractor data for dashboard:', {
+          contractor,
+          userId: contractor.user_id,
+          id: contractor.id
+        })
         setContractorData(contractor)
         setIsAuthenticated(true)
         setIsLoading(false)
@@ -127,5 +132,5 @@ export default function ContractorPage() {
   }
   
   // 인증된 경우 대시보드 렌더링
-  return <IntegratedContractorDashboard initialContractorData={contractorData} />
+  return <IntegratedDashboard contractorId={contractorData?.user_id || contractorData?.id} />
 }
