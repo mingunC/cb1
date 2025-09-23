@@ -37,40 +37,72 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 먼저 프로젝트 데이터 가져오기
+      console.log('Loading projects for contractor:', contractorData.id)
+      
+      // 먼저 프로젝트 데이터 가져오기 (selected_contractor_id 포함)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select('*')
+        .select('*, selected_contractor_id')
         .order('created_at', { ascending: false })
         .limit(50)
       
-      if (projectsError) throw projectsError
+      if (projectsError) {
+        console.error('Projects fetch error:', projectsError)
+        throw projectsError
+      }
       
-      console.log('Projects data:', projectsData)
+      console.log('Projects data with selected_contractor_id:', projectsData)
+      
+      // 모든 고객 ID 수집
+      const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
+      
+      // 고객 정보 일괄 조회
+      let customersMap: Record<string, any> = {}
+      if (customerIds.length > 0) {
+        const { data: customersData, error: customersError } = await supabase
+          .from('users')
+          .select('id, first_name, last_name, email, phone')
+          .in('id', customerIds)
+        
+        if (customersData && !customersError) {
+          customersMap = customersData.reduce((acc, customer) => {
+            acc[customer.id] = customer
+            return acc
+          }, {})
+          console.log('Customers data loaded:', customersMap)
+        } else {
+          console.log('Failed to load customers:', customersError)
+        }
+      }
+      
+      // 선택된 업체 정보 조회 (completed 프로젝트용)
+      const completedProjects = projectsData?.filter(p => p.status === 'completed') || []
+      const selectedContractorIds: Record<string, string> = {}
+      
+      for (const project of completedProjects) {
+        // selected_contractor_id가 없으면 contractor_quotes에서 accepted 상태인 것 찾기
+        if (!project.selected_contractor_id) {
+          const { data: acceptedQuote } = await supabase
+            .from('contractor_quotes')
+            .select('contractor_id')
+            .eq('project_id', project.id)
+            .eq('status', 'accepted')
+            .single()
+          
+          if (acceptedQuote) {
+            selectedContractorIds[project.id] = acceptedQuote.contractor_id
+            console.log(`Found accepted quote for project ${project.id}:`, acceptedQuote.contractor_id)
+          }
+        } else {
+          selectedContractorIds[project.id] = project.selected_contractor_id
+        }
+      }
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
         (projectsData || []).map(async (project) => {
-          // 고객 정보 개별 조회 (에러 방지)
-          let customerInfo = null
-          if (project.customer_id) {
-            try {
-              const { data: customerData, error: customerError } = await supabase
-                .from('users')
-                .select('id, first_name, last_name, email, phone')
-                .eq('id', project.customer_id)
-                .single()
-              
-              if (!customerError && customerData) {
-                customerInfo = customerData
-                console.log(`고객 정보 조회 성공 for customer_id: ${project.customer_id}`, customerData)
-              } else if (customerError) {
-                console.log(`고객 정보 조회 실패:`, customerError, `for customer_id: ${project.customer_id}`)
-              }
-            } catch (err) {
-              console.log('고객 정보 조회 중 에러:', err)
-            }
-          }
+          // 고객 정보 매핑
+          const customerInfo = customersMap[project.customer_id] || null
           
           // 현장방문 신청 조회
           const { data: siteVisits } = await supabase
@@ -89,17 +121,26 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
           const myQuote = quotes?.[0]
           
+          // 선택된 업체 ID 결정
+          const selectedContractorId = project.selected_contractor_id || selectedContractorIds[project.id]
+          
           // 프로젝트 상태 결정
           let projectStatus: ProjectStatus = 'pending'
           
-          const isMyQuoteSelected = project.selected_contractor_id === contractorData.id
-          const hasSelectedContractor = !!project.selected_contractor_id
+          const isMyQuoteSelected = selectedContractorId === contractorData.id
+          const hasSelectedContractor = !!selectedContractorId
           
           if (project.status === 'cancelled') {
             projectStatus = 'cancelled'
           } else if (project.status === 'completed') {
-            projectStatus = 'completed'
-          } else if (isMyQuoteSelected) {
+            if (isMyQuoteSelected) {
+              projectStatus = 'selected'
+            } else if (hasSelectedContractor) {
+              projectStatus = 'not-selected'
+            } else {
+              projectStatus = 'completed'
+            }
+          } else if (myQuote?.status === 'accepted' || isMyQuoteSelected) {
             projectStatus = 'selected'
           } else if (hasSelectedContractor && !isMyQuoteSelected) {
             projectStatus = 'not-selected'
@@ -113,14 +154,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'approved'
           }
           
-          console.log(`Project ${project.id} with customer:`, {
-            customer: customerInfo,
-            customer_name: customerInfo ? `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() : 'No customer'
+          console.log(`Project ${project.id}:`, {
+            customer: customerInfo ? `${customerInfo.first_name} ${customerInfo.last_name}` : 'No customer',
+            selectedContractorId,
+            myContractorId: contractorData.id,
+            isSelected: isMyQuoteSelected,
+            projectStatus
           })
           
           return {
             ...project,
-            customer: customerInfo, // 고객 정보 추가
+            customer: customerInfo,
+            selected_contractor_id: selectedContractorId, // 추가
             site_visit_application: mySiteVisit,
             contractor_quote: myQuote,
             projectStatus
@@ -181,6 +226,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     return counts
   }, [projects])
   
+  // 다른 업체 이름 가져오기 함수 추가
+  const getSelectedContractorName = async (contractorId: string) => {
+    const supabase = createBrowserClient()
+    const { data } = await supabase
+      .from('contractors')
+      .select('company_name')
+      .eq('id', contractorId)
+      .single()
+    return data?.company_name || '다른 업체'
+  }
+  
   if (isLoading && !projects.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -194,6 +250,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 프로젝트 카드를 렌더링하는 간단한 컴포넌트
   const SimpleProjectCard = ({ project }: { project: Project }) => {
+    const [selectedContractorName, setSelectedContractorName] = useState<string>('')
+    
+    // 선택된 업체 이름 로드
+    useEffect(() => {
+      if (project.selected_contractor_id && project.projectStatus === 'not-selected') {
+        getSelectedContractorName(project.selected_contractor_id).then(name => {
+          setSelectedContractorName(name)
+        })
+      }
+    }, [project.selected_contractor_id, project.projectStatus])
+    
     const getStatusBadge = () => {
       const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
         'pending': { label: '대기중', color: 'bg-gray-100 text-gray-700' },
@@ -202,7 +269,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'site-visit-completed': { label: '현장방문 완료', color: 'bg-indigo-100 text-indigo-700' },
         'quoted': { label: '견적서 제출', color: 'bg-purple-100 text-purple-700' },
         'selected': { label: '✅ 선택됨', color: 'bg-green-500 text-white font-bold' },
-        'not-selected': { label: '❌ 미선택', color: 'bg-red-100 text-red-700' },
+        'not-selected': { label: `❌ ${selectedContractorName} 선택`, color: 'bg-red-100 text-red-700' },
         'completed': { label: '완료', color: 'bg-gray-500 text-white' },
         'cancelled': { label: '취소됨', color: 'bg-gray-300 text-gray-600' }
       }
@@ -218,11 +285,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     // 고객 이름 표시
     const getCustomerName = () => {
       if (!project.customer) return '고객 정보 없음'
-      const { first_name, last_name } = project.customer
+      const { first_name, last_name, email } = project.customer
       if (first_name || last_name) {
         return `${first_name || ''} ${last_name || ''}`.trim()
       }
-      return '이름 미입력'
+      // 이름이 없으면 이메일의 @ 앞부분 표시
+      return email?.split('@')[0] || '이름 미입력'
     }
     
     // 프로젝트 타입 표시
@@ -303,7 +371,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             {/* 고객 이름 표시 */}
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <User className="w-4 h-4 mr-1" />
-              <span>{getCustomerName()}</span>
+              <span className="font-medium">{getCustomerName()}</span>
             </div>
             <p className="text-sm text-gray-500 mt-1">
               {getProjectTypeLabel()}
@@ -343,7 +411,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               </p>
               {project.contractor_quote.status && (
                 <p className="text-xs text-gray-500 mt-1">
-                  상태: {project.contractor_quote.status}
+                  상태: {project.contractor_quote.status === 'accepted' ? '✅ 수락됨' : project.contractor_quote.status}
                 </p>
               )}
             </div>
@@ -368,7 +436,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           {project.projectStatus === 'not-selected' && (
             <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded text-sm">
-              다른 업체 선택됨
+              {selectedContractorName}이(가) 선택됨
             </button>
           )}
           {project.projectStatus === 'approved' && !project.site_visit_application && (
