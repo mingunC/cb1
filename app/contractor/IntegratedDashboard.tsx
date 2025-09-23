@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -28,8 +28,27 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [projectFilter, setProjectFilter] = useState<ProjectStatus | 'all'>('all')
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
+  const [selectedContractorNames, setSelectedContractorNames] = useState<Record<string, string>>({})
   
-  // 프로젝트 데이터 로드 함수 - 개별 고객 정보 조회
+  // 선택된 업체 이름들을 미리 로드
+  const loadSelectedContractorNames = async (contractorIds: string[]) => {
+    if (!contractorIds.length) return {}
+    
+    const supabase = createBrowserClient()
+    const { data } = await supabase
+      .from('contractors')
+      .select('id, company_name')
+      .in('id', contractorIds)
+    
+    const namesMap: Record<string, string> = {}
+    data?.forEach(contractor => {
+      namesMap[contractor.id] = contractor.company_name
+    })
+    
+    return namesMap
+  }
+  
+  // 프로젝트 데이터 로드 함수
   const loadProjects = useCallback(async () => {
     if (!contractorData || !contractorData.id) {
       console.error('No contractor data available')
@@ -45,10 +64,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         companyName: contractorData.company_name
       })
       
-      // 먼저 프로젝트 데이터 가져오기 (selected_contractor_id 포함)
+      // 프로젝트 데이터 가져오기 (selected_contractor_id 포함)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select('*, selected_contractor_id')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50)
       
@@ -59,50 +78,51 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       console.log('Projects data loaded:', projectsData?.length, 'projects')
       
-      // 모든 고객 ID 수집
-      const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
-      
       // 고객 정보 일괄 조회
+      const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
       let customersMap: Record<string, any> = {}
+      
       if (customerIds.length > 0) {
-        const { data: customersData, error: customersError } = await supabase
+        const { data: customersData } = await supabase
           .from('users')
           .select('id, first_name, last_name, email, phone')
           .in('id', customerIds)
         
-        if (customersData && !customersError) {
+        if (customersData) {
           customersMap = customersData.reduce((acc, customer) => {
             acc[customer.id] = customer
             return acc
           }, {})
-          console.log('Customers data loaded:', Object.keys(customersMap).length, 'customers')
-        } else {
-          console.log('Failed to load customers:', customersError)
         }
       }
       
-      // 선택된 업체 정보 조회 (completed 프로젝트용)
-      const completedProjects = projectsData?.filter(p => p.status === 'completed') || []
-      const selectedContractorIds: Record<string, string> = {}
+      // 모든 contractor_quotes 조회 (선택된 업체 확인용)
+      const projectIds = projectsData?.map(p => p.id) || []
+      const { data: allQuotes } = await supabase
+        .from('contractor_quotes')
+        .select('project_id, contractor_id, status')
+        .in('project_id', projectIds)
       
-      for (const project of completedProjects) {
-        // selected_contractor_id가 없으면 contractor_quotes에서 accepted 상태인 것 찾기
-        if (!project.selected_contractor_id) {
-          const { data: acceptedQuote } = await supabase
-            .from('contractor_quotes')
-            .select('contractor_id')
-            .eq('project_id', project.id)
-            .eq('status', 'accepted')
-            .single()
-          
-          if (acceptedQuote) {
-            selectedContractorIds[project.id] = acceptedQuote.contractor_id
-            console.log(`Found accepted quote for project ${project.id}:`, acceptedQuote.contractor_id)
-          }
-        } else {
-          selectedContractorIds[project.id] = project.selected_contractor_id
+      // accepted 상태인 quotes를 기준으로 선택된 업체 매핑
+      const acceptedQuotesMap: Record<string, string> = {}
+      allQuotes?.forEach(quote => {
+        if (quote.status === 'accepted') {
+          acceptedQuotesMap[quote.project_id] = quote.contractor_id
         }
-      }
+      })
+      
+      // 선택된 업체 IDs 수집
+      const selectedContractorIds = new Set<string>()
+      projectsData?.forEach(project => {
+        const selectedId = project.selected_contractor_id || acceptedQuotesMap[project.id]
+        if (selectedId) {
+          selectedContractorIds.add(selectedId)
+        }
+      })
+      
+      // 선택된 업체 이름들 로드
+      const contractorNames = await loadSelectedContractorNames(Array.from(selectedContractorIds))
+      setSelectedContractorNames(contractorNames)
       
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
@@ -110,14 +130,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           // 고객 정보 매핑
           const customerInfo = customersMap[project.customer_id] || null
           
-          // 현장방문 신청 조회 - contractorData.id 사용
+          // 현장방문 신청 조회
           const { data: siteVisits } = await supabase
             .from('site_visit_applications')
             .select('*')
             .eq('project_id', project.id)
             .eq('contractor_id', contractorData.id)
           
-          // 견적서 조회 - contractorData.id 사용
+          // 내 견적서 조회
           const { data: quotes } = await supabase
             .from('contractor_quotes')
             .select('*')
@@ -127,8 +147,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
           const myQuote = quotes?.[0]
           
-          // 선택된 업체 ID 결정
-          const selectedContractorId = project.selected_contractor_id || selectedContractorIds[project.id]
+          // 선택된 업체 ID 결정 (DB에서 직접 가져오거나 accepted 견적서 기준)
+          const selectedContractorId = project.selected_contractor_id || acceptedQuotesMap[project.id]
           
           // 프로젝트 상태 결정
           let projectStatus: ProjectStatus = 'pending'
@@ -136,13 +156,16 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           const isMyQuoteSelected = selectedContractorId === contractorData.id
           const hasSelectedContractor = !!selectedContractorId
           
+          // 상태 결정 로직
           if (project.status === 'cancelled') {
             projectStatus = 'cancelled'
-          } else if (project.status === 'completed') {
+          } else if (project.status === 'completed' || project.status === 'in_progress') {
             if (isMyQuoteSelected) {
               projectStatus = 'selected'
             } else if (hasSelectedContractor) {
               projectStatus = 'not-selected'
+            } else if (myQuote) {
+              projectStatus = 'quoted'
             } else {
               projectStatus = 'completed'
             }
@@ -156,14 +179,22 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'site-visit-completed'
           } else if (mySiteVisit) {
             projectStatus = 'site-visit-applied'
-          } else if (project.status === 'approved') {
+          } else if (project.status === 'approved' || project.status === 'site_visit') {
             projectStatus = 'approved'
           }
+          
+          console.log(`Project ${project.id} status:`, {
+            projectStatus,
+            selectedContractorId,
+            isMyQuoteSelected,
+            myQuoteStatus: myQuote?.status,
+            projectBaseStatus: project.status
+          })
           
           return {
             ...project,
             customer: customerInfo,
-            selected_contractor_id: selectedContractorId, // 추가
+            selected_contractor_id: selectedContractorId,
             site_visit_application: mySiteVisit,
             contractor_quote: myQuote,
             projectStatus
@@ -171,12 +202,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         })
       )
       
-      console.log('Processed projects:', {
+      console.log('Processed projects summary:', {
         total: processedProjects.length,
-        withQuotes: processedProjects.filter(p => p.contractor_quote).length,
-        withSiteVisits: processedProjects.filter(p => p.site_visit_application).length,
         selected: processedProjects.filter(p => p.projectStatus === 'selected').length,
-        notSelected: processedProjects.filter(p => p.projectStatus === 'not-selected').length
+        notSelected: processedProjects.filter(p => p.projectStatus === 'not-selected').length,
+        quoted: processedProjects.filter(p => p.projectStatus === 'quoted').length,
+        completed: processedProjects.filter(p => p.status === 'completed').length
       })
       
       setProjects(processedProjects)
@@ -232,17 +263,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     return counts
   }, [projects])
   
-  // 다른 업체 이름 가져오기 함수 추가
-  const getSelectedContractorName = async (contractorId: string) => {
-    const supabase = createBrowserClient()
-    const { data } = await supabase
-      .from('contractors')
-      .select('company_name')
-      .eq('id', contractorId)
-      .single()
-    return data?.company_name || '다른 업체'
-  }
-  
   if (isLoading && !projects.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -254,35 +274,37 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     )
   }
   
-  // 프로젝트 카드를 렌더링하는 간단한 컴포넌트
+  // 프로젝트 카드를 렌더링하는 컴포넌트
   const SimpleProjectCard = ({ project }: { project: Project }) => {
-    const [selectedContractorName, setSelectedContractorName] = useState<string>('')
-    
-    // 선택된 업체 이름 로드
-    useEffect(() => {
-      if (project.selected_contractor_id && project.projectStatus === 'not-selected') {
-        getSelectedContractorName(project.selected_contractor_id).then(name => {
-          setSelectedContractorName(name)
-        })
-      }
-    }, [project.selected_contractor_id, project.projectStatus])
-    
     const getStatusBadge = () => {
-      const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
+      const statusConfig: Record<ProjectStatus, { label: string; color: string; icon?: any }> = {
         'pending': { label: '대기중', color: 'bg-gray-100 text-gray-700' },
         'approved': { label: '승인됨', color: 'bg-green-100 text-green-700' },
         'site-visit-applied': { label: '현장방문 신청', color: 'bg-blue-100 text-blue-700' },
         'site-visit-completed': { label: '현장방문 완료', color: 'bg-indigo-100 text-indigo-700' },
         'quoted': { label: '견적서 제출', color: 'bg-purple-100 text-purple-700' },
-        'selected': { label: '✅ 선택됨', color: 'bg-green-500 text-white font-bold' },
-        'not-selected': { label: `❌ ${selectedContractorName} 선택`, color: 'bg-red-100 text-red-700' },
+        'selected': { 
+          label: '선정됨', 
+          color: 'bg-green-500 text-white font-bold',
+          icon: Trophy
+        },
+        'not-selected': { 
+          label: selectedContractorNames[project.selected_contractor_id!] 
+            ? `${selectedContractorNames[project.selected_contractor_id!]} 선정` 
+            : '다른 업체 선정',
+          color: 'bg-red-100 text-red-700',
+          icon: X
+        },
         'completed': { label: '완료', color: 'bg-gray-500 text-white' },
         'cancelled': { label: '취소됨', color: 'bg-gray-300 text-gray-600' }
       }
       
       const config = statusConfig[project.projectStatus || 'pending']
+      const Icon = config.icon
+      
       return (
-        <span className={`px-3 py-1 rounded-full text-xs ${config.color}`}>
+        <span className={`px-3 py-1 rounded-full text-xs flex items-center gap-1 ${config.color}`}>
+          {Icon && <Icon className="w-3 h-3" />}
           {config.label}
         </span>
       )
@@ -295,48 +317,53 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       if (first_name || last_name) {
         return `${first_name || ''} ${last_name || ''}`.trim()
       }
-      // 이름이 없으면 이메일의 @ 앞부분 표시
       return email?.split('@')[0] || '이름 미입력'
     }
     
     // 프로젝트 타입 표시
     const getProjectTypeLabel = () => {
-      // project_types 배열 처리
       if (project.project_types && project.project_types.length > 0) {
         return project.project_types.map(type => {
-          if (type === 'full_renovation') return '전체 리노베이션'
-          if (type === 'partial_renovation') return '부분 리노베이션'
-          if (type === 'kitchen') return '주방'
-          if (type === 'bathroom') return '욕실'
-          if (type === 'basement') return '지하실'
-          if (type === 'painting') return '페인팅'
-          if (type === 'flooring') return '바닥재'
-          return type
+          const typeLabels: Record<string, string> = {
+            'full_renovation': '전체 리노베이션',
+            'partial_renovation': '부분 리노베이션',
+            'kitchen': '주방',
+            'bathroom': '욕실',
+            'basement': '지하실',
+            'painting': '페인팅',
+            'flooring': '바닥재'
+          }
+          return typeLabels[type] || type
         }).join(', ')
       }
-      
-      return '리노베이션' // 기본값
+      return '리노베이션'
     }
     
     // 공간 타입 표시
     const getSpaceTypeLabel = () => {
-      if (project.space_type === 'detached_house') return 'Detached House'
-      if (project.space_type === 'town_house') return 'Town House'
-      if (project.space_type === 'condo') return 'Condo'
-      if (project.space_type === 'semi_detached') return 'Semi-Detached'
-      if (project.space_type === 'commercial') return 'Commercial'
-      return 'House' // 기본값
+      const spaceLabels: Record<string, string> = {
+        'detached_house': 'Detached House',
+        'town_house': 'Town House',
+        'condo': 'Condo',
+        'semi_detached': 'Semi-Detached',
+        'commercial': 'Commercial'
+      }
+      return spaceLabels[project.space_type] || 'House'
     }
     
     // 예산 표시
     const getBudgetLabel = () => {
       const budget = project.budget
-      if (budget === 'under_50k') return '$50,000 미만'
-      if (budget === '50k_100k') return '$50,000 - $100,000'
-      if (budget === 'over_100k') return '$100,000 이상'
-      if (budget === '100k_200k') return '$100,000 - $200,000'
-      if (budget === '200k_500k') return '$200,000 - $500,000'
-      if (budget === 'over_500k') return '$500,000 이상'
+      const budgetLabels: Record<string, string> = {
+        'under_50k': '$50,000 미만',
+        '50k_100k': '$50,000 - $100,000',
+        'over_100k': '$100,000 이상',
+        '100k_200k': '$100,000 - $200,000',
+        '200k_500k': '$200,000 - $500,000',
+        'over_500k': '$500,000 이상'
+      }
+      
+      if (budgetLabels[budget]) return budgetLabels[budget]
       if (typeof budget === 'number') return `$${budget.toLocaleString()}`
       return '미정'
     }
@@ -367,14 +394,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return '미정'
     }
     
+    // 카드 테두리 색상 (선정/미선정 강조)
+    const getBorderColor = () => {
+      if (project.projectStatus === 'selected') return 'border-green-500 border-2'
+      if (project.projectStatus === 'not-selected') return 'border-red-300 border-2'
+      return 'border-gray-200'
+    }
+    
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className={`bg-white rounded-lg p-6 ${getBorderColor()} transition-all`}>
         <div className="flex justify-between items-start mb-4">
-          <div>
+          <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900">
               {getSpaceTypeLabel()}
             </h3>
-            {/* 고객 이름 표시 */}
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <User className="w-4 h-4 mr-1" />
               <span className="font-medium">{getCustomerName()}</span>
@@ -386,7 +419,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               예산: {getBudgetLabel()}
             </p>
           </div>
-          {getStatusBadge()}
+          <div className="ml-4">
+            {getStatusBadge()}
+          </div>
         </div>
         
         <div className="space-y-2 text-sm">
@@ -431,20 +466,28 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               </p>
             </div>
           )}
+          
+          {/* 선정/미선정 상태 강조 표시 */}
+          {project.projectStatus === 'selected' && (
+            <div className="mt-3 pt-3 border-t bg-green-50 -m-2 p-2 rounded">
+              <p className="text-sm font-semibold text-green-700 flex items-center">
+                <Trophy className="w-4 h-4 mr-1" />
+                🎉 축하합니다! 고객이 귀사를 선택했습니다.
+              </p>
+            </div>
+          )}
+          
+          {project.projectStatus === 'not-selected' && (
+            <div className="mt-3 pt-3 border-t bg-red-50 -m-2 p-2 rounded">
+              <p className="text-sm text-red-700">
+                고객이 <span className="font-semibold">{selectedContractorNames[project.selected_contractor_id!] || '다른 업체'}</span>를 선택했습니다.
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="mt-4 flex gap-2 flex-wrap">
           {/* 상태에 따른 액션 버튼 */}
-          {project.projectStatus === 'selected' && (
-            <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium">
-              고객이 선택함 ✅
-            </button>
-          )}
-          {project.projectStatus === 'not-selected' && (
-            <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded text-sm">
-              {selectedContractorName || '다른 업체'}이(가) 선택됨
-            </button>
-          )}
           {project.projectStatus === 'approved' && !project.site_visit_application && (
             <button 
               onClick={() => console.log('Apply for site visit')}
@@ -459,6 +502,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
             >
               견적서 작성
+            </button>
+          )}
+          {project.projectStatus === 'selected' && (
+            <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default">
+              진행 준비
             </button>
           )}
         </div>
@@ -525,6 +573,54 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </nav>
           </div>
         </div>
+        
+        {/* 통계 요약 (선정/미선정 강조) */}
+        {activeTab === 'projects' && (statusCounts['selected'] > 0 || statusCounts['not-selected'] > 0) && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {statusCounts['selected'] > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-600">선정된 프로젝트</p>
+                    <p className="text-2xl font-bold text-green-700">{statusCounts['selected']}</p>
+                  </div>
+                  <Trophy className="w-8 h-8 text-green-500" />
+                </div>
+              </div>
+            )}
+            {statusCounts['not-selected'] > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-red-600">미선정 프로젝트</p>
+                    <p className="text-2xl font-bold text-red-700">{statusCounts['not-selected']}</p>
+                  </div>
+                  <X className="w-8 h-8 text-red-500" />
+                </div>
+              </div>
+            )}
+            {statusCounts['quoted'] > 0 && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-purple-600">제출한 견적서</p>
+                    <p className="text-2xl font-bold text-purple-700">{statusCounts['quoted']}</p>
+                  </div>
+                  <Eye className="w-8 h-8 text-purple-500" />
+                </div>
+              </div>
+            )}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-600">전체 프로젝트</p>
+                  <p className="text-2xl font-bold text-blue-700">{statusCounts['all']}</p>
+                </div>
+                <Calendar className="w-8 h-8 text-blue-500" />
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* 프로젝트 탭 */}
         {activeTab === 'projects' && (
