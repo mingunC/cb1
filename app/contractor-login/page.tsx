@@ -3,8 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2 } from 'lucide-react'
-import { signIn, getCurrentUser } from '@/lib/auth'
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, LogOut } from 'lucide-react'
+import { signIn, getCurrentUser, signOut } from '@/lib/auth'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
@@ -14,71 +14,71 @@ interface FormData {
   password: string
 }
 
+interface CurrentUser {
+  email: string
+  userType?: 'customer' | 'contractor' | 'admin'
+  contractorData?: {
+    company_name: string
+  }
+}
+
 export default function ContractorLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
   const [error, setError] = useState('')
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: ''
   })
   
   const router = useRouter()
-  const supabase = createBrowserClient() // Google OAuth용
-  const hasCheckedSession = useRef(false) // 세션 체크 여부 추적
+  const supabase = createBrowserClient()
 
-  // 업체 세션 체크 및 자동 리다이렉트 (조건부)
+  // 세션 체크 - 이미 로그인된 상태 확인
   useEffect(() => {
-    // 이미 체크했으면 다시 실행하지 않음
-    if (hasCheckedSession.current) return
-    hasCheckedSession.current = true
-
-    const checkContractorSession = async () => {
+    const checkSession = async () => {
       try {
-        // URL 파라미터로 redirect=true가 있을 때만 자동 리다이렉션 시도
-        const urlParams = new URLSearchParams(window.location.search)
-        const forceRedirect = urlParams.get('redirect') === 'true'
-        
-        if (!forceRedirect) {
-          console.log('Auto-redirect disabled. Use ?redirect=true to enable automatic redirection.')
-          return
-        }
-
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session) {
-          // 세션이 없으면 로그인 페이지 유지
-          return
-        }
-
-        console.log('Existing session found:', session.user.email)
-        
-        // 새로운 auth.ts의 getCurrentUser 함수 사용
         const userInfo = await getCurrentUser()
         
-        if (userInfo.user && userInfo.userType === 'contractor' && userInfo.contractorData) {
-          console.log('Valid contractor session, redirecting to contractor dashboard')
-          toast.success(`${userInfo.contractorData.company_name} 계정으로 이미 로그인되어 있습니다`)
-          router.push('/contractor')
-        } else if (userInfo.user && userInfo.userType === 'admin') {
-          // 관리자가 업체 로그인 페이지에 있는 경우
-          console.log('Admin user on contractor login page')
-          toast.info('관리자 계정입니다. 관리자 페이지로 이동합니다.')
-          router.push('/admin')
-        } else if (userInfo.user && userInfo.userType === 'customer') {
-          // 일반 고객이 업체 로그인 페이지에 있는 경우
-          console.log('Customer user on contractor login page')
-          // 고객은 로그인 상태를 유지하고 업체 로그인 페이지에 머물 수 있음
-          // 업체 전환을 원할 수 있으므로 리다이렉트하지 않음
+        if (userInfo.user) {
+          setCurrentUser({
+            email: userInfo.user.email || '',
+            userType: userInfo.userType,
+            contractorData: userInfo.contractorData
+          })
         }
+        setCheckingSession(false)
       } catch (error) {
-        console.error('Contractor session check error:', error)
-        // 에러 발생 시 조용히 처리
+        console.error('Session check error:', error)
+        setCheckingSession(false)
       }
     }
 
-    checkContractorSession()
-  }, [router, supabase])
+    checkSession()
+  }, [])
+
+  // 로그아웃 처리
+  const handleLogout = async () => {
+    setIsLoading(true)
+    try {
+      const result = await signOut()
+      
+      if (result.success) {
+        toast.success('로그아웃되었습니다')
+        setCurrentUser(null)
+        setIsLoading(false)
+      } else {
+        toast.error(result.error || '로그아웃 실패')
+        setIsLoading(false)
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('로그아웃 중 오류가 발생했습니다')
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -172,6 +172,127 @@ export default function ContractorLoginPage() {
     setShowPassword(prev => !prev)
   }, [])
 
+  // 세션 체크 중
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">로그인 상태 확인 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 이미 로그인된 경우
+  if (currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          {/* 뒤로가기 버튼 */}
+          <div className="mb-6">
+            <Link 
+              href="/" 
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              <span>홈으로 돌아가기</span>
+            </Link>
+          </div>
+          
+          <div className="text-center">
+            <Building2 className="mx-auto h-12 w-12 text-green-600" />
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              이미 로그인되어 있습니다
+            </h2>
+          </div>
+        </div>
+
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <User className="h-8 w-8 text-green-600" />
+              </div>
+              
+              <p className="text-lg font-medium text-gray-900 mb-1">
+                {currentUser.contractorData?.company_name || currentUser.email}
+              </p>
+              <p className="text-sm text-gray-500">
+                {currentUser.email}
+              </p>
+              
+              {currentUser.userType === 'contractor' && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-3">
+                  업체 계정
+                </span>
+              )}
+              {currentUser.userType === 'customer' && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    일반 고객 계정으로 로그인되어 있습니다.
+                    업체 계정으로 로그인하려면 로그아웃 후 다시 시도해주세요.
+                  </p>
+                </div>
+              )}
+              {currentUser.userType === 'admin' && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    관리자 계정으로 로그인되어 있습니다.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {currentUser.userType === 'contractor' && (
+                <Link
+                  href="/contractor"
+                  className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                >
+                  업체 대시보드로 이동
+                </Link>
+              )}
+              {currentUser.userType === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                >
+                  관리자 대시보드로 이동
+                </Link>
+              )}
+              
+              <button
+                onClick={handleLogout}
+                disabled={isLoading}
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent mr-2" />
+                    로그아웃 중...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    로그아웃하고 다시 로그인
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                다른 계정으로 로그인하려면 먼저 로그아웃해주세요.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 로그인 폼
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -346,15 +467,15 @@ export default function ContractorLoginPage() {
                   />
                   <path
                     fill="#34A853"
-                    d="M12 22.56c3.25 0 5.92-1.09 7.9-2.96l-3.57-2.77c-.98.64-2.23 1.05-4.33 1.05-3.06 0-5.66-2.07-6.6-4.86H1.85v2.83c1.92 3.77 5.79 6.33 10.15 6.33z"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.05-4.33 1.05-3.31 0-6.12-2.23-7.12-5.24H.8v2.86A11.93 11.93 0 0012 23z"
                   />
                   <path
                     fill="#FBBC04"
-                    d="M5.35 14.05c-.1-.3-.16-.62-.16-.97s.06-.68.16-.97V9.25H1.85c-.36.72-.56 1.57-.56 2.49s.2 1.77.56 2.49l3.5-2.7z"
+                    d="M4.88 14.09A7.31 7.31 0 014.5 12c0-.73.13-1.45.38-2.09V7.05H.8A11.93 11.93 0 000 12c0 1.92.46 3.73 1.28 5.33l3.6-2.79z"
                   />
                   <path
                     fill="#EA4335"
-                    d="M12 5.64c1.92 0 3.45.8 4.23 1.55L20.5 2.93C18.42 1.01 15.75 0 12 0 7.64 0 3.77 2.56 1.85 6.33l3.5 2.7c.94-2.79 3.54-4.86 6.6-4.86z"
+                    d="M12 4.76c1.86 0 3.53.64 4.85 1.9l3.64-3.64A11.86 11.86 0 0012 0 11.93 11.93 0 00.8 7.05l3.6 2.79c1-3.01 3.81-5.08 7.12-5.08z"
                   />
                 </svg>
                 Google로 로그인
