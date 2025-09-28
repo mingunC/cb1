@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -471,6 +471,31 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 상단 메뉴 버튼들 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <button
+            onClick={() => router.push('/contractor/profile')}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <UserCircle className="h-5 w-5 text-blue-600" />
+            <span className="font-medium">프로필 관리</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('portfolio')}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Briefcase className="h-5 w-5 text-blue-600" />
+            <span className="font-medium">포트폴리오 관리</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('projects')}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors md:col-span-1"
+          >
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <span className="font-medium">My project</span>
+          </button>
+        </div>
+        
         {/* 탭 네비게이션 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
           <div className="border-b border-gray-200">
