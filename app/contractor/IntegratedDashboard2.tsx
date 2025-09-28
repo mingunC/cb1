@@ -483,7 +483,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                프로젝트 관리
+                My project
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
