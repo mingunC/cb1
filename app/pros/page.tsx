@@ -5,7 +5,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { 
   Search, Filter, MapPin, Star, Award, Calendar, Users, 
   CheckCircle, Phone, Mail, Globe, Clock, Building,
-  Briefcase, Shield, ChevronRight, X, Heart, MessageCircle, Image as ImageIcon
+  Briefcase, Shield, ChevronRight, X, MessageCircle, Image as ImageIcon
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -64,12 +64,10 @@ export default function ContractorsListingPage() {
     sortBy: 'rating'
   })
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null)
-  const [savedContractors, setSavedContractors] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
     fetchContractors()
-    loadSavedContractors()
   }, [])
 
   const fetchContractors = async () => {
@@ -179,23 +177,6 @@ export default function ContractorsListingPage() {
     }
   }
 
-  const loadSavedContractors = () => {
-    const saved = localStorage.getItem('saved_contractors')
-    if (saved) {
-      setSavedContractors(new Set(JSON.parse(saved)))
-    }
-  }
-
-  const toggleSaveContractor = (contractorId: string) => {
-    const newSaved = new Set(savedContractors)
-    if (newSaved.has(contractorId)) {
-      newSaved.delete(contractorId)
-    } else {
-      newSaved.add(contractorId)
-    }
-    setSavedContractors(newSaved)
-    localStorage.setItem('saved_contractors', JSON.stringify(Array.from(newSaved)))
-  }
 
   // SMS 문자 상담 함수
   const handleSMSConsultation = (contractor: Contractor) => {
@@ -418,21 +399,6 @@ export default function ContractorsListingPage() {
                     )}
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleSaveContractor(contractor.id)
-                    }}
-                    className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-full hover:bg-white"
-                  >
-                    <Heart
-                      className={`h-5 w-5 ${
-                        savedContractors.has(contractor.id)
-                          ? 'fill-red-500 text-red-500'
-                          : 'text-gray-600'
-                      }`}
-                    />
-                  </button>
                 </div>
 
                 <div className="p-4">
