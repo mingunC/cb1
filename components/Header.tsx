@@ -334,7 +334,7 @@ export default function Header() {
         { name: '업체', href: '/pros' },
         { name: '포트폴리오', href: '/portfolio' },
         { name: '이벤트', href: '/events' },
-        { name: '내견적관리', href: '/contractor' },
+        { name: 'MyPage', href: '/contractor' },
       ]
     } else {
       return [
