@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, Filter, MapPin, DollarSign, Calendar, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home, Store } from 'lucide-react'
 import Link from 'next/link'
@@ -34,9 +34,9 @@ type FilterState = {
   sortBy: 'latest' | 'popular' | 'budget_high' | 'budget_low'
 }
 
-export default function PortfolioGalleryPage() {
+function PortfolioContent() {
   const searchParams = useSearchParams()
-  const contractorIdFromUrl = searchParams?.get('contractor') // URL에서 업체 ID 가져오기
+  const contractorIdFromUrl = searchParams?.get('contractor')
   
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [filteredPortfolios, setFilteredPortfolios] = useState<Portfolio[]>([])
@@ -58,12 +58,13 @@ export default function PortfolioGalleryPage() {
   useEffect(() => {
     fetchPortfolios()
     loadLikedPortfolios()
-  }, [])
+  }, [contractorIdFromUrl])
 
   const fetchPortfolios = async () => {
     try {
       setIsLoading(true)
       console.log('🔍 포트폴리오 데이터 로딩 시작...')
+      console.log('📍 Contractor ID from URL:', contractorIdFromUrl)
       
       const supabase = createBrowserClient()
       
@@ -79,7 +80,6 @@ export default function PortfolioGalleryPage() {
         `)
         .order('created_at', { ascending: false })
       
-      // URL에서 contractor ID가 있으면 필터링
       if (contractorIdFromUrl) {
         console.log('🏢 특정 업체 필터링:', contractorIdFromUrl)
         query = query.eq('contractor_id', contractorIdFromUrl)
@@ -93,9 +93,7 @@ export default function PortfolioGalleryPage() {
       }
       
       console.log('✅ 포트폴리오 데이터 로드 성공:', data?.length, '개')
-      console.log('📊 원본 데이터:', data)
       
-      // 데이터 변환
       const transformedData: Portfolio[] = (data || []).map(p => {
         let imageArray: string[] = []
         if (Array.isArray(p.images)) {
@@ -103,8 +101,6 @@ export default function PortfolioGalleryPage() {
         } else if (typeof p.images === 'string') {
           imageArray = [p.images]
         }
-        
-        console.log(`Portfolio "${p.title}" images:`, imageArray)
         
         return {
           id: p.id,
@@ -128,9 +124,10 @@ export default function PortfolioGalleryPage() {
       setPortfolios(transformedData)
       setFilteredPortfolios(transformedData)
       
-      // 필터링된 업체명 저장
       if (contractorIdFromUrl && transformedData.length > 0 && transformedData[0].contractor) {
         setSelectedContractorName(transformedData[0].contractor.company_name)
+      } else {
+        setSelectedContractorName(null)
       }
       
       if (transformedData.length === 0) {
@@ -161,7 +158,6 @@ export default function PortfolioGalleryPage() {
     localStorage.setItem('liked_portfolios', JSON.stringify(Array.from(newLiked)))
   }
 
-  // 필터 초기화 (모든 포트폴리오 보기)
   const clearContractorFilter = () => {
     window.location.href = '/portfolio'
   }
@@ -234,7 +230,6 @@ export default function PortfolioGalleryPage() {
               )}
             </div>
             
-            {/* 검색바 */}
             <div className="flex gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -256,7 +251,6 @@ export default function PortfolioGalleryPage() {
             </div>
           </div>
 
-          {/* 필터 패널 */}
           {isFilterOpen && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -327,7 +321,6 @@ export default function PortfolioGalleryPage() {
                   setCurrentImageIndex(0)
                 }}
               >
-                {/* 이미지 */}
                 <div className="relative h-64 overflow-hidden rounded-t-lg bg-gray-100">
                   {portfolio.images && portfolio.images.length > 0 ? (
                     <img
@@ -344,7 +337,6 @@ export default function PortfolioGalleryPage() {
                     </div>
                   )}
                   
-                  {/* 좋아요 버튼 */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
@@ -361,7 +353,6 @@ export default function PortfolioGalleryPage() {
                     />
                   </button>
 
-                  {/* 이미지 개수 배지 */}
                   {portfolio.images && portfolio.images.length > 1 && (
                     <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 text-white text-xs rounded-full">
                       +{portfolio.images.length - 1} 더보기
@@ -369,7 +360,6 @@ export default function PortfolioGalleryPage() {
                   )}
                 </div>
 
-                {/* 정보 */}
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-2">{portfolio.title}</h3>
                   
@@ -430,7 +420,6 @@ export default function PortfolioGalleryPage() {
       {selectedPortfolio && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-            {/* 모달 헤더 */}
             <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
               <h2 className="text-xl font-bold">{selectedPortfolio.title}</h2>
               <button
@@ -441,7 +430,6 @@ export default function PortfolioGalleryPage() {
               </button>
             </div>
 
-            {/* 이미지 갤러리 */}
             {selectedPortfolio.images && selectedPortfolio.images.length > 0 && (
               <div className="relative bg-black">
                 <img
@@ -468,7 +456,6 @@ export default function PortfolioGalleryPage() {
                       <ChevronRight className="h-5 w-5" />
                     </button>
                     
-                    {/* 이미지 인디케이터 */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                       {selectedPortfolio.images.map((_, index) => (
                         <button
@@ -481,7 +468,6 @@ export default function PortfolioGalleryPage() {
                       ))}
                     </div>
 
-                    {/* 이미지 카운터 */}
                     <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 text-white text-sm rounded-full">
                       {currentImageIndex + 1} / {selectedPortfolio.images.length}
                     </div>
@@ -490,9 +476,7 @@ export default function PortfolioGalleryPage() {
               </div>
             )}
 
-            {/* 상세 정보 */}
             <div className="p-6">
-              {/* 업체 정보 */}
               {selectedPortfolio.contractor && (
                 <div className="flex items-center justify-between mb-6 pb-6 border-b">
                   <div className="flex items-center gap-3">
@@ -525,7 +509,6 @@ export default function PortfolioGalleryPage() {
                 </div>
               )}
 
-              {/* 프로젝트 정보 */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {selectedPortfolio.category && (
                   <div>
@@ -541,7 +524,6 @@ export default function PortfolioGalleryPage() {
                 )}
               </div>
 
-              {/* 설명 */}
               {selectedPortfolio.description && (
                 <div className="mb-6">
                   <h4 className="font-semibold mb-2">프로젝트 설명</h4>
@@ -549,7 +531,6 @@ export default function PortfolioGalleryPage() {
                 </div>
               )}
 
-              {/* 액션 버튼 */}
               <div className="flex gap-3">
                 <button
                   onClick={() => toggleLike(selectedPortfolio.id)}
@@ -576,5 +557,20 @@ export default function PortfolioGalleryPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PortfolioGalleryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">포트폴리오를 불러오는 중...</p>
+        </div>
+      </div>
+    }>
+      <PortfolioContent />
+    </Suspense>
   )
 }
