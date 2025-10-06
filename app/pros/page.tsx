@@ -113,12 +113,26 @@ export default function ContractorsListingPage() {
             .in('status', ['completed', 'selected'])
 
           // 또는 프로젝트에서 해당 업체가 선택된 경우
-          const { count: selectedProjects } = await supabase
-            .from('projects')
-            .select('*', { count: 'exact', head: true })
-            .eq('selected_contractor_id', contractor.id)
+          let selectedProjects = 0
+          try {
+            const { count, error: projectsError } = await supabase
+              .from('projects')
+              .select('*', { count: 'exact', head: true })
+              .eq('selected_contractor_id', contractor.id)
+            
+            if (projectsError) {
+              console.warn(`⚠️ Projects table access error for contractor ${contractor.company_name}:`, projectsError)
+              // projects 테이블에 접근할 수 없는 경우 0으로 설정
+              selectedProjects = 0
+            } else {
+              selectedProjects = count || 0
+            }
+          } catch (err) {
+            console.warn(`⚠️ Projects query failed for contractor ${contractor.company_name}:`, err)
+            selectedProjects = 0
+          }
 
-          const totalCompleted = (completedQuotes || 0) + (selectedProjects || 0)
+          const totalCompleted = (completedQuotes || 0) + selectedProjects
 
           return {
             ...contractor,
