@@ -426,11 +426,19 @@ export default function ContractorsListingPage() {
 
                 <div className="p-4">
                   <div className="flex items-start gap-3 mb-3">
-                    <img
-                      src={contractor.logo_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=48&h=48&fit=crop&crop=center'}
-                      alt={contractor.company_name}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
+                    {contractor.logo_url ? (
+                      <img
+                        src={contractor.logo_url}
+                        alt={contractor.company_name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">
+                          {contractor.company_name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900">{contractor.company_name}</h3>
                       <div className="flex items-center gap-2 mt-1">
@@ -521,11 +529,19 @@ export default function ContractorsListingPage() {
 
             <div className="p-6">
               <div className="flex items-start gap-4 mb-6">
-                <img
-                  src={selectedContractor.logo_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=80&h=80&fit=crop&crop=center'}
-                  alt={selectedContractor.company_name}
-                  className="w-20 h-20 rounded-lg object-cover"
-                />
+                {selectedContractor.logo_url ? (
+                  <img
+                    src={selectedContractor.logo_url}
+                    alt={selectedContractor.company_name}
+                    className="w-20 h-20 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-lg bg-blue-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-2xl">
+                      {selectedContractor.company_name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl font-bold">{selectedContractor.company_name}</h2>
