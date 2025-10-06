@@ -24,7 +24,7 @@ interface PortfolioProject {
   contractor_id: string
   title: string
   description: string | null
-  image_url: string | null
+  images: string[] | null
   category: string
   year: string
   created_at: string
@@ -166,7 +166,7 @@ export default function AdminPortfolioPage() {
 
   const openEditModal = (project: PortfolioProject) => {
     setEditingProject(project)
-    setUploadedImageUrl(project.image_url)
+    setUploadedImageUrl(project.images && project.images.length > 0 ? project.images[0] : null)
     setIsModalOpen(true)
   }
 
@@ -221,7 +221,7 @@ export default function AdminPortfolioPage() {
         contractor_id: formData.get('contractor_id') as string,
         title: formData.get('title') as string,
         description: formData.get('description') as string,
-        image_url: uploadedImageUrl,
+        images: uploadedImageUrl ? [uploadedImageUrl] : [],
         category: formData.get('category') as string,
         year: formData.get('year') as string,
       }
@@ -447,13 +447,17 @@ export default function AdminPortfolioPage() {
           ) : (
             <div className="divide-y divide-gray-200">
               {filteredProjects.map((project) => (
-                <div key={project.id} className="p-6 hover:bg-gray-50">
+                <div 
+                  key={project.id} 
+                  className="p-6 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => openEditModal(project)}
+                >
                   <div className="flex items-start space-x-4">
                     {/* 이미지 */}
                     <div className="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0">
-                      {project.image_url ? (
+                      {project.images && project.images.length > 0 ? (
                         <img
-                          src={project.image_url}
+                          src={project.images[0]}
                           alt={project.title}
                           className="w-full h-full object-cover rounded-lg"
                         />
@@ -494,14 +498,20 @@ export default function AdminPortfolioPage() {
                         {/* 액션 버튼 */}
                         <div className="flex items-center space-x-2 ml-4">
                           <button
-                            onClick={() => openEditModal(project)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openEditModal(project)
+                            }}
                             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                             title="수정"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(project.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(project.id)
+                            }}
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                             title="삭제"
                           >
