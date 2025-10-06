@@ -236,8 +236,12 @@ export default function ContractorProfile() {
 
       if (error) throw error
 
-      toast.success('프로필이 업데이트되었습니다')
-      loadProfile()
+      toast.success('프로필이 업데이트되었습니다. 메인 페이지로 이동합니다...')
+      
+      // 저장 성공 후 잠시 대기 후 리다이렉트 (사용자가 성공 메시지를 볼 수 있도록)
+      setTimeout(() => {
+        router.push('/contractor')
+      }, 1500)
     } catch (error) {
       console.error('Error saving profile:', error)
       toast.error('프로필 저장에 실패했습니다')
