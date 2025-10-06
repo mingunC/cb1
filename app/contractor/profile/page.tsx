@@ -26,6 +26,7 @@ export default function ContractorProfile() {
   const [profile, setProfile] = useState<ContractorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     company_name: '',
@@ -76,7 +77,10 @@ export default function ContractorProfile() {
           license_number: contractor.license_number || '',
           insurance: contractor.insurance || ''
         })
+        
+        // 로고 URL이 있으면 미리보기 설정
         if (contractor.company_logo) {
+          console.log('로고 URL 로드됨:', contractor.company_logo)
           setLogoPreview(contractor.company_logo)
         }
       }
@@ -97,29 +101,70 @@ export default function ContractorProfile() {
       return
     }
 
+    if (!profile) {
+      toast.error('프로필 정보를 불러올 수 없습니다')
+      return
+    }
+
+    setIsUploadingLogo(true)
     try {
       const supabase = createBrowserClient()
       const fileExt = file.name.split('.').pop()
-      const fileName = `${profile?.id}-${Date.now()}.${fileExt}`
+      const fileName = `${profile.id}-${Date.now()}.${fileExt}`
       const filePath = `contractor-logos/${fileName}`
 
-      const { error: uploadError, data } = await supabase.storage
+      console.log('로고 업로드 시작:', filePath)
+
+      // 파일 업로드
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('portfolios')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('업로드 에러:', uploadError)
+        throw uploadError
+      }
 
+      console.log('업로드 성공:', uploadData)
+
+      // Public URL 생성
       const { data: { publicUrl } } = supabase.storage
         .from('portfolios')
         .getPublicUrl(filePath)
 
+      console.log('생성된 Public URL:', publicUrl)
+
+      // 미리보기 업데이트
       setLogoPreview(publicUrl)
-      setFormData(prev => ({ ...prev, company_logo: publicUrl }))
+
+      // DB에 즉시 저장
+      const { error: updateError } = await supabase
+        .from('contractors')
+        .update({ 
+          company_logo: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
+
+      if (updateError) {
+        console.error('DB 업데이트 에러:', updateError)
+        throw updateError
+      }
+
+      console.log('DB 업데이트 성공')
       
       toast.success('로고가 업로드되었습니다')
-    } catch (error) {
+      
+      // 프로필 다시 로드
+      await loadProfile()
+    } catch (error: any) {
       console.error('Error uploading logo:', error)
-      toast.error('로고 업로드에 실패했습니다')
+      toast.error(error.message || '로고 업로드에 실패했습니다')
+    } finally {
+      setIsUploadingLogo(false)
     }
   }
 
@@ -149,7 +194,6 @@ export default function ContractorProfile() {
       
       const updateData = {
         ...formData,
-        company_logo: logoPreview,
         updated_at: new Date().toISOString()
       }
 
@@ -226,13 +270,26 @@ export default function ContractorProfile() {
           <div className="flex flex-col items-center mb-8">
             <div className="relative">
               <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                {logoPreview ? (
-                  <img src={logoPreview} alt="Company Logo" className="w-full h-full object-cover" />
+                {isUploadingLogo ? (
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                ) : logoPreview ? (
+                  <img 
+                    src={logoPreview} 
+                    alt="Company Logo" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('이미지 로드 실패:', logoPreview)
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
                 ) : (
                   <span className="text-gray-400 text-lg">Logo</span>
                 )}
               </div>
-              <label htmlFor="logo-upload" className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700">
+              <label 
+                htmlFor="logo-upload" 
+                className={`absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
                 <Camera className="h-5 w-5" />
                 <input
                   id="logo-upload"
@@ -240,10 +297,14 @@ export default function ContractorProfile() {
                   accept="image/*"
                   onChange={handleLogoUpload}
                   className="hidden"
+                  disabled={isUploadingLogo}
                 />
               </label>
             </div>
             <p className="text-lg font-medium mt-4">{formData.company_name || 'Company Name'}</p>
+            {isUploadingLogo && (
+              <p className="text-sm text-gray-500 mt-2">로고 업로드 중...</p>
+            )}
           </div>
 
           {/* 업체 소개 버튼 */}
