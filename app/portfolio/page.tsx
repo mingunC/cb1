@@ -14,6 +14,7 @@ interface Portfolio {
   images: string[]
   category?: string
   year?: string
+  project_address?: string
   created_at: string
   contractor?: {
     id: string
@@ -204,10 +205,23 @@ function PortfolioContent() {
                     </div>
                   )}
 
-                  {portfolio.category && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {portfolio.category}
-                    </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    {portfolio.category && (
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {portfolio.category}
+                      </span>
+                    )}
+                    {portfolio.year && (
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {portfolio.year}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {portfolio.project_address && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      📍 {portfolio.project_address}
+                    </div>
                   )}
                 </div>
               </div>
@@ -277,6 +291,15 @@ function PortfolioContent() {
                 <div className="mb-6">
                   <h4 className="font-semibold mb-2">프로젝트 설명</h4>
                   <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedPortfolio.description}</p>
+                </div>
+              )}
+
+              {selectedPortfolio.project_address && (
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-2">프로젝트 위치</h4>
+                  <p className="text-gray-600 flex items-center">
+                    📍 {selectedPortfolio.project_address}
+                  </p>
                 </div>
               )}
 
