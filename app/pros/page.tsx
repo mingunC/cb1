@@ -388,11 +388,22 @@ export default function ContractorsListingPage() {
                 onClick={() => setSelectedContractor(contractor)}
               >
                 <div className="relative h-48 overflow-hidden rounded-t-lg">
-                  <img
-                    src={contractor.cover_image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=200&fit=crop&crop=center'}
-                    alt={contractor.company_name}
-                    className="w-full h-full object-cover"
-                  />
+                  {contractor.cover_image ? (
+                    <img
+                      src={contractor.cover_image}
+                      alt={contractor.company_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                      <div className="text-center">
+                        <h3 className="text-white text-2xl font-bold mb-1">
+                          {contractor.company_name}
+                        </h3>
+                        <p className="text-blue-100 text-sm">Professional Services</p>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="absolute top-3 left-3 flex gap-2">
                     {contractor.is_premium && (
@@ -514,11 +525,22 @@ export default function ContractorsListingPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative h-64">
-              <img
-                src={selectedContractor.cover_image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=300&fit=crop&crop=center'}
-                alt={selectedContractor.company_name}
-                className="w-full h-full object-cover"
-              />
+              {selectedContractor.cover_image ? (
+                <img
+                  src={selectedContractor.cover_image}
+                  alt={selectedContractor.company_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <h2 className="text-white text-4xl font-bold mb-2">
+                      {selectedContractor.company_name}
+                    </h2>
+                    <p className="text-blue-100 text-lg">Professional Services</p>
+                  </div>
+                </div>
+              )}
               <button
                 onClick={() => setSelectedContractor(null)}
                 className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-white"
