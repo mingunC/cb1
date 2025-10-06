@@ -1,67 +1,50 @@
--- Supabase 스키마 캐시 새로고침
--- API 스키마 캐시를 강제로 업데이트
+-- Supabase 스키마 캐시 새로고침 (Foreign Key는 이미 존재함)
 
--- 1. 스키마 새로고침 (PostgREST 캐시 클리어)
--- NOTIFY pgrst, 'reload schema';  -- 이 명령어는 Supabase에서 지원하지 않을 수 있음
+-- 1. Foreign Key 관계 확인
+SELECT
+  tc.constraint_name,
+  tc.table_name,
+  kcu.column_name,
+  ccu.table_name AS foreign_table_name,
+  ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu
+  ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage AS ccu
+  ON ccu.constraint_name = tc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name = 'portfolios';
 
--- 2. 테이블 통계 업데이트
-ANALYZE contractor_quotes;
+-- 결과: portfolios.contractor_id -> contractors.id 관계가 표시되어야 함
 
--- 3. 인덱스 재구성
-REINDEX TABLE contractor_quotes;
+-- 2. 스키마 캐시 새로고침 (가장 중요!)
+NOTIFY pgrst, 'reload schema';
 
--- 4. 테이블 존재 및 구조 재확인
+-- 3. 테스트 쿼리
 SELECT 
-  'Table exists:' as check_type,
-  EXISTS (
-    SELECT 1 FROM information_schema.tables 
-    WHERE table_name = 'contractor_quotes'
-  ) as result;
+  p.id,
+  p.title,
+  p.contractor_id,
+  c.company_name,
+  c.company_logo
+FROM portfolios p
+LEFT JOIN contractors c ON c.id = p.contractor_id
+ORDER BY p.created_at DESC
+LIMIT 5;
 
+-- 4. 포트폴리오 개수 확인
 SELECT 
-  'Columns count:' as check_type,
-  COUNT(*) as result
-FROM information_schema.columns 
-WHERE table_name = 'contractor_quotes';
+  'Total portfolios' as info,
+  COUNT(*) as count
+FROM portfolios;
 
--- 5. 모든 컬럼 나열
+-- 5. 업체별 포트폴리오 개수
 SELECT 
-  ordinal_position,
-  column_name,
-  data_type,
-  is_nullable,
-  column_default
-FROM information_schema.columns 
-WHERE table_name = 'contractor_quotes' 
-ORDER BY ordinal_position;
+  c.company_name,
+  COUNT(p.id) as portfolio_count
+FROM contractors c
+LEFT JOIN portfolios p ON p.contractor_id = c.id
+GROUP BY c.company_name
+ORDER BY portfolio_count DESC;
 
--- 6. RLS 정책 확인
-SELECT 
-  policyname,
-  permissive,
-  roles,
-  cmd,
-  qual,
-  with_check
-FROM pg_policies 
-WHERE tablename = 'contractor_quotes';
-
--- 7. 테이블 권한 확인
-SELECT 
-  grantee,
-  privilege_type,
-  is_grantable
-FROM information_schema.table_privileges 
-WHERE table_name = 'contractor_quotes';
-
--- 8. API 접근 테스트용 샘플 데이터 삽입 (선택사항)
--- INSERT INTO contractor_quotes (contractor_id, project_id, price, description, status)
--- VALUES (
---   (SELECT id FROM contractors LIMIT 1),
---   (SELECT id FROM quote_requests LIMIT 1),
---   1000.00,
---   'Test quote',
---   'pending'
--- ) ON CONFLICT DO NOTHING;
-
-SELECT 'Schema cache refresh completed' as status;
+SELECT '✅ Schema cache refreshed! Please refresh your browser (Ctrl+F5)' as result;
