@@ -353,18 +353,6 @@ export default function ContractorProfile() {
             </p>
           </div>
 
-          {/* 업체 소개 버튼 */}
-          <div className="mb-8">
-            <button className="w-full py-3 bg-teal-700 text-white rounded-lg font-medium hover:bg-teal-800 transition-colors">
-              업체 소개
-            </button>
-          </div>
-
-          {/* 탭 메뉴 */}
-          <div className="flex gap-4 mb-8">
-            <button className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors">Portfolio</button>
-            <button className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors">Reviews</button>
-          </div>
 
           {/* 폼 섹션 */}
           <div className="space-y-6">
@@ -521,17 +509,6 @@ export default function ContractorProfile() {
             </div>
           </div>
 
-          {/* 포트폴리오 프리뷰 섹션 */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-teal-700 rounded-xl p-6 text-white">
-              <div className="h-48 bg-teal-800 rounded-lg mb-4"></div>
-              <p className="text-sm opacity-80">Participated dealers: 2</p>
-            </div>
-            <div className="bg-teal-700 rounded-xl p-6 text-white">
-              <div className="h-48 bg-teal-800 rounded-lg mb-4"></div>
-              <p className="text-sm opacity-80">Participated dealers: 2</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
