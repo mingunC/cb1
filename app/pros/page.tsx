@@ -102,6 +102,23 @@ export default function ContractorsListingPage() {
         // .eq('status', 'active') // 모든 상태의 업체 표시
         .order('created_at', { ascending: false })
 
+      // 각 업체별 완료된 견적서/프로젝트 수 조회
+      const contractorsWithProjects = await Promise.all(
+        contractorsData.map(async (contractor) => {
+          // 완료된 견적서 수 조회
+          const { count: completedQuotes } = await supabase
+            .from('contractor_quotes')
+            .select('*', { count: 'exact', head: true })
+            .eq('contractor_id', contractor.id)
+            .eq('status', 'completed')
+
+          return {
+            ...contractor,
+            completed_projects_count: completedQuotes || 0
+          }
+        })
+      )
+
       if (error) {
         console.error('Error fetching contractors:', error)
         setContractors([])
@@ -109,11 +126,16 @@ export default function ContractorsListingPage() {
         return
       }
 
-      console.log('📊 Fetched contractors from database:', contractorsData)
-      console.log('🏢 Contractor names:', contractorsData.map(c => c.company_name))
+      console.log('📊 Fetched contractors from database:', contractorsWithProjects)
+      console.log('🏢 Contractor names:', contractorsWithProjects.map(c => c.company_name))
+      console.log('📈 Completed projects count:', contractorsWithProjects.map(c => ({ 
+        name: c.company_name, 
+        completed: c.completed_projects_count,
+        portfolio: c.portfolio_count 
+      })))
 
       // 데이터베이스 데이터를 UI 인터페이스에 맞게 변환
-      const formattedContractors: Contractor[] = contractorsData.map(contractor => ({
+      const formattedContractors: Contractor[] = contractorsWithProjects.map(contractor => ({
         id: contractor.id,
         company_name: contractor.company_name || '업체명 없음',
         contact_name: contractor.contact_name || '담당자 없음',
@@ -125,12 +147,12 @@ export default function ContractorsListingPage() {
         description: contractor.description || '업체 소개가 없습니다.',
         established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
         employee_count: '정보 없음',
-        service_areas: ['서울', '경기'], // 기본값
+        service_areas: contractor.address ? [contractor.address] : ['서울', '경기'], // 실제 주소 사용
         specialties: Array.isArray(contractor.specialties) ? contractor.specialties : [],
         certifications: ['실내건축공사업'], // 기본값
         rating: contractor.rating || 0,
         review_count: 0, // 기본값
-        completed_projects: 0, // 기본값
+        completed_projects: contractor.completed_projects_count || contractor.portfolio_count || 0, // 실제 완료 프로젝트 수 사용
         response_time: '문의 후 안내',
         min_budget: undefined,
         is_verified: true,
