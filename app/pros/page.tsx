@@ -105,16 +105,24 @@ export default function ContractorsListingPage() {
       // 각 업체별 완료된 견적서/프로젝트 수 조회
       const contractorsWithProjects = await Promise.all(
         contractorsData.map(async (contractor) => {
-          // 완료된 견적서 수 조회
+          // 완료된 견적서 수 조회 (selected 상태도 포함)
           const { count: completedQuotes } = await supabase
             .from('contractor_quotes')
             .select('*', { count: 'exact', head: true })
             .eq('contractor_id', contractor.id)
-            .eq('status', 'completed')
+            .in('status', ['completed', 'selected'])
+
+          // 또는 프로젝트에서 해당 업체가 선택된 경우
+          const { count: selectedProjects } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('selected_contractor_id', contractor.id)
+
+          const totalCompleted = (completedQuotes || 0) + (selectedProjects || 0)
 
           return {
             ...contractor,
-            completed_projects_count: completedQuotes || 0
+            completed_projects_count: totalCompleted
           }
         })
       )
@@ -131,8 +139,17 @@ export default function ContractorsListingPage() {
       console.log('📈 Completed projects count:', contractorsWithProjects.map(c => ({ 
         name: c.company_name, 
         completed: c.completed_projects_count,
-        portfolio: c.portfolio_count 
+        portfolio: c.portfolio_count,
+        id: c.id
       })))
+      
+      // Micks Construction Co.의 상세 정보 로그
+      const micksContractor = contractorsWithProjects.find(c => 
+        c.company_name.includes('Micks') || c.company_name.includes('micks')
+      )
+      if (micksContractor) {
+        console.log('🏗️ Micks Construction Co. 상세 정보:', micksContractor)
+      }
 
       // 데이터베이스 데이터를 UI 인터페이스에 맞게 변환
       const formattedContractors: Contractor[] = contractorsWithProjects.map(contractor => ({
@@ -730,23 +747,6 @@ export default function ContractorsListingPage() {
                 </div>
               </div>
 
-              {/* 인증 및 자격 */}
-              {selectedContractor.certifications.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-3">인증 및 자격</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedContractor.certifications.map((cert, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
-                      >
-                        <Shield className="h-3 w-3" />
-                        {cert}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* 최근 프로젝트 */}
               {selectedContractor.recent_projects && selectedContractor.recent_projects.length > 0 && (
@@ -795,25 +795,9 @@ export default function ContractorsListingPage() {
 
                 {/* 액션 버튼 */}
                 <div className="flex gap-3">
-                  <button className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
-                    견적 요청하기
-                  </button>
                   <button className="px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium flex items-center gap-2">
                     <MessageCircle className="h-5 w-5" />
                     상담 신청
-                  </button>
-                  <button
-                    onClick={() => toggleSaveContractor(selectedContractor.id)}
-                    className={`px-6 py-3 border rounded-lg font-medium flex items-center gap-2 ${
-                      savedContractors.has(selectedContractor.id)
-                        ? 'border-red-300 bg-red-50 text-red-600'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Heart className={`h-5 w-5 ${
-                      savedContractors.has(selectedContractor.id) ? 'fill-current' : ''
-                    }`} />
-                    {savedContractors.has(selectedContractor.id) ? '저장됨' : '저장'}
                   </button>
                 </div>
               </div>
