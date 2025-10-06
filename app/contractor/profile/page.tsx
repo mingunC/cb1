@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Camera, Upload, Save, X } from 'lucide-react'
+import { ArrowLeft, Camera, Save } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
@@ -47,32 +47,7 @@ export default function ContractorProfile() {
 
   useEffect(() => {
     loadProfile()
-    checkCompanyLogoColumn()
   }, [])
-
-  // company_logo 컬럼 존재 여부 확인
-  const checkCompanyLogoColumn = async () => {
-    try {
-      const supabase = createBrowserClient()
-      const { data, error } = await supabase
-        .from('contractors')
-        .select('company_logo')
-        .limit(1)
-      
-      if (error && (error.code === 'PGRST204' || error.code === '42703')) {
-        console.error('❌ company_logo 컬럼이 존재하지 않습니다.')
-        console.log('🔧 해결 방법: Supabase SQL Editor에서 다음 명령어를 실행하세요:')
-        console.log('ALTER TABLE public.contractors ADD COLUMN IF NOT EXISTS company_logo TEXT;')
-        toast.error('데이터베이스 설정 필요: company_logo 컬럼을 추가해주세요. 관리자에게 문의하세요.')
-      } else if (error) {
-        console.error('컬럼 확인 중 오류:', error)
-      } else {
-        console.log('✅ company_logo 컬럼이 존재합니다.')
-      }
-    } catch (error) {
-      console.error('컬럼 확인 중 예외:', error)
-    }
-  }
 
   const loadProfile = async () => {
     try {
@@ -90,7 +65,10 @@ export default function ContractorProfile() {
         .eq('user_id', session.user.id)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('프로필 로드 에러:', error)
+        throw error
+      }
 
       if (contractor) {
         setProfile(contractor)
@@ -109,13 +87,17 @@ export default function ContractorProfile() {
         
         // 로고 URL이 있으면 미리보기 설정
         if (contractor.company_logo) {
-          console.log('로고 URL 로드됨:', contractor.company_logo)
+          console.log('✅ 로고 URL 로드:', contractor.company_logo)
           setLogoPreview(contractor.company_logo)
         }
       }
-    } catch (error) {
-      console.error('Error loading profile:', error)
-      toast.error('프로필을 불러오는데 실패했습니다')
+    } catch (error: any) {
+      console.error('프로필 로드 실패:', error)
+      if (error.code === '42703') {
+        toast.error('데이터베이스 설정 오류: company_logo 컬럼이 없습니다. add-company-logo-column.sql을 실행하세요.')
+      } else {
+        toast.error('프로필을 불러오는데 실패했습니다')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -147,15 +129,15 @@ export default function ContractorProfile() {
     }
 
     setIsUploadingLogo(true)
+    console.log('📤 로고 업로드 시작...')
     
     try {
       const supabase = createBrowserClient()
       const fileName = `${profile.id}-${Date.now()}.${fileExt}`
       const filePath = `contractor-logos/${fileName}`
 
-      console.log('로고 업로드 시작:', filePath)
-
       // 1. 파일 업로드
+      console.log('1️⃣ 파일 업로드 중:', filePath)
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('portfolios')
         .upload(filePath, file, {
@@ -164,53 +146,57 @@ export default function ContractorProfile() {
         })
 
       if (uploadError) {
-        console.error('업로드 에러:', uploadError)
+        console.error('❌ 업로드 실패:', uploadError)
         throw uploadError
       }
 
-      console.log('업로드 성공:', uploadData)
+      console.log('✅ 업로드 성공:', uploadData)
 
       // 2. Public URL 생성
       const { data: { publicUrl } } = supabase.storage
         .from('portfolios')
         .getPublicUrl(filePath)
 
-      console.log('생성된 Public URL:', publicUrl)
+      console.log('2️⃣ Public URL 생성:', publicUrl)
 
-      // 3. 미리보기 즉시 업데이트 (DB 저장 전에)
+      // 3. 미리보기 즉시 업데이트
       setLogoPreview(publicUrl)
+      console.log('3️⃣ 미리보기 업데이트 완료')
 
-      // 4. DB에 저장 시도
-      try {
-        const { error: updateError } = await supabase
-          .from('contractors')
-          .update({ 
-            company_logo: publicUrl,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', profile.id)
+      // 4. DB에 저장
+      console.log('4️⃣ DB 저장 시도...')
+      const { error: updateError } = await supabase
+        .from('contractors')
+        .update({ 
+          company_logo: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
 
-        if (updateError) {
-          console.error('DB 업데이트 에러:', updateError)
-          // DB 업데이트 실패해도 이미지는 표시되도록 함
-          toast.warning('로고가 업로드되었지만 저장에 실패했습니다. 관리자에게 문의하세요.')
+      if (updateError) {
+        console.error('❌ DB 저장 실패:', updateError)
+        
+        // company_logo 컬럼이 없는 경우
+        if (updateError.code === '42703') {
+          toast.error('데이터베이스 설정 필요: add-company-logo-column.sql을 실행하세요')
         } else {
-          console.log('DB 업데이트 성공')
-          toast.success('로고가 업로드되고 저장되었습니다')
-          
-          // 프로필 상태도 업데이트
-          setProfile(prev => prev ? { ...prev, company_logo: publicUrl } : null)
+          toast.warning('로고가 업로드되었지만 저장에 실패했습니다')
         }
-      } catch (dbError) {
-        console.error('DB 저장 중 오류:', dbError)
-        toast.warning('로고가 업로드되었지만 저장에 실패했습니다.')
+      } else {
+        console.log('✅ DB 저장 성공')
+        toast.success('로고가 성공적으로 업로드되었습니다!')
+        
+        // 프로필 상태 업데이트
+        setProfile(prev => prev ? { ...prev, company_logo: publicUrl } : null)
       }
       
     } catch (error: any) {
-      console.error('Error uploading logo:', error)
+      console.error('❌ 로고 업로드 중 오류:', error)
+      setLogoPreview(null)
       toast.error(error.message || '로고 업로드에 실패했습니다')
     } finally {
       setIsUploadingLogo(false)
+      console.log('📤 로고 업로드 프로세스 종료')
     }
   }
 
@@ -276,7 +262,10 @@ export default function ContractorProfile() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">프로필 로딩 중...</p>
+        </div>
       </div>
     )
   }
@@ -315,7 +304,7 @@ export default function ContractorProfile() {
           {/* 로고 섹션 */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative">
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden relative">
+              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
                 {isUploadingLogo ? (
                   <div className="flex flex-col items-center justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -327,20 +316,25 @@ export default function ContractorProfile() {
                     alt="Company Logo" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error('Logo image failed to load:', logoPreview)
+                      console.error('❌ 이미지 로드 실패:', logoPreview)
+                      toast.error('이미지를 불러올 수 없습니다')
                       setLogoPreview(null)
                     }}
                     onLoad={() => {
-                      console.log('Logo image loaded successfully:', logoPreview)
+                      console.log('✅ 이미지 로드 성공')
                     }}
                   />
                 ) : (
-                  <span className="text-gray-400 text-lg">Logo</span>
+                  <div className="flex flex-col items-center">
+                    <Camera className="h-8 w-8 text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-400">로고 업로드</span>
+                  </div>
                 )}
               </div>
               <label 
                 htmlFor="logo-upload" 
-                className={`absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`absolute bottom-0 right-0 bg-blue-600 text-white p-3 rounded-full cursor-pointer hover:bg-blue-700 shadow-lg transition-all ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'}`}
+                title="로고 업로드"
               >
                 <Camera className="h-5 w-5" />
                 <input
@@ -354,22 +348,22 @@ export default function ContractorProfile() {
               </label>
             </div>
             <p className="text-lg font-medium mt-4">{formData.company_name || 'Company Name'}</p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 mt-2">
               지원 형식: {ALLOWED_IMAGE_EXTENSIONS.join(', ').toUpperCase()} (최대 {Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB)
             </p>
           </div>
 
           {/* 업체 소개 버튼 */}
           <div className="mb-8">
-            <button className="w-full py-3 bg-teal-700 text-white rounded-lg font-medium hover:bg-teal-800">
+            <button className="w-full py-3 bg-teal-700 text-white rounded-lg font-medium hover:bg-teal-800 transition-colors">
               업체 소개
             </button>
           </div>
 
           {/* 탭 메뉴 */}
           <div className="flex gap-4 mb-8">
-            <button className="px-4 py-2 bg-teal-700 text-white rounded-lg">Portfolio</button>
-            <button className="px-4 py-2 bg-teal-700 text-white rounded-lg">Reviews</button>
+            <button className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors">Portfolio</button>
+            <button className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition-colors">Reviews</button>
           </div>
 
           {/* 폼 섹션 */}
@@ -383,7 +377,7 @@ export default function ContractorProfile() {
                 name="company_name"
                 value={formData.company_name}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="회사명을 입력하세요"
               />
             </div>
@@ -397,7 +391,7 @@ export default function ContractorProfile() {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={4}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="회사 소개를 입력하세요"
               />
             </div>
@@ -412,7 +406,7 @@ export default function ContractorProfile() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="전화번호를 입력하세요"
                 />
               </div>
@@ -426,7 +420,7 @@ export default function ContractorProfile() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="이메일을 입력하세요"
                 />
               </div>
@@ -441,7 +435,7 @@ export default function ContractorProfile() {
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="주소를 입력하세요"
               />
             </div>
@@ -456,7 +450,7 @@ export default function ContractorProfile() {
                   name="website"
                   value={formData.website}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="https://example.com"
                 />
               </div>
@@ -470,7 +464,7 @@ export default function ContractorProfile() {
                   name="years_in_business"
                   value={formData.years_in_business}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="0"
                   min="0"
                 />
@@ -483,12 +477,12 @@ export default function ContractorProfile() {
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {specialtyOptions.map(specialty => (
-                  <label key={specialty} className="flex items-center">
+                  <label key={specialty} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
                     <input
                       type="checkbox"
                       checked={formData.specialties.includes(specialty)}
                       onChange={() => handleSpecialtiesChange(specialty)}
-                      className="mr-2"
+                      className="mr-2 cursor-pointer"
                     />
                     <span className="text-sm">{specialty}</span>
                   </label>
@@ -506,7 +500,7 @@ export default function ContractorProfile() {
                   name="license_number"
                   value={formData.license_number}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="사업자 등록번호"
                 />
               </div>
@@ -520,7 +514,7 @@ export default function ContractorProfile() {
                   name="insurance"
                   value={formData.insurance}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="보험 정보"
                 />
               </div>
