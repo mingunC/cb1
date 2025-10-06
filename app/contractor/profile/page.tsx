@@ -21,6 +21,10 @@ interface ContractorProfile {
   insurance?: string
 }
 
+// 허용 가능한 파일 확장명 정의
+const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
 export default function ContractorProfile() {
   const router = useRouter()
   const [profile, setProfile] = useState<ContractorProfile | null>(null)
@@ -43,7 +47,32 @@ export default function ContractorProfile() {
 
   useEffect(() => {
     loadProfile()
+    checkCompanyLogoColumn()
   }, [])
+
+  // company_logo 컬럼 존재 여부 확인
+  const checkCompanyLogoColumn = async () => {
+    try {
+      const supabase = createBrowserClient()
+      const { data, error } = await supabase
+        .from('contractors')
+        .select('company_logo')
+        .limit(1)
+      
+      if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+        console.error('❌ company_logo 컬럼이 존재하지 않습니다.')
+        console.log('🔧 해결 방법: Supabase SQL Editor에서 다음 명령어를 실행하세요:')
+        console.log('ALTER TABLE public.contractors ADD COLUMN IF NOT EXISTS company_logo TEXT;')
+        toast.error('데이터베이스 설정 필요: company_logo 컬럼을 추가해주세요. 관리자에게 문의하세요.')
+      } else if (error) {
+        console.error('컬럼 확인 중 오류:', error)
+      } else {
+        console.log('✅ company_logo 컬럼이 존재합니다.')
+      }
+    } catch (error) {
+      console.error('컬럼 확인 중 예외:', error)
+    }
+  }
 
   const loadProfile = async () => {
     try {
@@ -96,8 +125,19 @@ export default function ContractorProfile() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('파일 크기는 5MB 이하여야 합니다')
+    // 파일 input 값 초기화 (같은 파일 재선택 가능하게)
+    event.target.value = ''
+
+    // 파일 확장명 검증
+    const fileExt = file.name.split('.').pop()?.toLowerCase()
+    if (!fileExt || !ALLOWED_IMAGE_EXTENSIONS.includes(fileExt)) {
+      toast.error(`허용되지 않는 파일 형식입니다. 지원 형식: ${ALLOWED_IMAGE_EXTENSIONS.join(', ')}`)
+      return
+    }
+
+    // 파일 크기 검증
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error(`파일 크기는 ${Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB 이하여야 합니다`)
       return
     }
 
@@ -107,15 +147,15 @@ export default function ContractorProfile() {
     }
 
     setIsUploadingLogo(true)
+    
     try {
       const supabase = createBrowserClient()
-      const fileExt = file.name.split('.').pop()
       const fileName = `${profile.id}-${Date.now()}.${fileExt}`
       const filePath = `contractor-logos/${fileName}`
 
       console.log('로고 업로드 시작:', filePath)
 
-      // 파일 업로드
+      // 1. 파일 업로드
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('portfolios')
         .upload(filePath, file, {
@@ -130,36 +170,42 @@ export default function ContractorProfile() {
 
       console.log('업로드 성공:', uploadData)
 
-      // Public URL 생성
+      // 2. Public URL 생성
       const { data: { publicUrl } } = supabase.storage
         .from('portfolios')
         .getPublicUrl(filePath)
 
       console.log('생성된 Public URL:', publicUrl)
 
-      // 미리보기 업데이트
+      // 3. 미리보기 즉시 업데이트 (DB 저장 전에)
       setLogoPreview(publicUrl)
 
-      // DB에 즉시 저장
-      const { error: updateError } = await supabase
-        .from('contractors')
-        .update({ 
-          company_logo: publicUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id)
+      // 4. DB에 저장 시도
+      try {
+        const { error: updateError } = await supabase
+          .from('contractors')
+          .update({ 
+            company_logo: publicUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', profile.id)
 
-      if (updateError) {
-        console.error('DB 업데이트 에러:', updateError)
-        throw updateError
+        if (updateError) {
+          console.error('DB 업데이트 에러:', updateError)
+          // DB 업데이트 실패해도 이미지는 표시되도록 함
+          toast.warning('로고가 업로드되었지만 저장에 실패했습니다. 관리자에게 문의하세요.')
+        } else {
+          console.log('DB 업데이트 성공')
+          toast.success('로고가 업로드되고 저장되었습니다')
+          
+          // 프로필 상태도 업데이트
+          setProfile(prev => prev ? { ...prev, company_logo: publicUrl } : null)
+        }
+      } catch (dbError) {
+        console.error('DB 저장 중 오류:', dbError)
+        toast.warning('로고가 업로드되었지만 저장에 실패했습니다.')
       }
-
-      console.log('DB 업데이트 성공')
       
-      toast.success('로고가 업로드되었습니다')
-      
-      // 프로필 다시 로드
-      await loadProfile()
     } catch (error: any) {
       console.error('Error uploading logo:', error)
       toast.error(error.message || '로고 업로드에 실패했습니다')
@@ -269,17 +315,23 @@ export default function ContractorProfile() {
           {/* 로고 섹션 */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative">
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden relative">
                 {isUploadingLogo ? (
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="text-xs text-blue-600 mt-2 font-medium">업로드 중...</span>
+                  </div>
                 ) : logoPreview ? (
                   <img 
                     src={logoPreview} 
                     alt="Company Logo" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error('이미지 로드 실패:', logoPreview)
-                      e.currentTarget.style.display = 'none'
+                      console.error('Logo image failed to load:', logoPreview)
+                      setLogoPreview(null)
+                    }}
+                    onLoad={() => {
+                      console.log('Logo image loaded successfully:', logoPreview)
                     }}
                   />
                 ) : (
@@ -294,7 +346,7 @@ export default function ContractorProfile() {
                 <input
                   id="logo-upload"
                   type="file"
-                  accept="image/*"
+                  accept={ALLOWED_IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')}
                   onChange={handleLogoUpload}
                   className="hidden"
                   disabled={isUploadingLogo}
@@ -302,9 +354,9 @@ export default function ContractorProfile() {
               </label>
             </div>
             <p className="text-lg font-medium mt-4">{formData.company_name || 'Company Name'}</p>
-            {isUploadingLogo && (
-              <p className="text-sm text-gray-500 mt-2">로고 업로드 중...</p>
-            )}
+            <p className="text-sm text-gray-500 mt-2">
+              지원 형식: {ALLOWED_IMAGE_EXTENSIONS.join(', ').toUpperCase()} (최대 {Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB)
+            </p>
           </div>
 
           {/* 업체 소개 버튼 */}

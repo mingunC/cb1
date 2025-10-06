@@ -46,6 +46,7 @@ export interface Database {
           id: string
           user_id: string
           company_name: string
+          company_logo: string | null
           email: string
           phone: string | null
           address: string | null
@@ -61,6 +62,7 @@ export interface Database {
           id?: string
           user_id: string
           company_name: string
+          company_logo?: string | null
           email: string
           phone?: string | null
           address?: string | null
@@ -76,6 +78,7 @@ export interface Database {
           id?: string
           user_id?: string
           company_name?: string
+          company_logo?: string | null
           email?: string
           phone?: string | null
           address?: string | null

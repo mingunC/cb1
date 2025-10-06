@@ -31,6 +31,7 @@ export interface Contractor {
   id: string
   user_id: string
   company_name: string
+  company_logo?: string
   contact_name: string
   status: string
   // ... other fields
