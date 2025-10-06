@@ -47,7 +47,7 @@ export default function ContractorProfile() {
 
   useEffect(() => {
     loadProfile()
-  }, [])
+  }, []) // 의존성 배열 비워두기 - 마운트 시 한 번만 실행
 
   const loadProfile = async () => {
     try {
@@ -94,7 +94,7 @@ export default function ContractorProfile() {
     } catch (error: any) {
       console.error('프로필 로드 실패:', error)
       if (error.code === '42703') {
-        toast.error('데이터베이스 설정 오류: company_logo 컬럼이 없습니다. add-company-logo-column.sql을 실행하세요.')
+        toast.error('데이터베이스 설정 오류: add-profile-columns.sql을 실행하세요.')
       } else {
         toast.error('프로필을 불러오는데 실패했습니다')
       }
@@ -178,7 +178,7 @@ export default function ContractorProfile() {
         
         // company_logo 컬럼이 없는 경우
         if (updateError.code === '42703') {
-          toast.error('데이터베이스 설정 필요: add-company-logo-column.sql을 실행하세요')
+          toast.error('데이터베이스 설정 필요: add-profile-columns.sql을 실행하세요')
         } else {
           toast.warning('로고가 업로드되었지만 저장에 실패했습니다')
         }
@@ -186,7 +186,7 @@ export default function ContractorProfile() {
         console.log('✅ DB 저장 성공')
         toast.success('로고가 성공적으로 업로드되었습니다!')
         
-        // 프로필 상태 업데이트
+        // 프로필 상태만 업데이트 (loadProfile 호출하지 않음)
         setProfile(prev => prev ? { ...prev, company_logo: publicUrl } : null)
       }
       
@@ -236,12 +236,11 @@ export default function ContractorProfile() {
 
       if (error) throw error
 
-      toast.success('프로필이 업데이트되었습니다. 메인 페이지로 이동합니다...')
+      // 프로필 상태 업데이트 (loadProfile 호출하지 않음)
+      setProfile(prev => prev ? { ...prev, ...updateData } : null)
       
-      // 저장 성공 후 잠시 대기 후 리다이렉트 (사용자가 성공 메시지를 볼 수 있도록)
-      setTimeout(() => {
-        router.push('/contractor')
-      }, 1500)
+      toast.success('프로필이 업데이트되었습니다!')
+      
     } catch (error) {
       console.error('Error saving profile:', error)
       toast.error('프로필 저장에 실패했습니다')
@@ -356,7 +355,6 @@ export default function ContractorProfile() {
               지원 형식: {ALLOWED_IMAGE_EXTENSIONS.join(', ').toUpperCase()} (최대 {Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB)
             </p>
           </div>
-
 
           {/* 폼 섹션 */}
           <div className="space-y-6">
@@ -512,7 +510,6 @@ export default function ContractorProfile() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
