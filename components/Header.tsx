@@ -409,9 +409,9 @@ export default function Header() {
                   
                   {/* 드롭다운 메뉴 */}
                   {isUserDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                       <div className="py-2">
-                        <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100">
+                        <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100 break-words">
                           {user.email}
                         </div>
                         {isAdmin && (
@@ -544,7 +544,7 @@ export default function Header() {
                               <div className="font-medium text-gray-900">
                                 {getDisplayName()}
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">{user.email}</div>
+                              <div className="text-xs text-gray-500 mt-1 break-words px-2">{user.email}</div>
                             </>
                           ) : (
                             <div className="animate-pulse">
