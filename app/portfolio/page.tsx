@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Search, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home } from 'lucide-react'
+import { Search, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
@@ -41,7 +41,6 @@ function PortfolioContent() {
     try {
       setIsLoading(true)
       console.log('🔍 포트폴리오 로딩 시작')
-      console.log('📍 Contractor ID:', contractorIdFromUrl)
       
       const supabase = createBrowserClient()
       
@@ -78,6 +77,7 @@ function PortfolioContent() {
         images: Array.isArray(p.images) ? p.images : typeof p.images === 'string' ? [p.images] : [],
         category: p.category,
         year: p.year,
+        project_address: p.project_address,
         created_at: p.created_at,
         contractor: p.contractor ? {
           id: p.contractor.id,
@@ -86,7 +86,6 @@ function PortfolioContent() {
         } : undefined
       }))
 
-      console.log('📦 변환된 데이터:', transformed)
       setPortfolios(transformed)
     } catch (error) {
       console.error('❌ 치명적 에러:', error)
@@ -117,11 +116,8 @@ function PortfolioContent() {
     }
   }
 
-  console.log('🎨 렌더링 상태:', { isLoading, portfolioCount: portfolios.length, filteredCount: filteredPortfolios.length })
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">인테리어 포트폴리오</h1>
@@ -139,7 +135,6 @@ function PortfolioContent() {
         </div>
       </div>
 
-      {/* 포트폴리오 그리드 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="text-center py-12">
@@ -219,8 +214,9 @@ function PortfolioContent() {
                   </div>
                   
                   {portfolio.project_address && (
-                    <div className="text-xs text-gray-500 mb-2">
-                      📍 {portfolio.project_address}
+                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="line-clamp-1">{portfolio.project_address}</span>
                     </div>
                   )}
                 </div>
@@ -230,7 +226,6 @@ function PortfolioContent() {
         )}
       </div>
 
-      {/* 상세보기 모달 */}
       {selectedPortfolio && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPortfolio(null)}>
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -284,6 +279,31 @@ function PortfolioContent() {
                   <Link href="/pros" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
                     업체 보기
                   </Link>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {selectedPortfolio.category && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">카테고리</p>
+                    <p className="font-medium">{selectedPortfolio.category}</p>
+                  </div>
+                )}
+                {selectedPortfolio.year && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">완료 연도</p>
+                    <p className="font-medium">{selectedPortfolio.year}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedPortfolio.project_address && (
+                <div className="mb-6">
+                  <p className="text-sm text-gray-500 mb-1">프로젝트 주소</p>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <p className="font-medium">{selectedPortfolio.project_address}</p>
+                  </div>
                 </div>
               )}
 
