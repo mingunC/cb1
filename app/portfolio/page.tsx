@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Search, Filter, MapPin, DollarSign, Calendar, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home, Store } from 'lucide-react'
 import Link from 'next/link'
 import { createBrowserClient } from '@/lib/supabase/clients'
@@ -34,6 +35,9 @@ type FilterState = {
 }
 
 export default function PortfolioGalleryPage() {
+  const searchParams = useSearchParams()
+  const contractorIdFromUrl = searchParams?.get('contractor') // URL에서 업체 ID 가져오기
+  
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [filteredPortfolios, setFilteredPortfolios] = useState<Portfolio[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -49,8 +53,8 @@ export default function PortfolioGalleryPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [likedPortfolios, setLikedPortfolios] = useState<Set<string>>(new Set())
+  const [selectedContractorName, setSelectedContractorName] = useState<string | null>(null)
 
-  // 포트폴리오 데이터 로드
   useEffect(() => {
     fetchPortfolios()
     loadLikedPortfolios()
@@ -63,8 +67,7 @@ export default function PortfolioGalleryPage() {
       
       const supabase = createBrowserClient()
       
-      // portfolios 테이블에서 데이터 가져오기
-      const { data, error } = await supabase
+      let query = supabase
         .from('portfolios')
         .select(`
           *,
@@ -76,6 +79,14 @@ export default function PortfolioGalleryPage() {
         `)
         .order('created_at', { ascending: false })
       
+      // URL에서 contractor ID가 있으면 필터링
+      if (contractorIdFromUrl) {
+        console.log('🏢 특정 업체 필터링:', contractorIdFromUrl)
+        query = query.eq('contractor_id', contractorIdFromUrl)
+      }
+      
+      const { data, error } = await query
+      
       if (error) {
         console.error('❌ 포트폴리오 로드 에러:', error)
         throw error
@@ -86,7 +97,6 @@ export default function PortfolioGalleryPage() {
       
       // 데이터 변환
       const transformedData: Portfolio[] = (data || []).map(p => {
-        // images 배열 처리
         let imageArray: string[] = []
         if (Array.isArray(p.images)) {
           imageArray = p.images
@@ -118,8 +128,13 @@ export default function PortfolioGalleryPage() {
       setPortfolios(transformedData)
       setFilteredPortfolios(transformedData)
       
+      // 필터링된 업체명 저장
+      if (contractorIdFromUrl && transformedData.length > 0 && transformedData[0].contractor) {
+        setSelectedContractorName(transformedData[0].contractor.company_name)
+      }
+      
       if (transformedData.length === 0) {
-        console.log('⚠️ 포트폴리오가 비어있습니다. 업체가 포트폴리오를 업로드해야 합니다.')
+        console.log('⚠️ 포트폴리오가 비어있습니다.')
       }
     } catch (error) {
       console.error('❌ Error fetching portfolios:', error)
@@ -128,7 +143,6 @@ export default function PortfolioGalleryPage() {
     }
   }
 
-  // 좋아요한 포트폴리오 로드
   const loadLikedPortfolios = () => {
     const saved = localStorage.getItem('liked_portfolios')
     if (saved) {
@@ -136,7 +150,6 @@ export default function PortfolioGalleryPage() {
     }
   }
 
-  // 좋아요 토글
   const toggleLike = (portfolioId: string) => {
     const newLiked = new Set(likedPortfolios)
     if (newLiked.has(portfolioId)) {
@@ -148,11 +161,14 @@ export default function PortfolioGalleryPage() {
     localStorage.setItem('liked_portfolios', JSON.stringify(Array.from(newLiked)))
   }
 
-  // 필터링 및 검색
+  // 필터 초기화 (모든 포트폴리오 보기)
+  const clearContractorFilter = () => {
+    window.location.href = '/portfolio'
+  }
+
   useEffect(() => {
     let filtered = [...portfolios]
 
-    // 검색어 필터링
     if (searchTerm) {
       filtered = filtered.filter(p => 
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,12 +178,10 @@ export default function PortfolioGalleryPage() {
       )
     }
 
-    // 카테고리 필터
     if (filters.spaceType !== 'all') {
       filtered = filtered.filter(p => p.category === filters.spaceType)
     }
 
-    // 정렬
     filtered.sort((a, b) => {
       switch (filters.sortBy) {
         case 'popular':
@@ -181,7 +195,6 @@ export default function PortfolioGalleryPage() {
     setFilteredPortfolios(filtered)
   }, [searchTerm, filters, portfolios])
 
-  // 이미지 갤러리 네비게이션
   const nextImage = () => {
     if (selectedPortfolio && selectedPortfolio.images.length > 1) {
       setCurrentImageIndex((prev) => 
@@ -204,7 +217,22 @@ export default function PortfolioGalleryPage() {
       <div className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">인테리어 포트폴리오</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">인테리어 포트폴리오</h1>
+              {selectedContractorName && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-sm text-gray-600">
+                    {selectedContractorName}의 포트폴리오
+                  </span>
+                  <button
+                    onClick={clearContractorFilter}
+                    className="text-xs text-blue-600 hover:text-blue-700 underline"
+                  >
+                    전체 보기
+                  </button>
+                </div>
+              )}
+            </div>
             
             {/* 검색바 */}
             <div className="flex gap-2 w-full sm:w-auto">
@@ -275,8 +303,18 @@ export default function PortfolioGalleryPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">포트폴리오가 없습니다</h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm ? '검색 결과가 없습니다.' : '업체들이 포트폴리오를 업로드하면 여기에 표시됩니다.'}
+              {searchTerm ? '검색 결과가 없습니다.' : 
+               selectedContractorName ? `${selectedContractorName}의 포트폴리오가 아직 없습니다.` :
+               '업체들이 포트폴리오를 업로드하면 여기에 표시됩니다.'}
             </p>
+            {selectedContractorName && (
+              <button
+                onClick={clearContractorFilter}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              >
+                전체 포트폴리오 보기
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
