@@ -30,6 +30,7 @@ export default function PortfolioManagerTest({ contractorId, onPortfolioUpdate }
     description: '',
     category: '주거공간',
     year: new Date().getFullYear().toString(),
+    project_address: '',
     image: null as File | null
   })
 
@@ -163,6 +164,7 @@ export default function PortfolioManagerTest({ contractorId, onPortfolioUpdate }
       description: project.description,
       category: project.category,
       year: project.year,
+      project_address: project.project_address || '',
       image: null
     })
     setShowAddForm(true)
@@ -370,6 +372,11 @@ export default function PortfolioManagerTest({ contractorId, onPortfolioUpdate }
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{project.category}</span>
                     <span className="text-xs text-gray-500">{project.year}</span>
                   </div>
+                  {project.project_address && (
+                    <div className="mb-3">
+                      <span className="text-xs text-gray-500">📍 {project.project_address}</span>
+                    </div>
+                  )}
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEdit(project)}

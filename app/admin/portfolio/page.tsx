@@ -27,6 +27,7 @@ interface PortfolioProject {
   images: string[] | null
   category: string
   year: string
+  project_address: string | null
   created_at: string
   updated_at: string
   contractors: {
@@ -493,6 +494,11 @@ export default function AdminPortfolioPage() {
                               <span>{project.year}</span>
                             </div>
                           </div>
+                          {project.project_address && (
+                            <div className="text-sm text-gray-500 mt-2">
+                              📍 {project.project_address}
+                            </div>
+                          )}
                         </div>
 
                         {/* 액션 버튼 */}
@@ -591,6 +597,20 @@ export default function AdminPortfolioPage() {
                   defaultValue={editingProject?.description || ''}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="프로젝트 설명을 입력하세요"
+                />
+              </div>
+
+              {/* 주소 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  프로젝트 주소
+                </label>
+                <input
+                  type="text"
+                  name="project_address"
+                  defaultValue={editingProject?.project_address || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: 서울시 강남구 테헤란로 123"
                 />
               </div>
 

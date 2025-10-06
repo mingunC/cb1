@@ -36,6 +36,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     description: '',
     category: '주거공간',
     year: new Date().getFullYear().toString(),
+    project_address: '',
     images: [] as File[]
   })
 
@@ -212,7 +213,8 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
         description: formData.description,
         images: imageUrls,
         category: formData.category,
-        year: formData.year
+        year: formData.year,
+        project_address: formData.project_address
       }
 
       if (editingProject) {
@@ -260,6 +262,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
       description: project.description,
       category: project.category,
       year: project.year,
+      project_address: project.project_address || '',
       images: []
     })
     setImagePreviews(project.images || [])
@@ -402,20 +405,36 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    완료 연도 *
-                  </label>
-                  <input
-                    type="number"
-                    name="year"
-                    value={formData.year}
-                    onChange={handleInputChange}
-                    min="2000"
-                    max={new Date().getFullYear()}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      완료 연도 *
+                    </label>
+                    <input
+                      type="number"
+                      name="year"
+                      value={formData.year}
+                      onChange={handleInputChange}
+                      min="2000"
+                      max={new Date().getFullYear()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      프로젝트 주소
+                    </label>
+                    <input
+                      type="text"
+                      name="project_address"
+                      value={formData.project_address}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 서울시 강남구 테헤란로 123"
+                    />
+                  </div>
                 </div>
 
                 {/* 이미지 업로드 */}
@@ -527,6 +546,11 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{project.category}</span>
                     <span className="text-xs text-gray-500">{project.year}</span>
                   </div>
+                  {project.project_address && (
+                    <div className="mb-3">
+                      <span className="text-xs text-gray-500">📍 {project.project_address}</span>
+                    </div>
+                  )}
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEdit(project)}

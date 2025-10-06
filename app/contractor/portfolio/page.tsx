@@ -34,6 +34,7 @@ export default function PortfolioManagementPage() {
     project_type: '',
     budget_range: '',
     duration: '',
+    project_address: '',
     images: [] as File[],
     before_images: [] as File[],
     after_images: [] as File[]
@@ -168,6 +169,7 @@ export default function PortfolioManagementPage() {
           project_type: formData.project_type,
           budget_range: formData.budget_range,
           duration: formData.duration,
+          project_address: formData.project_address,
           images: images,
           before_images: beforeImages,
           after_images: afterImages,
@@ -390,6 +392,11 @@ export default function PortfolioManagementPage() {
                         <div className="text-sm text-gray-900">
                           <div className="font-medium">{portfolio.title}</div>
                           <div className="text-xs text-gray-600">{portfolio.project_type}</div>
+                          {portfolio.project_address && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              📍 {portfolio.project_address}
+                            </div>
+                          )}
                           <div className="text-xs text-gray-500 mt-1">
                             {portfolio.description?.substring(0, 50)}...
                           </div>
@@ -558,6 +565,19 @@ export default function PortfolioManagementPage() {
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      프로젝트 주소
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={formData.project_address}
+                      onChange={(e) => setFormData({ ...formData, project_address: e.target.value })}
+                      placeholder="예: 서울시 강남구 테헤란로 123"
+                    />
                   </div>
 
                   <div>
