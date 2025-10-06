@@ -10,18 +10,7 @@ interface Portfolio {
   contractor_id: string
   title: string
   description: string
-  project_type?: string
-  space_type?: string
-  location?: string
-  budget_range?: string
-  completion_date?: string
-  duration?: string
-  size?: number
-  image_url: string
-  images?: string[]
-  before_images?: string[]
-  after_images?: string[]
-  tags?: string[]
+  images: string[]
   likes_count: number
   views_count: number
   created_at: string
@@ -93,27 +82,38 @@ export default function PortfolioGalleryPage() {
       }
       
       console.log('✅ 포트폴리오 데이터 로드 성공:', data?.length, '개')
+      console.log('📊 원본 데이터:', data)
       
       // 데이터 변환
-      const transformedData: Portfolio[] = (data || []).map(p => ({
-        id: p.id,
-        contractor_id: p.contractor_id,
-        title: p.title || '제목 없음',
-        description: p.description || '',
-        image_url: p.image_url || '',
-        images: p.image_url ? [p.image_url] : [],
-        category: p.category || '기타',
-        year: p.year || new Date().getFullYear().toString(),
-        likes_count: 0,
-        views_count: 0,
-        created_at: p.created_at,
-        tags: [],
-        contractor: p.contractor ? {
-          id: p.contractor.id,
-          company_name: p.contractor.company_name || '업체명 없음',
-          logo_url: p.contractor.company_logo
-        } : undefined
-      }))
+      const transformedData: Portfolio[] = (data || []).map(p => {
+        // images 배열 처리
+        let imageArray: string[] = []
+        if (Array.isArray(p.images)) {
+          imageArray = p.images
+        } else if (typeof p.images === 'string') {
+          imageArray = [p.images]
+        }
+        
+        console.log(`Portfolio "${p.title}" images:`, imageArray)
+        
+        return {
+          id: p.id,
+          contractor_id: p.contractor_id,
+          title: p.title || '제목 없음',
+          description: p.description || '',
+          images: imageArray,
+          category: p.category || '기타',
+          year: p.year || new Date().getFullYear().toString(),
+          likes_count: 0,
+          views_count: 0,
+          created_at: p.created_at,
+          contractor: p.contractor ? {
+            id: p.contractor.id,
+            company_name: p.contractor.company_name || '업체명 없음',
+            logo_url: p.contractor.company_logo
+          } : undefined
+        }
+      })
 
       setPortfolios(transformedData)
       setFilteredPortfolios(transformedData)
@@ -183,17 +183,17 @@ export default function PortfolioGalleryPage() {
 
   // 이미지 갤러리 네비게이션
   const nextImage = () => {
-    if (selectedPortfolio && selectedPortfolio.images && selectedPortfolio.images.length > 1) {
+    if (selectedPortfolio && selectedPortfolio.images.length > 1) {
       setCurrentImageIndex((prev) => 
-        prev === selectedPortfolio.images!.length - 1 ? 0 : prev + 1
+        prev === selectedPortfolio.images.length - 1 ? 0 : prev + 1
       )
     }
   }
 
   const prevImage = () => {
-    if (selectedPortfolio && selectedPortfolio.images && selectedPortfolio.images.length > 1) {
+    if (selectedPortfolio && selectedPortfolio.images.length > 1) {
       setCurrentImageIndex((prev) => 
-        prev === 0 ? selectedPortfolio.images!.length - 1 : prev - 1
+        prev === 0 ? selectedPortfolio.images.length - 1 : prev - 1
       )
     }
   }
@@ -291,9 +291,9 @@ export default function PortfolioGalleryPage() {
               >
                 {/* 이미지 */}
                 <div className="relative h-64 overflow-hidden rounded-t-lg bg-gray-100">
-                  {portfolio.image_url ? (
+                  {portfolio.images && portfolio.images.length > 0 ? (
                     <img
-                      src={portfolio.image_url}
+                      src={portfolio.images[0]}
                       alt={portfolio.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
@@ -322,6 +322,13 @@ export default function PortfolioGalleryPage() {
                       }`}
                     />
                   </button>
+
+                  {/* 이미지 개수 배지 */}
+                  {portfolio.images && portfolio.images.length > 1 && (
+                    <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 text-white text-xs rounded-full">
+                      +{portfolio.images.length - 1} 더보기
+                    </div>
+                  )}
                 </div>
 
                 {/* 정보 */}
@@ -397,16 +404,51 @@ export default function PortfolioGalleryPage() {
             </div>
 
             {/* 이미지 갤러리 */}
-            {selectedPortfolio.image_url && (
-              <div className="relative">
+            {selectedPortfolio.images && selectedPortfolio.images.length > 0 && (
+              <div className="relative bg-black">
                 <img
-                  src={selectedPortfolio.image_url}
-                  alt={selectedPortfolio.title}
-                  className="w-full h-[500px] object-cover"
+                  src={selectedPortfolio.images[currentImageIndex]}
+                  alt={`${selectedPortfolio.title} ${currentImageIndex + 1}`}
+                  className="w-full h-[500px] object-contain"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x500?text=No+Image'
                   }}
                 />
+                
+                {selectedPortfolio.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur rounded-full hover:bg-white"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur rounded-full hover:bg-white"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                    
+                    {/* 이미지 인디케이터 */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {selectedPortfolio.images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* 이미지 카운터 */}
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 text-white text-sm rounded-full">
+                      {currentImageIndex + 1} / {selectedPortfolio.images.length}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
