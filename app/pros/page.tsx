@@ -16,28 +16,32 @@ interface Contractor {
   phone: string
   email: string
   website?: string
+  company_logo?: string
+  description?: string
+  years_in_business?: number
+  specialties?: string[]
+  rating?: number
+  portfolio_count?: number
+  status?: string
+  created_at: string
+  // UI 표시용 추가 필드들
   logo_url?: string
   cover_image?: string
-  description: string
   established_year?: number
   employee_count?: string
   service_areas: string[]
-  specialties: string[]
   certifications: string[]
-  rating: number
   review_count: number
   completed_projects: number
   response_time?: string
   min_budget?: number
   is_verified: boolean
   is_premium: boolean
-  portfolio_count?: number
   recent_projects?: {
     id: string
     title: string
     image: string
   }[]
-  created_at: string
 }
 
 interface FilterState {
@@ -73,169 +77,72 @@ export default function ContractorsListingPage() {
     try {
       setIsLoading(true)
       
-      // 더미 데이터
-      const dummyContractors: Contractor[] = [
-        {
-          id: '1',
-          company_name: '디자인하우스',
-          contact_name: '김대표',
-          phone: '02-1234-5678',
-          email: 'contact@designhouse.co.kr',
-          website: 'https://designhouse.co.kr',
-          logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center',
-          cover_image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-          description: '20년 전통의 프리미엄 인테리어 전문 업체입니다. 고객의 라이프스타일을 반영한 맞춤형 공간을 만들어드립니다.',
-          established_year: 2004,
-          employee_count: '50-100명',
-          service_areas: ['서울', '경기', '인천'],
-          specialties: ['주거공간', '상업공간', '리모델링', '홈스타일링'],
-          certifications: ['실내건축공사업', 'ISO 9001', '우수시공업체'],
-          rating: 4.8,
-          review_count: 234,
-          completed_projects: 1250,
-          response_time: '1시간 이내',
-          min_budget: 30000000,
-          is_verified: true,
-          is_premium: true,
-          portfolio_count: 45,
-          recent_projects: [
-            { id: '1', title: '강남 아파트 리모델링', image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400' },
-            { id: '2', title: '판교 오피스 인테리어', image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=400' },
-            { id: '3', title: '성수 카페 인테리어', image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400' }
-          ],
-          created_at: '2020-01-15'
-        },
-        {
-          id: '2',
-          company_name: '모던인테리어',
-          contact_name: '이실장',
-          phone: '02-2345-6789',
-          email: 'info@moderninterior.kr',
-          logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center',
-          cover_image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800',
-          description: '미니멀하고 모던한 공간 디자인을 추구합니다. 실용성과 아름다움을 동시에 만족시키는 인테리어를 제공합니다.',
-          established_year: 2010,
-          employee_count: '20-50명',
-          service_areas: ['서울', '경기'],
-          specialties: ['아파트', '빌라', '원룸', '오피스텔'],
-          certifications: ['실내건축공사업', '전기공사업'],
-          rating: 4.6,
-          review_count: 189,
-          completed_projects: 890,
-          response_time: '2시간 이내',
-          min_budget: 20000000,
-          is_verified: true,
-          is_premium: false,
-          portfolio_count: 32,
-          created_at: '2021-03-20'
-        },
-        {
-          id: '3',
-          company_name: '드림스페이스',
-          contact_name: '박대표',
-          phone: '02-3456-7890',
-          email: 'dream@dreamspace.co.kr',
-          website: 'https://dreamspace.co.kr',
-          logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center',
-          cover_image: 'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=800',
-          description: '꿈꾸던 공간을 현실로 만들어드립니다. 고객과의 소통을 최우선으로 하는 인테리어 전문업체입니다.',
-          established_year: 2015,
-          employee_count: '10-20명',
-          service_areas: ['서울'],
-          specialties: ['주택', '아파트', '상가', '사무실'],
-          certifications: ['실내건축공사업'],
-          rating: 4.7,
-          review_count: 156,
-          completed_projects: 567,
-          response_time: '30분 이내',
-          min_budget: 15000000,
-          is_verified: true,
-          is_premium: true,
-          portfolio_count: 28,
-          recent_projects: [
-            { id: '4', title: '송파 아파트 인테리어', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400' }
-          ],
-          created_at: '2021-06-10'
-        },
-        {
-          id: '4',
-          company_name: '프리미엄디자인',
-          contact_name: '최실장',
-          phone: '02-4567-8901',
-          email: 'premium@premiumdesign.kr',
-          logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center',
-          cover_image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800',
-          description: '럭셔리 인테리어 전문. 최고급 자재와 디자인으로 품격 있는 공간을 만들어드립니다.',
-          established_year: 2008,
-          employee_count: '30-50명',
-          service_areas: ['서울', '경기', '부산'],
-          specialties: ['고급주택', '펜트하우스', '호텔', '리조트'],
-          certifications: ['실내건축공사업', 'ISO 9001', 'LEED 인증'],
-          rating: 4.9,
-          review_count: 198,
-          completed_projects: 780,
-          response_time: '1시간 이내',
-          min_budget: 50000000,
-          is_verified: true,
-          is_premium: true,
-          portfolio_count: 52,
-          created_at: '2019-12-01'
-        },
-        {
-          id: '5',
-          company_name: '에코인테리어',
-          contact_name: '정대표',
-          phone: '02-5678-9012',
-          email: 'eco@ecointerior.kr',
-          website: 'https://ecointerior.kr',
-          logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center',
-          cover_image: 'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=800',
-          description: '친환경 자재를 사용한 건강한 인테리어. 지속가능한 공간 디자인을 추구합니다.',
-          established_year: 2012,
-          employee_count: '10-20명',
-          service_areas: ['서울', '경기'],
-          specialties: ['친환경인테리어', '주택', '아파트', '어린이집'],
-          certifications: ['실내건축공사업', '친환경인증', 'WELL 인증'],
-          rating: 4.5,
-          review_count: 123,
-          completed_projects: 456,
-          response_time: '3시간 이내',
-          min_budget: 25000000,
-          is_verified: true,
-          is_premium: false,
-          portfolio_count: 21,
-          created_at: '2022-02-15'
-        },
-        {
-          id: '6',
-          company_name: '스마트홈인테리어',
-          contact_name: '강실장',
-          phone: '02-6789-0123',
-          email: 'smart@smarthome.kr',
-          logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center',
-          cover_image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800',
-          description: 'IoT 기술을 접목한 스마트홈 인테리어 전문. 미래형 주거공간을 만들어드립니다.',
-          established_year: 2018,
-          employee_count: '20-30명',
-          service_areas: ['서울', '경기', '인천'],
-          specialties: ['스마트홈', '홈오토메이션', '조명디자인', '음향시스템'],
-          certifications: ['실내건축공사업', '전기공사업', '정보통신공사업'],
-          rating: 4.7,
-          review_count: 98,
-          completed_projects: 234,
-          response_time: '1시간 이내',
-          min_budget: 35000000,
-          is_verified: true,
-          is_premium: false,
-          portfolio_count: 18,
-          created_at: '2022-08-20'
-        }
-      ]
+      const supabase = createBrowserClient()
+      
+      // 실제 데이터베이스에서 업체 데이터 가져오기
+      const { data: contractorsData, error } = await supabase
+        .from('contractors')
+        .select(`
+          id,
+          company_name,
+          contact_name,
+          phone,
+          email,
+          address,
+          website,
+          company_logo,
+          description,
+          years_in_business,
+          specialties,
+          rating,
+          portfolio_count,
+          status,
+          created_at
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
 
-      setContractors(dummyContractors)
-      setFilteredContractors(dummyContractors)
+      if (error) {
+        console.error('Error fetching contractors:', error)
+        setContractors([])
+        setFilteredContractors([])
+        return
+      }
+
+      // 데이터베이스 데이터를 UI 인터페이스에 맞게 변환
+      const formattedContractors: Contractor[] = contractorsData.map(contractor => ({
+        id: contractor.id,
+        company_name: contractor.company_name || '업체명 없음',
+        contact_name: contractor.contact_name || '담당자 없음',
+        phone: contractor.phone || '전화번호 없음',
+        email: contractor.email || '이메일 없음',
+        website: contractor.website,
+        logo_url: contractor.company_logo,
+        cover_image: contractor.company_logo, // 로고를 커버 이미지로도 사용
+        description: contractor.description || '업체 소개가 없습니다.',
+        established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
+        employee_count: '정보 없음',
+        service_areas: ['서울', '경기'], // 기본값
+        specialties: Array.isArray(contractor.specialties) ? contractor.specialties : [],
+        certifications: ['실내건축공사업'], // 기본값
+        rating: contractor.rating || 0,
+        review_count: 0, // 기본값
+        completed_projects: 0, // 기본값
+        response_time: '문의 후 안내',
+        min_budget: undefined,
+        is_verified: true,
+        is_premium: false,
+        portfolio_count: contractor.portfolio_count || 0,
+        recent_projects: [],
+        created_at: contractor.created_at
+      }))
+
+      setContractors(formattedContractors)
+      setFilteredContractors(formattedContractors)
     } catch (error) {
       console.error('Error fetching contractors:', error)
+      setContractors([])
+      setFilteredContractors([])
     } finally {
       setIsLoading(false)
     }
