@@ -429,7 +429,7 @@ export default function Header() {
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
-                            내견적관리
+                            MyPage
                           </Link>
                         )}
                         <button
@@ -567,7 +567,7 @@ export default function Header() {
                               className="block mt-2 bg-green-100 text-green-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
-                              내견적관리
+                              MyPage
                             </Link>
                           )}
                         </div>
