@@ -99,7 +99,7 @@ export default function ContractorsListingPage() {
           status,
           created_at
         `)
-        .eq('status', 'active')
+        // .eq('status', 'active') // 모든 상태의 업체 표시
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -108,6 +108,9 @@ export default function ContractorsListingPage() {
         setFilteredContractors([])
         return
       }
+
+      console.log('📊 Fetched contractors from database:', contractorsData)
+      console.log('🏢 Contractor names:', contractorsData.map(c => c.company_name))
 
       // 데이터베이스 데이터를 UI 인터페이스에 맞게 변환
       const formattedContractors: Contractor[] = contractorsData.map(contractor => ({
