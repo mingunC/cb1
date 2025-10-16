@@ -64,6 +64,7 @@ export default function ContractorsListingPage() {
     sortBy: 'rating'
   })
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null)
+  const [selectedContractorDetails, setSelectedContractorDetails] = useState<{portfolio_count: number, completed_projects: number} | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function ContractorsListingPage() {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
+      // ✅ 최적화: 기본 정보만 한 번에 가져오기
       const { data: contractorsData, error } = await supabase
         .from('contractors')
         .select(`
@@ -100,30 +102,8 @@ export default function ContractorsListingPage() {
         return
       }
 
-      const contractorsWithCounts = await Promise.all(
-        (contractorsData || []).map(async (contractor) => {
-          // 실제 포트폴리오 개수
-          const { count: portfolioCount } = await supabase
-            .from('portfolios')
-            .select('*', { count: 'exact', head: true })
-            .eq('contractor_id', contractor.id)
-
-          // 완료 프로젝트 수
-          const { count: completedQuotes } = await supabase
-            .from('contractor_quotes')
-            .select('*', { count: 'exact', head: true })
-            .eq('contractor_id', contractor.id)
-            .in('status', ['completed', 'selected'])
-
-          return {
-            ...contractor,
-            actual_portfolio_count: portfolioCount || 0,
-            completed_projects_count: completedQuotes || 0
-          }
-        })
-      )
-
-      const formattedContractors: Contractor[] = contractorsWithCounts.map(contractor => ({
+      // ✅ 추가 쿼리 없이 즉시 포맷팅
+      const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => ({
         id: contractor.id,
         company_name: contractor.company_name || '업체명 없음',
         contact_name: contractor.contact_name || '담당자 없음',
@@ -140,20 +120,17 @@ export default function ContractorsListingPage() {
         certifications: ['실내건축공사업'],
         rating: contractor.rating || 0,
         review_count: 0,
-        completed_projects: contractor.completed_projects_count,
+        completed_projects: 0, // 상세보기 클릭 시 로드
         response_time: '문의 후 안내',
         min_budget: undefined,
         is_verified: true,
         is_premium: false,
-        portfolio_count: contractor.actual_portfolio_count,
+        portfolio_count: 0, // 상세보기 클릭 시 로드
         recent_projects: [],
         created_at: contractor.created_at
       }))
 
-      console.log('✅ 업체 목록:', formattedContractors.map(c => ({ 
-        name: c.company_name, 
-        portfolio: c.portfolio_count 
-      })))
+      console.log('✅ 업체 목록 로드 완료:', formattedContractors.length, '개')
 
       setContractors(formattedContractors)
       setFilteredContractors(formattedContractors)
@@ -161,6 +138,33 @@ export default function ContractorsListingPage() {
       console.error('Error:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // ✅ 새로운 함수: 업체 상세 정보 로드 (모달 열릴 때만)
+  const loadContractorDetails = async (contractorId: string) => {
+    try {
+      const supabase = createBrowserClient()
+      
+      // 포트폴리오 개수
+      const { count: portfolioCount } = await supabase
+        .from('portfolios')
+        .select('*', { count: 'exact', head: true })
+        .eq('contractor_id', contractorId)
+
+      // 완료 프로젝트 수
+      const { count: completedQuotes } = await supabase
+        .from('contractor_quotes')
+        .select('*', { count: 'exact', head: true })
+        .eq('contractor_id', contractorId)
+        .in('status', ['completed', 'selected'])
+
+      setSelectedContractorDetails({
+        portfolio_count: portfolioCount || 0,
+        completed_projects: completedQuotes || 0
+      })
+    } catch (error) {
+      console.error('Error loading contractor details:', error)
     }
   }
 
@@ -236,7 +240,10 @@ export default function ContractorsListingPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
-          <div className="text-center py-12">로딩 중...</div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">로딩 중...</p>
+          </div>
         ) : filteredContractors.length === 0 ? (
           <div className="text-center py-12">
             <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -248,7 +255,11 @@ export default function ContractorsListingPage() {
               <div
                 key={contractor.id}
                 className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => setSelectedContractor(contractor)}
+                onClick={() => {
+                  setSelectedContractor(contractor)
+                  setSelectedContractorDetails(null) // 리셋
+                  loadContractorDetails(contractor.id) // 상세 정보 로드
+                }}
               >
                 <div className="relative h-48 overflow-hidden rounded-t-lg">
                   {contractor.cover_image ? (
@@ -288,11 +299,11 @@ export default function ContractorsListingPage() {
                   <div className="flex justify-between items-center pt-3 border-t">
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <Briefcase className="h-4 w-4" />
-                      <span>프로젝트 {contractor.completed_projects}건</span>
+                      <span>상세보기</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <ImageIcon className="h-4 w-4" />
-                      <span>포트폴리오 {contractor.portfolio_count}개</span>
+                      <span>포트폴리오</span>
                     </div>
                   </div>
                 </div>
@@ -348,7 +359,6 @@ export default function ContractorsListingPage() {
                       <span className="ml-1">(리뷰 {selectedContractor.review_count}개)</span>
                     </div>
                     {selectedContractor.established_year && <span>설립 {selectedContractor.established_year}년</span>}
-                    <span>정보 없음</span>
                   </div>
                 </div>
               </div>
@@ -358,7 +368,9 @@ export default function ContractorsListingPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-sm text-gray-500 mb-1">완료 프로젝트</div>
-                  <div className="font-semibold">{selectedContractor.completed_projects}건</div>
+                  <div className="font-semibold">
+                    {selectedContractorDetails ? `${selectedContractorDetails.completed_projects}건` : '로딩중...'}
+                  </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-sm text-gray-500 mb-1">응답 시간</div>
@@ -370,7 +382,9 @@ export default function ContractorsListingPage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-sm text-gray-500 mb-1">포트폴리오</div>
-                  <div className="font-semibold">{selectedContractor.portfolio_count}개</div>
+                  <div className="font-semibold">
+                    {selectedContractorDetails ? `${selectedContractorDetails.portfolio_count}개` : '로딩중...'}
+                  </div>
                 </div>
               </div>
 
