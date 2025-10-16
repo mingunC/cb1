@@ -127,7 +127,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'site-visit-completed'
           } else if (mySiteVisit) {
             projectStatus = 'site-visit-applied'
-          } else if (project.status === 'approved' || project.status === 'site_visit') {
+          } else if (project.status === 'approved' || project.status === 'site_visit' || project.status === 'site-visit-pending') {
             projectStatus = 'approved'
           }
           
@@ -163,6 +163,53 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     await loadProjects()
     setIsRefreshing(false)
     toast.success('데이터를 새로고침했습니다')
+  }
+
+  // ✅ 현장방문 신청 함수 추가
+  const handleSiteVisitApplication = async (project: Project) => {
+    if (!contractorData?.id) {
+      toast.error('업체 정보를 찾을 수 없습니다')
+      return
+    }
+
+    try {
+      const supabase = createBrowserClient()
+      
+      // 이미 신청했는지 확인
+      const { data: existing } = await supabase
+        .from('site_visit_applications')
+        .select('*')
+        .eq('project_id', project.id)
+        .eq('contractor_id', contractorData.id)
+        .maybeSingle()
+
+      if (existing) {
+        toast.error('이미 현장방문을 신청했습니다')
+        return
+      }
+
+      // 현장방문 신청 삽입
+      const { error: insertError } = await supabase
+        .from('site_visit_applications')
+        .insert({
+          project_id: project.id,
+          contractor_id: contractorData.id,
+          status: 'pending',
+          applied_at: new Date().toISOString()
+        })
+
+      if (insertError) {
+        console.error('Site visit application error:', insertError)
+        toast.error('현장방문 신청에 실패했습니다')
+        return
+      }
+
+      toast.success('현장방문 신청이 완료되었습니다')
+      await loadProjects() // 데이터 새로고침
+    } catch (error) {
+      console.error('Error applying for site visit:', error)
+      toast.error('현장방문 신청 중 오류가 발생했습니다')
+    }
   }
   
   // 필터링된 프로젝트
@@ -211,7 +258,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     const getStatusBadge = () => {
       const statusConfig: Record<ProjectStatus, { label: string; color: string; icon?: any }> = {
         'pending': { label: '대기중', color: 'bg-gray-100 text-gray-700' },
-        'approved': { label: '승인됨', color: 'bg-green-100 text-green-700' },
+        'approved': { label: '승인됨 - 현장방문 신청 가능', color: 'bg-green-100 text-green-700' },
         'site-visit-applied': { label: '현장방문 신청', color: 'bg-blue-100 text-blue-700' },
         'site-visit-completed': { label: '현장방문 완료', color: 'bg-indigo-100 text-indigo-700' },
         'quoted': { label: '견적서 제출', color: 'bg-purple-100 text-purple-700' },
@@ -221,7 +268,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           icon: Trophy
         },
         'not-selected': { 
-          label: '미선정',  // 다른 업체 이름 제거
+          label: '미선정',
           color: 'bg-red-100 text-red-700',
           icon: X
         },
@@ -380,7 +427,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <p className="text-sm font-medium">
                 제출 견적: ${project.contractor_quote.price?.toLocaleString()}
               </p>
-              {/* 견적 상태는 보안상 표시하지 않음 */}
             </div>
           )}
           
@@ -393,7 +439,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </div>
           )}
           
-          {/* 선정 상태 표시 - 보안 강화 */}
+          {/* 선정 상태 표시 */}
           {project.projectStatus === 'selected' && (
             <div className="mt-3 pt-3 border-t bg-green-50 -m-2 p-3 rounded">
               <p className="text-sm font-semibold text-green-700 flex items-center">
@@ -415,7 +461,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         <div className="mt-4 flex gap-2 flex-wrap">
           {project.projectStatus === 'approved' && !project.site_visit_application && (
             <button 
-              onClick={() => console.log('Apply for site visit')}
+              onClick={() => handleSiteVisitApplication(project)}
               className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
             >
               현장방문 신청
