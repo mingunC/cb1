@@ -39,11 +39,9 @@ export default function AdminPage() {
         if (isMounted) {
           setUser(user)
           
-          // cmgg919@gmail.com만 허용
           if (user.email === 'cmgg919@gmail.com') {
             setIsAuthorized(true)
             setIsLoading(false)
-            // 통계 데이터 가져오기
             fetchStats()
           } else {
             setIsAuthorized(false)
@@ -71,7 +69,6 @@ export default function AdminPage() {
     try {
       const supabase = createBrowserClient()
       
-      // 병렬로 모든 쿼리 실행 (성능 개선)
       const [
         pendingResult,
         contractorResult,
@@ -208,7 +205,7 @@ export default function AdminPage() {
           <p className="text-gray-600">플랫폼 현황을 확인하고 관리하세요</p>
         </div>
 
-        {/* 통계 대시보드 */}
+        {/* 통계 카드들 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -266,7 +263,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* 관리 메뉴 */}
+        {/* 빠른 메뉴 */}
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-4">빠른 메뉴</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -294,7 +291,7 @@ export default function AdminPage() {
                   </p>
                 </div>
               )
-            }))}
+            })}
           </div>
         </div>
       </div>
