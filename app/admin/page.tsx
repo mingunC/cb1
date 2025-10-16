@@ -39,11 +39,9 @@ export default function AdminPage() {
         if (isMounted) {
           setUser(user)
           
-          // cmgg919@gmail.com만 허용
           if (user.email === 'cmgg919@gmail.com') {
             setIsAuthorized(true)
             setIsLoading(false)
-            // 통계 데이터 가져오기
             fetchStats()
           } else {
             setIsAuthorized(false)
@@ -71,7 +69,6 @@ export default function AdminPage() {
     try {
       const supabase = createBrowserClient()
       
-      // 병렬로 모든 쿼리 실행 (성능 개선)
       const [
         pendingResult,
         contractorResult,
@@ -169,7 +166,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* 헤더 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -200,15 +196,12 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 환영 메시지 */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">환영합니다! 👋</h2>
           <p className="text-gray-600">플랫폼 현황을 확인하고 관리하세요</p>
         </div>
 
-        {/* 통계 대시보드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -266,7 +259,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* 관리 메뉴 */}
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-4">빠른 메뉴</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -294,7 +286,7 @@ export default function AdminPage() {
                   </p>
                 </div>
               )
-            }))}
+            })}
           </div>
         </div>
       </div>
