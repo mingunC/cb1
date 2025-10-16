@@ -288,6 +288,11 @@ export default function MyQuotesPage() {
     'flexible': '유연함'
   }
 
+  // ✅ 현장방문 단계인지 확인하는 헬퍼 함수
+  const isInSiteVisitPhase = (status: string) => {
+    return ['pending', 'approved', 'site-visit-pending', 'site-visit-completed'].includes(status)
+  }
+
   // 업체 선택 처리 함수 - API 라우트 사용
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     try {
@@ -481,6 +486,9 @@ export default function MyQuotesPage() {
               const siteVisitCount = quote.site_visit_applications?.length || 0
               const quoteCount = quote.contractor_quotes?.length || 0
               
+              // ✅ 현장방문 단계인지 확인
+              const showSiteVisitInfo = isInSiteVisitPhase(quote.status)
+              
               return (
                 <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="p-6">
@@ -495,8 +503,8 @@ export default function MyQuotesPage() {
                           <span className="text-sm text-gray-500">
                             {new Date(quote.created_at).toLocaleDateString('ko-KR')}
                           </span>
-                          {/* ✅ 개선된 현장방문 신청 개수 표시 - 더 크고 눈에 띄게 */}
-                          {siteVisitCount > 0 && (
+                          {/* ✅ 현장방문 단계일 때만 현장방문 배지 표시 */}
+                          {showSiteVisitInfo && siteVisitCount > 0 && (
                             <span className="inline-flex items-center bg-blue-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
                               <Home className="w-4 h-4 mr-1.5" />
                               현장방문 신청 {siteVisitCount}개
@@ -562,8 +570,8 @@ export default function MyQuotesPage() {
                       </div>
                     </div>
 
-                    {/* ✅ 개선된 현장방문 신청 섹션 - 전화번호와 이메일 삭제됨 */}
-                    {siteVisitCount > 0 && (
+                    {/* ✅ 현장방문 단계일 때만 현장방문 신청 섹션 표시 */}
+                    {showSiteVisitInfo && siteVisitCount > 0 && (
                       <div className="mt-6 mb-6">
                         <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                           <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
@@ -699,7 +707,7 @@ export default function MyQuotesPage() {
                       </div>
                     ) : (
                       // 견적서도 없고 현장방문 신청도 없을 때만 이 메시지 표시
-                      siteVisitCount === 0 && (
+                      !showSiteVisitInfo && siteVisitCount === 0 && (
                         <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
                           <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                           <p className="text-gray-500">아직 제출된 견적서가 없습니다.</p>
