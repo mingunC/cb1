@@ -591,12 +591,12 @@ export default function MyQuotesPage() {
                               <div className="mb-3">
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                                   application.status === 'pending' 
-                                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
+                                    ? 'bg-green-100 text-green-800 border border-green-300' 
                                     : application.status === 'approved'
                                     ? 'bg-green-100 text-green-800 border border-green-300'
                                     : 'bg-red-100 text-red-800 border border-red-300'
                                 }`}>
-                                  {application.status === 'pending' ? '신청 대기중' : 
+                                  {application.status === 'pending' ? '방문 예정' : 
                                    application.status === 'approved' ? '승인됨' : '취소됨'}
                                 </span>
                               </div>
