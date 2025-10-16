@@ -166,7 +166,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* 헤더 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -197,9 +196,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 환영 메시지 */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">환영합니다! 👋</h2>
           <p className="text-gray-600">플랫폼 현황을 확인하고 관리하세요</p>
