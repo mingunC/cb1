@@ -45,17 +45,54 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         companyName: contractorData.company_name
       })
       
-      // 프로젝트 데이터 가져오기
+      // ✅ 먼저 업체가 참여한 프로젝트 ID 목록 가져오기
+      const [siteVisitsResponse, quotesResponse] = await Promise.all([
+        // 현장방문 신청한 프로젝트
+        supabase
+          .from('site_visit_applications')
+          .select('project_id')
+          .eq('contractor_id', contractorData.id),
+        // 견적서 제출한 프로젝트
+        supabase
+          .from('contractor_quotes')
+          .select('project_id')
+          .eq('contractor_id', contractorData.id)
+      ])
+      
+      // 프로젝트 ID 중복 제거
+      const participatingProjectIds = new Set<string>()
+      
+      siteVisitsResponse.data?.forEach(item => {
+        if (item.project_id) participatingProjectIds.add(item.project_id)
+      })
+      
+      quotesResponse.data?.forEach(item => {
+        if (item.project_id) participatingProjectIds.add(item.project_id)
+      })
+      
+      console.log('Participating project IDs:', Array.from(participatingProjectIds))
+      
+      // 참여한 프로젝트가 없으면 빈 배열 반환
+      if (participatingProjectIds.size === 0) {
+        console.log('No participating projects found')
+        setProjects([])
+        setIsLoading(false)
+        return
+      }
+      
+      // ✅ 참여한 프로젝트만 가져오기
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
+        .in('id', Array.from(participatingProjectIds))
         .order('created_at', { ascending: false })
-        .limit(50)
       
       if (projectsError) {
         console.error('Projects fetch error:', projectsError)
         throw projectsError
       }
+      
+      console.log('Fetched projects:', projectsData?.length)
       
       // 고객 정보 일괄 조회
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
