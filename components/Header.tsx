@@ -359,7 +359,7 @@ export default function Header() {
       return cachedName || '...'
     }
     
-    return user?.email?.split('@')[0] || 'User'
+    return user?.email?.split('@')[0] || ''
   }
 
   return (
