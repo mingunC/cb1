@@ -3,9 +3,9 @@ import { ProjectStatus } from '@/types/contractor'
 import { FILTER_OPTIONS } from '@/constants/contractor'
 
 interface ProjectFiltersProps {
-  currentFilter: ProjectStatus | 'all'
-  onFilterChange: (filter: ProjectStatus | 'all') => void
-  statusCounts: Record<ProjectStatus | 'all', number>
+  currentFilter: ProjectStatus | 'all' | 'bidding'
+  onFilterChange: (filter: ProjectStatus | 'all' | 'bidding') => void
+  statusCounts: Record<ProjectStatus | 'all' | 'bidding', number>
 }
 
 /**
@@ -20,6 +20,7 @@ const ProjectFilters = React.memo(({
   const getFilterLabel = (status: string) => {
     const labels: Record<string, string> = {
       'all': '전체',
+      'bidding': '입찰 중',
       'approved': '승인됨',
       'site-visit-applied': '현장방문 신청',
       'site-visit-completed': '현장방문 완료',
@@ -36,16 +37,18 @@ const ProjectFilters = React.memo(({
         {FILTER_OPTIONS.map(status => (
           <button
             key={status}
-            onClick={() => onFilterChange(status as ProjectStatus | 'all')}
+            onClick={() => onFilterChange(status as ProjectStatus | 'all' | 'bidding')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               currentFilter === status
-                ? 'bg-blue-600 text-white'
+                ? status === 'bidding'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {getFilterLabel(status)}
             <span className="ml-2 text-xs">
-              ({statusCounts[status as ProjectStatus | 'all']})
+              ({statusCounts[status as ProjectStatus | 'all' | 'bidding']})
             </span>
           </button>
         ))}
