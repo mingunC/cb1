@@ -213,6 +213,84 @@ export default function AdminQuotesPage() {
     { id: 'completed', label: '완료', count: quotes.filter(q => q.status === 'completed').length }
   ]
 
+  // ✅ 상태별 다음 액션 버튼 렌더링 함수
+  const renderActionButton = (quote: QuoteRequest) => {
+    switch (quote.status) {
+      case 'pending':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('현장방문 신청을 승인하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'site-visit-pending')
+              }
+            }}
+            className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            현장방문승인
+          </button>
+        )
+      
+      case 'site-visit-pending':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('현장방문을 완료하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'site-visit-completed')
+              }
+            }}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            방문완료
+          </button>
+        )
+      
+      case 'site-visit-completed':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('입찰을 시작하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'bidding')
+              }
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            입찰시작
+          </button>
+        )
+      
+      case 'bidding':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('입찰을 종료하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'quote-submitted')
+              }
+            }}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            입찰종료
+          </button>
+        )
+      
+      case 'quote-submitted':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('프로젝트를 완료하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'completed')
+              }
+            }}
+            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            프로젝트완료
+          </button>
+        )
+      
+      default:
+        return null
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -358,30 +436,7 @@ export default function AdminQuotesPage() {
                           >
                             상세
                           </button>
-                          {quote.status === 'pending' && (
-                            <button
-                              onClick={() => {
-                                if (confirm('현장방문 신청을 승인하시겠습니까?')) {
-                                  updateQuoteStatus(quote.id, 'site-visit-pending')
-                                }
-                              }}
-                              className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
-                            >
-                              현장방문승인
-                            </button>
-                          )}
-                          {quote.status === 'site-visit-pending' && (
-                            <button
-                              onClick={() => {
-                                if (confirm('상태를 변경하시겠습니까?')) {
-                                  updateQuoteStatus(quote.id, 'site-visit-completed')
-                                }
-                              }}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
-                            >
-                              상태변경
-                            </button>
-                          )}
+                          {renderActionButton(quote)}
                         </div>
                       </td>
                     </tr>
@@ -456,7 +511,7 @@ export default function AdminQuotesPage() {
                   {getStatusBadge(selectedQuote.status)}
                 </div>
 
-                {/* 액션 버튼 */}
+                {/* ✅ 개선된 액션 버튼 - 상태별로 다음 단계 버튼 표시 */}
                 <div className="flex gap-2 pt-4">
                   {selectedQuote.status === 'pending' && (
                     <button
@@ -478,6 +533,39 @@ export default function AdminQuotesPage() {
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
                     >
                       현장방문 완료
+                    </button>
+                  )}
+                  {selectedQuote.status === 'site-visit-completed' && (
+                    <button
+                      onClick={() => {
+                        updateQuoteStatus(selectedQuote.id, 'bidding')
+                        setSelectedQuote(null)
+                      }}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      입찰 시작
+                    </button>
+                  )}
+                  {selectedQuote.status === 'bidding' && (
+                    <button
+                      onClick={() => {
+                        updateQuoteStatus(selectedQuote.id, 'quote-submitted')
+                        setSelectedQuote(null)
+                      }}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      입찰 종료
+                    </button>
+                  )}
+                  {selectedQuote.status === 'quote-submitted' && (
+                    <button
+                      onClick={() => {
+                        updateQuoteStatus(selectedQuote.id, 'completed')
+                        setSelectedQuote(null)
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      프로젝트 완료
                     </button>
                   )}
                   <button
