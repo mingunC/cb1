@@ -562,7 +562,7 @@ export default function MyQuotesPage() {
                       </div>
                     </div>
 
-                    {/* ✅ 개선된 현장방문 신청 섹션 - 더 강조되고 눈에 띄게 */}
+                    {/* ✅ 개선된 현장방문 신청 섹션 - 전화번호와 이메일 삭제됨 */}
                     {siteVisitCount > 0 && (
                       <div className="mt-6 mb-6">
                         <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
@@ -585,17 +585,6 @@ export default function MyQuotesPage() {
                                 </h4>
                                 <p className="text-sm text-gray-600 ml-7">
                                   담당자: {application.contractors?.contact_name || '담당자 정보 없음'}
-                                </p>
-                              </div>
-                              
-                              <div className="mb-3 space-y-1">
-                                <p className="text-sm text-gray-700 flex items-center">
-                                  <span className="mr-2">📞</span>
-                                  {application.contractors?.phone || '연락처 없음'}
-                                </p>
-                                <p className="text-sm text-gray-700 flex items-center">
-                                  <span className="mr-2">✉️</span>
-                                  {application.contractors?.email || '이메일 없음'}
                                 </p>
                               </div>
                               
