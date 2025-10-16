@@ -34,7 +34,7 @@ interface SiteVisitApplication {
   applied_at: string
   created_at: string
   updated_at: string
-  contractor?: {
+  contractors?: {
     id: string
     company_name: string
     contact_name: string
@@ -57,7 +57,7 @@ interface ContractorQuote {
   contractor_company?: string
   price?: number
   description?: string
-  contractor?: {
+  contractors?: {
     id: string
     company_name: string
     contact_name: string
@@ -139,12 +139,12 @@ export default function MyQuotesPage() {
 
   const fetchQuotes = async (customerId: string) => {
     try {
-      console.log('=== FETCHING QUOTES ===')
+      console.log('=== FETCHING QUOTES ==='
       console.log('Customer ID:', customerId)
       
       const supabase = createBrowserClient()
       
-      // quote_requests와 contractor_quotes를 한 번에 가져오기
+      // ✅ site_visit_applications도 함께 가져오기
       const { data: quotesData, error: quotesError } = await supabase
         .from('quote_requests')
         .select(`
@@ -161,6 +161,22 @@ export default function MyQuotesPage() {
             created_at,
             updated_at,
             contractors!contractor_quotes_contractor_id_fkey (
+              id,
+              company_name,
+              contact_name,
+              phone,
+              email
+            )
+          ),
+          site_visit_applications!site_visit_applications_project_id_fkey (
+            id,
+            contractor_id,
+            status,
+            notes,
+            applied_at,
+            created_at,
+            updated_at,
+            contractors!site_visit_applications_contractor_id_fkey (
               id,
               company_name,
               contact_name,
@@ -185,6 +201,7 @@ export default function MyQuotesPage() {
       if (quotesData && quotesData.length > 0) {
         console.log('First quote data:', quotesData[0])
         console.log('Project status:', quotesData[0].status)
+        console.log('Site visit applications:', quotesData[0].site_visit_applications)
         
         // contractor_quotes 구조 확인
         if (quotesData[0].contractor_quotes && quotesData[0].contractor_quotes.length > 0) {
@@ -242,6 +259,7 @@ export default function MyQuotesPage() {
 
   const spaceTypeMap: { [key: string]: string } = {
     'detached-house': '단독주택',
+    'detached_house': '단독주택',
     'condo': '콘도',
     'townhouse': '타운하우스',
     'town_house': '타운하우스',
@@ -264,6 +282,7 @@ export default function MyQuotesPage() {
 
   const timelineMap: { [key: string]: string } = {
     'asap': '가능한 빨리',
+    'immediate': '즉시',
     'within_1_month': '1개월 이내',
     'within_3_months': '3개월 이내',
     'flexible': '유연함'
@@ -308,7 +327,7 @@ export default function MyQuotesPage() {
       const contactName = selectedContractorQuote?.contractors?.contact_name || ''
       const phoneNumber = selectedContractorQuote?.contractors?.phone || '등록된 전화번호'
 
-      alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
+      alert(`업체가 성공적으로 선택되었습니다!\\n\\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\\n\\n프로젝트가 완료되었습니다.`)
       
       // 데이터 새로고침
       if (user?.id) {
@@ -466,7 +485,7 @@ export default function MyQuotesPage() {
                     {/* 프로젝트 헤더 */}
                     <div className="flex items-start justify-between mb-6">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-3">
+                        <div className="flex items-center space-x-3 mb-3 flex-wrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
                             <IconComponent className="w-3 h-3 mr-1" />
                             {statusInfo.text}
@@ -474,8 +493,14 @@ export default function MyQuotesPage() {
                           <span className="text-sm text-gray-500">
                             {new Date(quote.created_at).toLocaleDateString('ko-KR')}
                           </span>
-                          {quote.contractor_quotes && quote.contractor_quotes.length > 0 && (
+                          {/* ✅ 현장방문 신청 개수 표시 */}
+                          {quote.site_visit_applications && quote.site_visit_applications.length > 0 && (
                             <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                              현장방문 신청 {quote.site_visit_applications.length}개
+                            </span>
+                          )}
+                          {quote.contractor_quotes && quote.contractor_quotes.length > 0 && (
+                            <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
                               견적서 {quote.contractor_quotes.length}개
                             </span>
                           )}
@@ -533,16 +558,17 @@ export default function MyQuotesPage() {
                       </div>
                     </div>
 
-                    {/* 현장방문 신청 섹션 - 입찰중 이전 상태에서만 표시 */}
-                    {quote.site_visit_applications && 
-                     quote.site_visit_applications.length > 0 && 
-                     !['bidding', 'quote-submitted', 'completed'].includes(quote.status) && (
+                    {/* ✅ 현장방문 신청 섹션 - 항상 표시 */}
+                    {quote.site_visit_applications && quote.site_visit_applications.length > 0 && (
                       <div className="mt-6 mb-6">
                         <div className="mb-4">
                           <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
                             <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                             현장방문 신청 업체 ({quote.site_visit_applications.length}개)
                           </h3>
+                          <p className="text-sm text-gray-600">
+                            업체들이 현장방문을 신청했습니다. 승인하시면 업체가 현장방문 후 견적서를 제출합니다.
+                          </p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -550,19 +576,19 @@ export default function MyQuotesPage() {
                             <div key={application.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50 hover:bg-blue-100 transition-colors">
                               <div className="mb-3">
                                 <h4 className="font-semibold text-lg text-gray-900">
-                                  {application.contractor?.company_name || '업체명 없음'}
+                                  {application.contractors?.company_name || '업체명 없음'}
                                 </h4>
                                 <p className="text-sm text-gray-600">
-                                  담당자: {application.contractor?.contact_name || '담당자 정보 없음'}
+                                  담당자: {application.contractors?.contact_name || '담당자 정보 없음'}
                                 </p>
                               </div>
                               
                               <div className="mb-3">
                                 <p className="text-sm text-gray-600">
-                                  📞 {application.contractor?.phone || '연락처 없음'}
+                                  📞 {application.contractors?.phone || '연락처 없음'}
                                 </p>
                                 <p className="text-sm text-gray-600">
-                                  ✉️ {application.contractor?.email || '이메일 없음'}
+                                  ✉️ {application.contractors?.email || '이메일 없음'}
                                 </p>
                               </div>
                               
@@ -581,63 +607,6 @@ export default function MyQuotesPage() {
                               
                               <div className="text-xs text-gray-500">
                                 신청일: {new Date(application.applied_at).toLocaleDateString('ko-KR')}
-                              </div>
-                              
-                              {application.notes && (
-                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-700">
-                                  <strong>메모:</strong> {application.notes}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 견적 제출 예정 업체 섹션 - 입찰중 상태에서 표시 */}
-                    {quote.status === 'bidding' && 
-                     quote.site_visit_applications && 
-                     quote.site_visit_applications.filter(app => app.status === 'approved').length > 0 && (
-                      <div className="mt-6 mb-6">
-                        <div className="mb-4">
-                          <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
-                            <Clock className="w-5 h-5 mr-2 text-orange-600" />
-                            견적 제출 예정 업체 ({quote.site_visit_applications.filter(app => app.status === 'approved').length}개)
-                          </h3>
-                          <p className="text-sm text-gray-600">현장방문을 완료한 업체들이 견적서를 준비 중입니다.</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {quote.site_visit_applications
-                            .filter(application => application.status === 'approved')
-                            .map((application) => (
-                            <div key={application.id} className="border border-orange-200 rounded-lg p-4 bg-orange-50 hover:bg-orange-100 transition-colors">
-                              <div className="mb-3">
-                                <h4 className="font-semibold text-lg text-gray-900">
-                                  {application.contractor?.company_name || '업체명 없음'}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  담당자: {application.contractor?.contact_name || '담당자 정보 없음'}
-                                </p>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <p className="text-sm text-gray-600">
-                                  📞 {application.contractor?.phone || '연락처 없음'}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  ✉️ {application.contractor?.email || '이메일 없음'}
-                                </p>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                  견적서 준비중
-                                </span>
-                              </div>
-                              
-                              <div className="text-xs text-gray-500">
-                                현장방문 완료: {new Date(application.applied_at).toLocaleDateString('ko-KR')}
                               </div>
                               
                               {application.notes && (
@@ -733,10 +702,13 @@ export default function MyQuotesPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
-                        <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">아직 제출된 견적서가 없습니다.</p>
-                      </div>
+                      // 견적서가 없을 때만 이 메시지 표시
+                      !quote.site_visit_applications || quote.site_visit_applications.length === 0 ? (
+                        <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
+                          <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-500">아직 제출된 견적서가 없습니다.</p>
+                        </div>
+                      ) : null
                     )}
                   </div>
                 </div>
