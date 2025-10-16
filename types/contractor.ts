@@ -4,6 +4,7 @@ export type ProjectStatus =
   | 'approved'             // 관리자 승인됨
   | 'site-visit-applied'   // 현장방문 신청함
   | 'site-visit-completed' // 현장방문 완료
+  | 'bidding'              // 입찰 중
   | 'quoted'               // 견적서 제출함
   | 'selected'             // 고객에게 선택됨
   | 'not-selected'         // 선택 안됨
@@ -60,7 +61,7 @@ export interface Project {
   }
   
   // 프로젝트 상태 (클라이언트 계산용)
-  projectStatus?: ProjectStatus
+  projectStatus?: ProjectStatus | 'bidding'
 }
 
 // 업체 데이터 인터페이스
@@ -93,7 +94,7 @@ export interface ProjectCardProps {
 
 // 필터 Props
 export interface ProjectFiltersProps {
-  currentFilter: ProjectStatus | 'all'
-  onFilterChange: (filter: ProjectStatus | 'all') => void
-  statusCounts: Record<ProjectStatus | 'all', number>
+  currentFilter: ProjectStatus | 'all' | 'bidding'
+  onFilterChange: (filter: ProjectStatus | 'all' | 'bidding') => void
+  statusCounts: Record<ProjectStatus | 'all' | 'bidding', number>
 }
