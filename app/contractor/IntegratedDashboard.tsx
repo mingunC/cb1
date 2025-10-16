@@ -20,7 +20,7 @@ interface Props {
 export default function IntegratedContractorDashboard({ initialContractorData }: Props) {
   const router = useRouter()
   
-  // 상태 관리 - initialContractorData를 바로 사용
+  // 상태 관리
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -64,7 +64,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         companyName: contractorData.company_name
       })
       
-      // 프로젝트 데이터 가져오기 - selected_contractor_id와 selected_quote_id 포함
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
@@ -77,7 +76,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
       
       console.log('Projects data loaded:', projectsData?.length, 'projects')
-      console.log('Sample project with selection:', projectsData?.[0])
       
       // 고객 정보 일괄 조회
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
@@ -97,7 +95,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         }
       }
       
-      // 선택된 업체 IDs 수집 (이미 DB에 저장된 selected_contractor_id 사용)
+      // 선택된 업체 IDs 수집
       const selectedContractorIds = new Set<string>()
       projectsData?.forEach(project => {
         if (project.selected_contractor_id) {
@@ -109,12 +107,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       const contractorNames = await loadSelectedContractorNames(Array.from(selectedContractorIds))
       setSelectedContractorNames(contractorNames)
       
-      console.log('Selected contractor names:', contractorNames)
-      
       // 각 프로젝트에 대해 관련 데이터 조회
       const processedProjects = await Promise.all(
         (projectsData || []).map(async (project) => {
-          // 고객 정보 매핑
           const customerInfo = customersMap[project.customer_id] || null
           
           // 현장방문 신청 조회
@@ -133,21 +128,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
           const myQuote = quotes?.[0]
-          
-          // 선택된 업체 ID는 이미 DB에서 가져온 값 사용
           const selectedContractorId = project.selected_contractor_id
           
-          // 프로젝트 상태 결정
+          // ⭐ 프로젝트 상태 결정 - DB status 우선!
           let projectStatus: ProjectStatus = 'pending'
           
           const isMyQuoteSelected = selectedContractorId === contractorData.id
           const hasSelectedContractor = !!selectedContractorId
           
-          // 상태 결정 로직 - DB status 우선 반영
+          // 1️⃣ 취소/완료 상태
           if (project.status === 'cancelled') {
             projectStatus = 'cancelled'
           } else if (project.status === 'completed' || project.status === 'in_progress') {
-            // 완료되거나 진행중인 프로젝트
             if (isMyQuoteSelected) {
               projectStatus = 'selected'
             } else if (hasSelectedContractor) {
@@ -157,22 +149,36 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             } else {
               projectStatus = 'completed'
             }
-          } else if (isMyQuoteSelected) {
+          }
+          // 2️⃣ 선정/미선정 상태
+          else if (isMyQuoteSelected) {
             projectStatus = 'selected'
           } else if (hasSelectedContractor && !isMyQuoteSelected) {
             projectStatus = 'not-selected'
-          } else if (myQuote) {
-            projectStatus = 'quoted'
-          } else if (mySiteVisit && mySiteVisit.status === 'completed') {
-            // ✅ 현장방문 완료 후 DB status가 bidding이면 입찰 가능 상태
-            if (project.status === 'bidding' || project.status === 'quote-submitted') {
-              projectStatus = 'site-visit-completed'  // 견적서 작성 가능
+          }
+          // 3️⃣ 🔥 입찰 단계 - DB status 최우선!
+          else if (project.status === 'bidding' || project.status === 'quote-submitted') {
+            if (myQuote) {
+              projectStatus = 'quoted'
+            } else if (mySiteVisit && mySiteVisit.status === 'completed') {
+              projectStatus = 'site-visit-completed'  // 입찰 참여 가능
             } else {
-              projectStatus = 'site-visit-completed'
+              // 현장방문 미완료면 참여 불가
+              projectStatus = 'site-visit-applied'
             }
+          }
+          // 4️⃣ 견적서 제출 상태
+          else if (myQuote) {
+            projectStatus = 'quoted'
+          }
+          // 5️⃣ 현장방문 관련 상태
+          else if (mySiteVisit && mySiteVisit.status === 'completed') {
+            projectStatus = 'site-visit-completed'
           } else if (mySiteVisit) {
             projectStatus = 'site-visit-applied'
-          } else if (project.status === 'approved' || project.status === 'site_visit' || project.status === 'site-visit-pending') {
+          }
+          // 6️⃣ 기본 승인 상태
+          else if (project.status === 'approved' || project.status === 'site_visit' || project.status === 'site-visit-pending') {
             projectStatus = 'approved'
           }
           
@@ -187,17 +193,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         })
       )
       
-      // 프로젝트 상태 요약
-      const summary = {
-        total: processedProjects.length,
-        selected: processedProjects.filter(p => p.projectStatus === 'selected').length,
-        notSelected: processedProjects.filter(p => p.projectStatus === 'not-selected').length,
-        quoted: processedProjects.filter(p => p.projectStatus === 'quoted').length,
-        completed: processedProjects.filter(p => p.status === 'completed').length
-      }
-      
-      console.log('Processed projects summary:', summary)
-      
+      console.log('Processed projects:', processedProjects.length)
       setProjects(processedProjects)
     } catch (err: any) {
       console.error('Failed to load projects:', err)
@@ -268,11 +264,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       const statusConfig: Record<ProjectStatus, { label: string; color: string; icon?: any }> = {
         'pending': { label: '대기중', color: 'bg-gray-100 text-gray-700' },
         'approved': { label: '승인됨 - 현장방문 가능', color: 'bg-green-100 text-green-700' },
-        'site-visit-applied': { label: '현장방문 신청됨', color: 'bg-blue-100 text-blue-700' },
+        'site-visit-applied': { 
+          label: (project.status === 'bidding' || project.status === 'quote-submitted') 
+            ? '현장방문 미완료 - 입찰 참여 불가' 
+            : '현장방문 신청됨', 
+          color: 'bg-blue-100 text-blue-700' 
+        },
         'site-visit-completed': { 
-          label: project.status === 'bidding' || project.status === 'quote-submitted' ? '입찰 참여 가능' : '현장방문 완료', 
-          color: 'bg-orange-100 text-orange-700',
-          icon: TrendingUp
+          label: (project.status === 'bidding' || project.status === 'quote-submitted') 
+            ? '✅ 입찰 참여 가능' 
+            : '현장방문 완료', 
+          color: (project.status === 'bidding' || project.status === 'quote-submitted')
+            ? 'bg-orange-100 text-orange-700'
+            : 'bg-purple-100 text-purple-700',
+          icon: (project.status === 'bidding' || project.status === 'quote-submitted') ? TrendingUp : undefined
         },
         'quoted': { label: '견적서 제출완료', color: 'bg-purple-100 text-purple-700' },
         'selected': { 
@@ -386,11 +391,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return '미정'
     }
     
-    // 카드 테두리 색상 (선정/미선정 강조)
+    // 카드 테두리 색상
     const getBorderColor = () => {
       if (project.projectStatus === 'selected') return 'border-green-500 border-2 shadow-lg'
       if (project.projectStatus === 'not-selected') return 'border-red-300 border-2'
-      // ✅ 입찰 가능한 상태 강조
+      // 입찰 가능한 상태 강조
       if (project.projectStatus === 'site-visit-completed' && 
           (project.status === 'bidding' || project.status === 'quote-submitted') && 
           !project.contractor_quote) {
@@ -448,52 +453,38 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <p className="text-sm font-medium">
                 제출 견적: ${project.contractor_quote.price?.toLocaleString()}
               </p>
-              {project.contractor_quote.status && (
-                <p className="text-xs text-gray-500 mt-1">
-                  견적 상태: {
-                    project.contractor_quote.status === 'accepted' ? '✅ 수락됨' : 
-                    project.contractor_quote.status === 'submitted' ? '제출됨' :
-                    project.contractor_quote.status === 'rejected' ? '❌ 거절됨' :
-                    project.contractor_quote.status
-                  }
-                </p>
-              )}
             </div>
           )}
           
-          {/* 현장방문 정보 */}
-          {project.site_visit_application && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-sm text-blue-600">
-                현장방문 {project.site_visit_application.status === 'completed' ? '완료' : '신청됨'}
-              </p>
-            </div>
-          )}
-          
-          {/* ✅ 입찰 가능 상태 강조 표시 */}
+          {/* 입찰 가능 상태 강조 표시 */}
           {project.projectStatus === 'site-visit-completed' && 
            (project.status === 'bidding' || project.status === 'quote-submitted') && 
            !project.contractor_quote && (
             <div className="mt-3 pt-3 border-t bg-orange-50 -m-2 p-3 rounded">
               <p className="text-sm font-semibold text-orange-700 flex items-center">
                 <TrendingUp className="w-4 h-4 mr-2" />
-                입찰이 시작되었습니다! 견적서를 제출하세요.
+                🔥 입찰이 시작되었습니다! 견적서를 제출하세요.
               </p>
             </div>
           )}
           
-          {/* 선정 상태 강조 표시 */}
+          {/* 현장방문 미완료 시 입찰 참여 불가 알림 */}
+          {project.projectStatus === 'site-visit-applied' && 
+           (project.status === 'bidding' || project.status === 'quote-submitted') && (
+            <div className="mt-3 pt-3 border-t bg-yellow-50 -m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-yellow-700">
+                ⚠️ 현장방문을 완료해야 입찰에 참여할 수 있습니다.
+              </p>
+            </div>
+          )}
+          
+          {/* 선정 상태 표시 */}
           {project.projectStatus === 'selected' && (
             <div className="mt-3 pt-3 border-t bg-green-50 -m-2 p-3 rounded">
               <p className="text-sm font-semibold text-green-700 flex items-center">
                 <Trophy className="w-4 h-4 mr-2" />
                 🎉 축하합니다! 고객이 귀사를 선택했습니다.
               </p>
-              {project.selected_quote_id && (
-                <p className="text-xs text-green-600 mt-1">
-                  선택된 견적서 ID: {project.selected_quote_id}
-                </p>
-              )}
             </div>
           )}
           
@@ -504,17 +495,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                   {selectedContractorNames[project.selected_contractor_id!] || '다른 업체'}
                 </span>를 선택했습니다.
               </p>
-              {project.selected_quote_id && (
-                <p className="text-xs text-red-600 mt-1">
-                  선택된 견적서: 다른 업체 견적
-                </p>
-              )}
             </div>
           )}
         </div>
         
         <div className="mt-4 flex gap-2 flex-wrap">
-          {/* ✅ 상태에 따른 액션 버튼 */}
+          {/* 상태에 따른 액션 버튼 */}
           {project.projectStatus === 'approved' && !project.site_visit_application && (
             <button 
               onClick={() => console.log('Apply for site visit')}
@@ -523,7 +509,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               현장방문 신청
             </button>
           )}
-          {/* ✅ 입찰 가능 상태 (현장방문 완료 + bidding/quote-submitted 상태 + 견적서 미제출) */}
+          {/* 입찰 참여 버튼 */}
           {project.projectStatus === 'site-visit-completed' && 
            (project.status === 'bidding' || project.status === 'quote-submitted') && 
            !project.contractor_quote && (
@@ -535,7 +521,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               입찰 참여하기
             </button>
           )}
-          {/* 기존 견적서 작성 버튼 (site-visit-completed이지만 bidding 아닐 때) */}
+          {/* 기존 견적서 작성 버튼 */}
           {project.projectStatus === 'site-visit-completed' && 
            project.status !== 'bidding' && 
            project.status !== 'quote-submitted' &&
@@ -554,18 +540,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
         </div>
         
-        {/* 디버그 정보 (개발 중에만 표시) */}
+        {/* 디버그 정보 */}
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-2 pt-2 border-t text-xs text-gray-400">
             <p>Project ID: {project.id}</p>
             <p>DB Status: {project.status}</p>
             <p>Project Status: {project.projectStatus}</p>
-            {project.selected_contractor_id && (
-              <p>Selected: {project.selected_contractor_id}</p>
-            )}
-            {project.selected_quote_id && (
-              <p>Quote: {project.selected_quote_id}</p>
-            )}
           </div>
         )}
       </div>
@@ -574,7 +554,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-12">
@@ -602,9 +581,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         </div>
       </div>
       
-      {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 탭 네비게이션 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
@@ -632,7 +609,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           </div>
         </div>
         
-        {/* 통계 요약 (선정/미선정 강조) */}
         {activeTab === 'projects' && (statusCounts['selected'] > 0 || statusCounts['not-selected'] > 0) && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {statusCounts['selected'] > 0 && (
@@ -680,7 +656,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           </div>
         )}
         
-        {/* 프로젝트 탭 */}
         {activeTab === 'projects' && (
           <>
             <ProjectFilters
@@ -713,7 +688,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           </>
         )}
         
-        {/* 포트폴리오 탭 */}
         {activeTab === 'portfolio' && contractorData && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-6">
