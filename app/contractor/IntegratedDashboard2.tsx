@@ -294,10 +294,19 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     }
   }
   
-  // 입찰 참여 함수
+  // 입찰 참여 함수 - 디버깅 로그 추가
   const handleJoinBidding = (project: Project) => {
+    console.log('🎯 입찰 참여하기 버튼 클릭됨!')
+    console.log('Project:', project)
+    console.log('Contractor ID:', contractorData?.id)
+    console.log('Current showQuoteModal:', showQuoteModal)
+    
     setSelectedProject(project)
     setShowQuoteModal(true)
+    
+    console.log('✅ Modal state updated - showQuoteModal should be true now')
+    
+    toast.success('견적서 작성 모달을 여는 중...')
   }
   
   // 입찰 취소 함수
@@ -326,6 +335,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 견적서 제출 완료 핸들러
   const handleQuoteSubmitted = async () => {
+    console.log('✅ 견적서 제출 완료 핸들러 호출됨')
     setShowQuoteModal(false)
     setSelectedProject(null)
     await loadProjects()
@@ -616,7 +626,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {/* 입찰 중 - 견적서 미제출 시 입찰 참여 버튼 */}
           {project.projectStatus === 'bidding' && !project.contractor_quote && (
             <button 
-              onClick={() => handleJoinBidding(project)}
+              onClick={() => {
+                console.log('🔘 입찰 참여하기 버튼 클릭 이벤트 발생')
+                handleJoinBidding(project)
+              }}
               className="px-4 py-2 bg-orange-500 text-white rounded text-sm hover:bg-orange-600 font-semibold flex items-center gap-2"
             >
               <FileText className="w-4 h-4" />
@@ -650,18 +663,23 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
         </div>
         
-        {/* 디버그 정보 */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-2 pt-2 border-t text-xs text-gray-400">
-            <p>Project ID: {project.id}</p>
-            <p>DB Status: {project.status}</p>
-            <p>Project Status: {project.projectStatus}</p>
-            <p>Has Quote: {project.contractor_quote ? 'Yes' : 'No'}</p>
-          </div>
-        )}
+        {/* 디버그 정보 - 항상 표시 */}
+        <div className="mt-2 pt-2 border-t text-xs text-gray-400">
+          <p>Project ID: {project.id}</p>
+          <p>DB Status: {project.status}</p>
+          <p>Project Status: {project.projectStatus}</p>
+          <p>Has Quote: {project.contractor_quote ? 'Yes' : 'No'}</p>
+          <p>Contractor ID: {contractorData?.id}</p>
+        </div>
       </div>
     )
   }
+  
+  // showQuoteModal 상태 변경 감지
+  useEffect(() => {
+    console.log('📊 showQuoteModal 상태 변경:', showQuoteModal)
+    console.log('📊 selectedProject:', selectedProject)
+  }, [showQuoteModal, selectedProject])
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -842,19 +860,28 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         )}
       </div>
       
-      {/* 견적서 작성 모달 - 올바른 props 전달 */}
-      {showQuoteModal && selectedProject && (
+      {/* 견적서 작성 모달 - 디버깅 로그 추가 */}
+      {console.log('🎨 Modal Render Check:', { showQuoteModal, hasSelectedProject: !!selectedProject, contractorId: contractorData?.id })}
+      {showQuoteModal && selectedProject && contractorData?.id ? (
         <QuoteModal
           isOpen={showQuoteModal}
           mode="create"
           project={selectedProject}
-          contractorId={contractorData?.id || ''}
+          contractorId={contractorData.id}
           onClose={() => {
+            console.log('❌ Modal Close 버튼 클릭됨')
             setShowQuoteModal(false)
             setSelectedProject(null)
           }}
           onSuccess={handleQuoteSubmitted}
         />
+      ) : (
+        <div className="hidden">
+          {/* 모달이 렌더링되지 않는 이유 디버깅 */}
+          <p>showQuoteModal: {showQuoteModal ? 'true' : 'false'}</p>
+          <p>selectedProject: {selectedProject ? 'exists' : 'null'}</p>
+          <p>contractorId: {contractorData?.id || 'undefined'}</p>
+        </div>
       )}
     </div>
   )
