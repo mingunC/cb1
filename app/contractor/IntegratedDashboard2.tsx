@@ -328,7 +328,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const handleQuoteSubmitted = async () => {
     setShowQuoteModal(false)
     setSelectedProject(null)
-    toast.success('견적서가 제출되었습니다')
     await loadProjects()
   }
   
@@ -843,16 +842,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         )}
       </div>
       
-      {/* 견적서 작성 모달 */}
+      {/* 견적서 작성 모달 - 올바른 props 전달 */}
       {showQuoteModal && selectedProject && (
         <QuoteModal
+          isOpen={showQuoteModal}
+          mode="create"
           project={selectedProject}
           contractorId={contractorData?.id || ''}
           onClose={() => {
             setShowQuoteModal(false)
             setSelectedProject(null)
           }}
-          onSubmit={handleQuoteSubmitted}
+          onSuccess={handleQuoteSubmitted}
         />
       )}
     </div>
