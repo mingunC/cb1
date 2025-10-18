@@ -66,7 +66,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         companyName: contractorData.company_name
       })
       
-      // ✅ 먼저 업체가 참여한 프로젝트 ID 목록 가져오기
+      // ✅ 1. 업체가 참여한 프로젝트 ID 목록 가져오기
       const [siteVisitsResponse, quotesResponse] = await Promise.all([
         // 현장방문 신청한 프로젝트
         supabase
@@ -93,19 +93,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       console.log('Participating project IDs:', Array.from(participatingProjectIds))
       
-      // 참여한 프로젝트가 없으면 빈 배열 반환
-      if (participatingProjectIds.size === 0) {
-        console.log('No participating projects found')
-        setProjects([])
-        setIsLoading(false)
-        return
-      }
-      
-      // ✅ 참여한 프로젝트만 가져오기
+      // ✅ 2. approved 상태의 모든 프로젝트 + 참여한 프로젝트 가져오기
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
-        .in('id', Array.from(participatingProjectIds))
+        .or(`id.in.(${Array.from(participatingProjectIds).join(',')}),status.eq.approved,status.eq.site-visit-pending,status.eq.bidding,status.eq.quote-submitted`)
         .order('created_at', { ascending: false })
       
       if (projectsError) {
@@ -114,6 +106,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
       
       console.log('Fetched projects:', projectsData?.length)
+      console.log('- Approved projects that contractors can apply to')
+      console.log('- Projects the contractor has already participated in')
       
       // 고객 정보 일괄 조회
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
