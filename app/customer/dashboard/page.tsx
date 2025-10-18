@@ -163,31 +163,45 @@ export default function CustomerDashboard() {
   }
 
   const handleSelectContractor = async (projectId: string, contractorId: string, quoteId: string) => {
-    if (!confirm('이 업체를 선택하시겠습니까?')) return
+    console.log('🎯 업체 선택하기 버튼 클릭:', { projectId, contractorId, quoteId })
+    
+    if (!confirm('이 업체를 선택하시겠습니까?')) {
+      console.log('❌ 사용자가 취소했습니다')
+      return
+    }
     
     try {
+      console.log('📤 API 요청 시작...')
+      
       const response = await fetch('/api/select-contractor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, contractorId, quoteId })
       })
       
+      console.log('📥 API 응답 상태:', response.status, response.statusText)
+      
+      const responseData = await response.json()
+      console.log('📥 API 응답 데이터:', responseData)
+      
       if (!response.ok) {
-        throw new Error('Failed to select contractor')
+        throw new Error(responseData.error || 'Failed to select contractor')
       }
       
-      toast.success('업체가 선택되었습니다! 선택된 업체에게 축하 이메일이 발송됩니다.')
+      toast.success('✅ 업체가 선택되었습니다! 선택된 업체에게 축하 이메일이 발송됩니다.')
       
       // 프로젝트 새로고침
+      console.log('🔄 프로젝트 데이터 새로고침...')
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await loadProjects(user.id)
+        console.log('✅ 데이터 새로고침 완료')
       }
       
-    } catch (error) {
-      console.error('Error selecting contractor:', error)
-      toast.error('업체 선택에 실패했습니다')
+    } catch (error: any) {
+      console.error('❌ 업체 선택 에러:', error)
+      toast.error(`업체 선택에 실패했습니다: ${error.message}`)
     }
   }
 
@@ -319,6 +333,14 @@ export default function CustomerDashboard() {
               const canSelectContractor = (project.status === 'bidding' || project.status === 'bidding-closed') && !project.selected_contractor_id
               const canStartProject = project.status === 'bidding-closed' && project.selected_contractor_id
 
+              console.log('🔍 프로젝트 렌더링:', {
+                projectId: project.id,
+                status: project.status,
+                canSelectContractor,
+                hasSelectedContractor: !!project.selected_contractor_id,
+                quotesCount: quotes.length
+              })
+
               return (
                 <div key={project.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                   <div className="p-6">
@@ -378,71 +400,88 @@ export default function CustomerDashboard() {
 
                         {isExpanded && (
                           <div className="space-y-4">
-                            {quotes.map((quote) => (
-                              <div
-                                key={quote.id}
-                                className={`border rounded-lg p-5 transition-all ${
-                                  project.selected_quote_id === quote.id
-                                    ? 'border-green-500 bg-green-50 shadow-md'
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                              >
-                                <div className="flex justify-between items-start gap-4">
-                                  <div className="flex-1 min-w-0">
-                                    {/* 업체명 */}
-                                    <h5 className="font-bold text-gray-900 text-lg mb-1">
-                                      {quote.contractor?.company_name || '업체명 없음'}
-                                    </h5>
-                                    {quote.contractor?.contact_name && (
-                                      <p className="text-sm text-gray-600 mb-3">
-                                        담당자: {quote.contractor.contact_name}
+                            {quotes.map((quote) => {
+                              const isSelected = project.selected_quote_id === quote.id
+                              console.log('🎯 견적서 렌더링:', {
+                                quoteId: quote.id,
+                                contractorId: quote.contractor_id,
+                                isSelected,
+                                canSelect: canSelectContractor
+                              })
+                              
+                              return (
+                                <div
+                                  key={quote.id}
+                                  className={`border rounded-lg p-5 transition-all ${
+                                    isSelected
+                                      ? 'border-green-500 bg-green-50 shadow-md'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      {/* 업체명 */}
+                                      <h5 className="font-bold text-gray-900 text-lg mb-1">
+                                        {quote.contractor?.company_name || '업체명 없음'}
+                                      </h5>
+                                      {quote.contractor?.contact_name && (
+                                        <p className="text-sm text-gray-600 mb-3">
+                                          담당자: {quote.contractor.contact_name}
+                                        </p>
+                                      )}
+                                      
+                                      {/* 견적 금액 */}
+                                      <p className="text-3xl font-bold text-blue-600 mb-3">
+                                        ${quote.price.toLocaleString()} <span className="text-lg font-medium text-gray-500">CAD</span>
                                       </p>
-                                    )}
+                                      
+                                      {/* 작업 내용 */}
+                                      {quote.description && (
+                                        <div className="mb-3">
+                                          <p className="text-xs text-gray-500 mb-1">상세 작업 내용:</p>
+                                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.description}</p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* PDF 다운로드 버튼 */}
+                                      {quote.pdf_url && (
+                                        <button
+                                          onClick={() => handleDownloadPDF(quote.id, quote.pdf_url, quote.pdf_filename)}
+                                          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+                                        >
+                                          <Download className="w-4 h-4" />
+                                          견적서 다운로드
+                                        </button>
+                                      )}
+                                    </div>
                                     
-                                    {/* 견적 금액 */}
-                                    <p className="text-3xl font-bold text-blue-600 mb-3">
-                                      ${quote.price.toLocaleString()} <span className="text-lg font-medium text-gray-500">CAD</span>
-                                    </p>
-                                    
-                                    {/* 작업 내용 */}
-                                    {quote.description && (
-                                      <div className="mb-3">
-                                        <p className="text-xs text-gray-500 mb-1">상세 작업 내용:</p>
-                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.description}</p>
-                                      </div>
-                                    )}
-                                    
-                                    {/* PDF 다운로드 버튼 */}
-                                    {quote.pdf_url && (
-                                      <button
-                                        onClick={() => handleDownloadPDF(quote.id, quote.pdf_url, quote.pdf_filename)}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
-                                      >
-                                        <Download className="w-4 h-4" />
-                                        견적서 다운로드
-                                      </button>
-                                    )}
-                                  </div>
-                                  
-                                  {/* 선택 상태 or 선택 버튼 */}
-                                  <div className="flex-shrink-0">
-                                    {project.selected_quote_id === quote.id ? (
-                                      <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold">
-                                        <CheckCircle className="w-5 h-5" />
-                                        선택됨
-                                      </div>
-                                    ) : canSelectContractor ? (
-                                      <button
-                                        onClick={() => handleSelectContractor(project.id, quote.contractor_id, quote.id)}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold whitespace-nowrap"
-                                      >
-                                        업체 선택하기
-                                      </button>
-                                    ) : null}
+                                    {/* 선택 상태 or 선택 버튼 */}
+                                    <div className="flex-shrink-0">
+                                      {isSelected ? (
+                                        <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold">
+                                          <CheckCircle className="w-5 h-5" />
+                                          선택됨
+                                        </div>
+                                      ) : canSelectContractor ? (
+                                        <button
+                                          onClick={() => {
+                                            console.log('🎯 업체 선택하기 버튼 클릭됨!', {
+                                              projectId: project.id,
+                                              contractorId: quote.contractor_id,
+                                              quoteId: quote.id
+                                            })
+                                            handleSelectContractor(project.id, quote.contractor_id, quote.id)
+                                          }}
+                                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold whitespace-nowrap"
+                                        >
+                                          업체 선택하기
+                                        </button>
+                                      ) : null}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         )}
                       </div>
