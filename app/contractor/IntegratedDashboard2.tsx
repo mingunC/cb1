@@ -93,11 +93,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       console.log('Participating project IDs:', Array.from(participatingProjectIds))
       
-      // ✅ 2. approved 상태의 모든 프로젝트 + 참여한 프로젝트 가져오기
+      // ✅ 2. 모든 견적요청서 가져오기 (pending 포함!)
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
-        .or(`id.in.(${Array.from(participatingProjectIds).join(',')}),status.eq.approved,status.eq.site-visit-pending,status.eq.bidding,status.eq.quote-submitted`)
+        .or(`id.in.(${Array.from(participatingProjectIds).join(',')}),status.eq.pending,status.eq.approved,status.eq.site-visit-pending,status.eq.bidding,status.eq.quote-submitted`)
         .order('created_at', { ascending: false })
       
       if (projectsError) {
@@ -106,7 +106,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
       
       console.log('Fetched projects:', projectsData?.length)
-      console.log('- Approved projects that contractors can apply to')
+      console.log('- Pending: 고객이 새로 제출한 견적요청서')
+      console.log('- Approved: 현장방문 신청 가능한 프로젝트')
       console.log('- Projects the contractor has already participated in')
       
       // 고객 정보 일괄 조회
@@ -205,6 +206,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           // 6️⃣ 기본 승인 상태
           else if (project.status === 'approved' || project.status === 'site_visit' || project.status === 'site-visit-pending') {
             projectStatus = 'approved'
+          }
+          // 7️⃣ Pending 상태 - 새로 제출된 견적요청서
+          else if (project.status === 'pending') {
+            projectStatus = 'pending'
           }
           
           return {
@@ -510,6 +515,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       if (project.projectStatus === 'selected') return 'border-green-500 border-2 shadow-lg'
       if (project.projectStatus === 'not-selected') return 'border-red-300 border-2'
       if (project.projectStatus === 'bidding') return 'border-orange-500 border-2 shadow-lg'
+      if (project.projectStatus === 'pending') return 'border-yellow-300 border-2'
       return 'border-gray-200'
     }
     
@@ -561,6 +567,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <div className="mt-3 pt-3 border-t">
               <p className="text-sm font-medium">
                 제출 견적: ${project.contractor_quote.price?.toLocaleString()}
+              </p>
+            </div>
+          )}
+          
+          {/* Pending 상태 안내 */}
+          {project.projectStatus === 'pending' && (
+            <div className="mt-3 pt-3 border-t bg-yellow-50 -m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-yellow-700">
+                ⏳ 새로운 견적요청서입니다. 관리자 승인을 기다리고 있습니다.
               </p>
             </div>
           )}
