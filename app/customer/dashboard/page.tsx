@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle, Download } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface Project {
@@ -27,10 +27,12 @@ interface Quote {
   price: number
   description: string
   pdf_url: string
+  pdf_filename?: string
   created_at: string
   status: string
   contractor?: {
     company_name: string
+    contact_name?: string
     email: string
   }
 }
@@ -106,6 +108,7 @@ export default function CustomerDashboard() {
           *,
           contractor:contractors!contractor_quotes_contractor_id_fkey(
             company_name,
+            contact_name,
             email
           )
         `)
@@ -114,6 +117,8 @@ export default function CustomerDashboard() {
       
       if (quotesError) throw quotesError
       
+      console.log('✅ Loaded quotes for project:', projectId, quotesData)
+      
       setSelectedProjectQuotes(prev => ({
         ...prev,
         [projectId]: quotesData || []
@@ -121,6 +126,39 @@ export default function CustomerDashboard() {
       
     } catch (error) {
       console.error('Failed to load quotes:', error)
+    }
+  }
+
+  // PDF 다운로드 함수
+  const handleDownloadPDF = async (quoteId: string, pdfUrl: string, pdfFilename?: string) => {
+    console.log('🔽 Starting download for quote:', quoteId)
+    
+    if (!pdfUrl) {
+      toast.error('PDF 파일 정보가 없습니다')
+      return
+    }
+
+    try {
+      const supabase = createBrowserClient()
+      
+      // Supabase Storage에서 public URL 생성
+      const { data: publicUrlData } = supabase.storage
+        .from('contractor-quotes')
+        .getPublicUrl(pdfUrl)
+
+      console.log('✅ Public URL generated:', publicUrlData.publicUrl)
+
+      if (publicUrlData?.publicUrl) {
+        // 새 탭에서 PDF 열기
+        window.open(publicUrlData.publicUrl, '_blank')
+        toast.success('PDF 파일을 여는 중...')
+      } else {
+        throw new Error('Failed to generate public URL')
+      }
+      
+    } catch (error) {
+      console.error('❌ PDF download error:', error)
+      toast.error('PDF 다운로드에 실패했습니다')
     }
   }
 
@@ -206,6 +244,7 @@ export default function CustomerDashboard() {
     'detached_house': 'Detached House',
     'town_house': 'Town House',
     'condo': 'Condo',
+    'semi_detached': 'Semi-Detached',
     'commercial': 'Commercial'
   }
 
@@ -216,6 +255,15 @@ export default function CustomerDashboard() {
     'flooring': '바닥재',
     'painting': '페인팅',
     'full_renovation': '전체 리노베이션'
+  }
+
+  const budgetLabels: Record<string, string> = {
+    'under_50k': '$50,000 미만',
+    '50k_100k': '$50,000 - $100,000',
+    'over_100k': '$100,000 이상',
+    '100k_200k': '$100,000 - $200,000',
+    '200k_500k': '$200,000 - $500,000',
+    'over_500k': '$500,000 이상'
   }
 
   if (isLoading) {
@@ -243,7 +291,7 @@ export default function CustomerDashboard() {
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 홈으로
               </button>
-              <h1 className="text-xl font-bold text-gray-900">내 프로젝트</h1>
+              <h1 className="text-xl font-bold text-gray-900">내 견적</h1>
             </div>
           </div>
         </div>
@@ -251,6 +299,8 @@ export default function CustomerDashboard() {
 
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <p className="text-gray-600 mb-6">견적요청 내역과 받은 견적서를 비교해보세요.</p>
+        
         {projects.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <p className="text-gray-600 text-lg mb-4">아직 제출한 견적요청서가 없습니다</p>
@@ -275,34 +325,41 @@ export default function CustomerDashboard() {
                     {/* 프로젝트 헤더 */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          {getStatusBadge(project.status)}
+                          <span className="text-sm text-gray-500">
+                            {new Date(project.created_at).toLocaleDateString('ko-KR')}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900">
                           {spaceTypeLabels[project.space_type] || project.space_type}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          {project.project_types?.map(type => projectTypeLabels[type] || type).join(', ')}
-                        </p>
                       </div>
-                      {getStatusBadge(project.status)}
                     </div>
 
                     {/* 프로젝트 정보 */}
-                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                    <div className="space-y-2 text-sm mb-4">
                       <div className="flex items-center text-gray-600">
-                        <MapPin className="w-4 h-4 mr-2" />
+                        <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                         {project.full_address}
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <DollarSign className="w-4 h-4 mr-2" />
-                        예산: {project.budget}
+                      <div>
+                        <p className="text-gray-700 font-medium">
+                          프로젝트: {project.project_types?.map(type => projectTypeLabels[type] || type).join(', ')}
+                        </p>
+                        <p className="text-gray-700">
+                          예산: {budgetLabels[project.budget] || project.budget}
+                        </p>
+                        <p className="text-gray-700">
+                          원하는 완료일: {project.timeline}
+                        </p>
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="w-4 h-4 mr-2" />
-                        {project.timeline}
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {new Date(project.created_at).toLocaleDateString('ko-KR')}
-                      </div>
+                      {project.description && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-xs text-gray-500 mb-1">요구사항:</p>
+                          <p className="text-sm text-gray-700">{project.description}</p>
+                        </div>
+                      )}
                     </div>
 
                     {/* 견적서 목록 (입찰 중이거나 종료된 경우) */}
@@ -310,12 +367,13 @@ export default function CustomerDashboard() {
                       <div className="mt-6 border-t pt-6">
                         <button
                           onClick={() => setExpandedProject(isExpanded ? null : project.id)}
-                          className="flex items-center justify-between w-full mb-4"
+                          className="flex items-center justify-between w-full mb-4 text-left"
                         >
-                          <h4 className="text-lg font-semibold text-gray-900">
-                            제출된 견적서 ({quotes.length}개)
+                          <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <Award className="w-5 h-5 text-purple-500" />
+                            받은 견적서 ({quotes.length}개)
                           </h4>
-                          <Eye className="w-5 h-5 text-gray-400" />
+                          <Eye className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isExpanded && (
@@ -323,47 +381,65 @@ export default function CustomerDashboard() {
                             {quotes.map((quote) => (
                               <div
                                 key={quote.id}
-                                className={`border rounded-lg p-4 ${
+                                className={`border rounded-lg p-5 transition-all ${
                                   project.selected_quote_id === quote.id
-                                    ? 'border-green-500 bg-green-50'
-                                    : 'border-gray-200'
+                                    ? 'border-green-500 bg-green-50 shadow-md'
+                                    : 'border-gray-200 hover:border-gray-300'
                                 }`}
                               >
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <h5 className="font-semibold text-gray-900 flex items-center gap-2">
-                                      <Award className="w-5 h-5 text-blue-500" />
+                                <div className="flex justify-between items-start gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    {/* 업체명 */}
+                                    <h5 className="font-bold text-gray-900 text-lg mb-1">
                                       {quote.contractor?.company_name || '업체명 없음'}
                                     </h5>
-                                    <p className="text-2xl font-bold text-blue-600 mt-2">
-                                      ${quote.price.toLocaleString()}
+                                    {quote.contractor?.contact_name && (
+                                      <p className="text-sm text-gray-600 mb-3">
+                                        담당자: {quote.contractor.contact_name}
+                                      </p>
+                                    )}
+                                    
+                                    {/* 견적 금액 */}
+                                    <p className="text-3xl font-bold text-blue-600 mb-3">
+                                      ${quote.price.toLocaleString()} <span className="text-lg font-medium text-gray-500">CAD</span>
                                     </p>
-                                    <p className="text-sm text-gray-600 mt-2">{quote.description}</p>
+                                    
+                                    {/* 작업 내용 */}
+                                    {quote.description && (
+                                      <div className="mb-3">
+                                        <p className="text-xs text-gray-500 mb-1">상세 작업 내용:</p>
+                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.description}</p>
+                                      </div>
+                                    )}
+                                    
+                                    {/* PDF 다운로드 버튼 */}
                                     {quote.pdf_url && (
-                                      <a
-                                        href={quote.pdf_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-blue-600 hover:underline mt-2 inline-block"
+                                      <button
+                                        onClick={() => handleDownloadPDF(quote.id, quote.pdf_url, quote.pdf_filename)}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                                       >
-                                        견적서 PDF 보기 →
-                                      </a>
+                                        <Download className="w-4 h-4" />
+                                        견적서 다운로드
+                                      </button>
                                     )}
                                   </div>
                                   
-                                  {project.selected_quote_id === quote.id ? (
-                                    <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg">
-                                      <CheckCircle className="w-5 h-5" />
-                                      선택됨
-                                    </div>
-                                  ) : canSelectContractor ? (
-                                    <button
-                                      onClick={() => handleSelectContractor(project.id, quote.contractor_id, quote.id)}
-                                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
-                                    >
-                                      이 업체 선택
-                                    </button>
-                                  ) : null}
+                                  {/* 선택 상태 or 선택 버튼 */}
+                                  <div className="flex-shrink-0">
+                                    {project.selected_quote_id === quote.id ? (
+                                      <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold">
+                                        <CheckCircle className="w-5 h-5" />
+                                        선택됨
+                                      </div>
+                                    ) : canSelectContractor ? (
+                                      <button
+                                        onClick={() => handleSelectContractor(project.id, quote.contractor_id, quote.id)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold whitespace-nowrap"
+                                      >
+                                        업체 선택하기
+                                      </button>
+                                    ) : null}
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -375,8 +451,8 @@ export default function CustomerDashboard() {
                     {/* 프로젝트 시작 버튼 */}
                     {canStartProject && (
                       <div className="mt-6 border-t pt-6 bg-blue-50 -m-6 p-6 rounded-b-lg">
-                        <p className="text-sm text-blue-800 mb-4">
-                          업체를 선택하셨습니다. 프로젝트를 시작하시겠습니까?
+                        <p className="text-sm text-blue-800 mb-4 font-medium">
+                          ✅ 업체를 선택하셨습니다. 프로젝트를 시작하시겠습니까?
                         </p>
                         <button
                           onClick={() => handleStartProject(project.id)}
