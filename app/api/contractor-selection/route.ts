@@ -150,25 +150,32 @@ export async function POST(request: NextRequest) {
         console.error('업체 정보 조회 실패:', contractorError)
       }
 
-      // 7. 고객 정보 조회 (이메일 발송용)
+      // 7. ✅ 고객 정보 조회 (users 테이블에서) - 이메일, 전화번호, 주소 포함
       const { data: customerInfo, error: customerError } = await supabase
-        .from('customers')
-        .select('*')
+        .from('users')
+        .select('id, email, first_name, last_name, phone')
         .eq('id', currentProject.customer_id)
         .single()
 
       if (customerError) {
         console.error('고객 정보 조회 실패:', customerError)
+      } else {
+        console.log('✅ Customer info loaded:', {
+          email: customerInfo?.email,
+          phone: customerInfo?.phone,
+          name: `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim()
+        })
       }
 
       // 8. 이메일 발송 (실패해도 전체 프로세스는 계속 진행)
       if (contractorInfo?.email) {
         try {
-          // 업체에게 선정 알림 이메일 발송
+          // ✅ 업체에게 선정 알림 이메일 발송 (고객 정보 포함)
           const contractorEmailHtml = createSelectionEmailTemplate(
             contractorInfo.contact_name || contractorInfo.company_name,
             currentProject,
-            acceptedQuote
+            acceptedQuote,
+            customerInfo // 고객 정보 추가
           )
 
           await sendEmail({
@@ -182,7 +189,7 @@ export async function POST(request: NextRequest) {
           // 고객에게도 알림 이메일 발송 (옵션)
           if (customerInfo?.email) {
             const customerEmailHtml = createCustomerNotificationTemplate(
-              customerInfo.name || '고객',
+              `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() || '고객',
               contractorInfo,
               currentProject,
               acceptedQuote
