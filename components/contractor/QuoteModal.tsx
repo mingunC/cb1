@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { X, DollarSign, FileText, Upload, RefreshCw } from 'lucide-react'
+import { X, DollarSign, FileText, Upload, RefreshCw, CheckCircle, Trash2, File } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { Project } from '@/types/contractor'
@@ -39,6 +39,41 @@ export default function QuoteModal({
     const numericValue = value.replace(/[^0-9]/g, '')
     setPrice(numericValue)
     setPriceDisplay(formatPrice(numericValue))
+  }
+
+  // 파일 크기 포맷팅
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  // 파일 선택 핸들러
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('PDF 파일만 업로드 가능합니다')
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB 제한
+        toast.error('파일 크기는 10MB 이하여야 합니다')
+        return
+      }
+      setPdfFile(file)
+      toast.success('파일이 선택되었습니다')
+    }
+  }
+
+  // 파일 삭제 핸들러
+  const handleRemoveFile = () => {
+    setPdfFile(null)
+    // input 요소 초기화
+    const input = document.getElementById('pdf-upload') as HTMLInputElement
+    if (input) input.value = ''
+    toast.success('파일이 제거되었습니다')
   }
 
   // 모달 상태 초기화
@@ -211,30 +246,85 @@ export default function QuoteModal({
                 />
               </div>
 
-              {/* PDF 업로드 */}
+              {/* PDF 업로드 - 개선된 디자인 */}
               <div>
                 <label className="flex items-center gap-3 mb-3">
                   <Upload className="h-5 w-5 text-amber-500" />
                   <span className="text-md font-semibold text-gray-700">상세 견적서 (PDF) *</span>
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-amber-400 transition-colors">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="pdf-upload"
-                  />
-                  <label htmlFor="pdf-upload" className="cursor-pointer">
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-700 font-medium">
-                      {pdfFile ? pdfFile.name : '파일을 선택하거나 여기에 드래그하세요.'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      PDF 파일 업로드 (필수)
-                    </p>
-                  </label>
-                </div>
+                
+                {/* 파일이 선택되지 않았을 때 */}
+                {!pdfFile ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-amber-400 hover:bg-amber-50/30 transition-all">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="pdf-upload"
+                    />
+                    <label htmlFor="pdf-upload" className="cursor-pointer block">
+                      <div className="flex flex-col items-center justify-center">
+                        <Upload className="h-12 w-12 text-gray-400 mb-3" />
+                        <p className="text-gray-700 font-semibold text-lg mb-1">
+                          파일을 선택하거나 여기에 드래그하세요
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          PDF 파일만 가능 (최대 10MB)
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                ) : (
+                  /* 파일이 선택되었을 때 - 명확한 시각적 피드백 */
+                  <div className="border-2 border-green-500 bg-green-50 rounded-lg p-6 transition-all">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="bg-green-100 rounded-lg p-3">
+                          <File className="h-8 w-8 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-green-700">파일 선택 완료</span>
+                          </div>
+                          <p className="text-gray-900 font-semibold text-lg truncate mb-1">
+                            {pdfFile.name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            크기: {formatFileSize(pdfFile.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveFile}
+                        className="ml-4 p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
+                        title="파일 제거"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                    
+                    {/* 파일 변경 버튼 */}
+                    <div className="mt-4 pt-4 border-t border-green-200">
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="pdf-change"
+                      />
+                      <label 
+                        htmlFor="pdf-change" 
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-green-500 text-green-700 rounded-md hover:bg-green-50 transition-colors cursor-pointer font-medium text-sm"
+                      >
+                        <Upload className="h-4 w-4" />
+                        다른 파일 선택
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
