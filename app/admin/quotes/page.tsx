@@ -18,7 +18,7 @@ interface QuoteRequest {
   postal_code: string
   description: string
   photos: any[]
-  status: 'pending' | 'approved' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'completed' | 'cancelled'
+  status: 'pending' | 'approved' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'bidding-closed' | 'quote-submitted' | 'completed' | 'cancelled'
   created_at: string
   updated_at: string
 }
@@ -90,7 +90,7 @@ export default function AdminQuotesPage() {
           case 'site-visit':
             return quote.status === 'site-visit-pending'
           case 'active':
-            return ['site-visit-completed', 'bidding', 'quote-submitted'].includes(quote.status)
+            return ['site-visit-completed', 'bidding', 'bidding-closed', 'quote-submitted'].includes(quote.status)
           case 'completed':
             return quote.status === 'completed'
           default:
@@ -151,6 +151,47 @@ export default function AdminQuotesPage() {
     }
   }
 
+  // ✅ 현장방문 완료 → 자동으로 입찰 시작
+  const handleSiteVisitCompleted = async (quoteId: string) => {
+    try {
+      const supabase = createBrowserClient()
+      
+      // 현장방문 완료 → 자동으로 입찰 시작
+      const { error } = await supabase
+        .from('quote_requests')
+        .update({ 
+          status: 'bidding',  // 자동으로 입찰 시작
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', quoteId)
+      
+      if (error) {
+        alert('상태 업데이트 실패: ' + error.message)
+        return
+      }
+
+      // 로컬 상태 업데이트
+      setQuotes(quotes.map(quote => 
+        quote.id === quoteId 
+          ? { ...quote, status: 'bidding' as any, updated_at: new Date().toISOString() }
+          : quote
+      ))
+
+      if (selectedQuote && selectedQuote.id === quoteId) {
+        setSelectedQuote({
+          ...selectedQuote,
+          status: 'bidding' as any,
+          updated_at: new Date().toISOString()
+        })
+      }
+
+      alert('현장방문이 완료되고 자동으로 입찰이 시작되었습니다.')
+    } catch (error) {
+      console.error('Error:', error)
+      alert('오류가 발생했습니다.')
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     const badges = {
       pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: '대기중' },
@@ -158,6 +199,7 @@ export default function AdminQuotesPage() {
       'site-visit-pending': { color: 'bg-blue-100 text-blue-800', icon: Home, text: '현장방문대기' },
       'site-visit-completed': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, text: '현장방문완료' },
       bidding: { color: 'bg-orange-100 text-orange-800', icon: TrendingUp, text: '입찰중' },
+      'bidding-closed': { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '입찰종료' },
       'quote-submitted': { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료' },
       cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle, text: '취소' }
@@ -209,14 +251,28 @@ export default function AdminQuotesPage() {
     { id: 'pending', label: '대기중', count: quotes.filter(q => q.status === 'pending').length },
     { id: 'approved', label: '승인됨', count: quotes.filter(q => q.status === 'approved').length },
     { id: 'site-visit', label: '현장방문대기', count: quotes.filter(q => q.status === 'site-visit-pending').length },
-    { id: 'active', label: '입찰중', count: quotes.filter(q => ['site-visit-completed', 'bidding', 'quote-submitted'].includes(q.status)).length },
+    { id: 'active', label: '입찰중', count: quotes.filter(q => ['site-visit-completed', 'bidding', 'bidding-closed', 'quote-submitted'].includes(q.status)).length },
     { id: 'completed', label: '완료', count: quotes.filter(q => q.status === 'completed').length }
   ]
 
-  // ✅ 상태별 다음 액션 버튼 렌더링 함수
+  // ✅ 개선된 상태별 다음 액션 버튼 렌더링 함수
   const renderActionButton = (quote: QuoteRequest) => {
     switch (quote.status) {
       case 'pending':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('견적요청서를 승인하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'approved')
+              }
+            }}
+            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            승인
+          </button>
+        )
+      
+      case 'approved':
         return (
           <button
             onClick={() => {
@@ -234,27 +290,13 @@ export default function AdminQuotesPage() {
         return (
           <button
             onClick={() => {
-              if (confirm('현장방문을 완료하시겠습니까?')) {
-                updateQuoteStatus(quote.id, 'site-visit-completed')
+              if (confirm('현장방문을 완료하고 입찰을 시작하시겠습니까?')) {
+                handleSiteVisitCompleted(quote.id)
               }
             }}
             className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
           >
-            방문완료
-          </button>
-        )
-      
-      case 'site-visit-completed':
-        return (
-          <button
-            onClick={() => {
-              if (confirm('입찰을 시작하시겠습니까?')) {
-                updateQuoteStatus(quote.id, 'bidding')
-              }
-            }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
-          >
-            입찰시작
+            방문완료+입찰시작
           </button>
         )
       
@@ -263,7 +305,7 @@ export default function AdminQuotesPage() {
           <button
             onClick={() => {
               if (confirm('입찰을 종료하시겠습니까?')) {
-                updateQuoteStatus(quote.id, 'quote-submitted')
+                updateQuoteStatus(quote.id, 'bidding-closed')
               }
             }}
             className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
@@ -272,6 +314,7 @@ export default function AdminQuotesPage() {
           </button>
         )
       
+      case 'bidding-closed':
       case 'quote-submitted':
         return (
           <button
@@ -330,6 +373,18 @@ export default function AdminQuotesPage() {
 
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* 워크플로우 안내 */}
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2">📋 워크플로우</h3>
+          <div className="text-xs text-blue-800 space-y-1">
+            <p>1. <strong>대기중 (pending)</strong> → 승인 → 2. <strong>승인됨 (approved)</strong></p>
+            <p>2. <strong>승인됨</strong> → 업체가 현장방문 신청 → 3. <strong>현장방문대기 (site-visit-pending)</strong></p>
+            <p>3. <strong>현장방문대기</strong> → 방문완료+입찰시작 → 4. <strong>입찰중 (bidding)</strong></p>
+            <p>4. <strong>입찰중</strong> → 입찰종료 → 5. <strong>입찰종료 (bidding-closed)</strong></p>
+            <p>5. <strong>입찰종료</strong> → 고객이 업체 선택 → 6. <strong>완료 (completed)</strong></p>
+          </div>
+        </div>
+
         {/* 검색 */}
         <div className="mb-6">
           <div className="relative">
@@ -516,6 +571,17 @@ export default function AdminQuotesPage() {
                   {selectedQuote.status === 'pending' && (
                     <button
                       onClick={() => {
+                        updateQuoteStatus(selectedQuote.id, 'approved')
+                        setSelectedQuote(null)
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      승인
+                    </button>
+                  )}
+                  {selectedQuote.status === 'approved' && (
+                    <button
+                      onClick={() => {
                         updateQuoteStatus(selectedQuote.id, 'site-visit-pending')
                         setSelectedQuote(null)
                       }}
@@ -527,29 +593,18 @@ export default function AdminQuotesPage() {
                   {selectedQuote.status === 'site-visit-pending' && (
                     <button
                       onClick={() => {
-                        updateQuoteStatus(selectedQuote.id, 'site-visit-completed')
+                        handleSiteVisitCompleted(selectedQuote.id)
                         setSelectedQuote(null)
                       }}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
                     >
-                      현장방문 완료
-                    </button>
-                  )}
-                  {selectedQuote.status === 'site-visit-completed' && (
-                    <button
-                      onClick={() => {
-                        updateQuoteStatus(selectedQuote.id, 'bidding')
-                        setSelectedQuote(null)
-                      }}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
-                    >
-                      입찰 시작
+                      현장방문 완료 + 입찰 시작
                     </button>
                   )}
                   {selectedQuote.status === 'bidding' && (
                     <button
                       onClick={() => {
-                        updateQuoteStatus(selectedQuote.id, 'quote-submitted')
+                        updateQuoteStatus(selectedQuote.id, 'bidding-closed')
                         setSelectedQuote(null)
                       }}
                       className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
@@ -557,7 +612,7 @@ export default function AdminQuotesPage() {
                       입찰 종료
                     </button>
                   )}
-                  {selectedQuote.status === 'quote-submitted' && (
+                  {(selectedQuote.status === 'bidding-closed' || selectedQuote.status === 'quote-submitted') && (
                     <button
                       onClick={() => {
                         updateQuoteStatus(selectedQuote.id, 'completed')
