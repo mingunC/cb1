@@ -345,8 +345,11 @@ export default function MyQuotesPage() {
     }
   }
 
+  // ✅ 개선된 견적서 다운로드 함수
   const downloadQuote = async (quoteId: string) => {
     try {
+      console.log('🔽 Starting download for quote ID:', quoteId)
+      
       const supabase = createBrowserClient()
       
       // 먼저 contractor_quotes 테이블에서 PDF 정보 조회
@@ -356,66 +359,85 @@ export default function MyQuotesPage() {
         .eq('id', quoteId)
         .single()
 
+      console.log('Quote data:', quoteData)
+      console.log('Quote error:', quoteError)
+
       if (quoteError || !quoteData) {
         console.error('Error fetching quote data:', quoteError)
-        alert('견적서 정보를 찾을 수 없습니다.')
+        toast.error('견적서 정보를 찾을 수 없습니다.')
         return
       }
 
       // PDF URL이 없는 경우
       if (!quoteData.pdf_url) {
-        alert('견적서 파일이 없습니다.')
+        console.error('No PDF URL found')
+        toast.error('견적서 파일이 없습니다.')
         return
       }
 
-      // PDF 파일 다운로드 처리
       console.log('PDF URL:', quoteData.pdf_url)
-      console.log('PDF URL starts with http:', quoteData.pdf_url.startsWith('http'))
+      console.log('PDF Filename:', quoteData.pdf_filename)
       
-      if (quoteData.pdf_url.startsWith('http')) {
+      // PDF 파일 다운로드 처리
+      if (quoteData.pdf_url.startsWith('http://') || quoteData.pdf_url.startsWith('https://')) {
         // 전체 URL인 경우 직접 다운로드
-        console.log('Using direct download for full URL')
-        const link = document.createElement('a')
-        link.href = quoteData.pdf_url
-        link.download = quoteData.pdf_filename || `견적서_${quoteId}.pdf`
-        link.target = '_blank'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        console.log('✅ Using direct download for full URL')
+        window.open(quoteData.pdf_url, '_blank')
+        toast.success('견적서를 다운로드하는 중...')
       } else {
         // 상대 경로인 경우 Supabase Storage 사용
-        console.log('Using Supabase Storage for relative path')
+        console.log('✅ Using Supabase Storage for relative path')
         
-        // pdf_url에서 버킷명 제거 (contractor-quotes/ 제거)
+        // pdf_url에서 버킷명 제거 (있을 경우)
         let filePath = quoteData.pdf_url
         if (filePath.startsWith('contractor-quotes/')) {
           filePath = filePath.replace('contractor-quotes/', '')
         }
         
-        console.log('File path after removing bucket name:', filePath)
+        console.log('File path:', filePath)
         
-        const { data, error } = await supabase.storage
+        // Supabase Storage에서 공개 URL 가져오기
+        const { data: urlData } = supabase.storage
           .from('contractor-quotes')
-          .download(filePath)
+          .getPublicUrl(filePath)
 
-        if (error) {
-          console.error('Error downloading quote:', error)
-          alert('견적서 다운로드에 실패했습니다.')
-          return
+        console.log('Public URL data:', urlData)
+
+        if (urlData && urlData.publicUrl) {
+          // 공개 URL로 다운로드
+          console.log('✅ Opening public URL:', urlData.publicUrl)
+          window.open(urlData.publicUrl, '_blank')
+          toast.success('견적서를 다운로드하는 중...')
+        } else {
+          // 공개 URL을 가져올 수 없으면 signed URL 시도
+          console.log('⚠️ Public URL not available, trying signed URL')
+          
+          const { data: signedData, error: signedError } = await supabase.storage
+            .from('contractor-quotes')
+            .createSignedUrl(filePath, 3600) // 1시간 유효
+
+          console.log('Signed URL data:', signedData)
+          console.log('Signed URL error:', signedError)
+
+          if (signedError) {
+            console.error('Error creating signed URL:', signedError)
+            toast.error('견적서 다운로드에 실패했습니다.')
+            return
+          }
+
+          if (signedData && signedData.signedUrl) {
+            console.log('✅ Opening signed URL:', signedData.signedUrl)
+            window.open(signedData.signedUrl, '_blank')
+            toast.success('견적서를 다운로드하는 중...')
+          } else {
+            console.error('No signed URL generated')
+            toast.error('견적서 다운로드 URL을 생성할 수 없습니다.')
+          }
         }
-
-        const url = URL.createObjectURL(data)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = quoteData.pdf_filename || `견적서_${quoteId}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
       }
     } catch (error) {
-      console.error('Download error:', error)
-      alert('견적서 다운로드에 실패했습니다.')
+      console.error('❌ Download error:', error)
+      toast.error('견적서 다운로드 중 오류가 발생했습니다.')
     }
   }
 
@@ -694,9 +716,13 @@ export default function MyQuotesPage() {
                                 
                                 {contractorQuote.pdf_url && (
                                   <button 
-                                    onClick={() => downloadQuote(contractorQuote.id)}
-                                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
+                                    onClick={() => {
+                                      console.log('🔽 Download button clicked for quote:', contractorQuote.id)
+                                      downloadQuote(contractorQuote.id)
+                                    }}
+                                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium flex items-center justify-center"
                                   >
+                                    <Download className="w-4 h-4 mr-2" />
                                     견적서 다운로드
                                   </button>
                                 )}
