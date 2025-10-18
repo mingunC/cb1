@@ -129,11 +129,18 @@ export default function CustomerDashboard() {
     }
   }
 
-  // PDF 다운로드 함수
-  const handleDownloadPDF = async (quoteId: string, pdfUrl: string, pdfFilename?: string) => {
-    console.log('🔽 Starting download for quote:', quoteId)
+  // PDF 다운로드 함수 - 개선된 버전
+  const handleDownloadPDF = async (quote: Quote) => {
+    console.log('🔽 Download button clicked for quote:', quote.id)
+    console.log('📄 Quote data:', { 
+      id: quote.id, 
+      pdf_url: quote.pdf_url, 
+      pdf_filename: quote.pdf_filename,
+      contractor: quote.contractor?.company_name 
+    })
     
-    if (!pdfUrl) {
+    if (!quote.pdf_url) {
+      console.error('❌ No PDF URL found for quote:', quote.id)
       toast.error('PDF 파일 정보가 없습니다')
       return
     }
@@ -141,17 +148,26 @@ export default function CustomerDashboard() {
     try {
       const supabase = createBrowserClient()
       
+      console.log('📦 Using PDF URL:', quote.pdf_url)
+      
       // Supabase Storage에서 public URL 생성
       const { data: publicUrlData } = supabase.storage
         .from('contractor-quotes')
-        .getPublicUrl(pdfUrl)
+        .getPublicUrl(quote.pdf_url)
 
-      console.log('✅ Public URL generated:', publicUrlData.publicUrl)
+      console.log('🔗 Generated public URL:', publicUrlData.publicUrl)
 
       if (publicUrlData?.publicUrl) {
         // 새 탭에서 PDF 열기
-        window.open(publicUrlData.publicUrl, '_blank')
-        toast.success('PDF 파일을 여는 중...')
+        const opened = window.open(publicUrlData.publicUrl, '_blank')
+        
+        if (opened) {
+          console.log('✅ PDF opened successfully')
+          toast.success('PDF 파일을 여는 중...')
+        } else {
+          console.error('❌ Failed to open new window (popup blocked?)')
+          toast.error('팝업 차단을 해제해주세요')
+        }
       } else {
         throw new Error('Failed to generate public URL')
       }
@@ -405,8 +421,10 @@ export default function CustomerDashboard() {
                               console.log('🎯 견적서 렌더링:', {
                                 quoteId: quote.id,
                                 contractorId: quote.contractor_id,
+                                contractor: quote.contractor?.company_name,
                                 isSelected,
-                                canSelect: canSelectContractor
+                                canSelect: canSelectContractor,
+                                hasPDF: !!quote.pdf_url
                               })
                               
                               return (
@@ -444,14 +462,16 @@ export default function CustomerDashboard() {
                                       )}
                                       
                                       {/* PDF 다운로드 버튼 */}
-                                      {quote.pdf_url && (
+                                      {quote.pdf_url ? (
                                         <button
-                                          onClick={() => handleDownloadPDF(quote.id, quote.pdf_url, quote.pdf_filename)}
+                                          onClick={() => handleDownloadPDF(quote)}
                                           className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                                         >
                                           <Download className="w-4 h-4" />
                                           견적서 다운로드
                                         </button>
+                                      ) : (
+                                        <p className="text-sm text-gray-500 italic">견적서 파일이 없습니다</p>
                                       )}
                                     </div>
                                     
