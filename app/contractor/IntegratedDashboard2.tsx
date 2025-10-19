@@ -81,9 +81,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         // ⭐ 선택된 프로젝트 추가!
         supabase
           .from('quote_requests')
-          .select('id')
+          .select('id, status, selected_contractor_id, customer_id')
           .eq('selected_contractor_id', contractorData.id)
       ])
+      
+      console.log('🔍 Selected projects response:', selectedProjectsResponse.data)
       
       // 프로젝트 ID 중복 제거
       const participatingProjectIds = new Set<string>()
@@ -98,38 +100,35 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       // ⭐ 선택된 프로젝트 ID도 추가
       selectedProjectsResponse.data?.forEach(item => {
-        if (item.id) participatingProjectIds.add(item.id)
+        if (item.id) {
+          participatingProjectIds.add(item.id)
+          console.log('✅ Adding selected project:', {
+            id: item.id,
+            status: item.status,
+            selected_contractor_id: item.selected_contractor_id,
+            customer_id: item.customer_id
+          })
+        }
       })
       
       console.log('Participating project IDs:', Array.from(participatingProjectIds))
-      console.log('🎉 Including selected projects where contractor_id =', contractorData.id)
+      console.log('🎉 Total participating projects:', participatingProjectIds.size)
       
-      // ✅ 2. 승인된 견적요청서만 가져오기 (approved 이상의 상태만!)
-      // pending 상태는 제외하고, approved 이상의 상태만 조회
-      let query = supabase
+      // ✅ 2. 프로젝트 조회 - 더 간단한 방법으로 변경
+      // 참여한 프로젝트 ID로 직접 조회
+      const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
-        .in('status', ['approved', 'site-visit-pending', 'bidding', 'bidding-closed', 'completed', 'in-progress', 'cancelled'])
+        .in('id', Array.from(participatingProjectIds))
         .order('created_at', { ascending: false })
-      
-      // 참여한 프로젝트가 있으면 해당 프로젝트들도 포함
-      if (participatingProjectIds.size > 0) {
-        query = query.or(`id.in.(${Array.from(participatingProjectIds).join(',')}),status.in.(approved,site-visit-pending,bidding,bidding-closed,completed,in-progress,cancelled)`)
-      }
-      
-      const { data: projectsData, error: projectsError } = await query
       
       if (projectsError) {
         console.error('Projects fetch error:', projectsError)
         throw projectsError
       }
       
-      console.log('✅ Fetched approved+ projects:', projectsData?.length)
-      console.log('- Approved: 현장방문 신청 가능')
-      console.log('- Bidding: 입찰 중')
-      console.log('- Bidding-Closed: 입찰 종료')
-      console.log('- In-Progress: 진행중')
-      console.log('- Completed: 프로젝트 종료')
+      console.log('✅ Fetched projects:', projectsData?.length)
+      console.log('📋 Project statuses:', projectsData?.map(p => ({ id: p.id.slice(0, 8), status: p.status, selected: p.selected_contractor_id?.slice(0, 8) })))
       
       // 고객 정보 일괄 조회
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
@@ -190,6 +189,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           const isMyQuoteSelected = selectedContractorId === contractorData.id
           const hasSelectedContractor = !!selectedContractorId
           
+          console.log('🔍 Processing project:', {
+            id: project.id.slice(0, 8),
+            dbStatus: project.status,
+            isSelected: isMyQuoteSelected,
+            hasOtherSelected: hasSelectedContractor && !isMyQuoteSelected
+          })
+          
           // 1️⃣ 취소 상태 최우선
           if (project.status === 'cancelled') {
             projectStatus = 'cancelled'
@@ -245,6 +251,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           }
         })
       )
+      
+      console.log('✅ Final processed projects:', processedProjects.length)
+      console.log('📊 Project statuses breakdown:', processedProjects.map(p => ({
+        id: p.id.slice(0, 8),
+        status: p.projectStatus,
+        dbStatus: p.status
+      })))
       
       setProjects(processedProjects)
     } catch (err: any) {
@@ -860,7 +873,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                   프로젝트 목록 ({filteredProjects.length}개)
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  ✅ 승인된 프로젝트만 표시됩니다
+                  ✅ 참여 중인 프로젝트만 표시됩니다
                 </p>
               </div>
               
