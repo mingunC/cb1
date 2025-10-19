@@ -222,32 +222,36 @@ export default function CustomerDashboard() {
   }
 
   const handleStartProject = async (projectId: string) => {
-    if (!confirm('프로젝트를 시작하시겠습니까? 프로젝트가 완료 상태로 변경됩니다.')) return
+    if (!confirm('프로젝트를 시작하시겠습니까? 고객님과 업체에게 프로젝트 시작을 축하하는 메시지가 전송됩니다.')) return
     
     try {
-      const supabase = createBrowserClient()
+      console.log('🚀 프로젝트 시작 API 호출...')
       
-      const { error } = await supabase
-        .from('quote_requests')
-        .update({
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', projectId)
+      const response = await fetch('/api/start-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId })
+      })
       
-      if (error) throw error
+      const result = await response.json()
+      console.log('📥 API 응답:', result)
       
-      toast.success('프로젝트가 시작되었습니다!')
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to start project')
+      }
+      
+      toast.success('🎉 프로젝트가 시작되었습니다! 프로젝트 시작을 축하드립니다!')
       
       // 프로젝트 새로고침
+      const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await loadProjects(user.id)
       }
       
-    } catch (error) {
-      console.error('Error starting project:', error)
-      toast.error('프로젝트 시작에 실패했습니다')
+    } catch (error: any) {
+      console.error('❌ 프로젝트 시작 에러:', error)
+      toast.error(`프로젝트 시작에 실패했습니다: ${error.message}`)
     }
   }
 
@@ -258,6 +262,7 @@ export default function CustomerDashboard() {
       'site-visit-pending': { label: '현장방문 예정', color: 'bg-blue-100 text-blue-800' },
       'bidding': { label: '입찰 진행중', color: 'bg-orange-100 text-orange-800' },
       'bidding-closed': { label: '입찰 종료', color: 'bg-indigo-100 text-indigo-800' },
+      'in-progress': { label: '진행중', color: 'bg-blue-100 text-blue-800' },
       'completed': { label: '완료', color: 'bg-gray-500 text-white' },
       'cancelled': { label: '취소', color: 'bg-red-100 text-red-800' }
     }
@@ -509,15 +514,22 @@ export default function CustomerDashboard() {
 
                     {/* 프로젝트 시작 버튼 */}
                     {canStartProject && (
-                      <div className="mt-6 border-t pt-6 bg-blue-50 -m-6 p-6 rounded-b-lg">
-                        <p className="text-sm text-blue-800 mb-4 font-medium">
-                          ✅ 업체를 선택하셨습니다. 프로젝트를 시작하시겠습니까?
+                      <div className="mt-6 border-t pt-6 bg-gradient-to-br from-blue-50 to-purple-50 -m-6 p-6 rounded-b-lg">
+                        <div className="text-center mb-6">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">프로젝트를 시작해주세요!</h3>
+                          <p className="text-sm text-gray-700 mb-4 flex items-center justify-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            업체와 연락하여 공사 일정을 확정하세요
+                          </p>
+                        </div>
+                        <p className="text-sm text-blue-800 mb-4 text-center">
+                          준비가 완료되고 프로젝트를 시작하실 때 시작버튼을 눌러주세요.
                         </p>
                         <button
                           onClick={() => handleStartProject(project.id)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-lg font-bold text-lg flex items-center justify-center gap-3 shadow-lg transform transition-all hover:scale-105"
                         >
-                          <Play className="w-5 h-5" />
+                          <Play className="w-6 h-6" />
                           프로젝트 시작
                         </button>
                       </div>
