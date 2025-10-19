@@ -347,7 +347,7 @@ export default function MyQuotesPage() {
     }
   }
 
-  // ✅ 수정된 견적서 다운로드 함수 - 새로운 클라이언트 인스턴스 사용
+  // ✅ 최종 수정: 로컬 캐시 데이터 사용 - 데이터베이스 쿼리 없음!
   const downloadQuote = async (quoteId: string) => {
     // 중복 클릭 방지
     if (downloadingQuotes.has(quoteId)) {
@@ -364,45 +364,30 @@ export default function MyQuotesPage() {
     setDownloadingQuotes(prev => new Set(prev).add(quoteId))
     
     try {
-      // ✅ 매번 새로운 Supabase 클라이언트 인스턴스 생성
-      const supabase = createBrowserClient()
+      // ✅ 로컬 캐시에서 데이터 찾기 (데이터베이스 쿼리 없음!)
+      console.log('📊 로컬 캐시에서 PDF 정보 조회 중...')
       
-      console.log('📊 1단계: 데이터베이스에서 PDF 정보 조회 중...')
-      console.log('쿼리 실행: contractor_quotes 테이블, ID =', quoteId)
+      let quoteData: ContractorQuote | null = null
       
-      // ✅ 타임아웃과 함께 쿼리 실행
-      const queryPromise = supabase
-        .from('contractor_quotes')
-        .select('pdf_url, pdf_filename, contractor_id, project_id')
-        .eq('id', quoteId)
-        .single()
+      // 모든 프로젝트의 견적서를 검색
+      for (const project of quotes) {
+        if (project.contractor_quotes) {
+          const found = project.contractor_quotes.find(cq => cq.id === quoteId)
+          if (found) {
+            quoteData = found
+            break
+          }
+        }
+      }
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('쿼리 타임아웃 (15초)')), 15000)
-      )
-
-      const { data: quoteData, error: quoteError } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]) as any
-
-      console.log('📋 쿼리 완료!')
+      console.log('📋 조회 완료!')
       console.log('✅ 조회 결과:', {
-        success: !quoteError,
         hasData: !!quoteData,
         pdf_url: quoteData?.pdf_url || 'NULL',
         pdf_filename: quoteData?.pdf_filename || 'NULL',
         contractor_id: quoteData?.contractor_id || 'NULL',
-        project_id: quoteData?.project_id || 'NULL',
-        errorCode: quoteError?.code || 'NONE',
-        errorMessage: quoteError?.message || 'NONE'
+        project_id: quoteData?.project_id || 'NULL'
       })
-
-      if (quoteError) {
-        console.error('❌ 데이터베이스 쿼리 오류:', quoteError)
-        toast.error(`데이터베이스 오류: ${quoteError.message}`)
-        return
-      }
 
       if (!quoteData) {
         console.error('❌ 견적서 데이터가 존재하지 않습니다')
@@ -446,6 +431,7 @@ export default function MyQuotesPage() {
 
       // Public URL 생성
       console.log('🔄 Public URL 생성 시도...')
+      const supabase = createBrowserClient()
       const { data: publicUrlData } = supabase.storage
         .from('contractor-quotes')
         .getPublicUrl(filePath)
@@ -483,12 +469,7 @@ export default function MyQuotesPage() {
       console.error('❌ 오류 발생')
       console.error('오류 내용:', error)
       console.error('========================================')
-      
-      if (error.message === '쿼리 타임아웃 (15초)') {
-        toast.error('요청 시간이 초과되었습니다. 다시 시도해주세요.')
-      } else {
-        toast.error('견적서 다운로드 중 오류가 발생했습니다.')
-      }
+      toast.error('견적서 다운로드 중 오류가 발생했습니다.')
     } finally {
       // 다운로드 중 상태 제거
       setDownloadingQuotes(prev => {
