@@ -404,7 +404,7 @@ export default function MyQuotesPage() {
       return
     }
 
-    console.log('========================================'
+    console.log('========================================')
     console.log('🔽 PDF 다운로드 시작')
     console.log('견적서 ID:', quoteId)
     console.log('========================================')
@@ -471,7 +471,7 @@ export default function MyQuotesPage() {
       for (const prefix of bucketPrefixes) {
         if (filePath.startsWith(prefix)) {
           filePath = filePath.substring(prefix.length)
-          console.log(`🔧 버킷 접두사 제거: \"${prefix}\" → \"${filePath}\"`)
+          console.log(`🔧 버킷 접두사 제거: \\"${prefix}\\" → \\"${filePath}\\"`)
         }
       }
 
