@@ -61,12 +61,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      console.log('Loading projects for contractor:', {
+      console.log('🚀 Loading projects for contractor:', {
         contractorId: contractorData.id,
         companyName: contractorData.company_name
       })
       
       // ✅ 1. 업체가 참여한 프로젝트 ID 목록 가져오기
+      console.log('📝 Step 1: Fetching participating project IDs...')
       const [siteVisitsResponse, quotesResponse, selectedProjectsResponse] = await Promise.all([
         // 현장방문 신청한 프로젝트
         supabase
@@ -111,44 +112,77 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         }
       })
       
-      console.log('Participating project IDs:', Array.from(participatingProjectIds))
+      console.log('📊 Participating project IDs:', Array.from(participatingProjectIds))
       console.log('🎉 Total participating projects:', participatingProjectIds.size)
       
-      // ✅ 2. 프로젝트 조회 - 더 간단한 방법으로 변경
-      // 참여한 프로젝트 ID로 직접 조회
+      if (participatingProjectIds.size === 0) {
+        console.log('⚠️ No participating projects found')
+        setProjects([])
+        setIsLoading(false)
+        return
+      }
+      
+      // ✅ 2. 프로젝트 조회
+      console.log('📝 Step 2: Fetching project details...')
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
-        .select('*, selected_contractor_id, selected_quote_id')
+        .select('*')
         .in('id', Array.from(participatingProjectIds))
         .order('created_at', { ascending: false })
       
       if (projectsError) {
-        console.error('Projects fetch error:', projectsError)
+        console.error('❌ Projects fetch error:', projectsError)
         throw projectsError
       }
       
       console.log('✅ Fetched projects:', projectsData?.length)
-      console.log('📋 Project statuses:', projectsData?.map(p => ({ id: p.id.slice(0, 8), status: p.status, selected: p.selected_contractor_id?.slice(0, 8) })))
+      console.log('📋 Project data:', projectsData?.map(p => ({ 
+        id: p.id.slice(0, 8), 
+        status: p.status, 
+        selected: p.selected_contractor_id?.slice(0, 8) || 'none',
+        customer_id: p.customer_id?.slice(0, 8) || 'none'
+      })))
+      
+      if (!projectsData || projectsData.length === 0) {
+        console.log('⚠️ No project data returned from query')
+        setProjects([])
+        setIsLoading(false)
+        return
+      }
       
       // 고객 정보 일괄 조회
+      console.log('📝 Step 3: Fetching customer data...')
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
       let customersMap: Record<string, any> = {}
       
+      console.log('👥 Customer IDs to fetch:', customerIds)
+      
       if (customerIds.length > 0) {
-        const { data: customersData } = await supabase
-          .from('users')
-          .select('id, first_name, last_name, email, phone')
-          .in('id', customerIds)
-        
-        if (customersData) {
-          customersMap = customersData.reduce((acc, customer) => {
-            acc[customer.id] = customer
-            return acc
-          }, {})
+        try {
+          const { data: customersData, error: customersError } = await supabase
+            .from('users')
+            .select('id, first_name, last_name, email, phone')
+            .in('id', customerIds)
+          
+          if (customersError) {
+            console.error('⚠️ Error fetching customers:', customersError)
+          } else {
+            console.log('✅ Fetched customers:', customersData?.length)
+            if (customersData) {
+              customersMap = customersData.reduce((acc, customer) => {
+                acc[customer.id] = customer
+                return acc
+              }, {})
+              console.log('📊 Customers map created:', Object.keys(customersMap).length)
+            }
+          }
+        } catch (err) {
+          console.error('⚠️ Exception fetching customers:', err)
         }
       }
       
       // 선택된 업체 IDs 수집
+      console.log('📝 Step 4: Fetching selected contractor names...')
       const selectedContractorIds = new Set<string>()
       projectsData?.forEach(project => {
         if (project.selected_contractor_id) {
@@ -159,25 +193,40 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       // 선택된 업체 이름들 로드
       const contractorNames = await loadSelectedContractorNames(Array.from(selectedContractorIds))
       setSelectedContractorNames(contractorNames)
+      console.log('✅ Loaded contractor names:', Object.keys(contractorNames).length)
       
       // 각 프로젝트에 대해 관련 데이터 조회
-      const processedProjects = await Promise.all(
-        (projectsData || []).map(async (project) => {
+      console.log('📝 Step 5: Processing individual projects...')
+      const processedProjects: Project[] = []
+      
+      for (let i = 0; i < projectsData.length; i++) {
+        const project = projectsData[i]
+        console.log(`🔄 Processing project ${i + 1}/${projectsData.length}: ${project.id.slice(0, 8)}`)
+        
+        try {
           const customerInfo = customersMap[project.customer_id] || null
           
           // 현장방문 신청 조회
-          const { data: siteVisits } = await supabase
+          const { data: siteVisits, error: siteVisitsError } = await supabase
             .from('site_visit_applications')
             .select('*')
             .eq('project_id', project.id)
             .eq('contractor_id', contractorData.id)
           
+          if (siteVisitsError) {
+            console.warn(`⚠️ Error fetching site visits for project ${project.id.slice(0, 8)}:`, siteVisitsError)
+          }
+          
           // 내 견적서 조회
-          const { data: quotes } = await supabase
+          const { data: quotes, error: quotesError } = await supabase
             .from('contractor_quotes')
             .select('*')
             .eq('project_id', project.id)
             .eq('contractor_id', contractorData.id)
+          
+          if (quotesError) {
+            console.warn(`⚠️ Error fetching quotes for project ${project.id.slice(0, 8)}:`, quotesError)
+          }
           
           const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
           const myQuote = quotes?.[0]
@@ -189,11 +238,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           const isMyQuoteSelected = selectedContractorId === contractorData.id
           const hasSelectedContractor = !!selectedContractorId
           
-          console.log('🔍 Processing project:', {
-            id: project.id.slice(0, 8),
+          console.log(`🔍 Project ${project.id.slice(0, 8)} status calculation:`, {
             dbStatus: project.status,
             isSelected: isMyQuoteSelected,
-            hasOtherSelected: hasSelectedContractor && !isMyQuoteSelected
+            hasOtherSelected: hasSelectedContractor && !isMyQuoteSelected,
+            hasSiteVisit: !!mySiteVisit,
+            hasQuote: !!myQuote
           })
           
           // 1️⃣ 취소 상태 최우선
@@ -241,7 +291,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'approved'
           }
           
-          return {
+          const processedProject = {
             ...project,
             customer: customerInfo,
             selected_contractor_id: selectedContractorId,
@@ -249,8 +299,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             contractor_quote: myQuote,
             projectStatus
           }
-        })
-      )
+          
+          processedProjects.push(processedProject)
+          console.log(`✅ Successfully processed project ${project.id.slice(0, 8)} with status: ${projectStatus}`)
+          
+        } catch (err) {
+          console.error(`❌ Error processing project ${project.id.slice(0, 8)}:`, err)
+          // Continue with next project even if this one fails
+        }
+      }
       
       console.log('✅ Final processed projects:', processedProjects.length)
       console.log('📊 Project statuses breakdown:', processedProjects.map(p => ({
@@ -260,16 +317,22 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       })))
       
       setProjects(processedProjects)
+      console.log('🎉 Projects state updated successfully!')
+      
     } catch (err: any) {
-      console.error('Failed to load projects:', err)
+      console.error('❌ Failed to load projects:', err)
+      console.error('❌ Error stack:', err.stack)
       setError('프로젝트를 불러오는데 실패했습니다')
+      toast.error('프로젝트를 불러오는데 실패했습니다')
     } finally {
       setIsLoading(false)
+      console.log('🏁 loadProjects finished')
     }
   }, [contractorData])
   
   // 초기 데이터 로드
   useEffect(() => {
+    console.log('🔄 useEffect triggered, contractorData:', contractorData?.id)
     if (contractorData && contractorData.id) {
       loadProjects()
     }
@@ -279,6 +342,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   useEffect(() => {
     console.log('📊 Modal State Changed:', { showQuoteModal, hasProject: !!selectedProject, contractorId: contractorData?.id })
   }, [showQuoteModal, selectedProject, contractorData])
+  
+  // projects 상태 변경 감지
+  useEffect(() => {
+    console.log('📊 Projects state changed:', {
+      count: projects.length,
+      statuses: projects.map(p => p.projectStatus)
+    })
+  }, [projects])
   
   const refreshData = async () => {
     setIsRefreshing(true)
@@ -378,6 +449,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 필터링된 프로젝트
   const filteredProjects = useMemo(() => {
+    console.log('🔍 Filtering projects:', {
+      total: projects.length,
+      filter: projectFilter
+    })
     if (projectFilter === 'all') return projects
     if (projectFilter === 'bidding') {
       return projects.filter(p => p.projectStatus === 'bidding')
@@ -407,8 +482,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
     })
     
+    console.log('📊 Status counts:', counts)
+    
     return counts
   }, [projects])
+  
+  console.log('🎨 Rendering dashboard:', {
+    isLoading,
+    projectsCount: projects.length,
+    filteredCount: filteredProjects.length,
+    filter: projectFilter
+  })
   
   if (isLoading && !projects.length) {
     return (
@@ -716,11 +800,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         </div>
         
         {/* 디버그 정보 */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-2 pt-2 border-t text-xs text-gray-400">
-            <p>DB Status: {project.status} | Project Status: {project.projectStatus} | Has Quote: {project.contractor_quote ? 'Yes' : 'No'}</p>
-          </div>
-        )}
+        <div className="mt-2 pt-2 border-t text-xs text-gray-400">
+          <p>ID: {project.id.slice(0, 8)} | DB Status: {project.status} | Project Status: {project.projectStatus} | Has Quote: {project.contractor_quote ? 'Yes' : 'No'}</p>
+        </div>
       </div>
     )
   }
@@ -879,7 +961,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               
               {filteredProjects.length === 0 ? (
                 <div className="px-6 py-12 text-center text-gray-500">
-                  해당하는 프로젝트가 없습니다.
+                  {projects.length === 0 ? '참여 중인 프로젝트가 없습니다.' : '해당하는 프로젝트가 없습니다.'}
                 </div>
               ) : (
                 <div className="p-6">
