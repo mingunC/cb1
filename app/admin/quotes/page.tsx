@@ -18,7 +18,8 @@ interface QuoteRequest {
   postal_code: string
   description: string
   photos: any[]
-  status: 'pending' | 'approved' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'bidding-closed' | 'quote-submitted' | 'completed' | 'cancelled'
+  status: 'pending' | 'approved' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'bidding-closed' | 'quote-submitted' | 'completed' | 'cancelled' | 'in-progress'
+  selected_contractor_id?: string
   created_at: string
   updated_at: string
 }
@@ -92,7 +93,7 @@ export default function AdminQuotesPage() {
           case 'active':
             return ['site-visit-completed', 'bidding', 'bidding-closed', 'quote-submitted'].includes(quote.status)
           case 'completed':
-            return quote.status === 'completed'
+            return quote.status === 'completed' || quote.status === 'in-progress'
           default:
             return true
         }
@@ -192,7 +193,17 @@ export default function AdminQuotesPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, hasSelectedContractor: boolean = false) => {
+    // bidding-closed 상태이면서 업체가 선정된 경우 특별 처리
+    if (status === 'bidding-closed' && hasSelectedContractor) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          업체선정완료
+        </span>
+      )
+    }
+
     const badges = {
       pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: '대기중' },
       approved: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '승인됨' },
@@ -201,6 +212,7 @@ export default function AdminQuotesPage() {
       bidding: { color: 'bg-orange-100 text-orange-800', icon: TrendingUp, text: '입찰중' },
       'bidding-closed': { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '입찰종료' },
       'quote-submitted': { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' },
+      'in-progress': { color: 'bg-blue-100 text-blue-800', icon: TrendingUp, text: '진행중' },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료' },
       cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle, text: '취소' }
     }
@@ -252,7 +264,7 @@ export default function AdminQuotesPage() {
     { id: 'approved', label: '승인됨', count: quotes.filter(q => q.status === 'approved').length },
     { id: 'site-visit', label: '현장방문대기', count: quotes.filter(q => q.status === 'site-visit-pending').length },
     { id: 'active', label: '입찰중', count: quotes.filter(q => ['site-visit-completed', 'bidding', 'bidding-closed', 'quote-submitted'].includes(q.status)).length },
-    { id: 'completed', label: '완료', count: quotes.filter(q => q.status === 'completed').length }
+    { id: 'completed', label: '완료', count: quotes.filter(q => q.status === 'completed' || q.status === 'in-progress').length }
   ]
 
   // ✅ 개선된 상태별 다음 액션 버튼 렌더링 함수
@@ -316,6 +328,13 @@ export default function AdminQuotesPage() {
       
       case 'bidding-closed':
       case 'quote-submitted':
+        // 업체가 선정된 경우에만 프로젝트 종료 버튼 표시
+        if (quote.selected_contractor_id) {
+          return null // 고객이 프로젝트 시작을 하면 자동으로 완료됨
+        }
+        return null
+      
+      case 'in-progress':
         return (
           <button
             onClick={() => {
@@ -325,7 +344,7 @@ export default function AdminQuotesPage() {
             }}
             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
           >
-            프로젝트완료
+            프로젝트종료
           </button>
         )
       
@@ -381,7 +400,8 @@ export default function AdminQuotesPage() {
             <p>2. <strong>승인됨</strong> → 업체가 현장방문 신청 → 3. <strong>현장방문대기 (site-visit-pending)</strong></p>
             <p>3. <strong>현장방문대기</strong> → 방문완료+입찰시작 → 4. <strong>입찰중 (bidding)</strong></p>
             <p>4. <strong>입찰중</strong> → 입찰종료 → 5. <strong>입찰종료 (bidding-closed)</strong></p>
-            <p>5. <strong>입찰종료</strong> → 고객이 업체 선택 → 6. <strong>완료 (completed)</strong></p>
+            <p>5. <strong>입찰종료</strong> → 고객이 업체 선택 → 6. <strong>업체선정완료</strong> → 고객이 프로젝트 시작 → 7. <strong>진행중 (in-progress)</strong></p>
+            <p>7. <strong>진행중</strong> → 관리자가 프로젝트 종료 → 8. <strong>완료 (completed)</strong></p>
           </div>
         </div>
 
@@ -471,7 +491,7 @@ export default function AdminQuotesPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(quote.status)}
+                        {getStatusBadge(quote.status, !!quote.selected_contractor_id)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-600">
@@ -563,7 +583,7 @@ export default function AdminQuotesPage() {
                 {/* 현재 상태 */}
                 <div className="bg-purple-50 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">현재 상태</h3>
-                  {getStatusBadge(selectedQuote.status)}
+                  {getStatusBadge(selectedQuote.status, !!selectedQuote.selected_contractor_id)}
                 </div>
 
                 {/* ✅ 개선된 액션 버튼 - 상태별로 다음 단계 버튼 표시 */}
@@ -612,7 +632,7 @@ export default function AdminQuotesPage() {
                       입찰 종료
                     </button>
                   )}
-                  {(selectedQuote.status === 'bidding-closed' || selectedQuote.status === 'quote-submitted') && (
+                  {selectedQuote.status === 'in-progress' && (
                     <button
                       onClick={() => {
                         updateQuoteStatus(selectedQuote.id, 'completed')
@@ -620,7 +640,7 @@ export default function AdminQuotesPage() {
                       }}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
                     >
-                      프로젝트 완료
+                      프로젝트 종료
                     </button>
                   )}
                   <button
