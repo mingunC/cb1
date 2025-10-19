@@ -50,6 +50,7 @@ interface ContractorQuote {
   bid_amount: number
   bid_description: string
   pdf_url: string
+  pdf_filename?: string
   valid_until: string
   status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'selected' | 'expired'
   created_at: string
@@ -357,33 +358,53 @@ export default function MyQuotesPage() {
       
       // 1단계: contractor_quotes 테이블에서 PDF 정보 조회
       console.log('📊 1단계: 데이터베이스에서 PDF 정보 조회 중...')
+      console.log('쿼리 실행: contractor_quotes 테이블, ID =', quoteId)
+      
       const { data: quoteData, error: quoteError } = await supabase
         .from('contractor_quotes')
-        .select('pdf_url, pdf_filename')
+        .select('pdf_url, pdf_filename, contractor_id, project_id')
         .eq('id', quoteId)
         .single()
 
+      console.log('📋 쿼리 완료!')
       console.log('✅ 조회 결과:', {
         success: !quoteError,
-        pdf_url: quoteData?.pdf_url,
-        pdf_filename: quoteData?.pdf_filename,
-        error: quoteError
+        hasData: !!quoteData,
+        pdf_url: quoteData?.pdf_url || 'NULL',
+        pdf_filename: quoteData?.pdf_filename || 'NULL',
+        contractor_id: quoteData?.contractor_id || 'NULL',
+        project_id: quoteData?.project_id || 'NULL',
+        errorCode: quoteError?.code || 'NONE',
+        errorMessage: quoteError?.message || 'NONE'
       })
 
-      if (quoteError || !quoteData) {
-        console.error('❌ 데이터베이스 조회 실패:', quoteError)
-        toast.error('견적서 정보를 찾을 수 없습니다.')
+      if (quoteError) {
+        console.error('❌ 데이터베이스 쿼리 오류:', quoteError)
+        console.error('오류 코드:', quoteError.code)
+        console.error('오류 메시지:', quoteError.message)
+        console.error('오류 상세:', quoteError.details)
+        toast.error(`데이터베이스 오류: ${quoteError.message}`)
+        return
+      }
+
+      if (!quoteData) {
+        console.error('❌ 견적서 데이터가 존재하지 않습니다')
+        console.error('조회한 ID:', quoteId)
+        console.error('힌트: 이 ID의 레코드가 contractor_quotes 테이블에 없거나 RLS 정책에 의해 차단되었을 수 있습니다')
+        toast.error('견적서 정보를 찾을 수 없습니다. 관리자에게 문의하세요.')
         return
       }
 
       if (!quoteData.pdf_url) {
         console.error('❌ PDF URL이 비어있습니다')
-        toast.error('견적서 파일이 없습니다.')
+        console.error('견적서 데이터:', quoteData)
+        toast.error('견적서 파일이 업로드되지 않았습니다.')
         return
       }
 
       const originalUrl = quoteData.pdf_url
       console.log('📄 원본 URL:', originalUrl)
+      console.log('📄 파일명:', quoteData.pdf_filename || '(없음)')
 
       // 2단계: URL 형식 판단 및 처리
       if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
@@ -429,7 +450,10 @@ export default function MyQuotesPage() {
         
         // URL 유효성 빠른 체크
         try {
+          console.log('🔍 Public URL 접근성 체크 중...')
           const checkResponse = await fetch(publicUrl, { method: 'HEAD' })
+          console.log('응답 상태:', checkResponse.status, checkResponse.statusText)
+          
           if (checkResponse.ok) {
             console.log('✅ Public URL 접근 가능 확인됨')
             window.open(publicUrl, '_blank')
@@ -437,10 +461,11 @@ export default function MyQuotesPage() {
             console.log('✅ 성공: Public URL로 다운로드')
             return
           } else {
-            console.log('⚠️ Public URL이 존재하지만 접근 불가 (HTTP ' + checkResponse.status + ')')
+            console.log(`⚠️ Public URL이 존재하지만 접근 불가 (HTTP ${checkResponse.status})`)
           }
         } catch (checkError) {
-          console.log('⚠️ Public URL 체크 실패, Signed URL 시도:', checkError)
+          console.log('⚠️ Public URL 체크 실패:', checkError)
+          console.log('Signed URL로 시도합니다...')
         }
       }
 
@@ -452,7 +477,7 @@ export default function MyQuotesPage() {
 
       console.log('Signed URL 결과:', {
         success: !signedError,
-        signedUrl: signedData?.signedUrl,
+        signedUrl: signedData?.signedUrl || 'NULL',
         error: signedError
       })
 
@@ -462,6 +487,8 @@ export default function MyQuotesPage() {
         toast.success('견적서를 새 탭에서 엽니다...')
         console.log('✅ 성공: Signed URL로 다운로드')
         return
+      } else if (signedError) {
+        console.error('❌ Signed URL 생성 실패:', signedError)
       }
 
       // 방법 3: 다양한 경로 변형 시도
@@ -472,6 +499,8 @@ export default function MyQuotesPage() {
         filePath.replace(/^\//, ''),
         filePath.split('/').pop() || filePath // 파일명만
       ]
+
+      console.log('시도할 경로 변형:', pathVariations)
 
       for (const variation of pathVariations) {
         if (variation === filePath) continue // 이미 시도함
@@ -487,23 +516,42 @@ export default function MyQuotesPage() {
           toast.success('견적서를 새 탭에서 엽니다...')
           console.log('✅ 성공: 경로 변형으로 다운로드')
           return
+        } else {
+          console.log(`  ❌ 변형 실패:`, varError?.message || 'Unknown error')
         }
       }
 
       // 모든 방법 실패
+      console.error('========================================')
       console.error('❌ 모든 다운로드 방법 실패')
       console.error('최종 에러 정보:', {
+        quoteId,
         originalUrl,
         normalizedPath: filePath,
         signedError,
-        pathVariations
+        pathVariations,
+        contractorId: quoteData.contractor_id,
+        projectId: quoteData.project_id
       })
+      console.error('========================================')
+      console.error('')
+      console.error('🔧 해결 방법:')
+      console.error('1. Supabase Storage에서 contractor-quotes 버킷 확인')
+      console.error('2. 파일이 실제로 업로드되었는지 확인:', filePath)
+      console.error('3. RLS 정책 확인 (Storage에서 읽기 권한)')
+      console.error('4. 파일명이 정확한지 확인')
+      console.error('')
+      
       toast.error('견적서 파일을 찾을 수 없습니다. 관리자에게 문의하세요.')
 
     } catch (error) {
       console.error('========================================')
       console.error('❌ 치명적 오류 발생')
+      console.error('오류 타입:', error instanceof Error ? error.constructor.name : typeof error)
       console.error('오류 내용:', error)
+      if (error instanceof Error) {
+        console.error('스택 트레이스:', error.stack)
+      }
       console.error('========================================')
       toast.error('견적서 다운로드 중 오류가 발생했습니다.')
     }
