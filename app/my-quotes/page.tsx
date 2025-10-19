@@ -690,20 +690,19 @@ export default function MyQuotesPage() {
                       <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-lg p-6">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                               <CheckCircle className="w-6 h-6 mr-2 text-green-600" />
-                              업체 선정이 완료되었습니다
+                              프로젝트를 시작해주세요!
                             </h3>
-                            <p className="text-sm text-gray-700 mb-3">
-                              선정된 업체가 곧 연락드릴 예정입니다. 업체와 일정을 조율하신 후 아래 버튼을 눌러 프로젝트를 시작해주세요.
-                            </p>
-                            <div className="flex items-center text-sm text-gray-600 mb-2">
-                              <Building className="w-4 h-4 mr-2" />
-                              <span>업체와 연락하여 공사 일정을 확정하세요</span>
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Play className="w-4 h-4 mr-2" />
-                              <span>준비가 완료되면 프로젝트 시작 버튼을 눌러주세요</span>
+                            
+                            <div className="space-y-3">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Calendar className="w-4 h-4 mr-2" />
+                                <span>업체와 연락하여 공사 일정을 확정하세요</span>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                준비가 완료되고 프로젝트를 시작하실 때 시작버튼을 눌러주세요.
+                              </p>
                             </div>
                           </div>
                           <div className="ml-4">
