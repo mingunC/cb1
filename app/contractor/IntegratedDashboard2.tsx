@@ -250,7 +250,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           if (project.status === 'cancelled') {
             projectStatus = 'cancelled'
           }
-          // 2️⃣ 완료 상태 (프로젝트 시작 버튼 누름)
+          // 2️⃣ contractor-selected 상태 - 업체 선택되었지만 프로젝트 시작 전
+          else if (project.status === 'contractor-selected') {
+            if (isMyQuoteSelected) {
+              projectStatus = 'selected'
+            } else if (hasSelectedContractor) {
+              projectStatus = 'not-selected'
+            } else {
+              projectStatus = 'quoted'
+            }
+          }
+          // 3️⃣ 완료 상태 (프로젝트 시작 버튼 누름)
           else if (project.status === 'completed' || project.status === 'in-progress') {
             if (isMyQuoteSelected) {
               projectStatus = 'selected'
@@ -260,7 +270,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               projectStatus = 'completed'
             }
           }
-          // 3️⃣ 입찰 종료 상태 (bidding-closed)
+          // 4️⃣ 입찰 종료 상태 (bidding-closed)
           else if (project.status === 'bidding-closed') {
             if (isMyQuoteSelected) {
               projectStatus = 'selected'
@@ -272,21 +282,21 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               projectStatus = 'completed' // 입찰 종료되었지만 선정 안됨
             }
           }
-          // 4️⃣ 입찰 중 상태
+          // 5️⃣ 입찰 중 상태
           else if (project.status === 'bidding' || project.status === 'quote-submitted') {
             projectStatus = 'bidding'
           }
-          // 5️⃣ 견적서 제출 완료 상태
+          // 6️⃣ 견적서 제출 완료 상태
           else if (myQuote && project.status !== 'bidding') {
             projectStatus = 'quoted'
           }
-          // 6️⃣ 현장방문 관련 상태
+          // 7️⃣ 현장방문 관련 상태
           else if (mySiteVisit && mySiteVisit.status === 'completed') {
             projectStatus = 'site-visit-completed'
           } else if (mySiteVisit) {
             projectStatus = 'site-visit-applied'
           }
-          // 7️⃣ 기본 승인 상태 (현장방문 신청 가능)
+          // 8️⃣ 기본 승인 상태 (현장방문 신청 가능)
           else if (project.status === 'approved' || project.status === 'site_visit' || project.status === 'site-visit-pending') {
             projectStatus = 'approved'
           }
