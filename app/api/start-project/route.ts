@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Current status:', currentProject.status)
 
-    // 2. 상태 검증 - contractor-selected 또는 completed 상태여야 함
-    if (!['contractor-selected', 'completed'].includes(currentProject.status)) {
+    // 2. 상태 검증 - bidding-closed 또는 completed 상태여야 함
+    if (!['bidding-closed', 'completed'].includes(currentProject.status)) {
       return NextResponse.json(
         { 
           error: '업체가 선정된 프로젝트만 시작할 수 있습니다',
@@ -103,11 +103,95 @@ export async function POST(request: NextRequest) {
       .eq('id', currentProject.customer_id)
       .single()
 
-    // 8. 업체에게 프로젝트 시작 알림 이메일 발송 (선택사항)
+    const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || '고객'
+
+    // 8. 고객에게 프로젝트 시작 축하 이메일 발송
+    if (customerInfo?.email) {
+      try {
+        await sendEmail({
+          to: customerInfo.email,
+          subject: '🎉 프로젝트의 시작을 축하드립니다!',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; }
+                .info-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .highlight { background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+                .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1 style="margin: 0; font-size: 32px;">🎉 축하합니다!</h1>
+                  <p style="margin: 10px 0 0 0; font-size: 18px;">프로젝트의 시작을 진심으로 축하드립니다</p>
+                </div>
+                
+                <div class="content">
+                  <p>안녕하세요, <strong>${customerName}</strong>님</p>
+                  
+                  <div class="highlight">
+                    <h3 style="margin-top: 0; color: #d97706;">✨ 프로젝트가 공식적으로 시작되었습니다!</h3>
+                    <p style="margin-bottom: 0;">꿈꾸던 공간으로의 변화가 이제 시작됩니다.</p>
+                  </div>
+
+                  <div class="info-box">
+                    <h3 style="color: #667eea; margin-top: 0;">📋 프로젝트 정보</h3>
+                    <p style="margin: 10px 0;"><strong>선정 업체:</strong> ${contractorInfo?.company_name || '업체'}</p>
+                    <p style="margin: 10px 0;"><strong>프로젝트 유형:</strong> ${currentProject.space_type}</p>
+                    <p style="margin: 10px 0;"><strong>주소:</strong> ${currentProject.full_address}</p>
+                    <p style="margin: 10px 0;"><strong>시작일:</strong> ${new Date().toLocaleDateString('ko-KR')}</p>
+                  </div>
+                  
+                  <div class="info-box">
+                    <h3 style="color: #667eea; margin-top: 0;">👷 다음 단계</h3>
+                    <ul style="padding-left: 20px;">
+                      <li>업체와 최종 일정 협의</li>
+                      <li>공사 준비 사항 확인</li>
+                      <li>정기적인 진행 상황 체크</li>
+                      <li>완료 후 최종 검수</li>
+                    </ul>
+                  </div>
+
+                  <div class="highlight">
+                    <p style="margin: 0;"><strong>💡 팁:</strong> 궁금한 사항이나 변경사항이 있으시면 업체와 수시로 소통해주세요!</p>
+                  </div>
+                  
+                  <p style="margin-top: 30px; text-align: center;">
+                    <strong>성공적인 프로젝트 완료를 기원합니다!</strong>
+                  </p>
+                  
+                  <p style="text-align: center;">
+                    감사합니다.<br>
+                    <strong>Canada Beaver 팀</strong>
+                  </p>
+                </div>
+                
+                <div class="footer">
+                  <p>© 2024 Canada Beaver. All rights reserved.</p>
+                  <p>문의사항이 있으시면 언제든지 연락주세요.</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        })
+        
+        console.log('✅ Congratulations email sent to customer')
+      } catch (emailError) {
+        console.error('고객 이메일 발송 실패 (프로세스는 계속됨):', emailError)
+      }
+    }
+
+    // 9. 업체에게 프로젝트 시작 알림 이메일 발송
     if (contractorInfo?.email) {
       try {
-        const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || '고객'
-        
         await sendEmail({
           to: contractorInfo.email,
           subject: '🚀 프로젝트가 시작되었습니다',
@@ -135,7 +219,7 @@ export async function POST(request: NextRequest) {
                   <p>안녕하세요, <strong>${contractorInfo.company_name}</strong>님</p>
                   
                   <div class="info-box">
-                    <h3 style="color: #28a745; margin-top: 0;">프로젝트가 공식적으로 시작되었습니다</h3>
+                    <h3 style="color: #28a745; margin-top: 0;">🎉 프로젝트가 공식적으로 시작되었습니다</h3>
                     <p><strong>${customerName}</strong>님이 프로젝트 시작을 확인했습니다.</p>
                     <p style="margin: 15px 0;">📋 프로젝트 유형: ${currentProject.space_type}</p>
                     <p style="margin: 15px 0;">📍 주소: ${currentProject.full_address}</p>
@@ -169,7 +253,7 @@ export async function POST(request: NextRequest) {
         
         console.log('✅ Notification email sent to contractor')
       } catch (emailError) {
-        console.error('이메일 발송 실패 (프로세스는 계속됨):', emailError)
+        console.error('업체 이메일 발송 실패 (프로세스는 계속됨):', emailError)
       }
     }
 
@@ -177,7 +261,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: '프로젝트가 시작되었습니다',
+      message: '프로젝트가 시작되었습니다. 프로젝트의 시작을 축하드립니다!',
       projectStatus: 'in-progress',
       startedAt: updatedProject.project_started_at
     })
