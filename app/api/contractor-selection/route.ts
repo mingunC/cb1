@@ -47,13 +47,13 @@ export async function POST(request: NextRequest) {
 
       console.log('Current project status:', currentProject.status)
 
-      // 이미 완료된 프로젝트인지 확인
-      if (currentProject.status === 'completed') {
-        console.log('Project already completed')
+      // 이미 업체가 선정되었거나 진행 중인지 확인
+      if (['contractor-selected', 'in-progress', 'completed'].includes(currentProject.status)) {
+        console.log('Project already has a selected contractor')
         return NextResponse.json({
           success: false,
-          message: '이미 완료된 프로젝트입니다',
-          projectStatus: 'completed'
+          message: '이미 업체가 선정된 프로젝트입니다',
+          projectStatus: currentProject.status
         })
       }
 
@@ -107,11 +107,11 @@ export async function POST(request: NextRequest) {
         console.log(`✅ Rejected ${rejectedQuotes?.length || 0} other quotes`)
       }
 
-      // 5. 프로젝트(quote_request) 상태를 'completed'로 변경 - 가장 중요!
+      // 5. ✅ 프로젝트 상태를 'contractor-selected'로 변경 (completed 아님!)
       const { data: updatedProject, error: projectError } = await supabase
         .from('quote_requests')
         .update({ 
-          status: 'completed',
+          status: 'contractor-selected',  // ✅ 변경: completed → contractor-selected
           selected_contractor_id: contractorId || acceptedQuote?.contractor_id,
           selected_quote_id: contractorQuoteId,
           updated_at: new Date().toISOString()
@@ -218,14 +218,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 9. 최종 검증 - 프로젝트 상태가 실제로 'completed'로 변경되었는지 확인
+      // 9. ✅ 최종 검증 - 프로젝트 상태가 'contractor-selected'로 변경되었는지 확인
       const { data: finalCheck, error: finalError } = await supabase
         .from('quote_requests')
         .select('status')
         .eq('id', projectId)
         .single()
 
-      if (finalError || finalCheck?.status !== 'completed') {
+      if (finalError || finalCheck?.status !== 'contractor-selected') {
         throw new Error('프로젝트 상태 업데이트 검증 실패')
       }
 
@@ -235,8 +235,8 @@ export async function POST(request: NextRequest) {
       // 성공 응답
       return NextResponse.json({ 
         success: true, 
-        message: '업체 선택이 완료되었습니다',
-        projectStatus: 'completed',
+        message: '업체 선택이 완료되었습니다. 업체가 연락드릴 예정입니다.',
+        projectStatus: 'contractor-selected',  // ✅ 변경
         updatedAt: updatedProject?.updated_at,
         emailSent: !!contractorInfo?.email,
         details: {
