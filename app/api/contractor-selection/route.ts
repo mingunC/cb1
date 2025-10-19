@@ -150,20 +150,24 @@ export async function POST(request: NextRequest) {
         console.error('업체 정보 조회 실패:', contractorError)
       }
 
-      // 7. ✅ 고객 정보 조회 (users 테이블에서) - 이메일, 전화번호, 주소 포함
+      // 7. ✅ 고객 정보 조회 (users 테이블 + quote_requests 테이블)
       const { data: customerInfo, error: customerError } = await supabase
         .from('users')
         .select('id, email, first_name, last_name, phone')
         .eq('id', currentProject.customer_id)
         .single()
 
+      // quote_requests 테이블의 customer_phone 필드도 확인 (우선순위 높음)
+      const customerPhone = currentProject.customer_phone || customerInfo?.phone
+      const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim()
+
       if (customerError) {
         console.error('고객 정보 조회 실패:', customerError)
       } else {
         console.log('✅ Customer info loaded:', {
           email: customerInfo?.email,
-          phone: customerInfo?.phone,
-          name: `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim()
+          phone: customerPhone,
+          name: customerName || '고객'
         })
       }
 
@@ -175,7 +179,12 @@ export async function POST(request: NextRequest) {
             contractorInfo.contact_name || contractorInfo.company_name,
             currentProject,
             acceptedQuote,
-            customerInfo // 고객 정보 추가
+            {
+              ...customerInfo,
+              phone: customerPhone, // quote_requests 또는 users 테이블의 전화번호
+              first_name: customerInfo?.first_name,
+              last_name: customerInfo?.last_name
+            }
           )
 
           await sendEmail({
@@ -189,7 +198,7 @@ export async function POST(request: NextRequest) {
           // 고객에게도 알림 이메일 발송 (옵션)
           if (customerInfo?.email) {
             const customerEmailHtml = createCustomerNotificationTemplate(
-              `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() || '고객',
+              customerName || '고객',
               contractorInfo,
               currentProject,
               acceptedQuote
