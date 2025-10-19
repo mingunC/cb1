@@ -67,7 +67,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       })
       
       // ✅ 1. 업체가 참여한 프로젝트 ID 목록 가져오기
-      const [siteVisitsResponse, quotesResponse] = await Promise.all([
+      const [siteVisitsResponse, quotesResponse, selectedProjectsResponse] = await Promise.all([
         // 현장방문 신청한 프로젝트
         supabase
           .from('site_visit_applications')
@@ -77,7 +77,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         supabase
           .from('contractor_quotes')
           .select('project_id')
-          .eq('contractor_id', contractorData.id)
+          .eq('contractor_id', contractorData.id),
+        // ⭐ 선택된 프로젝트 추가!
+        supabase
+          .from('quote_requests')
+          .select('id')
+          .eq('selected_contractor_id', contractorData.id)
       ])
       
       // 프로젝트 ID 중복 제거
@@ -91,19 +96,25 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         if (item.project_id) participatingProjectIds.add(item.project_id)
       })
       
+      // ⭐ 선택된 프로젝트 ID도 추가
+      selectedProjectsResponse.data?.forEach(item => {
+        if (item.id) participatingProjectIds.add(item.id)
+      })
+      
       console.log('Participating project IDs:', Array.from(participatingProjectIds))
+      console.log('🎉 Including selected projects where contractor_id =', contractorData.id)
       
       // ✅ 2. 승인된 견적요청서만 가져오기 (approved 이상의 상태만!)
       // pending 상태는 제외하고, approved 이상의 상태만 조회
       let query = supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
-        .in('status', ['approved', 'site-visit-pending', 'bidding', 'bidding-closed', 'completed', 'in_progress', 'cancelled'])
+        .in('status', ['approved', 'site-visit-pending', 'bidding', 'bidding-closed', 'completed', 'in-progress', 'cancelled'])
         .order('created_at', { ascending: false })
       
       // 참여한 프로젝트가 있으면 해당 프로젝트들도 포함
       if (participatingProjectIds.size > 0) {
-        query = query.or(`id.in.(${Array.from(participatingProjectIds).join(',')}),status.in.(approved,site-visit-pending,bidding,bidding-closed,completed,in_progress,cancelled)`)
+        query = query.or(`id.in.(${Array.from(participatingProjectIds).join(',')}),status.in.(approved,site-visit-pending,bidding,bidding-closed,completed,in-progress,cancelled)`)
       }
       
       const { data: projectsData, error: projectsError } = await query
@@ -117,6 +128,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       console.log('- Approved: 현장방문 신청 가능')
       console.log('- Bidding: 입찰 중')
       console.log('- Bidding-Closed: 입찰 종료')
+      console.log('- In-Progress: 진행중')
       console.log('- Completed: 프로젝트 종료')
       
       // 고객 정보 일괄 조회
@@ -183,7 +195,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             projectStatus = 'cancelled'
           }
           // 2️⃣ 완료 상태 (프로젝트 시작 버튼 누름)
-          else if (project.status === 'completed' || project.status === 'in_progress') {
+          else if (project.status === 'completed' || project.status === 'in-progress') {
             if (isMyQuoteSelected) {
               projectStatus = 'selected'
             } else if (hasSelectedContractor) {
