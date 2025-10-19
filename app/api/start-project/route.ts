@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Current status:', currentProject.status)
 
-    // 2. 상태 검증 - bidding-closed 또는 completed 상태여야 함
-    if (!['bidding-closed', 'completed'].includes(currentProject.status)) {
+    // 2. 상태 검증 - contractor-selected 상태여야 함
+    if (currentProject.status !== 'contractor-selected') {
       return NextResponse.json(
         { 
           error: '업체가 선정된 프로젝트만 시작할 수 있습니다',
@@ -66,12 +66,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 5. 프로젝트 상태를 'in-progress'로 변경
+    // 5. 프로젝트 상태를 'completed'로 변경 (바로 완료)
     const { data: updatedProject, error: updateError } = await supabase
       .from('quote_requests')
       .update({ 
-        status: 'in-progress',
+        status: 'completed',
         project_started_at: new Date().toISOString(),
+        project_completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', projectId)
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Project started:', updatedProject.id)
-    console.log('✅ Status updated to: in-progress')
+    console.log('✅ Project started and completed:', updatedProject.id)
+    console.log('✅ Status updated to: completed')
 
     // 6. 업체 정보 조회 (알림 이메일 발송용)
     const { data: contractorInfo } = await supabase
@@ -261,9 +262,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: '프로젝트가 시작되었습니다. 프로젝트의 시작을 축하드립니다!',
-      projectStatus: 'in-progress',
-      startedAt: updatedProject.project_started_at
+      message: '프로젝트가 시작되고 완료 처리되었습니다. 프로젝트의 성공을 축하드립니다!',
+      projectStatus: 'completed',
+      startedAt: updatedProject.project_started_at,
+      completedAt: updatedProject.project_completed_at
     })
 
   } catch (error: any) {
