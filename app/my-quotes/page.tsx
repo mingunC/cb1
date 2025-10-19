@@ -75,6 +75,7 @@ export default function MyQuotesPage() {
   const [contractorQuotes, setContractorQuotes] = useState<ContractorQuote[]>([])
   const [quotesTableData, setQuotesTableData] = useState<any[]>([])
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
+  const [downloadingQuotes, setDownloadingQuotes] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   useEffect(() => {
@@ -346,25 +347,44 @@ export default function MyQuotesPage() {
     }
   }
 
-  // ✅ 강화된 견적서 다운로드 함수 - 모든 경우를 처리
+  // ✅ 수정된 견적서 다운로드 함수 - 새로운 클라이언트 인스턴스 사용
   const downloadQuote = async (quoteId: string) => {
+    // 중복 클릭 방지
+    if (downloadingQuotes.has(quoteId)) {
+      console.log('⚠️ 이미 다운로드 중입니다:', quoteId)
+      return
+    }
+
     console.log('========================================')
     console.log('🔽 PDF 다운로드 시작')
     console.log('견적서 ID:', quoteId)
     console.log('========================================')
     
+    // 다운로드 중 상태 추가
+    setDownloadingQuotes(prev => new Set(prev).add(quoteId))
+    
     try {
+      // ✅ 매번 새로운 Supabase 클라이언트 인스턴스 생성
       const supabase = createBrowserClient()
       
-      // 1단계: contractor_quotes 테이블에서 PDF 정보 조회
       console.log('📊 1단계: 데이터베이스에서 PDF 정보 조회 중...')
       console.log('쿼리 실행: contractor_quotes 테이블, ID =', quoteId)
       
-      const { data: quoteData, error: quoteError } = await supabase
+      // ✅ 타임아웃과 함께 쿼리 실행
+      const queryPromise = supabase
         .from('contractor_quotes')
         .select('pdf_url, pdf_filename, contractor_id, project_id')
         .eq('id', quoteId)
         .single()
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('쿼리 타임아웃 (15초)')), 15000)
+      )
+
+      const { data: quoteData, error: quoteError } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as any
 
       console.log('📋 쿼리 완료!')
       console.log('✅ 조회 결과:', {
@@ -380,24 +400,18 @@ export default function MyQuotesPage() {
 
       if (quoteError) {
         console.error('❌ 데이터베이스 쿼리 오류:', quoteError)
-        console.error('오류 코드:', quoteError.code)
-        console.error('오류 메시지:', quoteError.message)
-        console.error('오류 상세:', quoteError.details)
         toast.error(`데이터베이스 오류: ${quoteError.message}`)
         return
       }
 
       if (!quoteData) {
         console.error('❌ 견적서 데이터가 존재하지 않습니다')
-        console.error('조회한 ID:', quoteId)
-        console.error('힌트: 이 ID의 레코드가 contractor_quotes 테이블에 없거나 RLS 정책에 의해 차단되었을 수 있습니다')
-        toast.error('견적서 정보를 찾을 수 없습니다. 관리자에게 문의하세요.')
+        toast.error('견적서 정보를 찾을 수 없습니다.')
         return
       }
 
       if (!quoteData.pdf_url) {
         console.error('❌ PDF URL이 비어있습니다')
-        console.error('견적서 데이터:', quoteData)
         toast.error('견적서 파일이 업로드되지 않았습니다.')
         return
       }
@@ -408,9 +422,7 @@ export default function MyQuotesPage() {
 
       // 2단계: URL 형식 판단 및 처리
       if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
-        // 케이스 1: 전체 URL (http:// 또는 https://)
         console.log('🌐 케이스 1: 전체 URL 감지')
-        console.log('🔗 다운로드 URL:', originalUrl)
         window.open(originalUrl, '_blank')
         toast.success('견적서를 새 탭에서 엽니다...')
         console.log('✅ 성공: 전체 URL로 다운로드')
@@ -420,10 +432,7 @@ export default function MyQuotesPage() {
       // 케이스 2: 상대 경로 - Supabase Storage 사용
       console.log('📁 케이스 2: 상대 경로 감지 - Supabase Storage 사용')
       
-      // 파일 경로 정규화
       let filePath = originalUrl.trim()
-      
-      // 버킷명이 경로에 포함되어 있으면 제거
       const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\', '\\contractor-quotes\\']
       for (const prefix of bucketPrefixes) {
         if (filePath.startsWith(prefix)) {
@@ -432,12 +441,11 @@ export default function MyQuotesPage() {
         }
       }
 
-      // 앞뒤 슬래시 제거
       filePath = filePath.replace(/^\/+|\/+$/g, '')
       console.log('🔧 정규화된 파일 경로:', filePath)
 
-      // 방법 1: Public URL 시도
-      console.log('🔄 방법 1: Public URL 생성 시도...')
+      // Public URL 생성
+      console.log('🔄 Public URL 생성 시도...')
       const { data: publicUrlData } = supabase.storage
         .from('contractor-quotes')
         .getPublicUrl(filePath)
@@ -448,112 +456,46 @@ export default function MyQuotesPage() {
         const publicUrl = publicUrlData.publicUrl
         console.log('✅ Public URL 생성 성공:', publicUrl)
         
-        // URL 유효성 빠른 체크
-        try {
-          console.log('🔍 Public URL 접근성 체크 중...')
-          const checkResponse = await fetch(publicUrl, { method: 'HEAD' })
-          console.log('응답 상태:', checkResponse.status, checkResponse.statusText)
-          
-          if (checkResponse.ok) {
-            console.log('✅ Public URL 접근 가능 확인됨')
-            window.open(publicUrl, '_blank')
-            toast.success('견적서를 새 탭에서 엽니다...')
-            console.log('✅ 성공: Public URL로 다운로드')
-            return
-          } else {
-            console.log(`⚠️ Public URL이 존재하지만 접근 불가 (HTTP ${checkResponse.status})`)
-          }
-        } catch (checkError) {
-          console.log('⚠️ Public URL 체크 실패:', checkError)
-          console.log('Signed URL로 시도합니다...')
-        }
+        window.open(publicUrl, '_blank')
+        toast.success('견적서를 새 탭에서 엽니다...')
+        console.log('✅ 성공: Public URL로 다운로드')
+        return
       }
 
-      // 방법 2: Signed URL 시도
-      console.log('🔄 방법 2: Signed URL 생성 시도...')
+      // Signed URL로 fallback
+      console.log('🔄 Signed URL 생성 시도...')
       const { data: signedData, error: signedError } = await supabase.storage
         .from('contractor-quotes')
-        .createSignedUrl(filePath, 3600) // 1시간 유효
-
-      console.log('Signed URL 결과:', {
-        success: !signedError,
-        signedUrl: signedData?.signedUrl || 'NULL',
-        error: signedError
-      })
+        .createSignedUrl(filePath, 3600)
 
       if (!signedError && signedData?.signedUrl) {
-        console.log('✅ Signed URL 생성 성공:', signedData.signedUrl)
+        console.log('✅ Signed URL 생성 성공')
         window.open(signedData.signedUrl, '_blank')
         toast.success('견적서를 새 탭에서 엽니다...')
-        console.log('✅ 성공: Signed URL로 다운로드')
         return
-      } else if (signedError) {
-        console.error('❌ Signed URL 생성 실패:', signedError)
       }
 
-      // 방법 3: 다양한 경로 변형 시도
-      console.log('🔄 방법 3: 경로 변형으로 재시도...')
-      const pathVariations = [
-        filePath,
-        `contractor-quotes/${filePath}`,
-        filePath.replace(/^\//, ''),
-        filePath.split('/').pop() || filePath // 파일명만
-      ]
-
-      console.log('시도할 경로 변형:', pathVariations)
-
-      for (const variation of pathVariations) {
-        if (variation === filePath) continue // 이미 시도함
-        
-        console.log(`  🔍 변형 시도: "${variation}"`)
-        const { data: varData, error: varError } = await supabase.storage
-          .from('contractor-quotes')
-          .createSignedUrl(variation, 3600)
-
-        if (!varError && varData?.signedUrl) {
-          console.log('  ✅ 변형 성공:', varData.signedUrl)
-          window.open(varData.signedUrl, '_blank')
-          toast.success('견적서를 새 탭에서 엽니다...')
-          console.log('✅ 성공: 경로 변형으로 다운로드')
-          return
-        } else {
-          console.log(`  ❌ 변형 실패:`, varError?.message || 'Unknown error')
-        }
-      }
-
-      // 모든 방법 실패
-      console.error('========================================')
       console.error('❌ 모든 다운로드 방법 실패')
-      console.error('최종 에러 정보:', {
-        quoteId,
-        originalUrl,
-        normalizedPath: filePath,
-        signedError,
-        pathVariations,
-        contractorId: quoteData.contractor_id,
-        projectId: quoteData.project_id
-      })
-      console.error('========================================')
-      console.error('')
-      console.error('🔧 해결 방법:')
-      console.error('1. Supabase Storage에서 contractor-quotes 버킷 확인')
-      console.error('2. 파일이 실제로 업로드되었는지 확인:', filePath)
-      console.error('3. RLS 정책 확인 (Storage에서 읽기 권한)')
-      console.error('4. 파일명이 정확한지 확인')
-      console.error('')
-      
-      toast.error('견적서 파일을 찾을 수 없습니다. 관리자에게 문의하세요.')
+      toast.error('견적서 파일을 찾을 수 없습니다.')
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('========================================')
-      console.error('❌ 치명적 오류 발생')
-      console.error('오류 타입:', error instanceof Error ? error.constructor.name : typeof error)
+      console.error('❌ 오류 발생')
       console.error('오류 내용:', error)
-      if (error instanceof Error) {
-        console.error('스택 트레이스:', error.stack)
-      }
       console.error('========================================')
-      toast.error('견적서 다운로드 중 오류가 발생했습니다.')
+      
+      if (error.message === '쿼리 타임아웃 (15초)') {
+        toast.error('요청 시간이 초과되었습니다. 다시 시도해주세요.')
+      } else {
+        toast.error('견적서 다운로드 중 오류가 발생했습니다.')
+      }
+    } finally {
+      // 다운로드 중 상태 제거
+      setDownloadingQuotes(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(quoteId)
+        return newSet
+      })
     }
   }
 
@@ -772,79 +714,96 @@ export default function MyQuotesPage() {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {quote.contractor_quotes!.map((contractorQuote) => (
-                            <div key={contractorQuote.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                              <div className="mb-3">
-                                <h4 className="font-semibold text-lg text-gray-900">
-                                  {contractorQuote.contractors?.company_name || '업체명 없음'}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  담당자: {contractorQuote.contractors?.contact_name || '담당자 정보 없음'}
-                                </p>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <p className="text-2xl font-bold text-blue-600">
-                                  ${contractorQuote.price?.toLocaleString() || '0'} CAD
-                                </p>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <p className="text-sm text-gray-700">
-                                  {contractorQuote.description || '설명 없음'}
-                                </p>
-                              </div>
-                              
-                              <div className="text-sm text-gray-500 mb-4">
-                                제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
-                              </div>
-                              
-                              <div className="space-y-2">
-                                {contractorQuote.status === 'accepted' ? (
-                                  <div className="space-y-2">
-                                    <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
-                                      ✓ 선택된 업체
+                          {quote.contractor_quotes!.map((contractorQuote) => {
+                            const isDownloading = downloadingQuotes.has(contractorQuote.id)
+                            
+                            return (
+                              <div key={contractorQuote.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <div className="mb-3">
+                                  <h4 className="font-semibold text-lg text-gray-900">
+                                    {contractorQuote.contractors?.company_name || '업체명 없음'}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    담당자: {contractorQuote.contractors?.contact_name || '담당자 정보 없음'}
+                                  </p>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <p className="text-2xl font-bold text-blue-600">
+                                    ${contractorQuote.price?.toLocaleString() || '0'} CAD
+                                  </p>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <p className="text-sm text-gray-700">
+                                    {contractorQuote.description || '설명 없음'}
+                                  </p>
+                                </div>
+                                
+                                <div className="text-sm text-gray-500 mb-4">
+                                  제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  {contractorQuote.status === 'accepted' ? (
+                                    <div className="space-y-2">
+                                      <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
+                                        ✓ 선택된 업체
+                                      </div>
+                                      <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
+                                        📞 {contractorQuote.contractors?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
+                                      </div>
                                     </div>
-                                    <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
-                                      📞 {contractorQuote.contractors?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
+                                  ) : contractorQuote.status === 'rejected' ? (
+                                    <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
+                                      미선택
                                     </div>
-                                  </div>
-                                ) : contractorQuote.status === 'rejected' ? (
-                                  <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
-                                    미선택
-                                  </div>
-                                ) : (
-                                  <button 
-                                    onClick={() => {
+                                  ) : (
+                                    <button 
+                                      onClick={() => {
                                         console.log('Button clicked with:', {
                                           contractorId: contractorQuote.contractor_id,
                                           quoteRequestId: quote.id,
                                           projectId: contractorQuote.project_id
                                         });
-                                      // 직접 업체 선택 처리 함수 호출
-                                      handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id);
-                                    }}
-                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                                  >
-                                    업체 선택하기
-                                  </button>
-                                )}
-                                
-                                {contractorQuote.pdf_url && (
-                                  <button 
-                                    onClick={() => {
-                                      console.log('🔽 Download button clicked for quote:', contractorQuote.id)
-                                      downloadQuote(contractorQuote.id)
-                                    }}
-                                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium flex items-center justify-center"
-                                  >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    견적서 다운로드
-                                  </button>
-                                )}
+                                        handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id);
+                                      }}
+                                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                      업체 선택하기
+                                    </button>
+                                  )}
+                                  
+                                  {contractorQuote.pdf_url && (
+                                    <button 
+                                      onClick={() => {
+                                        console.log('🔽 Download button clicked for quote:', contractorQuote.id)
+                                        downloadQuote(contractorQuote.id)
+                                      }}
+                                      disabled={isDownloading}
+                                      className={`w-full px-4 py-2 border text-sm font-medium flex items-center justify-center rounded ${
+                                        isDownloading
+                                          ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
+                                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      {isDownloading ? (
+                                        <>
+                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                                          다운로드 중...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Download className="w-4 h-4 mr-2" />
+                                          견적서 다운로드
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     ) : (
