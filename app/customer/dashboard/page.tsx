@@ -83,7 +83,7 @@ export default function CustomerDashboard() {
       
       // 입찰 중이거나 종료된 프로젝트의 견적서 로드
       const biddingProjects = (projectsData || []).filter(
-        p => p.status === 'bidding' || p.status === 'bidding-closed' || p.status === 'quote-submitted'
+        p => p.status === 'bidding' || p.status === 'bidding-closed' || p.status === 'contractor-selected' || p.status === 'quote-submitted'
       )
       
       for (const project of biddingProjects) {
@@ -262,6 +262,7 @@ export default function CustomerDashboard() {
       'site-visit-pending': { label: '현장방문 예정', color: 'bg-blue-100 text-blue-800' },
       'bidding': { label: '입찰 진행중', color: 'bg-orange-100 text-orange-800' },
       'bidding-closed': { label: '입찰 종료', color: 'bg-indigo-100 text-indigo-800' },
+      'contractor-selected': { label: '업체선정완료', color: 'bg-purple-100 text-purple-800' },
       'in-progress': { label: '진행중', color: 'bg-blue-100 text-blue-800' },
       'completed': { label: '완료', color: 'bg-gray-500 text-white' },
       'cancelled': { label: '취소', color: 'bg-red-100 text-red-800' }
@@ -352,12 +353,13 @@ export default function CustomerDashboard() {
               const quotes = selectedProjectQuotes[project.id] || []
               const isExpanded = expandedProject === project.id
               const canSelectContractor = (project.status === 'bidding' || project.status === 'bidding-closed') && !project.selected_contractor_id
-              const canStartProject = project.status === 'bidding-closed' && project.selected_contractor_id
+              const canStartProject = (project.status === 'bidding-closed' || project.status === 'contractor-selected') && project.selected_contractor_id
 
               console.log('🔍 프로젝트 렌더링:', {
                 projectId: project.id,
                 status: project.status,
                 canSelectContractor,
+                canStartProject,
                 hasSelectedContractor: !!project.selected_contractor_id,
                 quotesCount: quotes.length
               })
