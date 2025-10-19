@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { getQuoteRequests } from '@/lib/supabase/quotes'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User, Home } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User, Home, Play, Loader } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface QuoteRequest {
@@ -19,11 +19,13 @@ interface QuoteRequest {
   postal_code: string
   description: string
   photos: string[]
-  status: 'pending' | 'approved' | 'rejected' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'completed' | 'cancelled'
+  status: 'pending' | 'approved' | 'rejected' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'contractor-selected' | 'in-progress' | 'completed' | 'cancelled'
   created_at: string
   updated_at: string
   contractor_quotes?: ContractorQuote[]
   site_visit_applications?: SiteVisitApplication[]
+  project_started_at?: string
+  project_completed_at?: string
 }
 
 interface SiteVisitApplication {
@@ -76,6 +78,7 @@ export default function MyQuotesPage() {
   const [quotesTableData, setQuotesTableData] = useState<any[]>([])
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
   const [downloadingQuotes, setDownloadingQuotes] = useState<Set<string>>(new Set())
+  const [startingProject, setStartingProject] = useState<string | null>(null)  // ✅ 추가
   const router = useRouter()
 
   useEffect(() => {
@@ -241,6 +244,10 @@ export default function MyQuotesPage() {
         return { color: 'bg-orange-100 text-orange-800', icon: Clock, text: '입찰중' }
       case 'quote-submitted':
         return { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' }
+      case 'contractor-selected':  // ✅ 추가
+        return { color: 'bg-blue-100 text-blue-800', icon: CheckCircle, text: '업체선정완료' }
+      case 'in-progress':  // ✅ 추가
+        return { color: 'bg-purple-100 text-purple-800', icon: Play, text: '공사진행중' }
       case 'completed':
         return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료' }
       case 'cancelled':
@@ -321,7 +328,7 @@ export default function MyQuotesPage() {
 
       if (!response.ok) {
         console.error('API error:', result)
-        alert(result.error || '업체 선택 중 오류가 발생했습니다.')
+        toast.error(result.error || '업체 선택 중 오류가 발생했습니다.')
         return
       }
 
@@ -334,7 +341,7 @@ export default function MyQuotesPage() {
       const contactName = selectedContractorQuote?.contractors?.contact_name || ''
       const phoneNumber = selectedContractorQuote?.contractors?.phone || '등록된 전화번호'
 
-      alert(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.\n\n프로젝트가 완료되었습니다.`)
+      toast.success(`업체가 성공적으로 선택되었습니다!\\n\\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.`)
       
       // 데이터 새로고침
       if (user?.id) {
@@ -343,11 +350,53 @@ export default function MyQuotesPage() {
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
-      alert('업체 선택 중 오류가 발생했습니다.')
+      toast.error('업체 선택 중 오류가 발생했습니다.')
     }
   }
 
-  // ✅ 최종 수정: 로컬 캐시 데이터 사용 - 데이터베이스 쿼리 없음!
+  // ✅ 프로젝트 시작 처리 함수 추가
+  const handleStartProject = async (projectId: string) => {
+    try {
+      if (!confirm('프로젝트를 시작하시겠습니까?\\n\\n업체와 일정을 조율하신 후 이 버튼을 눌러주세요.')) {
+        return
+      }
+
+      setStartingProject(projectId)
+      console.log('Starting project:', projectId)
+
+      const response = await fetch('/api/start-project', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ projectId })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('API error:', result)
+        toast.error(result.error || '프로젝트 시작 중 오류가 발생했습니다.')
+        return
+      }
+
+      console.log('API response:', result)
+      toast.success('프로젝트가 시작되었습니다! 🚀')
+      
+      // 데이터 새로고침
+      if (user?.id) {
+        await fetchQuotes(user.id)
+      }
+      
+    } catch (error) {
+      console.error('Error starting project:', error)
+      toast.error('프로젝트 시작 중 오류가 발생했습니다.')
+    } finally {
+      setStartingProject(null)
+    }
+  }
+
+  // ✅ 로컬 캐시 데이터 사용 - 데이터베이스 쿼리 없음!
   const downloadQuote = async (quoteId: string) => {
     // 중복 클릭 방지
     if (downloadingQuotes.has(quoteId)) {
@@ -355,7 +404,7 @@ export default function MyQuotesPage() {
       return
     }
 
-    console.log('========================================')
+    console.log('========================================'
     console.log('🔽 PDF 다운로드 시작')
     console.log('견적서 ID:', quoteId)
     console.log('========================================')
@@ -418,15 +467,15 @@ export default function MyQuotesPage() {
       console.log('📁 케이스 2: 상대 경로 감지 - Supabase Storage 사용')
       
       let filePath = originalUrl.trim()
-      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\', '\\contractor-quotes\\']
+      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\\\', '\\\\contractor-quotes\\\\']
       for (const prefix of bucketPrefixes) {
         if (filePath.startsWith(prefix)) {
           filePath = filePath.substring(prefix.length)
-          console.log(`🔧 버킷 접두사 제거: "${prefix}" → "${filePath}"`)
+          console.log(`🔧 버킷 접두사 제거: \"${prefix}\" → \"${filePath}\"`)
         }
       }
 
-      filePath = filePath.replace(/^\/+|\/+$/g, '')
+      filePath = filePath.replace(/^\\/+|\\/+$/g, '')
       console.log('🔧 정규화된 파일 경로:', filePath)
 
       // Public URL 생성
@@ -550,6 +599,11 @@ export default function MyQuotesPage() {
               // ✅ 현장방문 단계인지 확인
               const showSiteVisitInfo = isInSiteVisitPhase(quote.status)
               
+              // ✅ 프로젝트 시작 가능 여부
+              const canStartProject = quote.status === 'contractor-selected'
+              const isProjectInProgress = quote.status === 'in-progress'
+              const isProjectCompleted = quote.status === 'completed'
+              
               return (
                 <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="p-6">
@@ -630,6 +684,86 @@ export default function MyQuotesPage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* ✅ 프로젝트 시작 버튼 섹션 - contractor-selected 상태일 때만 표시 */}
+                    {canStartProject && (
+                      <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-lg p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                              <CheckCircle className="w-6 h-6 mr-2 text-green-600" />
+                              업체 선정이 완료되었습니다
+                            </h3>
+                            <p className="text-sm text-gray-700 mb-3">
+                              선정된 업체가 곧 연락드릴 예정입니다. 업체와 일정을 조율하신 후 아래 버튼을 눌러 프로젝트를 시작해주세요.
+                            </p>
+                            <div className="flex items-center text-sm text-gray-600 mb-2">
+                              <Building className="w-4 h-4 mr-2" />
+                              <span>업체와 연락하여 공사 일정을 확정하세요</span>
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Play className="w-4 h-4 mr-2" />
+                              <span>준비가 완료되면 프로젝트 시작 버튼을 눌러주세요</span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <button
+                              onClick={() => handleStartProject(quote.id)}
+                              disabled={startingProject === quote.id}
+                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {startingProject === quote.id ? (
+                                <>
+                                  <Loader className="w-5 h-5 mr-2 animate-spin" />
+                                  시작 중...
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-5 h-5 mr-2" />
+                                  프로젝트 시작
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ✅ 프로젝트 진행 중 표시 */}
+                    {isProjectInProgress && (
+                      <div className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                          <Play className="w-6 h-6 mr-2 text-purple-600 animate-pulse" />
+                          프로젝트 진행 중
+                        </h3>
+                        <p className="text-sm text-gray-700">
+                          현재 공사가 진행 중입니다. 업체와 지속적으로 소통하며 프로젝트를 진행해주세요.
+                        </p>
+                        {quote.project_started_at && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            시작일: {new Date(quote.project_started_at).toLocaleDateString('ko-KR')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ✅ 프로젝트 완료 표시 */}
+                    {isProjectCompleted && (
+                      <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                          <CheckCircle className="w-6 h-6 mr-2 text-green-600" />
+                          프로젝트 완료
+                        </h3>
+                        <p className="text-sm text-gray-700">
+                          프로젝트가 성공적으로 완료되었습니다. 이용해주셔서 감사합니다!
+                        </p>
+                        {quote.project_completed_at && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            완료일: {new Date(quote.project_completed_at).toLocaleDateString('ko-KR')}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* ✅ 현장방문 단계일 때만 현장방문 신청 섹션 표시 */}
                     {showSiteVisitInfo && siteVisitCount > 0 && (
@@ -740,19 +874,22 @@ export default function MyQuotesPage() {
                                       미선택
                                     </div>
                                   ) : (
-                                    <button 
-                                      onClick={() => {
-                                        console.log('Button clicked with:', {
-                                          contractorId: contractorQuote.contractor_id,
-                                          quoteRequestId: quote.id,
-                                          projectId: contractorQuote.project_id
-                                        });
-                                        handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id);
-                                      }}
-                                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                                    >
-                                      업체 선택하기
-                                    </button>
+                                    // ✅ contractor-selected, in-progress, completed 상태일 때는 선택 버튼 숨기기
+                                    !['contractor-selected', 'in-progress', 'completed'].includes(quote.status) && (
+                                      <button 
+                                        onClick={() => {
+                                          console.log('Button clicked with:', {
+                                            contractorId: contractorQuote.contractor_id,
+                                            quoteRequestId: quote.id,
+                                            projectId: contractorQuote.project_id
+                                          });
+                                          handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id);
+                                        }}
+                                        className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                      >
+                                        업체 선택하기
+                                      </button>
+                                    )
                                   )}
                                   
                                   {contractorQuote.pdf_url && (
