@@ -345,98 +345,166 @@ export default function MyQuotesPage() {
     }
   }
 
-  // ✅ 개선된 견적서 다운로드 함수
+  // ✅ 강화된 견적서 다운로드 함수 - 모든 경우를 처리
   const downloadQuote = async (quoteId: string) => {
+    console.log('========================================')
+    console.log('🔽 PDF 다운로드 시작')
+    console.log('견적서 ID:', quoteId)
+    console.log('========================================')
+    
     try {
-      console.log('🔽 Starting download for quote ID:', quoteId)
-      
       const supabase = createBrowserClient()
       
-      // 먼저 contractor_quotes 테이블에서 PDF 정보 조회
+      // 1단계: contractor_quotes 테이블에서 PDF 정보 조회
+      console.log('📊 1단계: 데이터베이스에서 PDF 정보 조회 중...')
       const { data: quoteData, error: quoteError } = await supabase
         .from('contractor_quotes')
         .select('pdf_url, pdf_filename')
         .eq('id', quoteId)
         .single()
 
-      console.log('Quote data:', quoteData)
-      console.log('Quote error:', quoteError)
+      console.log('✅ 조회 결과:', {
+        success: !quoteError,
+        pdf_url: quoteData?.pdf_url,
+        pdf_filename: quoteData?.pdf_filename,
+        error: quoteError
+      })
 
       if (quoteError || !quoteData) {
-        console.error('Error fetching quote data:', quoteError)
+        console.error('❌ 데이터베이스 조회 실패:', quoteError)
         toast.error('견적서 정보를 찾을 수 없습니다.')
         return
       }
 
-      // PDF URL이 없는 경우
       if (!quoteData.pdf_url) {
-        console.error('No PDF URL found')
+        console.error('❌ PDF URL이 비어있습니다')
         toast.error('견적서 파일이 없습니다.')
         return
       }
 
-      console.log('PDF URL:', quoteData.pdf_url)
-      console.log('PDF Filename:', quoteData.pdf_filename)
+      const originalUrl = quoteData.pdf_url
+      console.log('📄 원본 URL:', originalUrl)
+
+      // 2단계: URL 형식 판단 및 처리
+      if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
+        // 케이스 1: 전체 URL (http:// 또는 https://)
+        console.log('🌐 케이스 1: 전체 URL 감지')
+        console.log('🔗 다운로드 URL:', originalUrl)
+        window.open(originalUrl, '_blank')
+        toast.success('견적서를 새 탭에서 엽니다...')
+        console.log('✅ 성공: 전체 URL로 다운로드')
+        return
+      }
+
+      // 케이스 2: 상대 경로 - Supabase Storage 사용
+      console.log('📁 케이스 2: 상대 경로 감지 - Supabase Storage 사용')
       
-      // PDF 파일 다운로드 처리
-      if (quoteData.pdf_url.startsWith('http://') || quoteData.pdf_url.startsWith('https://')) {
-        // 전체 URL인 경우 직접 다운로드
-        console.log('✅ Using direct download for full URL')
-        window.open(quoteData.pdf_url, '_blank')
-        toast.success('견적서를 다운로드하는 중...')
-      } else {
-        // 상대 경로인 경우 Supabase Storage 사용
-        console.log('✅ Using Supabase Storage for relative path')
-        
-        // pdf_url에서 버킷명 제거 (있을 경우)
-        let filePath = quoteData.pdf_url
-        if (filePath.startsWith('contractor-quotes/')) {
-          filePath = filePath.replace('contractor-quotes/', '')
-        }
-        
-        console.log('File path:', filePath)
-        
-        // Supabase Storage에서 공개 URL 가져오기
-        const { data: urlData } = supabase.storage
-          .from('contractor-quotes')
-          .getPublicUrl(filePath)
-
-        console.log('Public URL data:', urlData)
-
-        if (urlData && urlData.publicUrl) {
-          // 공개 URL로 다운로드
-          console.log('✅ Opening public URL:', urlData.publicUrl)
-          window.open(urlData.publicUrl, '_blank')
-          toast.success('견적서를 다운로드하는 중...')
-        } else {
-          // 공개 URL을 가져올 수 없으면 signed URL 시도
-          console.log('⚠️ Public URL not available, trying signed URL')
-          
-          const { data: signedData, error: signedError } = await supabase.storage
-            .from('contractor-quotes')
-            .createSignedUrl(filePath, 3600) // 1시간 유효
-
-          console.log('Signed URL data:', signedData)
-          console.log('Signed URL error:', signedError)
-
-          if (signedError) {
-            console.error('Error creating signed URL:', signedError)
-            toast.error('견적서 다운로드에 실패했습니다.')
-            return
-          }
-
-          if (signedData && signedData.signedUrl) {
-            console.log('✅ Opening signed URL:', signedData.signedUrl)
-            window.open(signedData.signedUrl, '_blank')
-            toast.success('견적서를 다운로드하는 중...')
-          } else {
-            console.error('No signed URL generated')
-            toast.error('견적서 다운로드 URL을 생성할 수 없습니다.')
-          }
+      // 파일 경로 정규화
+      let filePath = originalUrl.trim()
+      
+      // 버킷명이 경로에 포함되어 있으면 제거
+      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\', '\\contractor-quotes\\']
+      for (const prefix of bucketPrefixes) {
+        if (filePath.startsWith(prefix)) {
+          filePath = filePath.substring(prefix.length)
+          console.log(`🔧 버킷 접두사 제거: "${prefix}" → "${filePath}"`)
         }
       }
+
+      // 앞뒤 슬래시 제거
+      filePath = filePath.replace(/^\/+|\/+$/g, '')
+      console.log('🔧 정규화된 파일 경로:', filePath)
+
+      // 방법 1: Public URL 시도
+      console.log('🔄 방법 1: Public URL 생성 시도...')
+      const { data: publicUrlData } = supabase.storage
+        .from('contractor-quotes')
+        .getPublicUrl(filePath)
+
+      console.log('Public URL 결과:', publicUrlData)
+
+      if (publicUrlData?.publicUrl) {
+        const publicUrl = publicUrlData.publicUrl
+        console.log('✅ Public URL 생성 성공:', publicUrl)
+        
+        // URL 유효성 빠른 체크
+        try {
+          const checkResponse = await fetch(publicUrl, { method: 'HEAD' })
+          if (checkResponse.ok) {
+            console.log('✅ Public URL 접근 가능 확인됨')
+            window.open(publicUrl, '_blank')
+            toast.success('견적서를 새 탭에서 엽니다...')
+            console.log('✅ 성공: Public URL로 다운로드')
+            return
+          } else {
+            console.log('⚠️ Public URL이 존재하지만 접근 불가 (HTTP ' + checkResponse.status + ')')
+          }
+        } catch (checkError) {
+          console.log('⚠️ Public URL 체크 실패, Signed URL 시도:', checkError)
+        }
+      }
+
+      // 방법 2: Signed URL 시도
+      console.log('🔄 방법 2: Signed URL 생성 시도...')
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('contractor-quotes')
+        .createSignedUrl(filePath, 3600) // 1시간 유효
+
+      console.log('Signed URL 결과:', {
+        success: !signedError,
+        signedUrl: signedData?.signedUrl,
+        error: signedError
+      })
+
+      if (!signedError && signedData?.signedUrl) {
+        console.log('✅ Signed URL 생성 성공:', signedData.signedUrl)
+        window.open(signedData.signedUrl, '_blank')
+        toast.success('견적서를 새 탭에서 엽니다...')
+        console.log('✅ 성공: Signed URL로 다운로드')
+        return
+      }
+
+      // 방법 3: 다양한 경로 변형 시도
+      console.log('🔄 방법 3: 경로 변형으로 재시도...')
+      const pathVariations = [
+        filePath,
+        `contractor-quotes/${filePath}`,
+        filePath.replace(/^\//, ''),
+        filePath.split('/').pop() || filePath // 파일명만
+      ]
+
+      for (const variation of pathVariations) {
+        if (variation === filePath) continue // 이미 시도함
+        
+        console.log(`  🔍 변형 시도: "${variation}"`)
+        const { data: varData, error: varError } = await supabase.storage
+          .from('contractor-quotes')
+          .createSignedUrl(variation, 3600)
+
+        if (!varError && varData?.signedUrl) {
+          console.log('  ✅ 변형 성공:', varData.signedUrl)
+          window.open(varData.signedUrl, '_blank')
+          toast.success('견적서를 새 탭에서 엽니다...')
+          console.log('✅ 성공: 경로 변형으로 다운로드')
+          return
+        }
+      }
+
+      // 모든 방법 실패
+      console.error('❌ 모든 다운로드 방법 실패')
+      console.error('최종 에러 정보:', {
+        originalUrl,
+        normalizedPath: filePath,
+        signedError,
+        pathVariations
+      })
+      toast.error('견적서 파일을 찾을 수 없습니다. 관리자에게 문의하세요.')
+
     } catch (error) {
-      console.error('❌ Download error:', error)
+      console.error('========================================')
+      console.error('❌ 치명적 오류 발생')
+      console.error('오류 내용:', error)
+      console.error('========================================')
       toast.error('견적서 다운로드 중 오류가 발생했습니다.')
     }
   }
