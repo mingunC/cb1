@@ -78,7 +78,7 @@ export default function MyQuotesPage() {
   const [quotesTableData, setQuotesTableData] = useState<any[]>([])
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
   const [downloadingQuotes, setDownloadingQuotes] = useState<Set<string>>(new Set())
-  const [startingProject, setStartingProject] = useState<string | null>(null)  // ✅ 추가
+  const [startingProject, setStartingProject] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -244,9 +244,9 @@ export default function MyQuotesPage() {
         return { color: 'bg-orange-100 text-orange-800', icon: Clock, text: '입찰중' }
       case 'quote-submitted':
         return { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' }
-      case 'contractor-selected':  // ✅ 추가
+      case 'contractor-selected':
         return { color: 'bg-blue-100 text-blue-800', icon: CheckCircle, text: '업체선정완료' }
-      case 'in-progress':  // ✅ 추가
+      case 'in-progress':
         return { color: 'bg-purple-100 text-purple-800', icon: Play, text: '공사진행중' }
       case 'completed':
         return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료' }
@@ -341,7 +341,7 @@ export default function MyQuotesPage() {
       const contactName = selectedContractorQuote?.contractors?.contact_name || ''
       const phoneNumber = selectedContractorQuote?.contractors?.phone || '등록된 전화번호'
 
-      toast.success(`업체가 성공적으로 선택되었습니다!\\n\\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.`)
+      toast.success(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.`)
       
       // 데이터 새로고침
       if (user?.id) {
@@ -357,7 +357,7 @@ export default function MyQuotesPage() {
   // ✅ 프로젝트 시작 처리 함수 추가
   const handleStartProject = async (projectId: string) => {
     try {
-      if (!confirm('프로젝트를 시작하시겠습니까?\\n\\n업체와 일정을 조율하신 후 이 버튼을 눌러주세요.')) {
+      if (!confirm('프로젝트를 시작하시겠습니까?\n\n업체와 일정을 조율하신 후 이 버튼을 눌러주세요.')) {
         return
       }
 
@@ -467,15 +467,15 @@ export default function MyQuotesPage() {
       console.log('📁 케이스 2: 상대 경로 감지 - Supabase Storage 사용')
       
       let filePath = originalUrl.trim()
-      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\\\', '\\\\contractor-quotes\\\\']
+      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\', '\\contractor-quotes\\']
       for (const prefix of bucketPrefixes) {
         if (filePath.startsWith(prefix)) {
           filePath = filePath.substring(prefix.length)
-          console.log(`🔧 버킷 접두사 제거: \\"${prefix}\\" → \\"${filePath}\\"`)
+          console.log(`🔧 버킷 접두사 제거: "${prefix}" → "${filePath}"`)
         }
       }
 
-      filePath = filePath.replace(/^\\/+|\\/+$/g, '')
+      filePath = filePath.replace(/^\/+|\/+$/g, '')
       console.log('🔧 정규화된 파일 경로:', filePath)
 
       // Public URL 생성
