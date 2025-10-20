@@ -739,7 +739,7 @@ export default function MyQuotesPage() {
                           고객과 업체와 함께 같이 지속적으로 소통하며 프로젝트 진행을 돕도록 하겠습니다.
                         </p>
                         <p className="text-sm text-gray-700 mt-2">
-                          캐나다비버를 이용해주셔서 감사합니다.
+                          캐나다비버를 이용해주셔서 감사합니다. 프로젝트가 끝나면 후기를 꼭 부탁드릴게요.
                         </p>
                         {quote.project_started_at && (
                           <p className="text-xs text-gray-500 mt-2">
