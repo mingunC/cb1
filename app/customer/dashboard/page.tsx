@@ -222,7 +222,7 @@ export default function CustomerDashboard() {
   }
 
   const handleStartProject = async (projectId: string) => {
-    if (!confirm('프로젝트를 시작하시겠습니까? 고객님과 업체에게 프로젝트 시작을 축하하는 메시지가 전송됩니다.')) return
+    if (!confirm('공사 날짜가 확정되셨나요? 확정되셨으면 이 버튼을 눌러주세요.')) return
     
     try {
       console.log('🚀 프로젝트 시작 API 호출...')
