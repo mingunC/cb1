@@ -733,10 +733,13 @@ export default function MyQuotesPage() {
                       <div className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                           <Play className="w-6 h-6 mr-2 text-purple-600 animate-pulse" />
-                          프로젝트 진행 중
+                          프로젝트가 시작되었습니다.
                         </h3>
                         <p className="text-sm text-gray-700">
-                          현재 공사가 진행 중입니다. 업체와 지속적으로 소통하며 프로젝트를 진행해주세요.
+                          고객과 업체와 함께 같이 지속적으로 소통하며 프로젝트 진행을 돕도록 하겠습니다.
+                        </p>
+                        <p className="text-sm text-gray-700 mt-2">
+                          캐나다비버를 이용해주셔서 감사합니다.
                         </p>
                         {quote.project_started_at && (
                           <p className="text-xs text-gray-500 mt-2">
