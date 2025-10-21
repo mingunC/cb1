@@ -396,6 +396,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'pending': { label: '대기중', color: 'bg-gray-100 text-gray-700' },
         'approved': { label: '✅ 승인됨 - 현장방문 신청 가능', color: 'bg-green-100 text-green-700' },
         'site-visit-applied': { label: '현장방문 신청됨', color: 'bg-blue-100 text-blue-700' },
+        'site-visit-pending': { label: '현장방문 대기중', color: 'bg-yellow-100 text-yellow-700' },
         'site-visit-completed': { label: '현장방문 완료', color: 'bg-indigo-100 text-indigo-700' },
         'bidding': { 
           label: project.contractor_quote ? '🔥 입찰 중 (견적서 제출완료)' : '🔥 입찰 중', 
@@ -418,12 +419,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
       
       const config = statusConfig[project.projectStatus || 'approved']
-      const Icon = config.icon
+      const Icon = config?.icon
       
       return (
-        <span className={`px-3 py-1 rounded-full text-xs inline-flex items-center gap-1 ${config.color}`}>
+        <span className={`px-3 py-1 rounded-full text-xs inline-flex items-center gap-1 ${config?.color || 'bg-gray-100 text-gray-700'}`}>
           {Icon && <Icon className="w-3 h-3" />}
-          {config.label}
+          {config?.label || '알 수 없음'}
         </span>
       )
     }
