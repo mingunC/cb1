@@ -290,16 +290,79 @@ export default function CustomerDashboard() {
     'basement': '지하실',
     'flooring': '바닥재',
     'painting': '페인팅',
-    'full_renovation': '전체 리노베이션'
+    'full_renovation': '전체 리노베이션',
+    'office': '사무실',
+    'retail': '상가/매장',
+    'restaurant': '카페/식당',
+    'education': '학원/교육',
+    'hospitality': '숙박/병원',
+    'other': '기타'
   }
 
-  const budgetLabels: Record<string, string> = {
-    'under_50k': '$50,000 미만',
-    '50k_100k': '$50,000 - $100,000',
-    'over_100k': '$100,000 이상',
-    '100k_200k': '$100,000 - $200,000',
-    '200k_500k': '$200,000 - $500,000',
-    'over_500k': '$500,000 이상'
+  // 예산 범위 포맷팅 함수 - 개선된 버전
+  const formatBudget = (budget: string): string => {
+    // 먼저 정의된 라벨 확인
+    const budgetLabels: Record<string, string> = {
+      'under_50k': '$50,000 미만',
+      '50k_100k': '$50,000 - $100,000',
+      'over_100k': '$100,000 이상',
+      '100k_200k': '$100,000 - $200,000',
+      '200k_500k': '$200,000 - $500,000',
+      'over_500k': '$500,000 이상'
+    }
+    
+    // 정확히 일치하는 경우
+    if (budgetLabels[budget]) {
+      return budgetLabels[budget]
+    }
+    
+    // 공백이나 대소문자 문제로 일치하지 않는 경우를 위한 정규화
+    const normalizedBudget = budget.trim().toLowerCase().replace(/\s+/g, '_')
+    if (budgetLabels[normalizedBudget]) {
+      return budgetLabels[normalizedBudget]
+    }
+    
+    // 패턴 매칭으로 변환 시도
+    if (normalizedBudget.includes('under') || normalizedBudget.includes('50k')) {
+      if (normalizedBudget.includes('under') || normalizedBudget.match(/^50k?$/)) {
+        return '$50,000 미만'
+      }
+    }
+    
+    if (normalizedBudget.includes('50') && normalizedBudget.includes('100')) {
+      return '$50,000 - $100,000'
+    }
+    
+    if (normalizedBudget.includes('100') && normalizedBudget.includes('200')) {
+      return '$100,000 - $200,000'
+    }
+    
+    if (normalizedBudget.includes('200') && normalizedBudget.includes('500')) {
+      return '$200,000 - $500,000'
+    }
+    
+    if (normalizedBudget.includes('over') || normalizedBudget.includes('above')) {
+      if (normalizedBudget.includes('500')) {
+        return '$500,000 이상'
+      }
+      if (normalizedBudget.includes('100')) {
+        return '$100,000 이상'
+      }
+    }
+    
+    // 숫자만 있는 경우 (예: "50000", "100000")
+    const numMatch = budget.match(/\d+/)
+    if (numMatch) {
+      const num = parseInt(numMatch[0])
+      if (num < 50000) return '$50,000 미만'
+      if (num >= 50000 && num <= 100000) return '$50,000 - $100,000'
+      if (num > 100000 && num <= 200000) return '$100,000 - $200,000'
+      if (num > 200000 && num <= 500000) return '$200,000 - $500,000'
+      if (num > 500000) return '$500,000 이상'
+    }
+    
+    // 변환할 수 없는 경우 원본 반환
+    return budget
   }
 
   if (isLoading) {
@@ -393,7 +456,7 @@ export default function CustomerDashboard() {
                           프로젝트: {project.project_types?.map(type => projectTypeLabels[type] || type).join(', ')}
                         </p>
                         <p className="text-gray-700">
-                          예산: {budgetLabels[project.budget] || project.budget}
+                          예산: {formatBudget(project.budget)}
                         </p>
                         <p className="text-gray-700">
                           원하는 완료일: {project.timeline}
