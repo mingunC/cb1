@@ -41,6 +41,14 @@ export interface Project {
     phone: string | null
   }
 
+  // 선택된 업체 정보 추가
+  selected_contractor?: {
+    id: string
+    company_name: string
+    contact_name: string | null
+    email: string
+  }
+
   // 관계 데이터
   site_visit_application?: {
     id: string
