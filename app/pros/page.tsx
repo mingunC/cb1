@@ -425,6 +425,19 @@ export default function ContractorsListingPage() {
                     <Mail className="h-4 w-4 text-gray-400" />
                     <span className="text-sm">{selectedContractor.email}</span>
                   </div>
+                  {selectedContractor.website && (
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-gray-400" />
+                      <a 
+                        href={selectedContractor.website.startsWith('http') ? selectedContractor.website : `https://${selectedContractor.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {selectedContractor.website}
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3">
