@@ -66,279 +66,153 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         companyName: contractorData.company_name
       })
       
-      // ✅ 1. 업체가 참여한 프로젝트 ID 목록 가져오기
-      console.log('📝 Step 1: Fetching participating project IDs...')
-      const [siteVisitsResponse, quotesResponse, selectedProjectsResponse] = await Promise.all([
+      // ✅ 모든 견적요청서를 가져오기 (업체가 참여하지 않은 것도 포함)
+      console.log('📝 Step 1: Fetching all quote requests...')
+      const { data: allProjectsData, error: projectsError } = await supabase
+        .from('quote_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+      
+      if (projectsError) {
+        console.error('Error fetching projects:', projectsError)
+        throw projectsError
+      }
+      
+      console.log('📊 Total projects loaded:', allProjectsData?.length || 0)
+      
+      // ✅ 2. 업체가 참여한 프로젝트 정보 가져오기
+      console.log('📝 Step 2: Fetching contractor participation data...')
+      const [siteVisitsResponse, quotesResponse] = await Promise.all([
         // 현장방문 신청한 프로젝트
         supabase
           .from('site_visit_applications')
-          .select('project_id')
+          .select('project_id, status, applied_at')
           .eq('contractor_id', contractorData.id),
         // 견적서 제출한 프로젝트
         supabase
           .from('contractor_quotes')
-          .select('project_id')
-          .eq('contractor_id', contractorData.id),
-        // ⭐ 선택된 프로젝트 추가!
-        supabase
-          .from('quote_requests')
-          .select('id, status, selected_contractor_id, customer_id')
-          .eq('selected_contractor_id', contractorData.id)
+          .select('project_id, price, status, created_at')
+          .eq('contractor_id', contractorData.id)
       ])
       
-      console.log('🔍 Selected projects response:', selectedProjectsResponse.data)
-      
-      // 프로젝트 ID 중복 제거
-      const participatingProjectIds = new Set<string>()
-      
+      // 참여 정보를 Map으로 정리
+      const siteVisitMap = new Map()
       siteVisitsResponse.data?.forEach(item => {
-        if (item.project_id) participatingProjectIds.add(item.project_id)
+        siteVisitMap.set(item.project_id, item)
       })
       
+      const quotesMap = new Map()
       quotesResponse.data?.forEach(item => {
-        if (item.project_id) participatingProjectIds.add(item.project_id)
+        quotesMap.set(item.project_id, item)
       })
       
-      // ⭐ 선택된 프로젝트 ID도 추가
-      selectedProjectsResponse.data?.forEach(item => {
-        if (item.id) {
-          participatingProjectIds.add(item.id)
-          console.log('✅ Adding selected project:', {
-            id: item.id,
-            status: item.status,
-            selected_contractor_id: item.selected_contractor_id,
-            customer_id: item.customer_id
-          })
-        }
-      })
+      console.log('📊 Site visits:', siteVisitMap.size)
+      console.log('📊 Quotes submitted:', quotesMap.size)
       
-      console.log('📊 Participating project IDs:', Array.from(participatingProjectIds))
-      console.log('🎉 Total participating projects:', participatingProjectIds.size)
+      // ✅ 3. 고객 정보 일괄 조회
+      console.log('📝 Step 3: Fetching customer information...')
+      const customerIds = [...new Set(allProjectsData?.map(p => p.customer_id).filter(Boolean) || [])]
+      console.log('👥 Customer IDs:', customerIds.length)
       
-      if (participatingProjectIds.size === 0) {
-        console.log('⚠️ No participating projects found')
-        setProjects([])
-        setIsLoading(false)
-        return
-      }
-      
-      // ✅ 2. 프로젝트 조회
-      console.log('📝 Step 2: Fetching project details...')
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('quote_requests')
-        .select('*')
-        .in('id', Array.from(participatingProjectIds))
-        .order('created_at', { ascending: false })
-      
-      if (projectsError) {
-        console.error('❌ Projects fetch error:', projectsError)
-        throw projectsError
-      }
-      
-      console.log('✅ Fetched projects:', projectsData?.length)
-      console.log('📋 Project data:', projectsData?.map(p => ({ 
-        id: p.id.slice(0, 8), 
-        status: p.status, 
-        selected: p.selected_contractor_id?.slice(0, 8) || 'none',
-        customer_id: p.customer_id?.slice(0, 8) || 'none'
-      })))
-      
-      if (!projectsData || projectsData.length === 0) {
-        console.log('⚠️ No project data returned from query')
-        setProjects([])
-        setIsLoading(false)
-        return
-      }
-      
-      // 고객 정보 일괄 조회
-      console.log('📝 Step 3: Fetching customer data...')
-      const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
       let customersMap: Record<string, any> = {}
-      
-      console.log('👥 Customer IDs to fetch:', customerIds)
-      
       if (customerIds.length > 0) {
-        try {
-          const { data: customersData, error: customersError } = await supabase
-            .from('users')
-            .select('id, first_name, last_name, email, phone')
-            .in('id', customerIds)
-          
-          if (customersError) {
-            console.error('⚠️ Error fetching customers:', customersError)
-          } else {
-            console.log('✅ Fetched customers:', customersData?.length)
-            if (customersData) {
-              customersMap = customersData.reduce((acc, customer) => {
-                acc[customer.id] = customer
-                return acc
-              }, {})
-              console.log('📊 Customers map created:', Object.keys(customersMap).length)
-            }
-          }
-        } catch (err) {
-          console.error('⚠️ Exception fetching customers:', err)
+        const { data: customersData } = await supabase
+          .from('users')
+          .select('id, first_name, last_name, email, phone')
+          .in('id', customerIds)
+        
+        if (customersData) {
+          customersMap = customersData.reduce((acc, customer) => {
+            acc[customer.id] = customer
+            return acc
+          }, {})
         }
       }
       
-      // 선택된 업체 IDs 수집
+      console.log('✅ Fetched customers:', Object.keys(customersMap).length)
+      
+      // ✅ 4. 선택된 업체 이름들 로드
       console.log('📝 Step 4: Fetching selected contractor names...')
       const selectedContractorIds = new Set<string>()
-      projectsData?.forEach(project => {
+      allProjectsData?.forEach(project => {
         if (project.selected_contractor_id) {
           selectedContractorIds.add(project.selected_contractor_id)
         }
       })
       
-      // 선택된 업체 이름들 로드
       const contractorNames = await loadSelectedContractorNames(Array.from(selectedContractorIds))
-      setSelectedContractorNames(contractorNames)
       console.log('✅ Loaded contractor names:', Object.keys(contractorNames).length)
       
-      // 각 프로젝트에 대해 관련 데이터 조회
+      // ✅ 5. 프로젝트 상태 계산 및 처리
       console.log('📝 Step 5: Processing individual projects...')
-      const processedProjects: Project[] = []
-      
-      for (let i = 0; i < projectsData.length; i++) {
-        const project = projectsData[i]
-        console.log(`🔄 Processing project ${i + 1}/${projectsData.length}: ${project.id.slice(0, 8)}`)
+      const processedProjects = allProjectsData?.map((project, index) => {
+        console.log(`🔄 Processing project ${index + 1}/${allProjectsData.length}: ${project.id.slice(0, 8)}`)
         
-        try {
-          const customerInfo = customersMap[project.customer_id] || null
-          
-          // 현장방문 신청 조회
-          const { data: siteVisits, error: siteVisitsError } = await supabase
-            .from('site_visit_applications')
-            .select('*')
-            .eq('project_id', project.id)
-            .eq('contractor_id', contractorData.id)
-          
-          if (siteVisitsError) {
-            console.warn(`⚠️ Error fetching site visits for project ${project.id.slice(0, 8)}:`, siteVisitsError)
-          }
-          
-          // 내 견적서 조회
-          const { data: quotes, error: quotesError } = await supabase
-            .from('contractor_quotes')
-            .select('*')
-            .eq('project_id', project.id)
-            .eq('contractor_id', contractorData.id)
-          
-          if (quotesError) {
-            console.warn(`⚠️ Error fetching quotes for project ${project.id.slice(0, 8)}:`, quotesError)
-          }
-          
-          const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
-          const myQuote = quotes?.[0]
-          const selectedContractorId = project.selected_contractor_id
-          
-          // ⭐ 프로젝트 상태 결정
-          let projectStatus: ProjectStatus | 'bidding' = 'approved'
-          
-          const isMyQuoteSelected = selectedContractorId === contractorData.id
-          const hasSelectedContractor = !!selectedContractorId
-          
-          console.log(`🔍 Project ${project.id.slice(0, 8)} status calculation:`, {
-            dbStatus: project.status,
-            isSelected: isMyQuoteSelected,
-            hasOtherSelected: hasSelectedContractor && !isMyQuoteSelected,
-            hasSiteVisit: !!mySiteVisit,
-            hasQuote: !!myQuote
-          })
-          
-          // 1️⃣ 취소 상태 최우선
-          if (project.status === 'cancelled') {
-            projectStatus = 'cancelled'
-          }
-          // 2️⃣ contractor-selected 상태 - 업체 선택되었지만 프로젝트 시작 전
-          else if (project.status === 'contractor-selected') {
-            if (isMyQuoteSelected) {
-              projectStatus = 'selected'
-            } else if (hasSelectedContractor) {
-              projectStatus = 'not-selected'
-            } else {
-              projectStatus = 'quoted'
-            }
-          }
-          // 3️⃣ 완료 상태 (프로젝트 시작 버튼 누름)
-          else if (project.status === 'completed' || project.status === 'in-progress') {
-            if (isMyQuoteSelected) {
-              projectStatus = 'selected'
-            } else if (hasSelectedContractor) {
-              projectStatus = 'not-selected'
-            } else {
-              projectStatus = 'completed'
-            }
-          }
-          // 4️⃣ 입찰 종료 상태 (bidding-closed)
-          else if (project.status === 'bidding-closed') {
-            if (isMyQuoteSelected) {
-              projectStatus = 'selected'
-            } else if (hasSelectedContractor) {
-              projectStatus = 'not-selected'
-            } else if (myQuote) {
-              projectStatus = 'quoted'
-            } else {
-              projectStatus = 'completed' // 입찰 종료되었지만 선정 안됨
-            }
-          }
-          // 5️⃣ 입찰 중 상태
-          else if (project.status === 'bidding' || project.status === 'quote-submitted') {
-            projectStatus = 'bidding'
-          }
-          // 6️⃣ 견적서 제출 완료 상태
-          else if (myQuote && project.status !== 'bidding') {
-            projectStatus = 'quoted'
-          }
-          // 7️⃣ 현장방문 관련 상태
-          else if (mySiteVisit && mySiteVisit.status === 'completed') {
-            projectStatus = 'site-visit-completed'
-          } else if (mySiteVisit) {
-            projectStatus = 'site-visit-applied'
-          }
-          // 8️⃣ 기본 승인 상태 (현장방문 신청 가능)
-          else if (project.status === 'approved' || project.status === 'site_visit' || project.status === 'site-visit-pending') {
-            projectStatus = 'approved'
-          }
-          
-          const processedProject = {
-            ...project,
-            customer: customerInfo,
-            selected_contractor_id: selectedContractorId,
-            site_visit_application: mySiteVisit,
-            contractor_quote: myQuote,
-            projectStatus
-          }
-          
-          processedProjects.push(processedProject)
-          console.log(`✅ Successfully processed project ${project.id.slice(0, 8)} with status: ${projectStatus}`)
-          
-        } catch (err) {
-          console.error(`❌ Error processing project ${project.id.slice(0, 8)}:`, err)
-          // Continue with next project even if this one fails
+        const customer = customersMap[project.customer_id]
+        const siteVisit = siteVisitMap.get(project.id)
+        const quote = quotesMap.get(project.id)
+        
+        // 프로젝트 상태 계산
+        const isSelected = project.selected_contractor_id === contractorData.id
+        const hasOtherSelected = project.selected_contractor_id && project.selected_contractor_id !== contractorData.id
+        const hasSiteVisit = !!siteVisit
+        const hasQuote = !!quote
+        
+        console.log(`🔍 Project ${project.id.slice(0, 8)} status calculation:`, {
+          dbStatus: project.status,
+          isSelected,
+          hasOtherSelected,
+          hasSiteVisit,
+          hasQuote
+        })
+        
+        let projectStatus: ProjectStatus
+        
+        if (isSelected) {
+          projectStatus = 'selected'
+        } else if (hasOtherSelected) {
+          projectStatus = 'not-selected'
+        } else if (hasQuote) {
+          projectStatus = 'quote-submitted'
+        } else if (hasSiteVisit) {
+          projectStatus = 'site-visit-completed'
+        } else if (project.status === 'approved') {
+          projectStatus = 'approved'
+        } else {
+          projectStatus = project.status as ProjectStatus
         }
-      }
+        
+        console.log(`✅ Successfully processed project ${project.id.slice(0, 8)} with status: ${projectStatus}`)
+        
+        return {
+          ...project,
+          projectStatus,
+          customer,
+          siteVisit,
+          quote,
+          contractorNames
+        }
+      }) || []
       
       console.log('✅ Final processed projects:', processedProjects.length)
-      console.log('📊 Project statuses breakdown:', processedProjects.map(p => ({
-        id: p.id.slice(0, 8),
-        status: p.projectStatus,
-        dbStatus: p.status
+      console.log('📊 Project statuses breakdown:', processedProjects.map(p => ({ 
+        id: p.id.slice(0, 8), 
+        status: p.projectStatus 
       })))
       
       setProjects(processedProjects)
+      setSelectedContractorNames(contractorNames)
       console.log('🎉 Projects state updated successfully!')
       
-    } catch (err: any) {
-      console.error('❌ Failed to load projects:', err)
-      console.error('❌ Error stack:', err.stack)
-      setError('프로젝트를 불러오는데 실패했습니다')
-      toast.error('프로젝트를 불러오는데 실패했습니다')
+    } catch (error) {
+      console.error('❌ Error loading projects:', error)
+      setError('프로젝트를 불러오는 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
       console.log('🏁 loadProjects finished')
     }
-  }, [contractorData])
+  }, [contractorData, loadSelectedContractorNames])
   
   // 초기 데이터 로드
   useEffect(() => {
