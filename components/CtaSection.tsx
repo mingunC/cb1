@@ -1,7 +1,46 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@/lib/supabase/clients'
 
 export default function CtaSection() {
+  const [isContractor, setIsContractor] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const supabase = createBrowserClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          const { data: contractorData } = await supabase
+            .from('contractors')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+          
+          setIsContractor(!!contractorData)
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkUserRole()
+  }, [])
+
+  const handleQuoteRequest = (e: React.MouseEvent) => {
+    if (isContractor) {
+      e.preventDefault()
+      alert('업체는 견적 요청을 할 수 없습니다.')
+    }
+  }
+
   const benefits = [
     '무료 견적 요청',
     '검증된 전문 업체',
@@ -36,7 +75,12 @@ export default function CtaSection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/quote-request"
-              className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center group"
+              onClick={handleQuoteRequest}
+              className={`px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center group ${
+                isContractor 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-white hover:bg-gray-100 text-blue-600'
+              }`}
             >
               무료 견적 요청하기
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

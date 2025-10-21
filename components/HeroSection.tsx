@@ -1,7 +1,46 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, Star, Users, Award } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@/lib/supabase/clients'
 
 export default function HeroSection() {
+  const [isContractor, setIsContractor] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const supabase = createBrowserClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          const { data: contractorData } = await supabase
+            .from('contractors')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+          
+          setIsContractor(!!contractorData)
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkUserRole()
+  }, [])
+
+  const handleQuoteRequest = (e: React.MouseEvent) => {
+    if (isContractor) {
+      e.preventDefault()
+      alert('업체는 견적 요청을 할 수 없습니다.')
+    }
+  }
+
   return (
     <section className="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden">
       {/* 배경 패턴 */}
@@ -29,7 +68,12 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/quote-request"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center group"
+                onClick={handleQuoteRequest}
+                className={`px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center group ${
+                  isContractor 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
                 무료 견적 요청하기
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
