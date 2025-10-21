@@ -39,7 +39,7 @@ export const STATUS_CONFIGS = {
   'bidding': { color: 'bg-orange-100 text-orange-800', label: '입찰 중' },
   'quoted': { color: 'bg-yellow-100 text-yellow-800', label: '견적서 제출' },
   'selected': { color: 'bg-green-100 text-green-800', label: '선택됨' },
-  'not-selected': { color: 'bg-red-100 text-red-800', label: '미선택' },
+  'not-selected': { color: 'bg-orange-100 text-orange-800', label: '미선정' },
   'completed': { color: 'bg-gray-100 text-gray-800', label: '완료' },
   'cancelled': { color: 'bg-red-100 text-red-800', label: '취소' }
 } as const
