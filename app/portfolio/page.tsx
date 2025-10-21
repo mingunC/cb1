@@ -64,29 +64,30 @@ function PortfolioContent() {
       
       if (error) {
         console.error('❌ 에러:', error)
-        return
-      }
-      
-      console.log('✅ 로드된 포트폴리오:', data?.length, '개')
-      
-      const transformed: Portfolio[] = (data || []).map(p => ({
-        id: p.id,
-        contractor_id: p.contractor_id,
-        title: p.title || '제목 없음',
-        description: p.description || '',
-        images: Array.isArray(p.images) ? p.images : typeof p.images === 'string' ? [p.images] : [],
-        category: p.category,
-        year: p.year,
-        project_address: p.project_address,
-        created_at: p.created_at,
-        contractor: p.contractor ? {
-          id: p.contractor.id,
-          company_name: p.contractor.company_name || '업체명 없음',
-          logo_url: p.contractor.company_logo
-        } : undefined
-      }))
+        // ✅ return 제거 - finally가 실행되도록
+        setPortfolios([])
+      } else {
+        console.log('✅ 로드된 포트폴리오:', data?.length, '개')
+        
+        const transformed: Portfolio[] = (data || []).map(p => ({
+          id: p.id,
+          contractor_id: p.contractor_id,
+          title: p.title || '제목 없음',
+          description: p.description || '',
+          images: Array.isArray(p.images) ? p.images : typeof p.images === 'string' ? [p.images] : [],
+          category: p.category,
+          year: p.year,
+          project_address: p.project_address,
+          created_at: p.created_at,
+          contractor: p.contractor ? {
+            id: p.contractor.id,
+            company_name: p.contractor.company_name || '업체명 없음',
+            logo_url: p.contractor.company_logo
+          } : undefined
+        }))
 
-      setPortfolios(transformed)
+        setPortfolios(transformed)
+      }
     } catch (error) {
       console.error('❌ 치명적 에러:', error)
     } finally {
