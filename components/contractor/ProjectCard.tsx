@@ -51,6 +51,10 @@ const ProjectCard = React.memo(({
 
   const customerName = getCustomerName()
 
+  // 미선정 상태일 때 선택된 업체명 표시 여부 확인
+  const isNotSelected = project.projectStatus === 'not-selected'
+  const selectedContractorName = project.selected_contractor?.company_name
+
   // 디버깅 로그
   debugLog('🔴 현장방문 버튼 조건:', {
     projectId: project.id,
@@ -152,6 +156,15 @@ const ProjectCard = React.memo(({
             {project.contractor_quote.status === 'accepted' && (
               <p className="text-sm text-green-600 mt-1 font-medium">✓ 고객이 선택했습니다</p>
             )}
+          </div>
+        )}
+
+        {/* 미선정 상태일 때 선택된 업체명 표시 */}
+        {isNotSelected && selectedContractorName && (
+          <div className="p-3 bg-orange-50 rounded-md border border-orange-200">
+            <p className="text-sm text-orange-800 font-medium">
+              고객이 타업체를 선택했습니다.
+            </p>
           </div>
         )}
       </div>
