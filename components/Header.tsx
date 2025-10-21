@@ -341,7 +341,7 @@ export default function Header() {
         { name: 'Pros', href: '/pros' },
         { name: '포트폴리오', href: '/portfolio' },
         { name: '이벤트', href: '/events' },
-        { name: '내 견적', href: '/my-quotes' },
+        { name: 'MyPage', href: '/my-quotes' },
       ]
     }
   }
