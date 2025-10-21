@@ -146,13 +146,11 @@ export async function POST(request: NextRequest) {
                     <p style="margin: 10px 0;"><strong>선정 업체:</strong> ${contractorInfo?.company_name || '업체'}</p>
                     <p style="margin: 10px 0;"><strong>프로젝트 유형:</strong> ${currentProject.space_type}</p>
                     <p style="margin: 10px 0;"><strong>주소:</strong> ${currentProject.full_address}</p>
-                    <p style="margin: 10px 0;"><strong>시작일:</strong> ${new Date().toLocaleDateString('ko-KR')}</p>
                   </div>
                   
                   <div class="info-box">
                     <h3 style="color: #667eea; margin-top: 0;">👷 다음 단계</h3>
                     <ul style="padding-left: 20px;">
-                      <li>업체와 최종 일정 협의</li>
                       <li>공사 준비 사항 확인</li>
                       <li>정기적인 진행 상황 체크</li>
                       <li>완료 후 최종 검수</li>
