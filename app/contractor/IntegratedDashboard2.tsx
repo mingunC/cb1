@@ -535,10 +535,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           icon: Trophy
         },
         'not-selected': { 
-          label: selectedContractorNames[project.selected_contractor_id!] 
-            ? `${selectedContractorNames[project.selected_contractor_id!]} 선정` 
-            : '미선정',
-          color: 'bg-red-100 text-red-700',
+          label: '미선택',
+          color: 'bg-orange-100 text-orange-800',
           icon: X
         },
         'completed': { label: '프로젝트 종료', color: 'bg-gray-500 text-white' },
@@ -742,11 +740,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           
           {project.projectStatus === 'not-selected' && (
-            <div className="mt-3 pt-3 border-t bg-red-50 -m-2 p-3 rounded">
-              <p className="text-sm text-red-700">
-                고객이 <span className="font-semibold">
-                  {selectedContractorNames[project.selected_contractor_id!] || '다른 업체'}
-                </span>를 선택했습니다.
+            <div className="mt-3 pt-3 border-t bg-orange-50 -m-2 p-3 rounded">
+              <p className="text-sm text-orange-800">
+                고객이 타업체를 선택했습니다.
               </p>
             </div>
           )}
