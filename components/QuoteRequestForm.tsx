@@ -28,7 +28,7 @@ const residentialProjectTypes = [
   { value: 'flooring', label: '바닥재' },
   { value: 'painting', label: '페인팅' },
   { value: 'full_renovation', label: '전체 리노베이션', exclusive: true },
-  { value: 'other', label: '기타' }
+  { value: 'other', label: '기타', exclusive: true }
 ]
 
 const commercialProjectTypes = [
@@ -216,11 +216,20 @@ export default function QuoteRequestForm() {
       let newTypes = [...prev.projectTypes]
       
       if (isExclusive) {
-        // 전체 리노베이션 선택 시 다른 옵션 모두 제거
-        newTypes = [value]
+        // 배타적 옵션 선택 시 (전체 리노베이션 또는 기타)
+        if (newTypes.includes(value)) {
+          // 이미 선택되어 있으면 해제
+          newTypes = []
+        } else {
+          // 새로 선택하면 다른 모든 옵션 제거하고 현재 옵션만 선택
+          newTypes = [value]
+        }
       } else {
-        // 일반 옵션 선택 시 전체 리노베이션 제거하고 현재 옵션 토글
-        newTypes = newTypes.filter(type => type !== 'full_renovation')
+        // 일반 옵션 선택 시
+        // 먼저 모든 배타적 옵션들 제거 (full_renovation, other)
+        newTypes = newTypes.filter(type => type !== 'full_renovation' && type !== 'other')
+        
+        // 현재 옵션 토글
         if (newTypes.includes(value)) {
           newTypes = newTypes.filter(type => type !== value)
         } else {
@@ -377,14 +386,14 @@ export default function QuoteRequestForm() {
                             name="projectTypes"
                             value={type.value}
                             checked={formData.projectTypes.includes(type.value)}
-                            onChange={() => handleProjectTypeChange(type.value, false)}
+                            onChange={() => handleProjectTypeChange(type.value, type.exclusive || false)}
                             className="sr-only"
                           />
                           <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
                             formData.projectTypes.includes(type.value)
                               ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg'
                               : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
-                          } ${type.exclusive && formData.projectTypes.includes('full_renovation') && !formData.projectTypes.includes(type.value) ? 'opacity-50' : ''}`}>
+                          }`}>
                             <div className="text-lg font-semibold text-gray-900">{type.label}</div>
                           </div>
                         </label>
