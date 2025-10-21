@@ -488,13 +488,15 @@ export default function Header() {
               </div>
             )}
             
-            {/* 견적 요청 버튼 - 맨 오른쪽 */}
-            <Link
-              href="/quote-request"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-            >
-              견적 요청
-            </Link>
+            {/* 견적 요청 버튼 - 업체가 아닐 때만 표시 */}
+            {!isContractor && (
+              <Link
+                href="/quote-request"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+              >
+                견적 요청
+              </Link>
+            )}
           </div>
 
           {/* 모바일 메뉴 버튼 */}
@@ -526,14 +528,19 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
+              {/* 견적 요청 버튼 - 업체가 아닐 때만 표시 */}
+              {!isContractor && (
+                <div className="pt-4 space-y-2">
+                  <Link
+                    href="/quote-request"
+                    className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    견적 요청
+                  </Link>
+                </div>
+              )}
               <div className="pt-4 space-y-2">
-                <Link
-                  href="/quote-request"
-                  className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  견적 요청
-                </Link>
                 {!isLoading && (
                   <>
                     {user ? (
