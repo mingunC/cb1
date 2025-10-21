@@ -365,29 +365,6 @@ export default function ContractorsListingPage() {
 
               <p className="text-gray-700 mb-6">{selectedContractor.description}</p>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-500 mb-1">완료 프로젝트</div>
-                  <div className="font-semibold">
-                    {selectedContractorDetails ? `${selectedContractorDetails.completed_projects}건` : '로딩중...'}
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-500 mb-1">응답 시간</div>
-                  <div className="font-semibold">{selectedContractor.response_time}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-500 mb-1">최소 예산</div>
-                  <div className="font-semibold">협의</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-500 mb-1">포트폴리오</div>
-                  <div className="font-semibold">
-                    {selectedContractorDetails ? `${selectedContractorDetails.portfolio_count}개` : '로딩중...'}
-                  </div>
-                </div>
-              </div>
-
               <div className="mb-6">
                 <h3 className="font-semibold mb-3">전문분야</h3>
                 <div className="flex flex-wrap gap-2">
