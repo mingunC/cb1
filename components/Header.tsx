@@ -324,21 +324,21 @@ export default function Header() {
   const getNavigation = () => {
     if (isAdmin) {
       return [
-        { name: '업체', href: '/pros' },
+        { name: 'Pros', href: '/pros' },
         { name: '포트폴리오', href: '/portfolio' },
         { name: '이벤트', href: '/events' },
         { name: '관리자 대시보드', href: '/admin' },
       ]
     } else if (isContractor) {
       return [
-        { name: '업체', href: '/pros' },
+        { name: 'Pros', href: '/pros' },
         { name: '포트폴리오', href: '/portfolio' },
         { name: '이벤트', href: '/events' },
         { name: 'MyPage', href: '/contractor' },
       ]
     } else {
       return [
-        { name: '업체', href: '/pros' },
+        { name: 'Pros', href: '/pros' },
         { name: '포트폴리오', href: '/portfolio' },
         { name: '이벤트', href: '/events' },
         { name: '내 견적', href: '/my-quotes' },
@@ -467,7 +467,7 @@ export default function Header() {
                     href="/contractor"
                     className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full hover:bg-green-200 transition-colors"
                   >
-                    업체
+                    Pros
                   </Link>
                 )}
               </div>
@@ -483,7 +483,7 @@ export default function Header() {
                   href="/contractor-login"
                   className="text-green-600 hover:text-green-700 px-4 py-2 text-sm font-medium transition-colors duration-200 border border-green-300 rounded-lg hover:bg-green-50"
                 >
-                  업체 로그인
+                  Pros 로그인
                 </Link>
               </div>
             )}
@@ -602,7 +602,7 @@ export default function Header() {
                           className="block text-center text-green-600 hover:text-green-700 px-3 py-2 text-base font-medium border border-green-300 rounded-lg hover:bg-green-50"
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          업체 로그인
+                          Pros 로그인
                         </Link>
                       </div>
                     )}
