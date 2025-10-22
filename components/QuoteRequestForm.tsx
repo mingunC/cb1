@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import { toast } from 'react-hot-toast'
 
 interface QuoteFormData {
   spaceType: string
@@ -124,24 +125,27 @@ export default function QuoteRequestForm() {
 
       if (insertError) {
         console.error('Insert failed:', insertError)
-        alert(`저장 실패: ${insertError.message}\n\n${JSON.stringify(insertError, null, 2)}`)
+        toast.error(`저장 실패: ${insertError.message}`)
+        setIsSubmitting(false)
         return
       }
 
       if (result) {
         console.log('SUCCESS! Quote saved:', result)
-        alert('견적 요청이 성공적으로 저장되었습니다!')
+        toast.success('견적 요청이 성공적으로 저장되었습니다!')
         setIsCompleted(true)
+        setIsSubmitting(false)
       } else {
         console.error('No data returned after insert')
-        alert('저장은 되었으나 데이터를 확인할 수 없습니다.')
+        toast.error('저장은 되었으나 데이터를 확인할 수 없습니다.')
+        setIsSubmitting(false)
       }
       
     } catch (error: any) {
       console.error('Unexpected error:', error)
-      alert(`예기치 않은 오류: ${error.message}`)
-    } finally {
+      toast.error(`예기치 않은 오류: ${error.message}`)
       setIsSubmitting(false)
+    } finally {
       console.log('=== SUBMISSION COMPLETE ===')
     }
   }

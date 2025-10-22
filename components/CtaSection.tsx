@@ -16,13 +16,14 @@ export default function CtaSection() {
         const { data: { user } } = await supabase.auth.getUser()
         
         if (user) {
-          const { data: contractorData } = await supabase
-            .from('contractors')
-            .select('id')
-            .eq('user_id', user.id)
-            .single()
+          // users 테이블에서 user_type 확인
+          const { data: userData } = await supabase
+            .from('users')
+            .select('user_type')
+            .eq('id', user.id)
+            .maybeSingle()
           
-          setIsContractor(!!contractorData)
+          setIsContractor(userData?.user_type === 'contractor')
         }
       } catch (error) {
         console.error('Error checking user role:', error)

@@ -288,7 +288,7 @@ export default function QuoteModal({
                             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                             <span className="text-sm font-semibold text-green-700">파일 선택 완료</span>
                           </div>
-                          <p className="text-gray-900 font-semibold text-lg truncate mb-1">
+                          <p className="text-gray-900 font-semibold text-lg break-words mb-1">
                             {pdfFile.name}
                           </p>
                           <p className="text-sm text-gray-600">
