@@ -600,7 +600,8 @@ export default function MyQuotesPage() {
               const showSiteVisitInfo = isInSiteVisitPhase(quote.status)
               
               // ✅ 프로젝트 시작 가능 여부
-              const canStartProject = quote.status === 'contractor-selected'
+              const canStartProject = quote.status === 'contractor-selected' || 
+                (quote.status === 'bidding' && quote.selected_contractor_id)
               const isProjectInProgress = quote.status === 'in-progress'
               const isProjectCompleted = quote.status === 'completed'
               
@@ -862,7 +863,9 @@ export default function MyQuotesPage() {
                                 </div>
                                 
                                 <div className="space-y-2">
-                                  {contractorQuote.status === 'accepted' ? (
+                                  {contractorQuote.status === 'accepted' || 
+                                   (quote.status === 'contractor-selected' && quote.selected_contractor_id === contractorQuote.contractor_id) ||
+                                   (quote.status === 'bidding' && quote.selected_contractor_id === contractorQuote.contractor_id) ? (
                                     <div className="space-y-2">
                                       <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
                                         ✓ 선택된 업체
