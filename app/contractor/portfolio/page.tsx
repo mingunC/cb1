@@ -26,8 +26,10 @@ export default function PortfolioManagementPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [contractorId, setContractorId] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -52,20 +54,25 @@ export default function PortfolioManagementPage() {
           return
         }
 
-        // 업체 권한 확인
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('user_type')
-          .eq('id', user.id)
+        // ✅ contractors 테이블에서 contractor_id 가져오기
+        const { data: contractorData, error: contractorError } = await supabase
+          .from('contractors')
+          .select('id, user_id')
+          .eq('user_id', user.id)
           .single()
 
-        if (userError || !userData || userData.user_type !== 'contractor') {
+        console.log('Contractor lookup:', { contractorData, contractorError })
+
+        if (contractorError || !contractorData) {
+          console.error('Not a contractor:', contractorError)
           router.push('/')
           return
         }
         
+        console.log('✅ Contractor ID:', contractorData.id)
+        setContractorId(contractorData.id)
         setIsAuthorized(true)
-        await fetchPortfolios()
+        await fetchPortfolios(contractorData.id)
       } catch (error) {
         console.error('Auth error:', error)
         router.push('/login')
@@ -75,23 +82,21 @@ export default function PortfolioManagementPage() {
     checkAuth()
   }, [])
 
-  const fetchPortfolios = async () => {
+  const fetchPortfolios = async (contractorId: string) => {
     try {
       const supabase = createBrowserClient()
-      const { data: { user } } = await supabase.auth.getUser()
       
-      if (user) {
-        const { data, error } = await supabase
-          .from('portfolios')
-          .select('*')
-          .eq('contractor_id', user.id)
-          .order('created_at', { ascending: false })
-        
-        if (error) {
-          console.error('Error fetching portfolios:', error)
-        } else {
-          setPortfolios(data || [])
-        }
+      const { data, error } = await supabase
+        .from('portfolios')
+        .select('*')
+        .eq('contractor_id', contractorId)
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching portfolios:', error)
+      } else {
+        console.log('✅ Portfolios loaded:', data?.length)
+        setPortfolios(data || [])
       }
     } catch (error) {
       console.error('Error:', error)
@@ -108,6 +113,8 @@ export default function PortfolioManagementPage() {
       const fileExt = file.name.split('.').pop()
       const fileName = `${folder}_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`
       
+      console.log(`📤 Uploading ${file.name} as ${fileName}...`)
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('portfolios')
         .upload(fileName, file)
@@ -121,6 +128,7 @@ export default function PortfolioManagementPage() {
         .from('portfolios')
         .getPublicUrl(fileName)
       
+      console.log('✅ Uploaded:', publicUrl)
       uploadedUrls.push(publicUrl)
     }
     
@@ -130,59 +138,78 @@ export default function PortfolioManagementPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('=== PORTFOLIO SUBMISSION START ===')
+    console.log('Form data:', formData)
+    console.log('Contractor ID:', contractorId)
+    
     if (!formData.title || !formData.description || !formData.project_type || !formData.budget_range || !formData.duration) {
       alert('모든 필수 필드를 입력해주세요.')
       return
     }
 
+    if (!contractorId) {
+      alert('업체 정보를 찾을 수 없습니다.')
+      return
+    }
+
+    setIsSubmitting(true)
+
     try {
       const supabase = createBrowserClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        alert('로그인이 필요합니다.')
-        return
-      }
 
       // 이미지 업로드
+      console.log('📤 Starting image uploads...')
       let images: string[] = []
       let beforeImages: string[] = []
       let afterImages: string[] = []
 
       if (formData.images.length > 0) {
+        console.log(`Uploading ${formData.images.length} project images...`)
         images = await uploadImages(formData.images, 'project')
       }
       if (formData.before_images.length > 0) {
+        console.log(`Uploading ${formData.before_images.length} before images...`)
         beforeImages = await uploadImages(formData.before_images, 'before')
       }
       if (formData.after_images.length > 0) {
+        console.log(`Uploading ${formData.after_images.length} after images...`)
         afterImages = await uploadImages(formData.after_images, 'after')
       }
 
+      console.log('✅ All images uploaded')
+
       // 포트폴리오 저장
-      const { error } = await supabase
+      const portfolioData = {
+        contractor_id: contractorId,  // ✅ contractors 테이블의 id 사용
+        title: formData.title,
+        description: formData.description,
+        project_type: formData.project_type,
+        budget_range: formData.budget_range,
+        duration: formData.duration,
+        project_address: formData.project_address,
+        images: images,
+        before_images: beforeImages,
+        after_images: afterImages,
+        status: 'pending'
+      }
+
+      console.log('💾 Saving portfolio to DB:', portfolioData)
+
+      const { data: insertedData, error } = await supabase
         .from('portfolios')
-        .insert({
-          contractor_id: user.id,
-          title: formData.title,
-          description: formData.description,
-          project_type: formData.project_type,
-          budget_range: formData.budget_range,
-          duration: formData.duration,
-          project_address: formData.project_address,
-          images: images,
-          before_images: beforeImages,
-          after_images: afterImages,
-          status: 'pending'
-        })
+        .insert(portfolioData)
+        .select()
 
       if (error) {
-        console.error('Portfolio creation error:', error)
-        alert('포트폴리오 생성에 실패했습니다.')
+        console.error('❌ Portfolio creation error:', error)
+        console.error('Error details:', JSON.stringify(error, null, 2))
+        alert(`포트폴리오 생성에 실패했습니다.\n\n${error.message}`)
         return
       }
 
+      console.log('✅ Portfolio created:', insertedData)
       alert('포트폴리오가 성공적으로 생성되었습니다!')
+      
       setShowAddModal(false)
       setFormData({
         title: '',
@@ -190,14 +217,19 @@ export default function PortfolioManagementPage() {
         project_type: '',
         budget_range: '',
         duration: '',
+        project_address: '',
         images: [],
         before_images: [],
         after_images: []
       })
-      await fetchPortfolios()
-    } catch (error) {
-      console.error('Error:', error)
-      alert('포트폴리오 생성 중 오류가 발생했습니다.')
+      
+      await fetchPortfolios(contractorId)
+    } catch (error: any) {
+      console.error('❌ Unexpected error:', error)
+      alert(`포트폴리오 생성 중 오류가 발생했습니다.\n\n${error.message || '알 수 없는 오류'}`)
+    } finally {
+      setIsSubmitting(false)
+      console.log('=== PORTFOLIO SUBMISSION END ===')
     }
   }
 
@@ -221,7 +253,9 @@ export default function PortfolioManagementPage() {
       }
 
       alert('포트폴리오가 삭제되었습니다.')
-      await fetchPortfolios()
+      if (contractorId) {
+        await fetchPortfolios(contractorId)
+      }
     } catch (error) {
       console.error('Error:', error)
       alert('포트폴리오 삭제 중 오류가 발생했습니다.')
@@ -625,14 +659,16 @@ export default function PortfolioManagementPage() {
                   <div className="flex space-x-3 pt-4">
                     <button
                       type="submit"
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      disabled={isSubmitting}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      포트폴리오 생성
+                      {isSubmitting ? '생성 중...' : '포트폴리오 생성'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
-                      className="px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded-lg font-medium transition-colors"
+                      disabled={isSubmitting}
+                      className="px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                     >
                       취소
                     </button>
