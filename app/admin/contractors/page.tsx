@@ -32,7 +32,7 @@ interface Portfolio {
   project_type: string
   space_type: string
   budget_range: string | null
-  completion_date: string | null
+  year: string | null
   photos: any[]
   thumbnail_url: string | null
   is_featured: boolean
@@ -128,7 +128,7 @@ export default function ContractorManagementPage() {
       console.log('Contractors data:', contractorsData)
       setContractors(contractorsData)
 
-      // 포트폴리오 목록 조회 - safeQuery 사용
+      // ✅ 수정: completion_date 제거, year 사용
       console.log('Fetching portfolios...')
       const portfoliosData = await safeQuery(
         supabase
@@ -138,20 +138,34 @@ export default function ContractorManagementPage() {
             contractor_id,
             title,
             description,
-            project_type,
-            space_type,
-            budget_range,
-            completion_date,
-            photos,
-            thumbnail_url,
-            is_featured,
-            created_at,
-            updated_at
+            category,
+            year,
+            images,
+            project_address,
+            created_at
           `)
           .order('created_at', { ascending: false })
       )
       console.log('Portfolios data:', portfoliosData)
-      setPortfolios(portfoliosData)
+      
+      // ✅ 포트폴리오 데이터 변환 (타입에 맞게 조정)
+      const transformedPortfolios = (portfoliosData || []).map((p: any) => ({
+        id: p.id,
+        contractor_id: p.contractor_id,
+        title: p.title || '제목 없음',
+        description: p.description,
+        project_type: p.category || '리노베이션',
+        space_type: '주거공간',
+        budget_range: null,
+        year: p.year,
+        photos: p.images || [],
+        thumbnail_url: p.images?.[0] || null,
+        is_featured: false,
+        created_at: p.created_at,
+        updated_at: p.created_at
+      }))
+      
+      setPortfolios(transformedPortfolios)
       console.log('FetchData completed successfully')
     } catch (error) {
       console.error('Error in fetchData:', error)
@@ -651,7 +665,7 @@ export default function ContractorManagementPage() {
                       업체
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      예산/완료일
+                      완료연도
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       이미지
@@ -687,8 +701,7 @@ export default function ContractorManagementPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900">
-                            <div>{portfolio.budget_range || '-'}</div>
-                            <div className="text-xs text-gray-600">{portfolio.completion_date || '-'}</div>
+                            <div>{portfolio.year || '-'}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -928,8 +941,7 @@ export default function ContractorManagementPage() {
                       <p className="text-sm"><span className="font-medium">제목:</span> {selectedPortfolio.title}</p>
                       <p className="text-sm"><span className="font-medium">프로젝트 유형:</span> {selectedPortfolio.project_type}</p>
                       <p className="text-sm"><span className="font-medium">공간 유형:</span> {selectedPortfolio.space_type}</p>
-                      <p className="text-sm"><span className="font-medium">예산 범위:</span> {selectedPortfolio.budget_range || '-'}</p>
-                      <p className="text-sm"><span className="font-medium">완료일:</span> {selectedPortfolio.completion_date || '-'}</p>
+                      <p className="text-sm"><span className="font-medium">완료 연도:</span> {selectedPortfolio.year || '-'}</p>
                       <p className="text-sm"><span className="font-medium">추천 여부:</span> {selectedPortfolio.is_featured ? '추천됨' : '일반'}</p>
                     </div>
                   </div>
