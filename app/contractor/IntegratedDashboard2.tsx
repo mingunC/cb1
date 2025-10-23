@@ -27,7 +27,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [contractorData, setContractorData] = useState<ContractorData | null>(initialContractorData)
   const [projectFilter, setProjectFilter] = useState<ProjectStatus | 'all' | 'bidding'>('all')
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
+  const [activeTab, setActiveTab] = useState<'projects' | 'profile' | 'portfolio'>('projects')
   const [selectedContractorNames, setSelectedContractorNames] = useState<Record<string, string>>({})
   const [showQuoteModal, setShowQuoteModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
@@ -755,29 +755,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 상단 메뉴 버튼들 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          <button
-            onClick={() => router.push('/contractor/profile')}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <UserCircle className="h-5 w-5 text-blue-600" />
-            <span className="font-medium">프로필 관리</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('portfolio')}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Briefcase className="h-5 w-5 text-blue-600" />
-            <span className="font-medium">포트폴리오 관리</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('projects')}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors md:col-span-1"
-          >
-            <Calendar className="h-5 w-5 text-blue-600" />
-            <span className="font-medium">My project</span>
-          </button>
-        </div>
         
         {/* 탭 네비게이션 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -791,7 +768,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                My project
+                My Projects
+              </button>
+              <button
+                onClick={() => router.push('/contractor/profile')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'profile'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Profile 관리
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
@@ -801,7 +788,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                포트폴리오 관리
+                Portfolio 관리
               </button>
             </nav>
           </div>
