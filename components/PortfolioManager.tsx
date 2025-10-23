@@ -302,13 +302,15 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
         <h3 className="text-lg font-semibold text-gray-900">포트폴리오 관리</h3>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-500">총 {projects.length}개 프로젝트</span>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            프로젝트 추가
-          </button>
+          {!showAddForm && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              프로젝트 추가
+            </button>
+          )}
         </div>
       </div>
 
