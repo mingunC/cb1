@@ -218,34 +218,85 @@ export default function ContractorProfile() {
   }
 
   const handleSave = async () => {
-    if (!profile) return
+    if (!profile) {
+      toast.error('프로필 정보가 없습니다')
+      return
+    }
 
     setIsSaving(true)
+    console.log('💾 프로필 저장 시작...')
+    console.log('저장할 데이터:', formData)
+    
     try {
       const supabase = createBrowserClient()
       
+      // ✅ 실제로 contractors 테이블에 있는 컬럼만 업데이트
       const updateData = {
-        ...formData,
+        company_name: formData.company_name,
+        description: formData.description,
+        phone: formData.phone,
+        email: formData.email,
+        address: formData.address,
+        website: formData.website,
+        specialties: formData.specialties,
+        years_in_business: formData.years_in_business,
         updated_at: new Date().toISOString()
       }
 
-      const { error } = await supabase
+      console.log('📝 DB 업데이트 시도:', updateData)
+      console.log('프로필 ID:', profile.id)
+
+      // ✅ timeout 추가 (10초)
+      const updatePromise = supabase
         .from('contractors')
         .update(updateData)
         .eq('id', profile.id)
+        .select()
 
-      if (error) throw error
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('요청 시간 초과 (10초)')), 10000)
+      )
 
-      // 프로필 상태 업데이트 (loadProfile 호출하지 않음)
+      const { data, error } = await Promise.race([
+        updatePromise,
+        timeoutPromise
+      ]) as any
+
+      console.log('✅ 업데이트 결과:', { data, error })
+
+      if (error) {
+        console.error('❌ 저장 에러:', error)
+        console.error('에러 코드:', error.code)
+        console.error('에러 메시지:', error.message)
+        console.error('에러 상세:', error.details)
+        
+        // 특정 에러 처리
+        if (error.code === '42703') {
+          toast.error('데이터베이스 컬럼이 없습니다. 관리자에게 문의하세요.')
+        } else if (error.code === '42501') {
+          toast.error('권한이 없습니다. RLS 정책을 확인해주세요.')
+        } else {
+          toast.error(`저장 실패: ${error.message}`)
+        }
+        return
+      }
+
+      // 성공
+      console.log('✅ 저장 성공!')
       setProfile(prev => prev ? { ...prev, ...updateData } : null)
-      
       toast.success('프로필이 업데이트되었습니다!')
       
-    } catch (error) {
-      console.error('Error saving profile:', error)
-      toast.error('프로필 저장에 실패했습니다')
+    } catch (error: any) {
+      console.error('❌ 예상치 못한 오류:', error)
+      
+      if (error.message === '요청 시간 초과 (10초)') {
+        toast.error('저장 시간이 너무 오래 걸립니다. 네트워크 연결을 확인해주세요.')
+      } else {
+        toast.error(`프로필 저장 실패: ${error.message || '알 수 없는 오류'}`)
+      }
     } finally {
       setIsSaving(false)
+      console.log('💾 프로필 저장 프로세스 종료')
     }
   }
 
@@ -292,7 +343,7 @@ export default function ContractorProfile() {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="h-4 w-4 mr-2" />
               {isSaving ? '저장 중...' : '저장'}
