@@ -1,10 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@/lib/supabase/clients'
-import { Calendar, Gift, Percent, Clock, ChevronRight, Tag, Users, Home, DollarSign, AlertCircle } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Calendar, Gift, Percent, Tag, AlertCircle } from 'lucide-react'
 
 interface Event {
   id: string
@@ -54,165 +51,16 @@ export default function EventsPromotionPage() {
     try {
       setIsLoading(true)
       
-      // 더미 데이터 사용 (실제 DB 연결 시 수정)
-      const dummyEvents: Event[] = [
-        {
-          id: '1',
-          title: '신년 맞이 전체 시공 20% 할인',
-          subtitle: '2025년 새해를 맞아 특별한 혜택을 드립니다',
-          description: '새해를 맞아 전체 인테리어 시공 시 20% 할인 혜택을 제공합니다. 주방, 거실, 침실 등 모든 공간 리모델링에 적용됩니다.',
-          type: 'discount',
-          discount_rate: 20,
-          original_price: 50000000,
-          discounted_price: 40000000,
-          image_url: 'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800',
-          start_date: '2025-01-01',
-          end_date: '2025-01-31',
-          is_featured: true,
-          is_active: true,
-          terms_conditions: [
-            '3천만원 이상 시공 시 적용',
-            '타 할인 이벤트와 중복 불가',
-            '계약금 납부 시점 기준',
-            '부분 시공은 제외'
-          ],
-          target_space: ['전체'],
-          min_budget: 30000000,
-          max_participants: 50,
-          current_participants: 23,
-          tags: ['신년이벤트', '할인', '전체시공'],
-           contractor: {
-             company_name: '디자인하우스',
-             logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center'
-           },
-          created_at: '2024-12-20'
-        },
-        {
-          id: '2',
-          title: '주방 리모델링 가전제품 증정',
-          subtitle: '독일 프리미엄 주방가전 3종 세트',
-          description: '주방 전체 리모델링 계약 시 총 500만원 상당의 독일 프리미엄 주방가전(식기세척기, 오븐, 인덕션)을 무료로 드립니다.',
-          type: 'gift',
-          image_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800',
-          start_date: '2025-01-15',
-          end_date: '2025-02-28',
-          is_featured: true,
-          is_active: true,
-          terms_conditions: [
-            '주방 전체 리모델링 한정',
-            '2천만원 이상 계약 시',
-            '선착순 30명',
-            '제품 변경 불가'
-          ],
-          target_space: ['주방'],
-          min_budget: 20000000,
-          max_participants: 30,
-          current_participants: 12,
-          tags: ['주방', '가전증정', '프리미엄'],
-          contractor: {
-            company_name: '키친마스터'
-          },
-          created_at: '2025-01-10'
-        },
-        {
-          id: '3',
-          title: '봄맞이 베란다 확장 특가',
-          subtitle: '따뜻한 봄을 준비하는 공간 확장',
-          description: '베란다 확장 공사를 특별가로 진행합니다. 단열, 방음, 마감재까지 프리미엄 자재로 시공합니다.',
-          type: 'special',
-          discount_rate: 30,
-          image_url: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800',
-          start_date: '2025-02-01',
-          end_date: '2025-03-31',
-          is_featured: false,
-          is_active: false,
-          terms_conditions: [
-            '아파트 한정',
-            '관리사무소 승인 필요',
-            '평당 가격 적용'
-          ],
-          target_space: ['베란다'],
-          tags: ['베란다확장', '봄이벤트', '특가'],
-          contractor: {
-            company_name: '스페이스확장'
-          },
-          created_at: '2025-01-20'
-        },
-        {
-          id: '4',
-          title: '무료 3D 디자인 상담',
-          subtitle: '전문 디자이너의 1:1 맞춤 상담',
-          description: '인테리어 전문 디자이너가 직접 방문하여 3D 디자인과 견적을 무료로 제공합니다.',
-          type: 'special',
-          image_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-          start_date: '2025-01-01',
-          end_date: '2025-12-31',
-          is_featured: false,
-          is_active: true,
-          terms_conditions: [
-            '서울/경기 지역 한정',
-            '1가구 1회 한정',
-            '상담 후 계약 의무 없음'
-          ],
-          tags: ['무료상담', '3D디자인', '디자이너'],
-          contractor: {
-            company_name: '디자인스튜디오'
-          },
-          created_at: '2024-12-01'
-        },
-        {
-          id: '5',
-          title: '카드사 제휴 10% 추가 할인',
-          subtitle: '특정 카드 결제 시 추가 혜택',
-          description: '삼성카드, 현대카드로 결제 시 시공비 10% 추가 할인 혜택을 드립니다.',
-          type: 'collaboration',
-          discount_rate: 10,
-          image_url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800',
-          start_date: '2025-01-01',
-          end_date: '2025-06-30',
-          is_featured: true,
-          is_active: true,
-          terms_conditions: [
-            '제휴 카드사 결제 시',
-            '일시불 결제 한정',
-            '최대 300만원 할인'
-          ],
-          tags: ['카드할인', '제휴이벤트'],
-          contractor: {
-            company_name: '올리모델링'
-          },
-          created_at: '2024-12-15'
-        },
-        {
-          id: '6',
-          title: '여름 특별 패키지',
-          subtitle: '시원한 여름을 위한 인테리어',
-          description: '에어컨 설치, 단열 시공, 습도 조절 시스템을 패키지로 제공합니다.',
-          type: 'season',
-          original_price: 15000000,
-          discounted_price: 12000000,
-          image_url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-          start_date: '2025-05-01',
-          end_date: '2025-07-31',
-          is_featured: false,
-          is_active: false,
-          terms_conditions: [
-            '패키지 전체 구매 시',
-            '설치비 포함'
-          ],
-          target_space: ['전체'],
-          tags: ['여름', '패키지', '시즌특가'],
-          contractor: {
-            company_name: '쿨인테리어'
-          },
-          created_at: '2025-04-01'
-        }
-      ]
-
-      setEvents(dummyEvents)
-      setFilteredEvents(dummyEvents)
+      // 실제 API 호출
+      const response = await fetch('/api/events')
+      if (!response.ok) throw new Error('Failed to fetch events')
+      
+      const data = await response.json()
+      setEvents(data.events || [])
     } catch (error) {
       console.error('Error fetching events:', error)
+      // 에러 발생 시 빈 배열로 설정
+      setEvents([])
     } finally {
       setIsLoading(false)
     }
