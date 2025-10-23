@@ -70,7 +70,14 @@ export default function AdminPage() {
     try {
       const supabase = createBrowserClient()
       
-      const [\n        pendingResult,\n        contractorResult,\n        monthlyResult,\n        activeResult,\n        completedResult,\n        eventsResult\n      ] = await Promise.all([
+      const [
+        pendingResult,
+        contractorResult,
+        monthlyResult,
+        activeResult,
+        completedResult,
+        eventsResult
+      ] = await Promise.all([
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('contractors').select('*', { count: 'exact', head: true }),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
