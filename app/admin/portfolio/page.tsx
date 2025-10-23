@@ -373,13 +373,15 @@ export default function AdminPortfolioPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">포트폴리오 관리</h2>
             <p className="text-gray-600">업체 포트폴리오를 관리하고 검증하세요</p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            새 프로젝트 추가
-          </button>
+          {!isModalOpen && (
+            <button
+              onClick={openCreateModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              새 프로젝트 추가
+            </button>
+          )}
         </div>
 
         {/* 필터 및 검색 */}
