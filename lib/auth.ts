@@ -106,7 +106,7 @@ export async function signInServer(credentials: AuthCredentials): Promise<AuthRe
   }
 }
 
-// 사용자 타입과 관련 데이터 조회 (클라이언트)
+// ✅ 최적화: 사용자 타입과 관련 데이터 조회 (클라이언트)
 async function getUserTypeAndData(userId: string): Promise<{
   success: boolean;
   userType?: 'customer' | 'contractor' | 'admin';
@@ -116,27 +116,16 @@ async function getUserTypeAndData(userId: string): Promise<{
   const supabase = createBrowserClient();
 
   try {
-    // 1. 먼저 업체인지 확인 (contractors 테이블만 확인)
+    // ✅ 최적화: 필요한 필드만 조회 + status 체크를 쿼리에서 처리
     const { data: contractorData, error: contractorError } = await supabase
       .from('contractors')
-      .select('id, company_name, contact_name, status')
+      .select('id, company_name, status')
       .eq('user_id', userId)
+      .eq('status', 'active') // ✅ 쿼리 레벨에서 필터링
       .maybeSingle();
 
-    if (contractorError) {
-      console.error('Contractor data query error:', contractorError);
-      return { success: false, error: '업체 정보 조회 실패' };
-    }
-
+    // 에러가 발생하지 않고 데이터가 있으면 contractor
     if (contractorData) {
-      // 업체 상태 확인
-      if (contractorData.status !== 'active') {
-        return { 
-          success: false, 
-          error: '업체 계정이 비활성화되어 있습니다. 관리자에게 문의해주세요.' 
-        };
-      }
-
       return {
         success: true,
         userType: 'contractor',
@@ -144,27 +133,33 @@ async function getUserTypeAndData(userId: string): Promise<{
       };
     }
 
-    // 2. 일반 사용자 확인 (users 테이블 - customer, admin만)
+    // contractors 테이블 조회 실패 시에만 에러 처리
+    if (contractorError && contractorError.code !== 'PGRST116') { // PGRST116은 "no rows found" 에러
+      console.error('Contractor data query error:', contractorError);
+      return { success: false, error: '업체 정보 조회 실패' };
+    }
+
+    // ✅ 최적화: users 테이블에서 user_type만 조회
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('user_type')
       .eq('id', userId)
       .maybeSingle();
 
-    if (userError) {
+    if (userError && userError.code !== 'PGRST116') {
       console.error('User type query error:', userError);
       return { success: false, error: '사용자 정보 조회 실패' };
     }
 
+    // users 테이블에 있으면 해당 타입 리턴
     if (userData && userData.user_type !== 'contractor') {
-      // users 테이블에는 customer와 admin만 있어야 함
       return {
         success: true,
         userType: userData.user_type as 'customer' | 'admin'
       };
     }
 
-    // 3. 어느 테이블에도 없으면 기본 customer
+    // 어느 테이블에도 없으면 기본 customer
     return {
       success: true,
       userType: 'customer'
@@ -185,14 +180,15 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
   const supabase = createServerClient();
 
   try {
-    // 1. 먼저 업체인지 확인 (contractors 테이블만 확인)
-    const { data: contractorData, error: contractorError } = await supabase
+    // ✅ 최적화: 필요한 필드만 조회 + status 필터
+    const { data: contractorData } = await supabase
       .from('contractors')
-      .select('id, company_name, contact_name, status')
+      .select('id, company_name, status')
       .eq('user_id', userId)
+      .eq('status', 'active')
       .maybeSingle();
 
-    if (contractorData && contractorData.status === 'active') {
+    if (contractorData) {
       return {
         success: true,
         userType: 'contractor',
@@ -200,7 +196,7 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
       };
     }
 
-    // 2. 일반 사용자 확인 (users 테이블 - customer, admin만)
+    // ✅ 최적화: user_type만 조회
     const { data: userData } = await supabase
       .from('users')
       .select('user_type')
@@ -214,7 +210,6 @@ async function getUserTypeAndDataServer(userId: string): Promise<{
       };
     }
 
-    // 3. 기본값
     return {
       success: true,
       userType: 'customer'
@@ -239,7 +234,7 @@ function getRedirectPath(userType?: string, contractorData?: any): string {
   }
 }
 
-// 현재 사용자 정보 조회 (클라이언트)
+// ✅ 최적화: 현재 사용자 정보 조회 (클라이언트)
 export async function getCurrentUser(): Promise<{
   user: any | null;
   userType?: 'customer' | 'contractor' | 'admin';
