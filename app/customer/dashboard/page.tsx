@@ -557,7 +557,8 @@ export default function CustomerDashboard() {
                                 isSelected,
                                 isSelecting,
                                 canSelect: canSelectContractor,
-                                hasPDF: !!quote.pdf_url
+                                hasPDF: !!quote.pdf_url,
+                                selectingContractor
                               })
                               
                               return (
@@ -625,9 +626,9 @@ export default function CustomerDashboard() {
                                             })
                                             handleSelectContractor(project.id, quote.contractor_id, quote.id)
                                           }}
-                                          disabled={isSelecting}
-                                          className={`px-6 py-2 rounded-lg font-semibold whitespace-nowrap flex items-center gap-2 ${
-                                            isSelecting
+                                          disabled={selectingContractor !== null}
+                                          className={`px-6 py-2 rounded-lg font-semibold whitespace-nowrap flex items-center gap-2 transition-all ${
+                                            selectingContractor !== null
                                               ? 'bg-gray-400 cursor-not-allowed'
                                               : 'bg-blue-600 hover:bg-blue-700 text-white'
                                           }`}
