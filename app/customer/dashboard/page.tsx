@@ -290,7 +290,7 @@ export default function CustomerDashboard() {
     'basement': '지하실',
     'flooring': '바닥재',
     'painting': '페인팅',
-    'full_renovation': '전체 리노베이션',
+    'full_renovation': '전체 레노베이션',
     'office': '사무실',
     'retail': '상가/매장',
     'restaurant': '카페/식당',
@@ -363,6 +363,51 @@ export default function CustomerDashboard() {
     
     // 변환할 수 없는 경우 원본 반환
     return budget
+  }
+
+  // 시작시기 포맷팅 함수 추가
+  const formatTimeline = (timeline: string): string => {
+    const timelineLabels: Record<string, string> = {
+      'immediately': '즉시 시작',
+      'asap': '즉시 시작',
+      '1_month': '1개월 내',
+      'within_1_month': '1개월 내',
+      '3_months': '3개월 내',
+      'within_3_months': '3개월 내',
+      'planning': '계획단계',
+      'planning_stage': '계획단계'
+    }
+    
+    // 정확히 일치하는 경우
+    if (timelineLabels[timeline]) {
+      return timelineLabels[timeline]
+    }
+    
+    // 공백이나 대소문자 문제로 일치하지 않는 경우를 위한 정규화
+    const normalizedTimeline = timeline.trim().toLowerCase().replace(/\s+/g, '_')
+    if (timelineLabels[normalizedTimeline]) {
+      return timelineLabels[normalizedTimeline]
+    }
+    
+    // 패턴 매칭으로 변환 시도
+    if (normalizedTimeline.includes('immediately') || normalizedTimeline.includes('asap') || normalizedTimeline.includes('즉시')) {
+      return '즉시 시작'
+    }
+    
+    if (normalizedTimeline.includes('1') && (normalizedTimeline.includes('month') || normalizedTimeline.includes('개월'))) {
+      return '1개월 내'
+    }
+    
+    if (normalizedTimeline.includes('3') && (normalizedTimeline.includes('month') || normalizedTimeline.includes('개월'))) {
+      return '3개월 내'
+    }
+    
+    if (normalizedTimeline.includes('planning') || normalizedTimeline.includes('계획')) {
+      return '계획단계'
+    }
+    
+    // 변환할 수 없는 경우 원본 반환
+    return timeline
   }
 
   if (isLoading) {
@@ -459,7 +504,7 @@ export default function CustomerDashboard() {
                           예산: {formatBudget(project.budget)}
                         </p>
                         <p className="text-gray-700">
-                          원하는 완료일: {project.timeline}
+                          시작시기: {formatTimeline(project.timeline)}
                         </p>
                       </div>
                       {project.description && (
