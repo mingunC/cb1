@@ -1,15 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/clients'
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+// Helper function to create Supabase client for API routes
+const createServerClient = async (request: NextRequest) => {
+  const cookieStore = await cookies()
+  
+  return createSupabaseServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+      },
+    }
+  )
+}
 
 // GET - 이벤트 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     const { searchParams } = new URL(request.url)
 
     // 쿼리 파라미터
     const type = searchParams.get('type')
-    const status = searchParams.get('status') // 'ongoing', 'upcoming', 'ended'
+    const status = searchParams.get('status')
     const featured = searchParams.get('featured')
     const contractorId = searchParams.get('contractorId')
 
@@ -90,16 +108,19 @@ export async function GET(request: NextRequest) {
 // POST - 새 이벤트 생성
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
+      console.error('Auth error:', authError)
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+
+    console.log('Authenticated user:', user.id, user.email)
 
     // 관리자 또는 업체 확인
     const { data: userData } = await supabase
@@ -107,6 +128,8 @@ export async function POST(request: NextRequest) {
       .select('user_type')
       .eq('id', user.id)
       .single()
+
+    console.log('User data:', userData)
 
     const isAdmin = userData?.user_type === 'admin'
 
@@ -145,6 +168,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('Creating event with data:', eventData)
+
     const { data: event, error } = await supabase
       .from('events')
       .insert(eventData)
@@ -154,7 +179,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error creating event:', error)
       return NextResponse.json(
-        { error: 'Failed to create event' },
+        { error: 'Failed to create event: ' + error.message },
         { status: 500 }
       )
     }
@@ -172,7 +197,7 @@ export async function POST(request: NextRequest) {
 // PUT - 이벤트 수정
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -259,7 +284,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - 이벤트 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
