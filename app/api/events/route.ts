@@ -3,10 +3,14 @@ import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 // Helper function to create Supabase client for API routes
-const createServerClient = async () => {
+const createServerClient = async (request: NextRequest) => {
   const cookieStore = await cookies()
   
-  return createSupabaseServerClient(
+  // Authorization 헤더에서 토큰 가져오기
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+  
+  const supabase = createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -31,12 +35,22 @@ const createServerClient = async () => {
       },
     }
   )
+
+  // Authorization 헤더가 있으면 토큰으로 세션 설정
+  if (token) {
+    await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: '', // refresh_token은 필요하지 않음
+    })
+  }
+
+  return supabase
 }
 
 // GET - 이벤트 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     const { searchParams } = new URL(request.url)
 
     // 쿼리 파라미터
@@ -122,7 +136,7 @@ export async function GET(request: NextRequest) {
 // POST - 새 이벤트 생성
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     
     console.log('🔍 사용자 인증 확인 시작')
     
@@ -226,7 +240,7 @@ export async function POST(request: NextRequest) {
 // PUT - 이벤트 수정
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -313,7 +327,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - 이벤트 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createServerClient(request)
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
