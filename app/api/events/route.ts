@@ -10,6 +10,12 @@ const createServerClient = async (request: NextRequest) => {
   const authHeader = request.headers.get('authorization')
   const token = authHeader?.replace('Bearer ', '')
   
+  console.log('🔐 API: Authorization 헤더 확인:', {
+    hasAuthHeader: !!authHeader,
+    hasToken: !!token,
+    tokenPrefix: token?.substring(0, 20) + '...'
+  })
+  
   const supabase = createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -33,16 +39,13 @@ const createServerClient = async (request: NextRequest) => {
           }
         },
       },
+      global: {
+        headers: token ? {
+          Authorization: `Bearer ${token}`
+        } : {}
+      }
     }
   )
-
-  // Authorization 헤더가 있으면 토큰으로 세션 설정
-  if (token) {
-    await supabase.auth.setSession({
-      access_token: token,
-      refresh_token: '', // refresh_token은 필요하지 않음
-    })
-  }
 
   return supabase
 }
@@ -142,10 +145,18 @@ export async function POST(request: NextRequest) {
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    console.log('👤 인증 결과:', {
+      hasUser: !!user,
+      userId: user?.id,
+      email: user?.email,
+      error: authError?.message
+    })
+    
     if (authError || !user) {
       console.error('❌ 인증 실패:', authError)
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - ' + (authError?.message || 'No user found') },
         { status: 401 }
       )
     }
