@@ -261,6 +261,7 @@ export default function MyQuotesPage() {
     const budgetMap: { [key: string]: string } = {
       'under_50k': '$50,000 미만',
       '50k_to_100k': '$50,000 - $100,000',
+      '50k_100k': '$50,000 - $100,000',
       'over_100k': '$100,000 이상'
     }
     return budgetMap[budget] || budget
@@ -272,7 +273,10 @@ export default function MyQuotesPage() {
     'condo': '콘도',
     'townhouse': '타운하우스',
     'town_house': '타운하우스',
-    'commercial': '상업'
+    'commercial': '상업',
+    'beecroft': '비크로프트',
+    'apartment': '아파트',
+    'house': '주택'
   }
 
   const projectTypeMap: { [key: string]: string } = {
@@ -282,6 +286,7 @@ export default function MyQuotesPage() {
     'painting': '페인팅',
     'flooring': '바닥',
     'full-renovation': '전체 리노베이션',
+    'full_renovation': '전체 리노베이션',
     'restaurant': '레스토랑',
     'retail': '소매점',
     'office': '사무실',
@@ -294,6 +299,7 @@ export default function MyQuotesPage() {
     'immediate': '즉시',
     'within_1_month': '1개월 이내',
     'within_3_months': '3개월 이내',
+    '3_months': '3개월 이내',
     'flexible': '유연함'
   }
 
