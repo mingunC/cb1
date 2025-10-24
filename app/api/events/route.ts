@@ -3,7 +3,7 @@ import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 // Helper function to create Supabase client for API routes
-const createServerClient = async (request: NextRequest) => {
+const createServerClient = async () => {
   const cookieStore = await cookies()
   
   return createSupabaseServerClient(
@@ -14,6 +14,20 @@ const createServerClient = async (request: NextRequest) => {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set(name, value, options)
+          } catch (error) {
+            // Handle errors in middleware
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set(name, '', { ...options, maxAge: 0 })
+          } catch (error) {
+            // Handle errors in middleware
+          }
+        },
       },
     }
   )
@@ -22,7 +36,7 @@ const createServerClient = async (request: NextRequest) => {
 // GET - 이벤트 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient(request)
+    const supabase = await createServerClient()
     const { searchParams } = new URL(request.url)
 
     // 쿼리 파라미터
@@ -108,47 +122,59 @@ export async function GET(request: NextRequest) {
 // POST - 새 이벤트 생성
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient(request)
+    const supabase = await createServerClient()
+    
+    console.log('🔍 사용자 인증 확인 시작')
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      console.error('Auth error:', authError)
+      console.error('❌ 인증 실패:', authError)
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    console.log('Authenticated user:', user.id, user.email)
+    console.log('✅ 인증 성공:', { userId: user.id, email: user.email })
 
     // 관리자 또는 업체 확인
-    const { data: userData } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('user_type')
       .eq('id', user.id)
       .single()
 
-    console.log('User data:', userData)
+    if (userError) {
+      console.error('❌ 사용자 정보 조회 실패:', userError)
+    }
+
+    console.log('📋 사용자 정보:', userData)
 
     const isAdmin = userData?.user_type === 'admin'
 
     // 업체 정보 확인 (관리자가 아닌 경우)
     let contractorId = null
     if (!isAdmin) {
-      const { data: contractorData } = await supabase
+      const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
         .select('id')
         .eq('user_id', user.id)
         .single()
 
+      if (contractorError) {
+        console.error('❌ 업체 정보 조회 실패:', contractorError)
+      }
+
       if (!contractorData) {
+        console.error('❌ 업체 정보 없음')
         return NextResponse.json(
           { error: 'Contractor not found' },
           { status: 403 }
         )
       }
       contractorId = contractorData.id
+      console.log('🏢 업체 ID:', contractorId)
     }
 
     const body = await request.json()
@@ -162,13 +188,14 @@ export async function POST(request: NextRequest) {
     // 필수 필드 검증
     if (!eventData.title || !eventData.description || !eventData.type || 
         !eventData.image_url || !eventData.start_date || !eventData.end_date) {
+      console.error('❌ 필수 필드 누락:', eventData)
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    console.log('Creating event with data:', eventData)
+    console.log('📝 이벤트 생성 데이터:', eventData)
 
     const { data: event, error } = await supabase
       .from('events')
@@ -177,16 +204,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating event:', error)
+      console.error('❌ 이벤트 생성 실패:', error)
       return NextResponse.json(
         { error: 'Failed to create event: ' + error.message },
         { status: 500 }
       )
     }
 
+    console.log('✅ 이벤트 생성 성공:', event.id)
+
     return NextResponse.json({ event }, { status: 201 })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('❌ 예상치 못한 에러:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -197,7 +226,7 @@ export async function POST(request: NextRequest) {
 // PUT - 이벤트 수정
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createServerClient(request)
+    const supabase = await createServerClient()
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -284,7 +313,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - 이벤트 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createServerClient(request)
+    const supabase = await createServerClient()
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
