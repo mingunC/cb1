@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle, Download } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle, Download, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface Project {
@@ -43,6 +43,7 @@ export default function CustomerDashboard() {
   const [selectedProjectQuotes, setSelectedProjectQuotes] = useState<Record<string, Quote[]>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
+  const [selectingContractor, setSelectingContractor] = useState<string | null>(null) // 선택 중인 견적서 ID
 
   useEffect(() => {
     checkAuthAndLoadProjects()
@@ -180,6 +181,16 @@ export default function CustomerDashboard() {
 
   const handleSelectContractor = async (projectId: string, contractorId: string, quoteId: string) => {
     console.log('🎯 업체 선택하기 버튼 클릭:', { projectId, contractorId, quoteId })
+    console.log('📊 현재 상태:', {
+      selectingContractor,
+      isAlreadySelecting: selectingContractor !== null
+    })
+    
+    if (selectingContractor) {
+      console.log('⚠️ 이미 다른 업체를 선택 중입니다')
+      toast.error('처리 중입니다. 잠시만 기다려주세요.')
+      return
+    }
     
     if (!confirm('이 업체를 선택하시겠습니까?')) {
       console.log('❌ 사용자가 취소했습니다')
@@ -187,6 +198,7 @@ export default function CustomerDashboard() {
     }
     
     try {
+      setSelectingContractor(quoteId)
       console.log('📤 API 요청 시작...')
       
       const response = await fetch('/api/select-contractor', {
@@ -218,6 +230,9 @@ export default function CustomerDashboard() {
     } catch (error: any) {
       console.error('❌ 업체 선택 에러:', error)
       toast.error(`업체 선택에 실패했습니다: ${error.message}`)
+    } finally {
+      setSelectingContractor(null)
+      console.log('🏁 업체 선택 프로세스 종료')
     }
   }
 
@@ -533,11 +548,14 @@ export default function CustomerDashboard() {
                           <div className="space-y-4">
                             {quotes.map((quote) => {
                               const isSelected = project.selected_quote_id === quote.id
+                              const isSelecting = selectingContractor === quote.id
+                              
                               console.log('🎯 견적서 렌더링:', {
                                 quoteId: quote.id,
                                 contractorId: quote.contractor_id,
                                 contractor: quote.contractor?.company_name,
                                 isSelected,
+                                isSelecting,
                                 canSelect: canSelectContractor,
                                 hasPDF: !!quote.pdf_url
                               })
@@ -607,9 +625,21 @@ export default function CustomerDashboard() {
                                             })
                                             handleSelectContractor(project.id, quote.contractor_id, quote.id)
                                           }}
-                                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold whitespace-nowrap"
+                                          disabled={isSelecting}
+                                          className={`px-6 py-2 rounded-lg font-semibold whitespace-nowrap flex items-center gap-2 ${
+                                            isSelecting
+                                              ? 'bg-gray-400 cursor-not-allowed'
+                                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                          }`}
                                         >
-                                          업체 선택하기
+                                          {isSelecting ? (
+                                            <>
+                                              <Loader2 className="w-4 h-4 animate-spin" />
+                                              처리 중...
+                                            </>
+                                          ) : (
+                                            '업체 선택하기'
+                                          )}
                                         </button>
                                       ) : null}
                                     </div>
