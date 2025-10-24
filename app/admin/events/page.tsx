@@ -77,7 +77,9 @@ export default function AdminEventsPage() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/events')
+      const response = await fetch('/api/events', {
+        credentials: 'include' // 쿠키 포함
+      })
       const data = await response.json()
       setEvents(data.events || [])
     } catch (error) {
@@ -135,20 +137,28 @@ export default function AdminEventsPage() {
         const response = await fetch('/api/events', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // 쿠키 포함
           body: JSON.stringify({ id: editingEvent.id, ...eventData })
         })
 
-        if (!response.ok) throw new Error('Failed to update event')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update event')
+        }
         showNotification('success', '이벤트가 수정되었습니다.')
       } else {
         // 생성
         const response = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // 쿠키 포함
           body: JSON.stringify(eventData)
         })
 
-        if (!response.ok) throw new Error('Failed to create event')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to create event')
+        }
         showNotification('success', '이벤트가 생성되었습니다.')
       }
 
@@ -156,7 +166,7 @@ export default function AdminEventsPage() {
       handleCloseModal()
     } catch (error) {
       console.error('Error saving event:', error)
-      showNotification('error', '이벤트 저장에 실패했습니다.')
+      showNotification('error', error instanceof Error ? error.message : '이벤트 저장에 실패했습니다.')
     }
   }
 
@@ -165,16 +175,20 @@ export default function AdminEventsPage() {
 
     try {
       const response = await fetch(`/api/events?id=${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include' // 쿠키 포함
       })
 
-      if (!response.ok) throw new Error('Failed to delete event')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete event')
+      }
       
       showNotification('success', '이벤트가 삭제되었습니다.')
       fetchEvents()
     } catch (error) {
       console.error('Error deleting event:', error)
-      showNotification('error', '이벤트 삭제에 실패했습니다.')
+      showNotification('error', error instanceof Error ? error.message : '이벤트 삭제에 실패했습니다.')
     }
   }
 
