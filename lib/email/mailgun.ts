@@ -86,7 +86,7 @@ export const createSelectionEmailTemplate = (
 ): string => {
   const commission = calculateCommission(quoteInfo.price);
   const completionDate = new Date();
-  completionDate.setDate(completionDate.getDate() + 30); // 30일 후
+  completionDate.setDate(completionDate.getDate() + 7); // 7일 후로 변경
   
   // 고객 이름
   const customerName = customerInfo 
@@ -201,7 +201,7 @@ export const createSelectionEmailTemplate = (
               </tr>
               <tr>
                 <td>수수료율</td>
-                <td>견적 금액의 10%</td>
+                <td>견적 금액의 10%<br/><span style="font-size: 13px; color: #666;">(선금5% + 프로젝트 시작후 5%)</span></td>
               </tr>
               <tr>
                 <td>지급 기한</td>
@@ -211,7 +211,7 @@ export const createSelectionEmailTemplate = (
             <div style="background: #e7f3ff; padding: 12px; border-radius: 5px; margin-top: 15px; font-size: 14px; color: #333;">
               <strong>📌 수수료 정책:</strong>
               <ul style="margin: 8px 0; padding-left: 20px;">
-                <li>수수료는 프로젝트 계약 체결 후 30일 이내에 지급해주세요</li>
+                <li>수수료는 프로젝트 계약 체결 후 7일 이내에 지급해주세요</li>
                 <li>최종 프로젝트 금액이 변경될 경우, 변경된 금액 기준으로 수수료가 재계산됩니다</li>
                 <li>입금 계좌 정보는 별도로 안내드립니다</li>
               </ul>
@@ -220,11 +220,11 @@ export const createSelectionEmailTemplate = (
           
           <h3>📌 다음 단계</h3>
           <ol class="steps">
-            <li><strong>고객 연락</strong>: ${hasPhone ? '전화 또는 이메일로' : '이메일로'} 연락하여 일정 조율</li>
+            <li><strong>고객 연락</strong>: ${hasPhone ? '이메일 or 전화로' : '이메일로'} 연락하여 일정 조율</li>
             <li><strong>현장 방문</strong>: 방문 일정을 잡고 상세 견적 확정</li>
             <li><strong>계약 체결</strong>: 계약서 작성 및 서명 진행</li>
-            <li><strong>진행 업데이트</strong>: 대시보드에서 프로젝트 상황 업데이트</li>
-            <li><strong>수수료 지급</strong>: 계약 체결 후 30일 이내 플랫폼 수수료 지급</li>
+            <li><strong>진행 업데이트</strong>: 이메일로 프로젝트 시작일을 캐나다비버에게 알려주세요</li>
+            <li><strong>수수료 지급</strong>: 계약 체결 후 7일 이내 플랫폼 수수료 지급</li>
           </ol>
           
           <center>
