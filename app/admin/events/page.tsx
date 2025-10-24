@@ -76,26 +76,44 @@ export default function AdminEventsPage() {
     fetchContractors()
   }, [])
 
-  // 인증 헤더 가져오기 헬퍼 함수
+  // 인증 헤더 가져오기 헬퍼 함수 - 개선된 버전
   const getAuthHeaders = async () => {
     try {
       console.log('🔑 인증 헤더 가져오기 시작')
-      const supabase = createBrowserClient()
-      const { data: { session }, error } = await supabase.auth.getSession()
       
-      console.log('📋 세션 정보:', { 
-        hasSession: !!session, 
-        hasAccessToken: !!session?.access_token,
-        error 
-      })
+      // localStorage에서 직접 세션 읽기 (더 빠르고 안정적)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const projectRef = supabaseUrl?.split('//')[1]?.split('.')[0]
       
-      if (!session?.access_token) {
-        throw new Error('로그인이 필요합니다. 다시 로그인해주세요.')
+      if (!projectRef) {
+        throw new Error('Supabase 프로젝트 설정을 찾을 수 없습니다')
       }
+      
+      // localStorage 키 패턴: sb-{project-ref}-auth-token
+      const storageKey = `sb-${projectRef}-auth-token`
+      console.log('📦 localStorage 키:', storageKey)
+      
+      const sessionData = localStorage.getItem(storageKey)
+      console.log('📋 세션 데이터 존재:', !!sessionData)
+      
+      if (!sessionData) {
+        throw new Error('로그인 세션을 찾을 수 없습니다. 다시 로그인해주세요.')
+      }
+      
+      const session = JSON.parse(sessionData)
+      const accessToken = session?.access_token
+      
+      console.log('🎫 액세스 토큰 존재:', !!accessToken)
+      
+      if (!accessToken) {
+        throw new Error('액세스 토큰이 없습니다. 다시 로그인해주세요.')
+      }
+      
+      console.log('✅ 인증 헤더 준비 완료')
       
       return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${accessToken}`
       }
     } catch (error) {
       console.error('❌ 인증 헤더 가져오기 실패:', error)
