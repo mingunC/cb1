@@ -66,35 +66,47 @@ export default function AdminPortfolioPage() {
 
   const checkUser = async () => {
     try {
+      console.log('🔍 포트폴리오 페이지: 사용자 확인 시작')
       const supabase = createBrowserClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
+        console.log('❌ 사용자 없음, 로그인 페이지로 이동')
         router.push('/login')
         return
       }
 
+      console.log('👤 사용자 확인:', user.email)
+
       if (user.email !== 'cmgg919@gmail.com') {
+        console.log('❌ 관리자 권한 없음')
         router.push('/')
         return
       }
 
+      console.log('✅ 관리자 권한 확인됨')
       setUser(user)
       setIsAuthorized(true)
-      setIsLoading(false)
       
+      console.log('📊 데이터 로딩 시작...')
       await Promise.all([
         fetchProjects(),
         fetchContractors()
       ])
+      console.log('✅ 데이터 로딩 완료')
+      
     } catch (error) {
-      console.error('Error:', error)
+      console.error('❌ 에러 발생:', error)
       router.push('/login')
+    } finally {
+      console.log('🏁 로딩 상태 해제')
+      setIsLoading(false)
     }
   }
 
   const fetchProjects = async () => {
     try {
+      console.log('📂 포트폴리오 가져오기 시작')
       const supabase = createBrowserClient()
       
       // 포트폴리오와 업체 정보를 별도로 조회
@@ -104,10 +116,12 @@ export default function AdminPortfolioPage() {
         .order('created_at', { ascending: false })
 
       if (portfoliosError) {
-        console.error('Error fetching portfolios:', portfoliosError)
+        console.error('❌ 포트폴리오 조회 에러:', portfoliosError)
         toast.error('포트폴리오를 불러오는데 실패했습니다.')
         return
       }
+
+      console.log('✅ 포트폴리오 조회 성공:', portfolios?.length, '개')
 
       // 업체 정보 조회
       const { data: contractors, error: contractorsError } = await supabase
@@ -115,10 +129,12 @@ export default function AdminPortfolioPage() {
         .select('id, company_name, contact_name')
 
       if (contractorsError) {
-        console.error('Error fetching contractors:', contractorsError)
+        console.error('❌ 업체 정보 조회 에러:', contractorsError)
         toast.error('업체 정보를 불러오는데 실패했습니다.')
         return
       }
+
+      console.log('✅ 업체 정보 조회 성공:', contractors?.length, '개')
 
       // 포트폴리오와 업체 정보 결합
       const projectsWithContractors = portfolios?.map(portfolio => ({
@@ -126,15 +142,17 @@ export default function AdminPortfolioPage() {
         contractors: contractors?.find(c => c.id === portfolio.contractor_id) || null
       })) || []
 
+      console.log('✅ 데이터 결합 완료:', projectsWithContractors.length, '개')
       setProjects(projectsWithContractors)
     } catch (error) {
-      console.error('Error:', error)
+      console.error('❌ fetchProjects 에러:', error)
       toast.error('프로젝트를 불러오는데 실패했습니다.')
     }
   }
 
   const fetchContractors = async () => {
     try {
+      console.log('🏢 업체 목록 가져오기 시작')
       const supabase = createBrowserClient()
       
       const { data, error } = await supabase
@@ -143,13 +161,14 @@ export default function AdminPortfolioPage() {
         .order('company_name')
 
       if (error) {
-        console.error('Error fetching contractors:', error)
+        console.error('❌ 업체 목록 조회 에러:', error)
         return
       }
 
+      console.log('✅ 업체 목록 조회 성공:', data?.length, '개')
       setContractors(data || [])
     } catch (error) {
-      console.error('Error:', error)
+      console.error('❌ fetchContractors 에러:', error)
     }
   }
 
@@ -297,7 +316,7 @@ export default function AdminPortfolioPage() {
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.contractors.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+                         project.contractors?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory
     const matchesContractor = selectedContractor === 'all' || project.contractor_id === selectedContractor
@@ -310,7 +329,7 @@ export default function AdminPortfolioPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">관리자 권한 확인 중...</p>
+          <p className="mt-4 text-gray-600">포트폴리오 데이터 로딩 중...</p>
         </div>
       </div>
     )
@@ -485,7 +504,7 @@ export default function AdminPortfolioPage() {
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <div className="flex items-center">
                               <Building2 className="w-4 h-4 mr-1" />
-                              <span>{project.contractors.company_name}</span>
+                              <span>{project.contractors?.company_name || '업체 정보 없음'}</span>
                             </div>
                             <div className="flex items-center">
                               <span className="font-medium mr-1">카테고리:</span>
