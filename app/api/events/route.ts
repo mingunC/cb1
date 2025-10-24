@@ -1,10 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/clients'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // GET - 이벤트 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
+          },
+        },
+      }
+    )
     const { searchParams } = new URL(request.url)
 
     // 쿼리 파라미터
@@ -90,11 +113,36 @@ export async function GET(request: NextRequest) {
 // POST - 새 이벤트 생성
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
+          },
+        },
+      }
+    )
     
-    // 인증 확인
+    // 쿠키 기반 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log('🔍 API 인증 확인:', { user: user?.email, authError })
+    
     if (authError || !user) {
+      console.log('❌ 인증 실패:', authError)
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -102,14 +150,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 관리자 또는 업체 확인
-    const { data: userData } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', user.id)
-      .single()
-
-    const isAdmin = userData?.user_type === 'admin'
-
+    const isAdmin = user.email === 'cmgg919@gmail.com'
+    console.log('🔍 관리자 확인:', { email: user.email, isAdmin })
+    
     // 업체 정보 확인 (관리자가 아닌 경우)
     let contractorId = null
     if (!isAdmin) {
