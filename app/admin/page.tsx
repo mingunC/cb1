@@ -24,12 +24,45 @@ export default function AdminPage() {
     
     const checkUser = async () => {
       try {
-        const supabase = createBrowserClient()
-        const { data: { user }, error } = await supabase.auth.getUser()
+        console.log('🔍 Admin: 사용자 확인 시작')
         
-        if (!isMounted) return
+        // localStorage에서 직접 세션 읽기
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const projectRef = supabaseUrl?.split('//')[1]?.split('.')[0]
         
-        if (error || !user) {
+        if (!projectRef) {
+          console.error('❌ Supabase 프로젝트 설정을 찾을 수 없습니다')
+          if (isMounted) {
+            setIsLoading(false)
+            router.push('/login')
+          }
+          return
+        }
+        
+        const storageKey = `sb-${projectRef}-auth-token`
+        const sessionData = localStorage.getItem(storageKey)
+        
+        console.log('📋 세션 확인:', {
+          hasSession: !!sessionData,
+          storageKey
+        })
+        
+        if (!sessionData) {
+          console.log('❌ 세션 없음 - 로그인 페이지로 이동')
+          if (isMounted) {
+            setIsLoading(false)
+            router.push('/login')
+          }
+          return
+        }
+        
+        const session = JSON.parse(sessionData)
+        const userEmail = session?.user?.email
+        
+        console.log('👤 사용자 이메일:', userEmail)
+        
+        if (!userEmail) {
+          console.log('❌ 사용자 정보 없음')
           if (isMounted) {
             setIsLoading(false)
             router.push('/login')
@@ -38,20 +71,22 @@ export default function AdminPage() {
         }
 
         if (isMounted) {
-          setUser(user)
+          setUser(session.user)
           
-          if (user.email === 'cmgg919@gmail.com') {
+          if (userEmail === 'cmgg919@gmail.com') {
+            console.log('✅ 관리자 권한 확인됨')
             setIsAuthorized(true)
             setIsLoading(false)
             fetchStats()
           } else {
+            console.log('❌ 관리자 권한 없음')
             setIsAuthorized(false)
             setIsLoading(false)
             router.push('/')
           }
         }
       } catch (error) {
-        console.error('Unexpected error:', error)
+        console.error('❌ 예상치 못한 에러:', error)
         if (isMounted) {
           setIsLoading(false)
           router.push('/login')
@@ -68,6 +103,7 @@ export default function AdminPage() {
 
   const fetchStats = async () => {
     try {
+      console.log('📊 통계 가져오기 시작')
       const supabase = createBrowserClient()
       
       const [
@@ -86,23 +122,42 @@ export default function AdminPage() {
         supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_active', true)
       ])
       
-      setStats({
+      const newStats = {
         pendingQuotes: pendingResult.count || 0,
         totalContractors: contractorResult.count || 0,
         monthlyQuotes: monthlyResult.count || 0,
         activeProjects: activeResult.count || 0,
         completedProjects: completedResult.count || 0,
         activeEvents: eventsResult.count || 0
-      })
+      }
+      
+      console.log('✅ 통계 로드 완료:', newStats)
+      setStats(newStats)
     } catch (error) {
-      console.error('Error fetching stats:', error)
+      console.error('❌ 통계 가져오기 실패:', error)
     }
   }
 
   const handleSignOut = async () => {
-    const supabase = createBrowserClient()
-    await supabase.auth.signOut()
-    router.push('/')
+    try {
+      console.log('🚪 로그아웃 시작')
+      const supabase = createBrowserClient()
+      await supabase.auth.signOut()
+      
+      // localStorage 세션도 삭제
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const projectRef = supabaseUrl?.split('//')[1]?.split('.')[0]
+      if (projectRef) {
+        const storageKey = `sb-${projectRef}-auth-token`
+        localStorage.removeItem(storageKey)
+      }
+      
+      console.log('✅ 로그아웃 완료')
+      router.push('/')
+    } catch (error) {
+      console.error('❌ 로그아웃 실패:', error)
+      router.push('/')
+    }
   }
 
   if (isLoading) {
