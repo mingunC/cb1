@@ -77,6 +77,42 @@ export const calculateCommission = (budget: number): string => {
   }).format(commission);
 };
 
+// 번역 매핑 함수들
+const formatProjectTypes = (projectTypes: string[]): string => {
+  const projectTypeMap: { [key: string]: string } = {
+    'kitchen': '주방',
+    'bathroom': '욕실',
+    'basement': '지하실',
+    'painting': '페인팅',
+    'flooring': '바닥',
+    'full-renovation': '전체 리노베이션',
+    'full_renovation': '전체 리노베이션',
+    'restaurant': '레스토랑',
+    'retail': '소매점',
+    'office': '사무실',
+    'education': '교육시설',
+    'other': '기타'
+  }
+  
+  return projectTypes.map(type => projectTypeMap[type] || type).join(', ')
+}
+
+const formatSpaceType = (spaceType: string): string => {
+  const spaceTypeMap: { [key: string]: string } = {
+    'detached-house': '단독주택',
+    'detached_house': '단독주택',
+    'condo': '콘도',
+    'townhouse': '타운하우스',
+    'town_house': '타운하우스',
+    'commercial': '상업',
+    'beecroft': '비크로프트',
+    'apartment': '아파트',
+    'house': '주택'
+  }
+  
+  return spaceTypeMap[spaceType] || spaceType
+}
+
 // ✅ 업체에게 보낼 이메일 템플릿 (고객 정보 포함)
 export const createSelectionEmailTemplate = (
   contractorName: string,
@@ -175,11 +211,11 @@ export const createSelectionEmailTemplate = (
             <table class="info-table">
               <tr>
                 <td>프로젝트 유형</td>
-                <td>${projectInfo.project_types?.join(', ') || '리모델링'}</td>
+                <td>${formatProjectTypes(projectInfo.project_types || [])}</td>
               </tr>
               <tr>
                 <td>공간 유형</td>
-                <td>${projectInfo.space_type || '주거공간'}</td>
+                <td>${formatSpaceType(projectInfo.space_type || '')}</td>
               </tr>
               <tr>
                 <td>주소</td>
