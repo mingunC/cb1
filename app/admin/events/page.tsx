@@ -75,10 +75,25 @@ export default function AdminEventsPage() {
     fetchContractors()
   }, [])
 
+  // 인증 헤더 가져오기 헬퍼 함수
+  const getAuthHeaders = async () => {
+    const supabase = createBrowserClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session?.access_token) {
+      throw new Error('로그인이 필요합니다')
+    }
+    
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
+    }
+  }
+
   const fetchEvents = async () => {
     try {
       const response = await fetch('/api/events', {
-        credentials: 'include' // 쿠키 포함
+        credentials: 'include'
       })
       const data = await response.json()
       setEvents(data.events || [])
@@ -113,6 +128,9 @@ export default function AdminEventsPage() {
     e.preventDefault()
 
     try {
+      // 인증 헤더 가져오기
+      const headers = await getAuthHeaders()
+
       // 데이터 변환
       const eventData = {
         ...formData,
@@ -136,8 +154,8 @@ export default function AdminEventsPage() {
         // 수정
         const response = await fetch('/api/events', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // 쿠키 포함
+          headers,
+          credentials: 'include',
           body: JSON.stringify({ id: editingEvent.id, ...eventData })
         })
 
@@ -150,8 +168,8 @@ export default function AdminEventsPage() {
         // 생성
         const response = await fetch('/api/events', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // 쿠키 포함
+          headers,
+          credentials: 'include',
           body: JSON.stringify(eventData)
         })
 
@@ -174,9 +192,12 @@ export default function AdminEventsPage() {
     if (!confirm('정말 이 이벤트를 삭제하시겠습니까?')) return
 
     try {
+      const headers = await getAuthHeaders()
+      
       const response = await fetch(`/api/events?id=${id}`, {
         method: 'DELETE',
-        credentials: 'include' // 쿠키 포함
+        headers,
+        credentials: 'include'
       })
 
       if (!response.ok) {
