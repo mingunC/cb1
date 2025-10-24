@@ -90,8 +90,10 @@ export default function AdminQuotesPage() {
             return quote.status === 'approved'
           case 'site-visit':
             return quote.status === 'site-visit-pending'
-          case 'active':
-            return ['site-visit-completed', 'bidding', 'bidding-closed', 'contractor-selected', 'quote-submitted'].includes(quote.status)
+          case 'bidding':
+            return quote.status === 'bidding'
+          case 'contractor-selected':
+            return quote.status === 'contractor-selected' || quote.status === 'bidding-closed'
           case 'completed':
             return quote.status === 'completed' || quote.status === 'in-progress'
           default:
@@ -264,7 +266,8 @@ export default function AdminQuotesPage() {
     { id: 'pending', label: '대기중', count: quotes.filter(q => q.status === 'pending').length },
     { id: 'approved', label: '승인됨', count: quotes.filter(q => q.status === 'approved').length },
     { id: 'site-visit', label: '현장방문대기', count: quotes.filter(q => q.status === 'site-visit-pending').length },
-    { id: 'active', label: '입찰중', count: quotes.filter(q => ['site-visit-completed', 'bidding', 'bidding-closed', 'contractor-selected', 'quote-submitted'].includes(q.status)).length },
+    { id: 'bidding', label: '입찰중', count: quotes.filter(q => q.status === 'bidding').length },
+    { id: 'contractor-selected', label: '업체선정완료', count: quotes.filter(q => q.status === 'contractor-selected' || q.status === 'bidding-closed').length },
     { id: 'completed', label: '완료', count: quotes.filter(q => q.status === 'completed' || q.status === 'in-progress').length }
   ]
 
