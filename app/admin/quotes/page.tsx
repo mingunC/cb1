@@ -238,14 +238,24 @@ export default function AdminQuotesPage() {
 
   const budgetMap: { [key: string]: string } = {
     'under_50k': '$50,000 미만',
+    '50k_100k': '$50,000 - $100,000',
     '50k_to_100k': '$50,000 - $100,000',
-    'over_100k': '$100,000 이상'
+    'over_100k': '$100,000 이상',
+    '100k_200k': '$100,000 - $200,000',
+    '200k_500k': '$200,000 - $500,000',
+    'over_500k': '$500,000 이상'
   }
 
   const timelineMap: { [key: string]: string } = {
-    'immediate': '즉시',
+    'immediate': '즉시 시작',
+    'immediately': '즉시 시작',
+    'asap': '즉시 시작',
+    '1_month': '1개월 내',
     'within_1_month': '1개월 내',
+    '3_months': '3개월 내',
     'within_3_months': '3개월 내',
+    'planning': '계획단계',
+    'planning_stage': '계획단계',
     'flexible': '유연함'
   }
 
@@ -548,7 +558,7 @@ export default function AdminQuotesPage() {
                     <p className="text-sm"><span className="font-medium">공간:</span> {spaceTypeMap[selectedQuote.space_type] || selectedQuote.space_type}</p>
                     <p className="text-sm"><span className="font-medium">서비스:</span> {selectedQuote.project_types?.map(type => projectTypeMap[type] || type).join(', ')}</p>
                     <p className="text-sm"><span className="font-medium">예산:</span> {budgetMap[selectedQuote.budget] || selectedQuote.budget}</p>
-                    <p className="text-sm"><span className="font-medium">일정:</span> {timelineMap[selectedQuote.timeline] || selectedQuote.timeline}</p>
+                    <p className="text-sm"><span className="font-medium">시작시기:</span> {timelineMap[selectedQuote.timeline] || selectedQuote.timeline}</p>
                     {selectedQuote.visit_date && (
                       <p className="text-sm"><span className="font-medium">방문일:</span> {new Date(selectedQuote.visit_date).toLocaleDateString('ko-KR')}</p>
                     )}
