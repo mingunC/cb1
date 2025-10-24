@@ -47,6 +47,7 @@ export default function AdminEventsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -77,16 +78,28 @@ export default function AdminEventsPage() {
 
   // 인증 헤더 가져오기 헬퍼 함수
   const getAuthHeaders = async () => {
-    const supabase = createBrowserClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.access_token) {
-      throw new Error('로그인이 필요합니다')
-    }
-    
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`
+    try {
+      console.log('🔑 인증 헤더 가져오기 시작')
+      const supabase = createBrowserClient()
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      console.log('📋 세션 정보:', { 
+        hasSession: !!session, 
+        hasAccessToken: !!session?.access_token,
+        error 
+      })
+      
+      if (!session?.access_token) {
+        throw new Error('로그인이 필요합니다. 다시 로그인해주세요.')
+      }
+      
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    } catch (error) {
+      console.error('❌ 인증 헤더 가져오기 실패:', error)
+      throw error
     }
   }
 
@@ -121,19 +134,34 @@ export default function AdminEventsPage() {
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
-    setTimeout(() => setNotification(null), 3000)
+    setTimeout(() => setNotification(null), 5000)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    console.log('📝 폼 제출 시작')
+    console.log('폼 데이터:', formData)
+
+    // 이미 제출 중이면 중복 제출 방지
+    if (isSubmitting) {
+      console.log('⚠️ 이미 제출 중입니다')
+      return
+    }
+
+    setIsSubmitting(true)
 
     try {
       // 인증 헤더 가져오기
+      console.log('1️⃣ 인증 헤더 가져오기...')
       const headers = await getAuthHeaders()
+      console.log('✅ 인증 헤더 준비 완료')
 
       // 데이터 변환
+      console.log('2️⃣ 데이터 변환 중...')
       const eventData = {
         ...formData,
+        subtitle: formData.subtitle || '', // 빈 문자열로 기본값 설정
         discount_rate: formData.discount_rate ? parseInt(formData.discount_rate) : null,
         original_price: formData.original_price ? parseInt(formData.original_price) : null,
         discounted_price: formData.discounted_price ? parseInt(formData.discounted_price) : null,
@@ -149,9 +177,11 @@ export default function AdminEventsPage() {
           ? formData.tags.split(',').map(t => t.trim()).filter(t => t) 
           : []
       }
+      console.log('변환된 데이터:', eventData)
 
       if (editingEvent) {
         // 수정
+        console.log('3️⃣ 이벤트 수정 API 호출...')
         const response = await fetch('/api/events', {
           method: 'PUT',
           headers,
@@ -159,13 +189,17 @@ export default function AdminEventsPage() {
           body: JSON.stringify({ id: editingEvent.id, ...eventData })
         })
 
+        console.log('응답 상태:', response.status)
+        const result = await response.json()
+        console.log('응답 데이터:', result)
+
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Failed to update event')
+          throw new Error(result.error || 'Failed to update event')
         }
         showNotification('success', '이벤트가 수정되었습니다.')
       } else {
         // 생성
+        console.log('3️⃣ 이벤트 생성 API 호출...')
         const response = await fetch('/api/events', {
           method: 'POST',
           headers,
@@ -173,18 +207,25 @@ export default function AdminEventsPage() {
           body: JSON.stringify(eventData)
         })
 
+        console.log('응답 상태:', response.status)
+        const result = await response.json()
+        console.log('응답 데이터:', result)
+
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Failed to create event')
+          throw new Error(result.error || 'Failed to create event')
         }
         showNotification('success', '이벤트가 생성되었습니다.')
       }
 
-      fetchEvents()
+      console.log('4️⃣ 이벤트 목록 새로고침...')
+      await fetchEvents()
+      console.log('✅ 완료!')
       handleCloseModal()
     } catch (error) {
-      console.error('Error saving event:', error)
+      console.error('❌ Error saving event:', error)
       showNotification('error', error instanceof Error ? error.message : '이벤트 저장에 실패했습니다.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -241,6 +282,7 @@ export default function AdminEventsPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setEditingEvent(null)
+    setIsSubmitting(false)
     setFormData({
       contractor_id: '',
       title: '',
@@ -417,7 +459,7 @@ export default function AdminEventsPage() {
               {/* 업체 선택 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  업체 <span className="text-red-500">*</span>
+                  업체
                 </label>
                 <select
                   value={formData.contractor_id}
@@ -673,14 +715,23 @@ export default function AdminEventsPage() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  {editingEvent ? '수정하기' : '추가하기'}
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      처리 중...
+                    </>
+                  ) : (
+                    editingEvent ? '수정하기' : '추가하기'
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium"
+                  disabled={isSubmitting}
+                  className="px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   취소
                 </button>
