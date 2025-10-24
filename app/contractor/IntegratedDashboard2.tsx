@@ -496,12 +496,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return spaceLabels[project.space_type] || 'House'
     }
     
-    // 예산 표시
+    // 예산 표시 - 개선된 버전
     const getBudgetLabel = () => {
       const budget = project.budget
       const budgetLabels: Record<string, string> = {
         'under_50k': '$50,000 미만',
         '50k_100k': '$50,000 - $100,000',
+        '50k_to_100k': '$50,000 - $100,000',
         'over_100k': '$100,000 이상',
         '100k_200k': '$100,000 - $200,000',
         '200k_500k': '$200,000 - $500,000',
@@ -510,7 +511,26 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       if (budgetLabels[budget]) return budgetLabels[budget]
       if (typeof budget === 'number') return `$${budget.toLocaleString()}`
-      return '미정'
+      return budget || '미정'
+    }
+    
+    // 시작시기 표시 - 새로 추가
+    const getTimelineLabel = () => {
+      const timeline = project.timeline
+      const timelineLabels: Record<string, string> = {
+        'immediate': '즉시 시작',
+        'immediately': '즉시 시작',
+        'asap': '즉시 시작',
+        '1_month': '1개월 내',
+        'within_1_month': '1개월 내',
+        '3_months': '3개월 내',
+        'within_3_months': '3개월 내',
+        'planning': '계획단계',
+        'planning_stage': '계획단계',
+        'flexible': '유연함'
+      }
+      
+      return timelineLabels[timeline] || timeline || '미정'
     }
     
     // 날짜 포맷
@@ -560,10 +580,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <span className="font-medium">{getCustomerName()}</span>
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {getProjectTypeLabel()}
+              프로젝트: {getProjectTypeLabel()}
             </p>
             <p className="text-sm text-gray-500">
               예산: {getBudgetLabel()}
+            </p>
+            <p className="text-sm text-gray-500">
+              시작시기: {getTimelineLabel()}
             </p>
           </div>
           <div className="ml-4">
