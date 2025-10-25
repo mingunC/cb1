@@ -325,22 +325,22 @@ export default function Header() {
     if (isAdmin) {
       return [
         { name: 'Pros', href: '/pros' },
-        { name: '포트폴리오', href: '/portfolio' },
-        { name: '이벤트', href: '/events' },
+        { name: 'Portfolio', href: '/portfolio' },
+        { name: 'Event', href: '/events' },
         { name: '관리자 대시보드', href: '/admin' },
       ]
     } else if (isContractor) {
       return [
         { name: 'Pros', href: '/pros' },
-        { name: '포트폴리오', href: '/portfolio' },
-        { name: '이벤트', href: '/events' },
+        { name: 'Portfolio', href: '/portfolio' },
+        { name: 'Event', href: '/events' },
         { name: 'MyPage', href: '/contractor' },
       ]
     } else {
       return [
         { name: 'Pros', href: '/pros' },
-        { name: '포트폴리오', href: '/portfolio' },
-        { name: '이벤트', href: '/events' },
+        { name: 'Portfolio', href: '/portfolio' },
+        { name: 'Event', href: '/events' },
         { name: 'MyPage', href: '/my-quotes' },
       ]
     }
