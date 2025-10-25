@@ -322,25 +322,33 @@ export default function Header() {
 
   // 네비게이션 메뉴 설정
   const getNavigation = () => {
+    // 기본 메뉴 (로그인 여부와 무관하게 항상 표시)
+    const baseNavigation = [
+      { name: 'Pros', href: '/pros' },
+      { name: '포트폴리오', href: '/portfolio' },
+      { name: '이벤트', href: '/events' },
+    ]
+
+    // 로그인하지 않은 경우 - MyPage 없이 기본 메뉴만
+    if (!user) {
+      return baseNavigation
+    }
+
+    // 로그인한 경우 - 역할에 따라 MyPage 추가
     if (isAdmin) {
       return [
-        { name: 'Pros', href: '/pros' },
-        { name: '포트폴리오', href: '/portfolio' },
-        { name: '이벤트', href: '/events' },
+        ...baseNavigation,
         { name: '관리자 대시보드', href: '/admin' },
       ]
     } else if (isContractor) {
       return [
-        { name: 'Pros', href: '/pros' },
-        { name: '포트폴리오', href: '/portfolio' },
-        { name: '이벤트', href: '/events' },
+        ...baseNavigation,
         { name: 'MyPage', href: '/contractor' },
       ]
     } else {
+      // 일반 고객
       return [
-        { name: 'Pros', href: '/pros' },
-        { name: '포트폴리오', href: '/portfolio' },
-        { name: '이벤트', href: '/events' },
+        ...baseNavigation,
         { name: 'MyPage', href: '/my-quotes' },
       ]
     }
