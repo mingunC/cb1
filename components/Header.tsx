@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Menu, X, User, LogOut } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
@@ -127,12 +128,14 @@ export default function Header() {
           {/* 로고 */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                Renovation
-              </span>
+              <Image 
+                src="/logo.png" 
+                alt="Canada Beaver" 
+                width={180}
+                height={48}
+                className="h-8 w-auto"
+                priority
+              />
             </Link>
           </div>
 
