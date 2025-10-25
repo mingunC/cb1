@@ -2,43 +2,17 @@
 
 import Link from 'next/link'
 import { ArrowRight, Star, Users, Award } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@/lib/supabase/clients'
+import toast from 'react-hot-toast'
 
-export default function HeroSection() {
-  const [isContractor, setIsContractor] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+interface HeroSectionProps {
+  isContractor: boolean
+}
 
-  useEffect(() => {
-    const checkUserRole = async () => {
-      try {
-        const supabase = createBrowserClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (user) {
-          // users 테이블에서 user_type 확인
-          const { data: userData } = await supabase
-            .from('users')
-            .select('user_type')
-            .eq('id', user.id)
-            .maybeSingle()
-          
-          setIsContractor(userData?.user_type === 'contractor')
-        }
-      } catch (error) {
-        console.error('Error checking user role:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkUserRole()
-  }, [])
-
+export default function HeroSection({ isContractor }: HeroSectionProps) {
   const handleQuoteRequest = (e: React.MouseEvent) => {
     if (isContractor) {
       e.preventDefault()
-      alert('업체는 견적 요청을 할 수 없습니다.')
+      toast.error('업체는 견적 요청을 할 수 없습니다.')
     }
   }
 
