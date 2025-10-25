@@ -93,6 +93,7 @@ export default function QuoteRequestForm() {
       
       if (authError || !user) {
         alert('로그인이 필요합니다.')
+        setIsSubmitting(false)  // ⭐ 이 줄 추가!
         window.location.href = '/login'
         return
       }
@@ -126,26 +127,24 @@ export default function QuoteRequestForm() {
       if (insertError) {
         console.error('Insert failed:', insertError)
         toast.error(`저장 실패: ${insertError.message}`)
-        setIsSubmitting(false)
-        return
+        return  // finally 블록에서 setIsSubmitting(false) 호출됨
       }
 
       if (result) {
         console.log('SUCCESS! Quote saved:', result)
         toast.success('견적 요청이 성공적으로 저장되었습니다!')
         setIsCompleted(true)
-        setIsSubmitting(false)
       } else {
         console.error('No data returned after insert')
         toast.error('저장은 되었으나 데이터를 확인할 수 없습니다.')
-        setIsSubmitting(false)
       }
       
     } catch (error: any) {
       console.error('Unexpected error:', error)
       toast.error(`예기치 않은 오류: ${error.message}`)
-      setIsSubmitting(false)
     } finally {
+      // ⭐ finally 블록으로 이동 - 모든 경로에서 실행됨!
+      setIsSubmitting(false)
       console.log('=== SUBMISSION COMPLETE ===')
     }
   }
@@ -273,7 +272,7 @@ export default function QuoteRequestForm() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">견적 요청 완료!</h2>
           <p className="text-gray-600 mb-6">
             견적 요청이 성공적으로 제출되었습니다.<br />
-            관리자 승인 후 업체들이 견적을 제출할 예정입니다.
+            관리자 승인 후 현장방문이 이루어질 예정입니다.
           </p>
           <button
             onClick={() => window.location.href = '/my-quotes'}

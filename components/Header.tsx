@@ -128,12 +128,12 @@ export default function Header() {
           {/* 로고 */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <Image 
-                src="/logo.png" 
-                alt="Canada Beaver" 
-                width={180}
-                height={48}
-                className="h-8 w-auto"
+              <Image
+                src="/logo.png"
+                alt="Canada Beaver"
+                width={400}
+                height={120}
+                className="h-24 md:h-28 w-auto"
                 priority
               />
             </Link>
