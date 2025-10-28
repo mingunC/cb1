@@ -268,7 +268,7 @@ export default function QuoteRequestForm() {
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl border-4 border-purple-500 p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">✅</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">견적 요청 완료!</h2>
           <p className="text-gray-600 mb-6">
@@ -277,7 +277,7 @@ export default function QuoteRequestForm() {
           </p>
           <button
             onClick={() => window.location.href = '/my-quotes'}
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+            className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-3 px-6 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
           >
             내 견적 보기
           </button>
@@ -289,9 +289,9 @@ export default function QuoteRequestForm() {
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-2xl border-4 border-purple-500 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-8 text-center">
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-8 text-center">
             <h1 className="text-3xl font-bold mb-2">리노베이션 견적 요청</h1>
             <p className="text-lg opacity-90">간단한 6단계로 전문가의 견적을 받아보세요</p>
             
@@ -311,7 +311,7 @@ export default function QuoteRequestForm() {
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
-                    <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-center leading-8 font-bold mr-3">1</span>
+                    <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">1</span>
                     <h2 className="text-2xl font-semibold text-gray-900">부동산 유형</h2>
                   </div>
                   <p className="text-gray-600 ml-11">리노베이션하실 공간의 유형을 선택해주세요</p>
@@ -330,8 +330,8 @@ export default function QuoteRequestForm() {
                       />
                       <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
                         formData.spaceType === type.value
-                          ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg'
-                          : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
+                          : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                       }`}>
                         <div className="text-lg font-semibold text-gray-900 mb-1">{type.label}</div>
                         <div className="text-sm text-gray-600">{type.subtitle}</div>
@@ -347,7 +347,7 @@ export default function QuoteRequestForm() {
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
-                    <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-center leading-8 font-bold mr-3">2</span>
+                    <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">2</span>
                     <h2 className="text-2xl font-semibold text-gray-900">프로젝트 영역</h2>
                   </div>
                   <p className="text-gray-600 ml-11">리노베이션하실 영역을 선택해주세요</p>
@@ -367,8 +367,8 @@ export default function QuoteRequestForm() {
                         />
                         <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
                           formData.projectTypes.includes(type.value)
-                            ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg'
-                            : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                            ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
+                            : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                         }`}>
                           <div className="text-lg font-semibold text-gray-900">{type.label}</div>
                         </div>
@@ -395,8 +395,8 @@ export default function QuoteRequestForm() {
                           />
                           <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
                             formData.projectTypes.includes(type.value)
-                              ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg'
-                              : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
+                              : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                           }`}>
                             <div className="text-lg font-semibold text-gray-900">{type.label}</div>
                           </div>
@@ -413,7 +413,7 @@ export default function QuoteRequestForm() {
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
-                    <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-center leading-8 font-bold mr-3">3</span>
+                    <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">3</span>
                     <h2 className="text-2xl font-semibold text-gray-900">예산 범위</h2>
                   </div>
                   <p className="text-gray-600 ml-11">예상 예산 범위를 선택해주세요</p>
@@ -432,8 +432,8 @@ export default function QuoteRequestForm() {
                       />
                       <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
                         formData.budget === budget.value
-                          ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg'
-                          : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
+                          : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                       }`}>
                         <div className="text-lg font-semibold text-gray-900 mb-1">{budget.label}</div>
                         <div className="text-sm text-gray-600">{budget.subtitle}</div>
@@ -449,7 +449,7 @@ export default function QuoteRequestForm() {
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
-                    <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-center leading-8 font-bold mr-3">4</span>
+                    <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">4</span>
                     <h2 className="text-2xl font-semibold text-gray-900">시작 시기</h2>
                   </div>
                   <p className="text-gray-600 ml-11">프로젝트 시작 희망 시기를 선택해주세요</p>
@@ -468,8 +468,8 @@ export default function QuoteRequestForm() {
                       />
                       <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
                         formData.timeline === timeline.value
-                          ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg'
-                          : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
+                          : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                       }`}>
                         <div className="text-lg font-semibold text-gray-900 mb-1">{timeline.label}</div>
                         <div className="text-sm text-gray-600">{timeline.subtitle}</div>
@@ -485,7 +485,7 @@ export default function QuoteRequestForm() {
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
-                    <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-center leading-8 font-bold mr-3">5</span>
+                    <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">5</span>
                     <h2 className="text-2xl font-semibold text-gray-900">위치 정보</h2>
                   </div>
                   <p className="text-gray-600 ml-11">프로젝트 위치와 방문 일정을 입력해주세요</p>
@@ -535,7 +535,7 @@ export default function QuoteRequestForm() {
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
-                    <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-center leading-8 font-bold mr-3">6</span>
+                    <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">6</span>
                     <h2 className="text-2xl font-semibold text-gray-900">프로젝트 요구사항</h2>
                   </div>
                   <p className="text-gray-600 ml-11">프로젝트에 대한 상세 요구사항을 작성해주세요</p>
@@ -576,7 +576,7 @@ export default function QuoteRequestForm() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                  className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
                 >
                   다음 →
                 </button>
