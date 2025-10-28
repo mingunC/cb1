@@ -324,9 +324,9 @@ export default function Header() {
   const getNavigation = () => {
     // 기본 메뉴 (로그인 여부와 무관하게 항상 표시)
     const baseNavigation = [
-      { name: 'Pros', href: '/pros' },
-      { name: '포트폴리오', href: '/portfolio' },
-      { name: '이벤트', href: '/events' },
+      { name: 'Partners', href: '/pros' },
+      { name: 'Portfolio', href: '/portfolio' },
+      { name: 'Events', href: '/events' },
     ]
 
     // 로그인하지 않은 경우 - MyPage 없이 기본 메뉴만
