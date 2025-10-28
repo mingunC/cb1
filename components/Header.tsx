@@ -541,7 +541,7 @@ export default function Header() {
                 <div className="pt-4 space-y-2">
                   <Link
                     href="/quote-request"
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Get a Quote
