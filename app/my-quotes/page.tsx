@@ -781,14 +781,14 @@ export default function MyQuotesPage() {
                       <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                           <CheckCircle className="w-6 h-6 mr-2 text-green-600" />
-                          프로젝트 완료
+                          Project Completed
                         </h3>
                         <p className="text-sm text-gray-700">
-                          프로젝트가 성공적으로 완료되었습니다. 이용해주셔서 감사합니다!
+                          The project has been successfully completed. Thank you for using our service!
                         </p>
                         {quote.project_completed_at && (
                           <p className="text-xs text-gray-500 mt-2">
-                            완료일: {new Date(quote.project_completed_at).toLocaleDateString('ko-KR')}
+                            Completed: {new Date(quote.project_completed_at).toLocaleDateString('en-US')}
                           </p>
                         )}
                       </div>
