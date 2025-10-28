@@ -149,11 +149,12 @@ export default function EventsPromotionPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 배너 */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-3xl font-bold mb-4">이벤트 & 프로모션</h1>
-          <p className="text-lg opacity-90">
-            레노베이션 전문 업체들의 특별한 혜택을 만나보세요
+          <h1 className="text-4xl lg:text-5xl font-bold mb-4">Exclusive Events</h1>
+          <div className="w-20 h-1 bg-amber-600 mb-4"></div>
+          <p className="text-xl opacity-90">
+            Discover special offers from trusted professionals
           </p>
         </div>
       </div>
