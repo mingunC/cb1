@@ -376,9 +376,9 @@ export default function QuoteRequestForm() {
                   </div>
                 ) : (
                   <div className="mb-4">
-                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <div className="bg-emerald-50 p-4 rounded-lg mb-6">
                       <p className="text-sm text-emerald-800">
-                        <strong>참고:</strong> '전체 리노베이션'을 선택하면 다른 옵션은 선택할 수 없습니다. 나머지는 다중 선택이 가능합니다.
+                        <strong>Note:</strong> If you select 'Full Renovation', you cannot select other options. You can select multiple options for the rest.
                       </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
