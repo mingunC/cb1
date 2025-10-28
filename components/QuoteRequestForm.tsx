@@ -132,7 +132,7 @@ export default function QuoteRequestForm() {
 
       if (result) {
         console.log('SUCCESS! Quote saved:', result)
-        toast.success('견적 요청이 성공적으로 저장되었습니다!')
+        toast.success('Quote request submitted successfully!')
         setIsCompleted(true)
         setIsSubmitting(false)
       } else {
@@ -270,10 +270,10 @@ export default function QuoteRequestForm() {
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">견적 요청 완료!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Quote Request Submitted!</h2>
           <p className="text-gray-600 mb-6">
-            견적 요청이 성공적으로 제출되었습니다.<br />
-            관리자 승인 후 업체들이 방문 할 예정입니다.
+            Your quote request has been successfully submitted.<br />
+            Contractors will visit after admin approval.
           </p>
           <button
             onClick={() => window.location.href = '/my-quotes'}
