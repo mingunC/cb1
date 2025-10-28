@@ -260,48 +260,48 @@ export default function MyQuotesPage() {
 
   const formatBudget = (budget: string) => {
     const budgetMap: { [key: string]: string } = {
-      'under_50k': '$50,000 미만',
+      'under_50k': 'Under $50,000',
       '50k_to_100k': '$50,000 - $100,000',
       '50k_100k': '$50,000 - $100,000',
-      'over_100k': '$100,000 이상'
+      'over_100k': '$100,000+'
     }
     return budgetMap[budget] || budget
   }
 
   const spaceTypeMap: { [key: string]: string } = {
-    'detached-house': '단독주택',
-    'detached_house': '단독주택',
-    'condo': '콘도',
-    'townhouse': '타운하우스',
-    'town_house': '타운하우스',
-    'commercial': '상업',
-    'beecroft': '비크로프트',
-    'apartment': '아파트',
-    'house': '주택'
+    'detached-house': 'Detached House',
+    'detached_house': 'Detached House',
+    'condo': 'Condo',
+    'townhouse': 'Town House',
+    'town_house': 'Town House',
+    'commercial': 'Commercial',
+    'beecroft': 'Beecroft',
+    'apartment': 'Apartment',
+    'house': 'House'
   }
 
   const projectTypeMap: { [key: string]: string } = {
-    'kitchen': '주방',
-    'bathroom': '욕실',
-    'basement': '지하실',
-    'painting': '페인팅',
-    'flooring': '바닥',
-    'full-renovation': '전체 리노베이션',
-    'full_renovation': '전체 리노베이션',
-    'restaurant': '레스토랑',
-    'retail': '소매점',
-    'office': '사무실',
-    'education': '교육시설',
-    'other': '기타'
+    'kitchen': 'Kitchen',
+    'bathroom': 'Bathroom',
+    'basement': 'Basement',
+    'painting': 'Painting',
+    'flooring': 'Flooring',
+    'full-renovation': 'Full Renovation',
+    'full_renovation': 'Full Renovation',
+    'restaurant': 'Restaurant',
+    'retail': 'Retail',
+    'office': 'Office',
+    'education': 'Education',
+    'other': 'Other'
   }
 
   const timelineMap: { [key: string]: string } = {
-    'asap': '가능한 빨리',
-    'immediate': '즉시',
-    'within_1_month': '1개월 이내',
-    'within_3_months': '3개월 이내',
-    '3_months': '3개월 이내',
-    'flexible': '유연함'
+    'asap': 'As soon as possible',
+    'immediate': 'Immediate',
+    'within_1_month': 'Within 1 month',
+    'within_3_months': 'Within 3 months',
+    '3_months': 'Within 3 months',
+    'flexible': 'Flexible'
   }
 
   // ✅ 현장방문 단계인지 확인하는 헬퍼 함수
@@ -678,17 +678,17 @@ export default function MyQuotesPage() {
                           
                           <div>
                             <p className="text-sm text-gray-600 mb-1">
-                              <strong>프로젝트:</strong> {quote.project_types?.map(type => 
+                              <strong>Project:</strong> {quote.project_types?.map(type => 
                                 projectTypeMap[type] || type
                               ).join(', ')}
                             </p>
                             <p className="text-sm text-gray-600 mb-1">
-                              <strong>일정:</strong> {timelineMap[quote.timeline] || quote.timeline}
+                              <strong>Timeline:</strong> {timelineMap[quote.timeline] || quote.timeline}
                             </p>
                             {quote.visit_date && (
                               <p className="text-sm text-gray-600">
                                 <Calendar className="w-4 h-4 inline mr-1" />
-                                방문일: {new Date(quote.visit_date).toLocaleDateString('ko-KR')}
+                                Visit Date: {new Date(quote.visit_date).toLocaleDateString('ko-KR')}
                               </p>
                             )}
                           </div>
@@ -696,7 +696,7 @@ export default function MyQuotesPage() {
 
                         {quote.description && (
                           <p className="text-sm text-gray-600 mb-4">
-                            <strong>요청사항:</strong> {quote.description}
+                            <strong>Request:</strong> {quote.description}
                           </p>
                         )}
                       </div>
@@ -993,9 +993,9 @@ export default function MyQuotesPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">기본 정보</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Basic Information</h4>
                     <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                      <p><strong>공간 유형:</strong> {spaceTypeMap[selectedQuote.space_type] || selectedQuote.space_type}</p>
+                      <p><strong>Space Type:</strong> {spaceTypeMap[selectedQuote.space_type] || selectedQuote.space_type}</p>
                       <p><strong>프로젝트:</strong> {selectedQuote.project_types?.map(type => 
                         projectTypeMap[type] || type
                       ).join(', ')}</p>
@@ -1005,19 +1005,19 @@ export default function MyQuotesPage() {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">위치 정보</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Location</h4>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p><strong>주소:</strong> {selectedQuote.full_address}</p>
-                      <p><strong>우편번호:</strong> {selectedQuote.postal_code}</p>
+                      <p><strong>Address:</strong> {selectedQuote.full_address}</p>
+                      <p><strong>Postal Code:</strong> {selectedQuote.postal_code}</p>
                       {selectedQuote.visit_date && (
-                        <p><strong>방문 희망일:</strong> {new Date(selectedQuote.visit_date).toLocaleDateString('ko-KR')}</p>
+                        <p><strong>Visit Date:</strong> {new Date(selectedQuote.visit_date).toLocaleDateString('ko-KR')}</p>
                       )}
                     </div>
                   </div>
 
                   {selectedQuote.description && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">요청사항</h4>
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">Request</h4>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p>{selectedQuote.description}</p>
                       </div>
