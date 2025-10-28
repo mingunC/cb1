@@ -610,14 +610,14 @@ export default function Header() {
                           className="block text-center text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium border border-gray-300 rounded-lg hover:bg-gray-50"
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          로그인
+                          Login
                         </Link>
                         <Link
                           href="/contractor-login"
                           className="block text-center text-green-600 hover:text-green-700 px-3 py-2 text-base font-medium border border-green-300 rounded-lg hover:bg-green-50"
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          Pros 로그인
+                          Partners Login
                         </Link>
                       </div>
                     )}
