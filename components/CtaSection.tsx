@@ -16,7 +16,6 @@ export default function CtaSection() {
         const { data: { user } } = await supabase.auth.getUser()
         
         if (user) {
-          // users 테이블에서 user_type 확인
           const { data: userData } = await supabase
             .from('users')
             .select('user_type')
@@ -42,73 +41,54 @@ export default function CtaSection() {
     }
   }
 
-  const benefits = [
-    '무료 견적 요청',
-    '검증된 전문 업체',
-    '투명한 가격 정보',
-    '품질 보장 서비스'
-  ]
-
   return (
-    <section className="py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
+    <section className="py-20 bg-emerald-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           {/* 메인 메시지 */}
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
-            지금 바로 시작하세요
+            Ready to Transform Your Space?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            복잡한 리노베이션 과정을 간단하게 만들어드립니다. 
-            전문 업체들이 직접 연락드려 맞춤형 견적을 제공합니다.
+          <p className="text-xl text-white/80 mb-12 max-w-3xl mx-auto">
+            Get started with your renovation journey today
           </p>
 
-          {/* 혜택 리스트 */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12 max-w-4xl mx-auto">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center justify-center text-white">
-                <CheckCircle className="h-5 w-5 mr-2 text-green-300" />
-                <span className="text-sm lg:text-base">{benefit}</span>
-              </div>
-            ))}
-          </div>
-
           {/* CTA 버튼들 */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link
               href="/quote-request"
               onClick={handleQuoteRequest}
-              className={`px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center group ${
+              className={`border-2 border-white text-white bg-transparent hover:bg-white hover:text-emerald-950 px-8 py-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center group ${
                 isContractor 
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                  : 'bg-white hover:bg-gray-100 text-blue-600'
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : ''
               }`}
             >
-              무료 견적 요청하기
+              Get Your Free Quote
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/pros"
-              className="border-2 border-white hover:bg-white hover:text-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center"
+              className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-emerald-950 px-8 py-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center"
             >
-              업체 둘러보기
+              Browse Professionals
             </Link>
           </div>
 
-          {/* 신뢰 지표 */}
-          <div className="mt-16 pt-8 border-t border-blue-500">
-            <p className="text-blue-200 text-sm mb-4">신뢰받는 플랫폼</p>
-            <div className="flex justify-center items-center space-x-8 text-blue-200">
+          {/* Bottom Features */}
+          <div className="pt-8 border-t border-amber-600/30">
+            <div className="flex justify-center items-center space-x-12 text-white">
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">500+</div>
-                <div className="text-sm">검증된 업체</div>
+                <div className="text-3xl font-bold text-amber-600 mb-1">100%</div>
+                <div className="text-sm text-white/80">Satisfaction</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">1000+</div>
-                <div className="text-sm">완료 프로젝트</div>
+                <div className="text-3xl font-bold text-amber-600 mb-1">24/7</div>
+                <div className="text-sm text-white/80">Support</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">4.8</div>
-                <div className="text-sm">평균 평점</div>
+                <div className="text-3xl font-bold text-amber-600 mb-1">Free</div>
+                <div className="text-sm text-white/80">Consultation</div>
               </div>
             </div>
           </div>

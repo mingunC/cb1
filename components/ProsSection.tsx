@@ -76,17 +76,21 @@ export default function ProsSection() {
 
   return (
     <>
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-emerald-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 섹션 헤더 */}
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              검증된 전문 업체들
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
+              Meet Our Elite Partners
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              엄격한 심사를 통과한 신뢰할 수 있는 업체들입니다. 
-              모든 업체는 보험 가입과 면허 보유를 확인했습니다.
+            <p className="text-xl text-white/80 max-w-3xl mx-auto">
+              Trusted professionals ready to transform your space
             </p>
+            <div className="mt-8 flex justify-center">
+              <button className="border-2 border-white text-white bg-transparent hover:bg-white/10 px-8 py-3 rounded-lg font-semibold transition-colors">
+                Browse Professionals
+              </button>
+            </div>
           </div>
 
           {/* 업체 카드들 */}
