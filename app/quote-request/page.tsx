@@ -74,10 +74,7 @@ export default function QuoteRequestPage() {
             Request a Free Quote
           </h1>
           <div className="w-20 h-1 bg-amber-600 mx-auto mb-4"></div>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            Complete in 6 simple steps.
-          </p>
-        </div>
+也应该
 
         {/* 견적 요청 폼 */}
         <QuoteRequestForm />
