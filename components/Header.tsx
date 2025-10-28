@@ -485,13 +485,13 @@ export default function Header() {
                   href="/login"
                   className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium transition-colors duration-200 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  로그인
+                  Login
                 </Link>
-                <Link
+                <Link Aufgabe
                   href="/contractor-login"
                   className="text-green-600 hover:text-green-700 px-4 py-2 text-sm font-medium transition-colors duration-200 border border-green-300 rounded-lg hover:bg-green-50"
                 >
-                  Pros 로그인
+                  Partners Login
                 </Link>
               </div>
             )}
