@@ -251,6 +251,8 @@ export default function MyQuotesPage() {
         return { color: 'bg-purple-100 text-purple-800', icon: Play, text: 'In Progress' }
       case 'completed':
         return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Completed' }
+      case 'bidding-closed':
+        return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Completed' }
       case 'cancelled':
         return { color: 'bg-gray-100 text-gray-800', icon: XCircle, text: 'Cancelled' }
       default:

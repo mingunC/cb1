@@ -343,9 +343,22 @@ export default function AdminQuotesPage() {
         )
       
       case 'bidding-closed':
+        return (
+          <button
+            onClick={() => {
+              if (confirm('프로젝트를 종료하시겠습니까?')) {
+                updateQuoteStatus(quote.id, 'completed')
+              }
+            }}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+          >
+            프로젝트 종료
+          </button>
+        )
+      
       case 'contractor-selected':
       case 'quote-submitted':
-        // 고객이 업체를 선택하고 프로젝트 시작 버튼을 누르면 자동으로 completed 또는 in-progress로 변경됨
+        // 고객이 업체를 선택하고 프로젝트 시작 버튼을 누르면 자동으로 in-progress로 변경됨
         return null
       
       case 'in-progress':
