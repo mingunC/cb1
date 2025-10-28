@@ -984,7 +984,7 @@ export default function MyQuotesPage() {
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">견적 요청 상세</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Quote Request Details</h3>
                   <button
                     onClick={() => setSelectedQuote(null)}
                     className="text-gray-400 hover:text-gray-600"
@@ -998,10 +998,10 @@ export default function MyQuotesPage() {
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Basic Information</h4>
                     <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                       <p><strong>Space Type:</strong> {spaceTypeMap[selectedQuote.space_type] || selectedQuote.space_type}</p>
-                      <p><strong>프로젝트:</strong> {selectedQuote.project_types?.map(type => 
+                        <p><strong>Project:</strong> {selectedQuote.project_types?.map(type => 
                         projectTypeMap[type] || type
                       ).join(', ')}</p>
-                      <p><strong>예산:</strong> {formatBudget(selectedQuote.budget)}</p>
+                      <p><strong>Budget:</strong> {formatBudget(selectedQuote.budget)}</p>
                       <p><strong>일정:</strong> {timelineMap[selectedQuote.timeline] || selectedQuote.timeline}</p>
                     </div>
                   </div>
