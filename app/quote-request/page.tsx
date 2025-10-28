@@ -11,29 +11,40 @@ export default function QuoteRequestPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+    
     const checkAuth = async () => {
       try {
         const supabase = createBrowserClient()
-        const { data: { user }, error } = await supabase.auth.getUser()
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (error || !user) {
-          // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
-          console.log('Not authenticated, redirecting to login')
+        if (!mounted) return
+        
+        if (!session || !session.user) {
+          console.log('No session found, redirecting to login')
           router.push('/login')
           return
         }
         
-        console.log('User authenticated:', user.email)
+        console.log('Session found for user:', session.user.email)
         setIsAuthenticated(true)
       } catch (error) {
         console.error('Auth check error:', error)
-        router.push('/login')
+        if (mounted) {
+          router.push('/login')
+        }
       } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     checkAuth()
+    
+    return () => {
+      mounted = false
+    }
   }, [router])
 
   // 로딩 중
@@ -64,8 +75,7 @@ export default function QuoteRequestPage() {
           </h1>
           <div className="w-20 h-1 bg-amber-600 mx-auto mb-4"></div>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            Complete in 5 simple steps. 
-            Professional partners will contact you directly to provide a customized quote.
+            Complete in 6 simple steps.
           </p>
         </div>
 
