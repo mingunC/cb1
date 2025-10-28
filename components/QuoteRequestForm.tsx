@@ -523,7 +523,7 @@ export default function QuoteRequestForm() {
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg cursor-pointer"
                     />
-                    <p className="text-sm text-gray-600 mt-2">현장 방문을 원하시는 날짜를 선택해주세요</p>
+                    <p className="text-sm text-gray-600 mt-2">Companies will visit to provide accurate estimates</p>
                   </div>
                 </div>
               </div>
