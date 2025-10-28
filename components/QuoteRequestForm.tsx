@@ -291,9 +291,9 @@ export default function QuoteRequestForm() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-8 text-center">
-            <h1 className="text-3xl font-bold mb-2">리노베이션 견적 요청</h1>
-            <p className="text-lg opacity-90">간단한 6단계로 전문가의 견적을 받아보세요</p>
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 sm:p-8 text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Quote Request Form</h груд1 className="text-2xl sm:text-3xl font-bold mb-2">Quote Request</h1>
+            <p className="text-base sm:text-lg opacity-90">Complete in 6 simple steps</p>
             
             {/* Progress Bar */}
             <div className="bg-white bg-opacity-20 h-2 rounded-full mt-6 overflow-hidden">
@@ -302,22 +302,22 @@ export default function QuoteRequestForm() {
                 style={{ width: `${(currentStep / 6) * 100}%` }}
               />
             </div>
-            <p className="text-sm mt-2 opacity-80">단계 {currentStep}/6</p>
+            <p className="text-sm mt-2 opacity-80">Step {currentStep}/6</p>
           </div>
 
-          <div className="p-8">
+          <div className="p-4 sm:p-8">
             {/* Step 1: Space Type */}
             {currentStep === 1 && (
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">1</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Property Type</h2>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Property Type</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Select the type of space you want to renovate</p>
+                  <p className="text-sm sm:text-base text-gray-600 ml-11">Select the type of space you want to renovate</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   {spaceTypes.map((type) => (
                     <label key={type.value} className="relative cursor-pointer">
                       <input
@@ -333,7 +333,7 @@ export default function QuoteRequestForm() {
                           ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
                           : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                       }`}>
-                        <div className="text-2xl font-semibold text-gray-900">{type.label}</div>
+                        <div className="text-lg sm:text-2xl font-semibold text-gray-900">{type.label}</div>
                       </div>
                     </label>
                   ))}
@@ -353,7 +353,7 @@ export default function QuoteRequestForm() {
                 </div>
                 
                 {formData.spaceType === 'commercial' ? (
-                  <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                     {commercialProjectTypes.map((type) => (
                       <label key={type.value} className="relative cursor-pointer">
                         <input
@@ -381,7 +381,7 @@ export default function QuoteRequestForm() {
                         <strong>참고:</strong> '전체 리노베이션'을 선택하면 다른 옵션은 선택할 수 없습니다. 나머지는 다중 선택이 가능합니다.
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                       {residentialProjectTypes.map((type) => (
                         <label key={type.value} className="relative cursor-pointer">
                           <input
@@ -454,7 +454,7 @@ export default function QuoteRequestForm() {
                   <p className="text-gray-600 ml-11">Select your preferred project start time</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   {timelines.map((timeline) => (
                     <label key={timeline.value} className="relative cursor-pointer">
                       <input
