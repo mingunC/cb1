@@ -590,7 +590,7 @@ export default function QuoteRequestForm() {
                       : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transform hover:-translate-y-1 hover:shadow-lg'
                   }`}
                 >
-                  {isSubmitting ? '제출 중...' : '견적 요청하기'}
+                  {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
                 </button>
               )}
             </div>
