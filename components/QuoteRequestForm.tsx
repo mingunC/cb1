@@ -558,18 +558,17 @@ export default function QuoteRequestForm() {
 
             {/* Navigation Buttons */}
             <div className="flex gap-4 mt-8">
-              <button
-                type="button"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${
-                  currentStep === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:transform hover:-translate-y-1'
-                }`}
-              >
-                ← Previous
-              </button>
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200"
+                >
+                  ← Previous
+                </button>
+              )}
+              
+              <div className="flex-1"></div>
 
               {currentStep < 6 ? (
                 <button
@@ -584,10 +583,10 @@ export default function QuoteRequestForm() {
                   type="button"
                   onClick={(e) => onSubmit(e)}
                   disabled={isSubmitting}
-                  className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`px-10 py-3 rounded-lg font-semibold transition-all duration-300 ${
                     isSubmitting
                       ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transform hover:-translate-y-1 hover:shadow-lg'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
                   }`}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
