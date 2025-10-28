@@ -92,8 +92,8 @@ export default function HeroSection() {
             {/* Statistics Boxes - Responsive Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-4 sm:px-8 sm:py-6 shadow-lg">
-                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">150+</div>
-                <div className="text-xs sm:text-sm text-gray-600 uppercase tracking-wide">Premium Partners</div>
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">0</div>
+                <div className="text-xs sm:text-sm text-gray-600 uppercase tracking-wide">Free Quote</div>
               </div>
               
               <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-4 sm:px-8 sm:py-6 shadow-lg">
