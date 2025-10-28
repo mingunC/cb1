@@ -279,7 +279,7 @@ export default function QuoteRequestForm() {
             onClick={() => window.location.href = '/my-quotes'}
             className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-3 px-6 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
           >
-            내 견적 보기
+            View My Quotes
           </button>
         </div>
       </div>
@@ -568,7 +568,7 @@ export default function QuoteRequestForm() {
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:transform hover:-translate-y-1'
                 }`}
               >
-                ← 이전
+                ← Previous
               </button>
 
               {currentStep < 6 ? (
@@ -577,7 +577,7 @@ export default function QuoteRequestForm() {
                   onClick={nextStep}
                   className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
                 >
-                  다음 →
+                  Next →
                 </button>
               ) : (
                 <button
