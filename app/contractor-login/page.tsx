@@ -66,16 +66,16 @@ export default function ContractorLoginPage() {
       const result = await signOut()
       
       if (result.success) {
-        toast.success('로그아웃되었습니다')
+        toast.success('Logged out successfully')
         setCurrentUser(null)
         setIsLoading(false)
       } else {
-        toast.error(result.error || '로그아웃 실패')
+        toast.error(result.error || 'Logout failed')
         setIsLoading(false)
       }
     } catch (error) {
       console.error('Logout error:', error)
-      toast.error('로그아웃 중 오류가 발생했습니다')
+      toast.error('Error occurred during logout')
       setIsLoading(false)
     }
   }
@@ -85,14 +85,14 @@ export default function ContractorLoginPage() {
     
     // 유효성 검사
     if (!formData.email || !formData.password) {
-      setError('이메일과 비밀번호를 모두 입력해주세요.')
+      setError('Please enter both email and password.')
       return
     }
 
     // 이메일 형식 검사
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('올바른 이메일 형식을 입력해주세요.')
+      setError('Please enter a valid email address.')
       return
     }
 
@@ -107,26 +107,26 @@ export default function ContractorLoginPage() {
       })
 
       if (!result.success) {
-        setError(result.error || '로그인에 실패했습니다.')
+        setError(result.error || 'Login failed.')
         setIsLoading(false)
         return
       }
 
       // 업체 계정 확인
       if (result.userType !== 'contractor') {
-        setError('업체 계정이 아닙니다. 업체 회원가입을 해주세요.')
+        setError('This is not a contractor account. Please sign up as a contractor.')
         setIsLoading(false)
         return
       }
 
       // 로그인 성공
       console.log('Contractor login successful:', result.user?.email)
-      toast.success(`${result.contractorData?.company_name} 계정으로 로그인되었습니다`)
+      toast.success(`Logged in as ${result.contractorData?.company_name}`)
       router.push('/contractor')
       
     } catch (err: any) {
       console.error('Unexpected error during login:', err)
-      setError('로그인 중 오류가 발생했습니다.')
+      setError('An error occurred during login.')
       setIsLoading(false)
     }
   }, [formData, router])
@@ -145,14 +145,14 @@ export default function ContractorLoginPage() {
 
       if (googleError) {
         console.error('Google login error:', googleError)
-        setError('Google 로그인에 실패했습니다.')
-        toast.error('Google 로그인에 실패했습니다')
+        setError('Google login failed.')
+        toast.error('Google login failed')
         setIsLoading(false)
       }
     } catch (err) {
       console.error('Google sign in error:', err)
-      setError('Google 로그인 중 오류가 발생했습니다.')
-      toast.error('Google 로그인 중 오류가 발생했습니다')
+      setError('An error occurred during Google login.')
+      toast.error('An error occurred during Google login')
       setIsLoading(false)
     }
   }, [supabase])
@@ -178,7 +178,7 @@ export default function ContractorLoginPage() {
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로그인 상태 확인 중...</p>
+          <p className="mt-4 text-gray-600">Checking login status...</p>
         </div>
       </div>
     )
@@ -196,14 +196,14 @@ export default function ContractorLoginPage() {
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
-              <span>홈으로 돌아가기</span>
+              <span>Back to Home</span>
             </Link>
           </div>
           
           <div className="text-center">
             <Building2 className="mx-auto h-12 w-12 text-emerald-600" />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              이미 로그인되어 있습니다
+              Already Logged In
             </h2>
           </div>
         </div>
@@ -224,21 +224,21 @@ export default function ContractorLoginPage() {
               
               {currentUser.userType === 'contractor' && (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 mt-3">
-                  업체 계정
+                  Contractor Account
                 </span>
               )}
               {currentUser.userType === 'customer' && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                   <p className="text-sm text-yellow-800">
-                    일반 고객 계정으로 로그인되어 있습니다.
-                    업체 계정으로 로그인하려면 로그아웃 후 다시 시도해주세요.
+                    You are logged in with a regular customer account.
+                    Please log out and try again to log in with a contractor account.
                   </p>
                 </div>
               )}
               {currentUser.userType === 'admin' && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm text-blue-800">
-                    관리자 계정으로 로그인되어 있습니다.
+                    You are logged in with an admin account.
                   </p>
                 </div>
               )}
@@ -250,7 +250,7 @@ export default function ContractorLoginPage() {
                   href="/contractor"
                   className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
                 >
-                  업체 대시보드로 이동
+                  Go to Contractor Dashboard
                 </Link>
               )}
               {currentUser.userType === 'admin' && (
@@ -258,7 +258,7 @@ export default function ContractorLoginPage() {
                   href="/admin"
                   className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                 >
-                  관리자 대시보드로 이동
+                  Go to Admin Dashboard
                 </Link>
               )}
               
@@ -270,12 +270,12 @@ export default function ContractorLoginPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent mr-2" />
-                    로그아웃 중...
+                    Logging out...
                   </>
                 ) : (
                   <>
                     <LogOut className="h-4 w-4 mr-2" />
-                    로그아웃하고 다시 로그인
+                    Log out and log in again
                   </>
                 )}
               </button>
@@ -283,7 +283,7 @@ export default function ContractorLoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                다른 계정으로 로그인하려면 먼저 로그아웃해주세요.
+                To log in with a different account, please log out first.
               </p>
             </div>
           </div>
@@ -303,29 +303,29 @@ export default function ContractorLoginPage() {
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            <span>홈으로 돌아가기</span>
+            <span>Back to Home</span>
           </Link>
         </div>
         
         <div className="text-center">
           <Building2 className="mx-auto h-12 w-12 text-emerald-600" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            업체 로그인
+            Contractor Login
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            전문 업체 계정으로 로그인하세요
+            Log in with your professional contractor account
           </p>
         </div>
         <p className="mt-2 text-center text-sm text-gray-600">
-          일반 고객이신가요?{' '}
+          Are you a regular customer?{' '}
           <Link href="/login" className="font-medium text-emerald-600 hover:text-emerald-500">
-            고객 로그인
+            Customer Login
           </Link>
         </p>
         <p className="mt-1 text-center text-sm text-gray-600">
-          아직 업체 회원이 아니신가요?{' '}
+          Not a contractor member yet?{' '}
           <Link href="/contractor-signup" className="font-medium text-emerald-600 hover:text-green-500">
-            업체 회원가입
+            Contractor Sign Up
           </Link>
         </p>
       </div>
@@ -344,7 +344,7 @@ export default function ContractorLoginPage() {
             {/* 이메일 입력 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일
+                Email
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -368,7 +368,7 @@ export default function ContractorLoginPage() {
             {/* 비밀번호 입력 */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                비밀번호
+                Password
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -413,13 +413,13 @@ export default function ContractorLoginPage() {
                   disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  로그인 상태 유지
+                  Keep me signed in
                 </label>
               </div>
 
               <div className="text-sm">
                 <Link href="/forgot-password" className="font-medium text-emerald-600 hover:text-green-500">
-                  비밀번호를 잊으셨나요?
+                  Forgot password?
                 </Link>
               </div>
             </div>
@@ -434,10 +434,10 @@ export default function ContractorLoginPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    로그인 중...
+                    Signing in...
                   </>
                 ) : (
-                  '업체 로그인'
+                  'Sign In'
                 )}
               </button>
             </div>
@@ -448,7 +448,7 @@ export default function ContractorLoginPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">또는</span>
+                <span className="px-2 bg-white text-gray-500">or</span>
               </div>
             </div>
 
@@ -478,7 +478,7 @@ export default function ContractorLoginPage() {
                     d="M12 4.76c1.86 0 3.53.64 4.85 1.9l3.64-3.64A11.86 11.86 0 0012 0 11.93 11.93 0 00.8 7.05l3.6 2.79c1-3.01 3.81-5.08 7.12-5.08z"
                   />
                 </svg>
-                Google로 로그인
+                Sign in with Google
               </button>
             </div>
           </form>
