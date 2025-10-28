@@ -121,17 +121,17 @@ function PortfolioContent() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-4">Inspiring Portfolio</h1>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">Inspiring Portfolio</h1>
           <div className="w-20 h-1 bg-amber-600 mb-6"></div>
           
-          <div className="relative max-w-md">
+          <div className="relative max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
               placeholder="업체명, 프로젝트명으로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base"
             />
           </div>
         </div>
