@@ -16,42 +16,42 @@ interface QuoteFormData {
 }
 
 const spaceTypes = [
-  { value: 'detached_house', label: 'Detached House', subtitle: '단독주택' },
-  { value: 'town_house', label: 'Town House', subtitle: '타운하우스' },
-  { value: 'condo', label: 'Condo & Apartment', subtitle: '콘도 & 아파트' },
-  { value: 'commercial', label: 'Commercial', subtitle: '상업공간' }
+  { value: 'detached_house', label: 'Detached House' },
+  { value: 'town_house', label: 'Town House' },
+  { value: 'condo', label: 'Condo & Apartment' },
+  { value: 'commercial', label: 'Commercial' }
 ]
 
 const residentialProjectTypes = [
-  { value: 'kitchen', label: '주방' },
-  { value: 'bathroom', label: '욕실' },
-  { value: 'basement', label: '지하실' },
-  { value: 'flooring', label: '바닥재' },
-  { value: 'painting', label: '페인팅' },
-  { value: 'full_renovation', label: '전체 리노베이션', exclusive: true },
-  { value: 'other', label: '기타', exclusive: true }
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'basement', label: 'Basement' },
+  { value: 'flooring', label: 'Flooring' },
+  { value: 'painting', label: 'Painting' },
+  { value: 'full_renovation', label: 'Full Renovation', exclusive: true },
+  { value: 'other', label: 'Other', exclusive: true }
 ]
 
 const commercialProjectTypes = [
-  { value: 'office', label: '사무실' },
-  { value: 'retail', label: '상가/매장' },
-  { value: 'restaurant', label: '카페/식당' },
-  { value: 'education', label: '학원/교육' },
-  { value: 'hospitality', label: '숙박/병원' },
-  { value: 'other', label: '기타' }
+  { value: 'office', label: 'Office' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'education', label: 'Education' },
+  { value: 'hospitality', label: 'Hospitality' },
+  { value: 'other', label: 'Other' }
 ]
 
 const budgetRanges = [
-  { value: 'under_50k', label: '$50,000 미만', subtitle: '소규모 리노베이션' },
-  { value: '50k_100k', label: '$50,000 - $100,000', subtitle: '중규모 리노베이션' },
-  { value: 'over_100k', label: '$100,000 이상', subtitle: '대규모 리노베이션' }
+  { value: 'under_50k', label: 'Under $50,000', subtitle: 'Small renovation' },
+  { value: '50k_100k', label: '$50,000 - $100,000', subtitle: 'Medium renovation' },
+  { value: 'over_100k', label: '$100,000+', subtitle: 'Large renovation' }
 ]
 
 const timelines = [
-  { value: 'immediate', label: '즉시 시작', subtitle: '가능한 빨리' },
-  { value: '1_month', label: '1개월 내', subtitle: '한 달 이내' },
-  { value: '3_months', label: '3개월 내', subtitle: '3개월 이내' },
-  { value: 'planning', label: '계획 단계', subtitle: '아직 계획 중' }
+  { value: 'immediate', label: 'Immediate', subtitle: 'As soon as possible' },
+  { value: '1_month', label: 'Within 1 month', subtitle: 'Within a month' },
+  { value: '3_months', label: 'Within 3 months', subtitle: 'Within 3 months' },
+  { value: 'planning', label: 'Planning stage', subtitle: 'Still planning' }
 ]
 
 export default function QuoteRequestForm() {
@@ -312,9 +312,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">1</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">부동산 유형</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Property Type</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">리노베이션하실 공간의 유형을 선택해주세요</p>
+                  <p className="text-gray-600 ml-11">Select the type of space you want to renovate</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 mb-8">
@@ -333,8 +333,7 @@ export default function QuoteRequestForm() {
                           ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg'
                           : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                       }`}>
-                        <div className="text-lg font-semibold text-gray-900 mb-1">{type.label}</div>
-                        <div className="text-sm text-gray-600">{type.subtitle}</div>
+                        <div className="text-2xl font-semibold text-gray-900">{type.label}</div>
                       </div>
                     </label>
                   ))}
@@ -348,9 +347,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">2</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">프로젝트 영역</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Project Area</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">리노베이션하실 영역을 선택해주세요</p>
+                  <p className="text-gray-600 ml-11">Select the area you want to renovate</p>
                 </div>
                 
                 {formData.spaceType === 'commercial' ? (
@@ -414,9 +413,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">3</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">예산 범위</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Budget Range</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">예상 예산 범위를 선택해주세요</p>
+                  <p className="text-gray-600 ml-11">Select your estimated budget range</p>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 mb-8">
@@ -450,9 +449,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">4</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">시작 시기</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Start Time</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">프로젝트 시작 희망 시기를 선택해주세요</p>
+                  <p className="text-gray-600 ml-11">Select your preferred project start time</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 mb-8">
@@ -486,9 +485,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">5</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">위치 정보</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Location & Visit</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">프로젝트 위치와 방문 일정을 입력해주세요</p>
+                  <p className="text-gray-600 ml-11">Enter project location and visit schedule</p>
                 </div>
                 
                 <div className="space-y-6 mb-8">
@@ -499,24 +498,24 @@ export default function QuoteRequestForm() {
                       value={formData.postalCode}
                       onChange={handlePostalCodeChange}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
-                      placeholder="예: A0A 0A0"
+                      placeholder="e.g. A0A 0A0"
                       maxLength={7}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">상세 주소 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Address *</label>
                     <input
                       type="text"
                       value={formData.fullAddress}
                       onChange={(e) => setFormData(prev => ({ ...prev, fullAddress: e.target.value }))}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
-                      placeholder="예: 123 Main Street, Toronto, ON"
+                      placeholder="e.g. 123 Main Street, Toronto, ON"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">방문 희망 일자</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Visit Date</label>
                     <input
                       type="date"
                       value={formData.visitDate}
@@ -536,20 +535,20 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">6</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">프로젝트 요구사항</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Project Requirements</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">프로젝트에 대한 상세 요구사항을 작성해주세요</p>
+                  <p className="text-gray-600 ml-11">Write detailed requirements for your project</p>
                 </div>
                 
                 <div className="space-y-6 mb-8">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트 설명 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Project Description *</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       rows={6}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg resize-vertical"
-                      placeholder="프로젝트에 대한 자세한 설명을 작성해주세요. 예: 원하는 스타일, 특별한 요구사항, 현재 상태 등"
+                      placeholder="Write detailed information about your project. e.g. desired style, special requirements, current condition, etc."
                     />
                   </div>
                   
