@@ -769,7 +769,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                   <h1 className="text-2xl font-serif font-light text-[#2c5f4e]">
                     {contractorData?.company_name || 'Partners Dashboard'}
                   </h1>
-                  <p className="text-sm text-gray-500 font-light">업체 대시보드</p>
                 </div>
               </div>
             </div>
