@@ -267,7 +267,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         .maybeSingle()
 
       if (existing) {
-        toast.error('이미 현장방문을 신청했습니다')
+        toast.error('Site visit already applied')
         return
       }
 
@@ -283,15 +283,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
       if (insertError) {
         console.error('Site visit application error:', insertError)
-        toast.error('현장방문 신청에 실패했습니다')
+        toast.error('Site visit application failed')
         return
       }
 
-      toast.success('현장방문 신청이 완료되었습니다')
+      toast.success('Site visit application submitted successfully')
       await loadProjects() // 데이터 새로고침
     } catch (error) {
       console.error('Error applying for site visit:', error)
-      toast.error('현장방문 신청 중 오류가 발생했습니다')
+      toast.error('Error applying for site visit')
     }
   }
   
