@@ -8,7 +8,7 @@ DROP CONSTRAINT IF EXISTS quote_requests_status_check;
 ALTER TABLE quote_requests 
 ADD CONSTRAINT quote_requests_status_check 
 CHECK (status IN (
-  'pending',夏天              -- 관리자 검토 대기
+  'pending',              -- 관리자 검토 대기
   'approved',             -- 관리자 승인
   'rejected',             -- 거절됨
   'site-visit-pending',   -- 현장방문 대기
