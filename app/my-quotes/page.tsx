@@ -238,7 +238,7 @@ export default function MyQuotesPage() {
       case 'rejected':
         return { color: 'bg-red-100 text-red-800', icon: XCircle, text: '거부됨' }
       case 'site-visit-pending':
-        return { color: 'bg-blue-100 text-blue-800', icon: Calendar, text: '현장방문대기' }
+        return { color: 'bg-emerald-100 text-emerald-800', icon: Calendar, text: '현장방문대기' }
       case 'site-visit-completed':
         return { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, text: '현장방문완료' }
       case 'bidding':
@@ -246,7 +246,7 @@ export default function MyQuotesPage() {
       case 'quote-submitted':
         return { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' }
       case 'contractor-selected':
-        return { color: 'bg-blue-100 text-blue-800', icon: CheckCircle, text: '업체선정완료' }
+        return { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: '업체선정완료' }
       case 'in-progress':
         return { color: 'bg-purple-100 text-purple-800', icon: Play, text: '공사진행중' }
       case 'completed':
@@ -559,7 +559,7 @@ export default function MyQuotesPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">로딩 중...</p>
         </div>
       </div>
@@ -574,7 +574,7 @@ export default function MyQuotesPage() {
           <p className="text-gray-600 mb-4">고객 계정으로 로그인해주세요.</p>
           <button
             onClick={() => router.push('/login')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg"
           >
             로그인하기
           </button>
@@ -609,7 +609,7 @@ export default function MyQuotesPage() {
               <div className="mt-6">
                 <button
                   onClick={() => router.push('/quote-request')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg"
                 >
                   견적 요청하기
                 </button>
@@ -647,7 +647,7 @@ export default function MyQuotesPage() {
                           </span>
                           {/* ✅ 현장방문 단계일 때만 현장방문 배지 표시 */}
                           {showSiteVisitInfo && siteVisitCount > 0 && (
-                            <span className="inline-flex items-center bg-blue-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
+                            <span className="inline-flex items-center bg-emerald-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
                               <Home className="w-4 h-4 mr-1.5" />
                               현장방문 신청 {siteVisitCount}개
                             </span>
@@ -704,7 +704,7 @@ export default function MyQuotesPage() {
                       <div className="ml-4">
                         <button
                           onClick={() => setSelectedQuote(quote)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                          className="bg-emerald-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
                         >
                           <Eye className="w-4 h-4 mr-1 inline" />
                           상세보기
@@ -714,7 +714,7 @@ export default function MyQuotesPage() {
 
                     {/* ✅ 프로젝트 시작 버튼 섹션 - contractor-selected 상태일 때만 표시 */}
                     {canStartProject && (
-                      <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-lg p-6">
+                      <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-emerald-300 rounded-lg p-6">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -797,9 +797,9 @@ export default function MyQuotesPage() {
                     {/* ✅ 현장방문 단계일 때만 현장방문 신청 섹션 표시 */}
                     {showSiteVisitInfo && siteVisitCount > 0 && (
                       <div className="mt-6 mb-6">
-                        <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg">
                           <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                            <Home className="w-6 h-6 mr-2 text-blue-600" />
+                            <Home className="w-6 h-6 mr-2 text-emerald-600" />
                             현장방문 신청 업체 ({siteVisitCount}개)
                           </h3>
                           <p className="text-sm text-gray-700">
@@ -809,10 +809,10 @@ export default function MyQuotesPage() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {quote.site_visit_applications!.map((application) => (
-                            <div key={application.id} className="border-2 border-blue-300 rounded-lg p-4 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all shadow-sm">
+                            <div key={application.id} className="border-2 border-emerald-300 rounded-lg p-4 bg-emerald-50 hover:bg-blue-100 hover:border-emerald-400 transition-all shadow-sm">
                               <div className="mb-3">
                                 <h4 className="font-semibold text-lg text-gray-900 flex items-center">
-                                  <Building className="w-5 h-5 mr-2 text-blue-600" />
+                                  <Building className="w-5 h-5 mr-2 text-emerald-600" />
                                   {application.contractors?.company_name || '업체명 없음'}
                                 </h4>
                                 <p className="text-sm text-gray-600 ml-7">
@@ -838,7 +838,7 @@ export default function MyQuotesPage() {
                               </div>
                               
                               {application.notes && (
-                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-700 border border-blue-200">
+                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-700 border border-emerald-200">
                                   <strong>메모:</strong> {application.notes}
                                 </div>
                               )}
@@ -873,7 +873,7 @@ export default function MyQuotesPage() {
                                 </div>
                                 
                                 <div className="mb-3">
-                                  <p className="text-2xl font-bold text-blue-600">
+                                  <p className="text-2xl font-bold text-emerald-600">
                                     ${contractorQuote.price?.toLocaleString() || '0'} CAD
                                   </p>
                                 </div>
@@ -896,7 +896,7 @@ export default function MyQuotesPage() {
                                       <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
                                         ✓ 선택된 업체
                                       </div>
-                                      <div className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded text-sm text-center border border-blue-200">
+                                      <div className="w-full px-4 py-2 bg-emerald-50 text-emerald-700 rounded text-sm text-center border border-emerald-200">
                                         📞 {contractorQuote.contractors?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
                                       </div>
                                     </div>
