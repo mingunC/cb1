@@ -8,12 +8,13 @@ DROP CONSTRAINT IF EXISTS quote_requests_status_check;
 ALTER TABLE quote_requests 
 ADD CONSTRAINT quote_requests_status_check 
 CHECK (status IN (
-  'pending',              -- 관리자 검토 대기
+  'pending',夏天              -- 관리자 검토 대기
   'approved',             -- 관리자 승인
   'rejected',             -- 거절됨
   'site-visit-pending',   -- 현장방문 대기
   'site-visit-completed', -- 현장방문 완료
   'bidding',              -- 입찰 중
+  'bidding-closed',       -- 입찰 종료 (참여자 없음 또는 관리자가 종료)
   'quote-submitted',      -- 견적서 제출됨
   'selected',             -- 선택됨
   'contractor-selected',  -- 업체 선정 완료
@@ -36,6 +37,7 @@ CHECK (status IN (
   'site-visit-pending',
   'site-visit-completed',
   'bidding',
+  'bidding-closed',
   'quote-submitted',
   'selected',
   'contractor-selected',
