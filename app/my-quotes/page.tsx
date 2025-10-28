@@ -466,13 +466,13 @@ export default function MyQuotesPage() {
 
       if (!quoteData) {
         console.error('❌ 견적서 데이터가 존재하지 않습니다')
-        toast.error('견적서 정보를 찾을 수 없습니다.')
+        toast.error('Quote information not found.')
         return
       }
 
       if (!quoteData.pdf_url) {
         console.error('❌ PDF URL이 비어있습니다')
-        toast.error('견적서 파일이 업로드되지 않았습니다.')
+        toast.error('Quote file not uploaded.')
         return
       }
 
@@ -537,7 +537,7 @@ export default function MyQuotesPage() {
       }
 
       console.error('❌ 모든 다운로드 방법 실패')
-      toast.error('견적서 파일을 찾을 수 없습니다.')
+      toast.error('Quote file not found.')
 
     } catch (error: any) {
       console.error('========================================')
@@ -649,13 +649,13 @@ export default function MyQuotesPage() {
                           {showSiteVisitInfo && siteVisitCount > 0 && (
                             <span className="inline-flex items-center bg-emerald-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
                               <Home className="w-4 h-4 mr-1.5" />
-                              현장방문 신청 {siteVisitCount}개
+                              Site Visit Applications {siteVisitCount}
                             </span>
                           )}
                           {quoteCount > 0 && (
                             <span className="inline-flex items-center bg-purple-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
                               <FileText className="w-4 h-4 mr-1.5" />
-                              견적서 {quoteCount}개
+                              Quotes {quoteCount}
                             </span>
                           )}
                         </div>
@@ -965,7 +965,7 @@ export default function MyQuotesPage() {
                       !showSiteVisitInfo && siteVisitCount === 0 && (
                         <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
                           <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <p className="text-gray-500">아직 제출된 견적서가 없습니다.</p>
+                          <p className="text-gray-500">No quotes submitted yet.</p>
                         </div>
                       )
                     )}
