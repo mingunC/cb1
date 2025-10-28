@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import { useState, useEffect, useCallback, useMemo, Fragment, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban } from 'lucide-react'
@@ -19,6 +19,9 @@ interface Props {
 
 export default function IntegratedContractorDashboard({ initialContractorData }: Props) {
   const router = useRouter()
+  
+  // 중복 실행 방지용 ref
+  const isLoadingProjectsRef = useRef(false)
   
   // 상태 관리
   const [projects, setProjects] = useState<Project[]>([])
@@ -56,6 +59,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       console.error('No contractor data available')
       return
     }
+    
+    // 중복 실행 방지
+    if (isLoadingProjectsRef.current) {
+      console.log('⏭️ loadProjects already in progress, skipping...')
+      return
+    }
+    
+    isLoadingProjectsRef.current = true
     
     try {
       setIsLoading(true)
@@ -216,6 +227,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setError('프로젝트를 불러오는 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
+      isLoadingProjectsRef.current = false
       console.log('🏁 loadProjects finished')
     }
   }, [contractorData, loadSelectedContractorNames])
