@@ -292,7 +292,7 @@ export default function QuoteRequestForm() {
         <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 sm:p-8 text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Quote Request Form</h груд1 className="text-2xl sm:text-3xl font-bold mb-2">Quote Request</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Quote Request</h1>
             <p className="text-base sm:text-lg opacity-90">Complete in 6 simple steps</p>
             
             {/* Progress Bar */}
