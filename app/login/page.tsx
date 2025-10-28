@@ -190,7 +190,8 @@ export default function LoginPage() {
           </Link>
         </div>
 
- CASh2         <div className="flex items-center justify-center mb-6">
+          {/* Logo */}
+          <div className="flex items-center justify-center mb-6">
           <div className="h-16 w-16 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-lg">
             <span className="text-white font-bold text-2xl">R</span>
           </div>
@@ -293,15 +294,15 @@ export default function LoginPage() {
                   disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  로그인 상태 유지
+                  Remember me
                 </label>
               </div>
 
               <Link 
                 href="/forgot-password" 
-                className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="text-sm font-medium text-emerald-600 hover:text-emerald-500 transition-colors"
               >
-                비밀번호 찾기
+                Forgot password?
               </Link>
             </div>
 
