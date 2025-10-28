@@ -177,7 +177,7 @@ export default function LoginPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* 뒤로가기 버튼 - 위치 개선 */}
         <div className="mb-6">
@@ -186,20 +186,26 @@ export default function LoginPage() {
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            <span>홈으로 돌아가기</span>
+                <span>Back to Home</span>
           </Link>
         </div>
 
+ CASh2         <div className="flex items-center justify-center mb-6">
+          <div className="h-16 w-16 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-2xl">R</span>
+          </div>
+        </div>
+
         <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          로그인
+          Customer Login
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          아직 회원이 아니신가요?{' '}
+          Not a member yet?{' '}
           <Link 
             href="/signup" 
-            className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            className="font-medium text-emerald-600 hover:text-emerald-500 transition-colors"
           >
-            회원가입
+            Sign Up
           </Link>
         </p>
       </div>
@@ -257,7 +263,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="••••••••"
                 />
                 <button
@@ -283,7 +289,7 @@ export default function LoginPage() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
                   disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
@@ -303,15 +309,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  로그인 중...
+                  Signing in...
                 </>
               ) : (
-                '로그인'
+                'Sign In'
               )}
             </button>
 
@@ -321,7 +327,7 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">또는</span>
+                <span className="px-2 bg-white text-gray-500">Or</span>
               </div>
             </div>
 
