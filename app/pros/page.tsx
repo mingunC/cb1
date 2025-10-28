@@ -216,10 +216,11 @@ export default function ContractorsListingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">레노베이션 전문 업체</h1>
-          <p className="text-lg text-gray-600">검증된 인테리어 전문가들을 만나보세요</p>
+      <div className="bg-gradient-to-br from-emerald-50 to-gray-50 border-b border-emerald-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Professional Partners</h1>
+          <div className="w-20 h-1 bg-amber-600 mb-4"></div>
+          <p className="text-xl text-gray-600">Meet trusted experts ready to transform your space</p>
         </div>
       </div>
 
@@ -281,7 +282,7 @@ export default function ContractorsListingPage() {
                     {contractor.logo_url ? (
                       <img src={contractor.logo_url} alt={contractor.company_name} className="w-12 h-12 rounded-lg object-cover" />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
                         <span className="text-white font-bold text-lg">
                           {contractor.company_name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
                         </span>
