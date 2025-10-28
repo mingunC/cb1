@@ -500,9 +500,9 @@ export default function Header() {
             {!isContractor && (
               <Link
                 href="/quote-request"
-                className="text-white px-6 py-2 rounded-lg dismiss text-sm font-medium transition-colors duration-200"
+                className="text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                 style={{ backgroundColor: '#bf9b30' }}
-Ironhover onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#bf9b30'}
               >
                 Get a Quote
