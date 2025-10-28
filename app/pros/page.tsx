@@ -216,9 +216,9 @@ export default function ContractorsListingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-emerald-50 to-gray-50 border-b border-emerald-200">
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Professional Partners</h1>
+          <h1 className="text-4xl lg:text-5xl font-bold mb-4">Professional Partners</h1>
           <div className="w-20 h-1 bg-amber-600 mb-4"></div>
           <p className="text-xl text-gray-600">Meet trusted experts ready to transform your space</p>
         </div>
