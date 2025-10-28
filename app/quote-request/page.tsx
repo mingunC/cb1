@@ -18,10 +18,12 @@ export default function QuoteRequestPage() {
         
         if (error || !user) {
           // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+          console.log('Not authenticated, redirecting to login')
           router.push('/login')
           return
         }
         
+        console.log('User authenticated:', user.email)
         setIsAuthenticated(true)
       } catch (error) {
         console.error('Auth check error:', error)
@@ -32,7 +34,7 @@ export default function QuoteRequestPage() {
     }
 
     checkAuth()
-  }, [])
+  }, [router])
 
   // 로딩 중
   if (isLoading) {
