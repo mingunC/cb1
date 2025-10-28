@@ -41,8 +41,8 @@ export default function HeroSection() {
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative h-[700px] lg:h-[800px] overflow-hidden">
+      {/* Hero Section - Mobile Optimized */}
+      <section className="relative h-[500px] sm:h-[600px] lg:h-[700px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -58,52 +58,52 @@ export default function HeroSection() {
         </div>
 
         {/* Content Container */}
-        <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-0">
           <div className="w-full">
-            {/* Main Layout: Title Left, Info Box Right */}
-            <div className="grid lg:grid-cols-2 gap-12 items-start mb-12">
-              {/* Left: Main Title */}
+            {/* Main Layout: Stacked on Mobile, Side by Side on Desktop */}
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start mb-6 lg:mb-12">
+              {/* Main Title */}
               <div className="max-w-2xl">
-                <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight mb-6">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight mb-4 lg:mb-6">
                   Trusted Renovation Experts Across Canada
                 </h1>
               </div>
 
-              {/* Right: Info Box */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 shadow-lg">
-                <p className="text-gray-700 leading-relaxed mb-6">
+              {/* Info Box */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg">
+                <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 lg:mb-6">
                   Canada Beaver simplifies the complex process of furnishing all-inclusive, boutique & high-end hotels, and luxury residences in Canada.
                 </p>
                 <Link
                   href="/quote-request"
                   onClick={handleQuoteRequest}
-                  className={`inline-flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`inline-flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 w-full sm:w-auto justify-center ${
                     isContractor 
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                       : 'bg-white border-2 border-gray-300 text-gray-900 hover:bg-gray-50 shadow-md'
                   }`}
                 >
                   Start Your Furnishing Journey
-                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Link>
               </div>
             </div>
 
-            {/* Statistics Boxes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-8 py-6 shadow-lg">
-                <div className="text-4xl font-bold text-gray-900 mb-2">150+</div>
-                <div className="text-sm text-gray-600 uppercase tracking-wide">Premium Partners</div>
+            {/* Statistics Boxes - Responsive Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-4 sm:px-8 sm:py-6 shadow-lg">
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">150+</div>
+                <div className="text-xs sm:text-sm text-gray-600 uppercase tracking-wide">Premium Partners</div>
               </div>
               
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-8 py-6 shadow-lg">
-                <div className="text-4xl font-bold text-gray-900 mb-2">15+</div>
-                <div className="text-sm text-gray-600 uppercase tracking-wide">Years of Excellence</div>
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-4 sm:px-8 sm:py-6 shadow-lg">
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">15+</div>
+                <div className="text-xs sm:text-sm text-gray-600 uppercase tracking-wide">Years of Excellence</div>
               </div>
               
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-8 py-6 shadow-lg">
-                <div className="text-4xl font-bold text-gray-900 mb-2">98%</div>
-                <div className="text-sm text-gray-600 uppercase tracking-wide">Client Satisfaction</div>
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-4 sm:px-8 sm:py-6 shadow-lg">
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">98%</div>
+                <div className="text-xs sm:text-sm text-gray-600 uppercase tracking-wide">Client Satisfaction</div>
               </div>
             </div>
           </div>
