@@ -74,7 +74,7 @@ export default function QuoteRequestPage() {
             Request a Free Quote
           </h1>
           <div className="w-20 h-1 bg-amber-600 mx-auto mb-4"></div>
-也应该
+        </div>
 
         {/* 견적 요청 폼 */}
         <QuoteRequestForm />
