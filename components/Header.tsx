@@ -500,9 +500,9 @@ export default function Header() {
             {!isContractor && (
               <Link
                 href="/quote-request"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
               >
-                견적 요청
+                Get a Quote
               </Link>
             )}
           </div>
