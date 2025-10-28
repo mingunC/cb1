@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Star, Users, Award } from 'lucide-react'
+import { ArrowRight, Star, Users, Award, Calendar } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import Image from 'next/image'
 
 export default function HeroSection() {
   const [isContractor, setIsContractor] = useState(false)
@@ -43,145 +44,130 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden">
-      {/* 배경 패턴 */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* 왼쪽 콘텐츠 */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                완벽한{' '}
-                <span className="text-blue-600">리노베이션</span>
-                <br />
-                전문가와 함께
-              </h1>
-              <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
-                신뢰할 수 있는 검증된 업체들과 연결되어 
-                꿈의 공간을 현실로 만들어보세요. 
-                5단계 간편 견적 요청으로 시작하세요.
-              </p>
-            </div>
+    <>
+      {/* Hero Section with Background Image */}
+      <section className="relative h-[600px] lg:h-[700px] overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/luxury-sofa.jpg"
+            alt="Luxury Interior"
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/30"></div>
+        </div>
 
-            {/* CTA 버튼들 */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/quote-request"
-                onClick={handleQuoteRequest}
-                className={`px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center group ${
-                  isContractor 
-                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                무료 견적 요청하기
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/pros"
-                className="border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center"
-              >
-                업체 둘러보기
-              </Link>
-            </div>
-
-            {/* 통계 */}
-            <div className="grid grid-cols-3 gap-8 pt-8">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="text-2xl font-bold text-gray-900">500+</div>
-                <div className="text-sm text-gray-600">검증된 업체</div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Star className="h-6 w-6 text-yellow-500" />
-                </div>
-                <div className="text-2xl font-bold text-gray-900">4.8</div>
-                <div className="text-sm text-gray-600">평균 평점</div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Award className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="text-2xl font-bold text-gray-900">1000+</div>
-                <div className="text-sm text-gray-600">완료 프로젝트</div>
-              </div>
-            </div>
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+              Interior Specialists in South Florida
+            </h1>
+            <p className="text-xl text-white/90 mb-8">
+              Professional and reliable interior design professionals to transform your home into a personalized masterpiece
+            </p>
+            <Link
+              href="/quote-request"
+              onClick={handleQuoteRequest}
+              className={`inline-flex items-center px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-200 ${
+                isContractor 
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                  : 'bg-white text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              REQUEST A QUOTE
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </div>
+        </div>
+      </section>
 
-          {/* 오른쪽 이미지/일러스트레이션 */}
-          <div className="relative">
-            <div className="bg-gradient-to-br from-blue-100 to-indigo-200 rounded-2xl p-8 lg:p-12">
-              <div className="space-y-6">
-                {/* 프로젝트 카드들 */}
-                <div className="bg-white rounded-xl p-6 shadow-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold">K</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">주방 리노베이션</h3>
-                      <p className="text-sm text-gray-600">김○○님의 프로젝트</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-current" />
-                      ))}
-                    </div>
-                    <span className="ml-2 text-sm text-gray-600">5.0 (12 리뷰)</span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-green-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold">B</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">욕실 리노베이션</h3>
-                      <p className="text-sm text-gray-600">박○○님의 프로젝트</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-current" />
-                      ))}
-                    </div>
-                    <span className="ml-2 text-sm text-gray-600">4.9 (8 리뷰)</span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-purple-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-bold">L</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">전체 리노베이션</h3>
-                      <p className="text-sm text-gray-600">이○○님의 프로젝트</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-current" />
-                      ))}
-                    </div>
-                    <span className="ml-2 text-sm text-gray-600">4.8 (15 리뷰)</span>
-                  </div>
-                </div>
-              </div>
+      {/* Stats Section */}
+      <section className="bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">500+</div>
+              <div className="text-gray-600">Completed Projects</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">5.0 Stars</div>
+              <div className="text-gray-600">Customer Rating</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">20 Years</div>
+              <div className="text-gray-600">Of Experience</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">10K+ Customer</div>
+              <div className="text-gray-600">Satisfied Clients</div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Popular Projects Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Most Popular Projects in 2025
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Project Card 1 */}
+            <div className="group cursor-pointer">
+              <div className="relative h-80 rounded-2xl overflow-hidden mb-4 shadow-lg">
+                <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-200"></div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300"></div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="bg-white rounded-lg px-4 py-3">
+                    <h3 className="font-semibold text-gray-900">Living Room</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Card 2 */}
+            <div className="group cursor-pointer">
+              <div className="relative h-80 rounded-2xl overflow-hidden mb-4 shadow-lg">
+                <div className="w-full h-full bg-gradient-to-br from-green-100 to-emerald-200"></div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300"></div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="bg-white rounded-lg px-4 py-3">
+                    <h3 className="font-semibold text-gray-900">Bed Room</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Card 3 */}
+            <div className="group cursor-pointer">
+              <div className="relative h-80 rounded-2xl overflow-hidden mb-4 shadow-lg">
+                <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-200"></div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300"></div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="bg-white rounded-lg px-4 py-3">
+                    <h3 className="font-semibold text-gray-900">Kitchen</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* View All Button */}
+          <div className="text-center mt-12">
+            <button className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:border-gray-400 transition-colors">
+              View All
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
   )
 }
