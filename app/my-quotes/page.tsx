@@ -232,29 +232,29 @@ export default function MyQuotesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: '검토중' }
+        return { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: 'Under Review' }
       case 'approved':
-        return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '승인됨' }
+        return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Approved' }
       case 'rejected':
-        return { color: 'bg-red-100 text-red-800', icon: XCircle, text: '거부됨' }
+        return { color: 'bg-red-100 text-red-800', icon: XCircle, text: 'Rejected' }
       case 'site-visit-pending':
-        return { color: 'bg-emerald-100 text-emerald-800', icon: Calendar, text: '현장방문대기' }
+        return { color: 'bg-emerald-100 text-emerald-800', icon: Calendar, text: 'Site Visit Pending' }
       case 'site-visit-completed':
-        return { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, text: '현장방문완료' }
+        return { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, text: 'Site Visit Completed' }
       case 'bidding':
-        return { color: 'bg-orange-100 text-orange-800', icon: Clock, text: '입찰중' }
+        return { color: 'bg-orange-100 text-orange-800', icon: Clock, text: 'Bidding' }
       case 'quote-submitted':
-        return { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: '견적제출완료' }
+        return { color: 'bg-indigo-100 text-indigo-800', icon: CheckCircle, text: 'Quote Submitted' }
       case 'contractor-selected':
-        return { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: '업체선정완료' }
+        return { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: 'Contractor Selected' }
       case 'in-progress':
-        return { color: 'bg-purple-100 text-purple-800', icon: Play, text: '공사진행중' }
+        return { color: 'bg-purple-100 text-purple-800', icon: Play, text: 'In Progress' }
       case 'completed':
-        return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: '완료' }
+        return { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Completed' }
       case 'cancelled':
-        return { color: 'bg-gray-100 text-gray-800', icon: XCircle, text: '취소' }
+        return { color: 'bg-gray-100 text-gray-800', icon: XCircle, text: 'Cancelled' }
       default:
-        return { color: 'bg-gray-100 text-gray-800', icon: Clock, text: '알 수 없음' }
+        return { color: 'bg-gray-100 text-gray-800', icon: Clock, text: 'Unknown' }
     }
   }
 
@@ -318,7 +318,7 @@ export default function MyQuotesPage() {
     }
     
     try {
-      if (!confirm('이 업체를 선택하시겠습니까? 선택 후에는 변경할 수 없습니다.')) {
+      if (!confirm('Do you want to select this contractor? You cannot change this once selected.')) {
         return
       }
 
@@ -352,7 +352,7 @@ export default function MyQuotesPage() {
           return
         }
         
-        toast.error(result.error || '업체 선택 중 오류가 발생했습니다.')
+        toast.error(result.error || 'Error selecting contractor.')
         return
       }
 
@@ -361,11 +361,11 @@ export default function MyQuotesPage() {
       // 선택된 업체 정보 가져오기 (로컬 데이터에서 먼저)
       const selectedQuote = quotes.find(q => q.id === projectId)
       const selectedContractorQuote = selectedQuote?.contractor_quotes?.find(cq => cq.id === contractorQuoteId)
-      const contractorInfo = selectedContractorQuote?.contractors?.company_name || '선택된 업체'
+      const contractorInfo = selectedContractorQuote?.contractors?.company_name || 'Selected Contractor'
       const contactName = selectedContractorQuote?.contractors?.contact_name || ''
-      const phoneNumber = selectedContractorQuote?.contractors?.phone || '등록된 전화번호'
+      const phoneNumber = selectedContractorQuote?.contractors?.phone || 'registered phone number'
 
-      toast.success(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.`)
+      toast.success(`Contractor selected successfully!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''} will contact you at the phone number you provided (${phoneNumber}).`)
       
       // 성공 메시지 표시 후 백그라운드에서 데이터 새로고침
       if (user?.id) {
@@ -383,7 +383,7 @@ export default function MyQuotesPage() {
   // ✅ 프로젝트 시작 처리 함수 추가
   const handleStartProject = async (projectId: string) => {
     try {
-      if (!confirm('프로젝트를 시작하시겠습니까?\n\n업체와 일정을 조율하신 후 이 버튼을 눌러주세요.')) {
+      if (!confirm('Do you want to start the project?\n\nPlease coordinate with the contractor and schedule before clicking this button.')) {
         return
       }
 
@@ -402,12 +402,12 @@ export default function MyQuotesPage() {
 
       if (!response.ok) {
         console.error('API error:', result)
-        toast.error(result.error || '프로젝트 시작 중 오류가 발생했습니다.')
+        toast.error(result.error || 'Error starting project.')
         return
       }
 
       console.log('API response:', result)
-      toast.success('프로젝트가 시작되었습니다! 🚀')
+      toast.success('Project started! 🚀')
       
       // 데이터 새로고침
       if (user?.id) {
@@ -416,7 +416,7 @@ export default function MyQuotesPage() {
       
     } catch (error) {
       console.error('Error starting project:', error)
-      toast.error('프로젝트 시작 중 오류가 발생했습니다.')
+      toast.error('Error starting project.')
     } finally {
       setStartingProject(null)
     }
@@ -544,7 +544,7 @@ export default function MyQuotesPage() {
       console.error('❌ 오류 발생')
       console.error('오류 내용:', error)
       console.error('========================================')
-      toast.error('견적서 다운로드 중 오류가 발생했습니다.')
+                                          toast.error('Error downloading quote.')
     } finally {
       // 다운로드 중 상태 제거
       setDownloadingQuotes(prev => {
@@ -560,7 +560,7 @@ export default function MyQuotesPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -570,13 +570,13 @@ export default function MyQuotesPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">접근 권한 없음</h1>
-          <p className="text-gray-600 mb-4">고객 계정으로 로그인해주세요.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">Please log in with a customer account.</p>
           <button
             onClick={() => router.push('/login')}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg"
           >
-            로그인하기
+            Go to Login
           </button>
         </div>
       </div>
@@ -593,10 +593,10 @@ export default function MyQuotesPage() {
             className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            뒤로가기
+            Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">내 견적</h1>
-          <p className="mt-2 text-gray-600">견적요청 내역과 업체 견적서를 비교해보세요.</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Quotes</h1>
+          <p className="mt-2 text-gray-600">Compare your quote requests with contractor quotes.</p>
         </div>
 
         {/* 통합 견적 관리 뷰 */}
@@ -604,14 +604,14 @@ export default function MyQuotesPage() {
           {quotes.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">아직 견적 요청이 없습니다</h3>
-              <p className="text-gray-600 mb-4">새로운 견적 요청을 만들어보세요.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No quote requests yet</h3>
+              <p className="text-gray-600 mb-4">Create a new quote request.</p>
               <div className="mt-6">
                 <button
                   onClick={() => router.push('/quote-request')}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg"
                 >
-                  견적 요청하기
+                  Request a Quote
                 </button>
               </div>
             </div>
@@ -707,7 +707,7 @@ export default function MyQuotesPage() {
                           className="bg-emerald-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
                         >
                           <Eye className="w-4 h-4 mr-1 inline" />
-                          상세보기
+                          View Details
                         </button>
                       </div>
                     </div>
@@ -800,10 +800,10 @@ export default function MyQuotesPage() {
                         <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg">
                           <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                             <Home className="w-6 h-6 mr-2 text-emerald-600" />
-                            현장방문 신청 업체 ({siteVisitCount}개)
+                            Site Visit Applications ({siteVisitCount})
                           </h3>
                           <p className="text-sm text-gray-700">
-                            {siteVisitCount}개 업체가 현장방문을 신청했습니다. 승인하시면 업체가 현장방문 후 견적서를 제출합니다.
+                            {siteVisitCount} contractors have applied for a site visit. Once approved, they will visit the site and submit quotes.
                           </p>
                         </div>
                         
@@ -813,10 +813,10 @@ export default function MyQuotesPage() {
                               <div className="mb-3">
                                 <h4 className="font-semibold text-lg text-gray-900 flex items-center">
                                   <Building className="w-5 h-5 mr-2 text-emerald-600" />
-                                  {application.contractors?.company_name || '업체명 없음'}
+                                  {application.contractors?.company_name || 'Company Name Not Available'}
                                 </h4>
                                 <p className="text-sm text-gray-600 ml-7">
-                                  담당자: {application.contractors?.contact_name || '담당자 정보 없음'}
+                                  Contact: {application.contractors?.contact_name || 'Contact Info Not Available'}
                                 </p>
                               </div>
                               
@@ -828,18 +828,18 @@ export default function MyQuotesPage() {
                                     ? 'bg-green-100 text-green-800 border border-green-300'
                                     : 'bg-red-100 text-red-800 border border-red-300'
                                 }`}>
-                                  {application.status === 'pending' ? '방문 예정' : 
-                                   application.status === 'approved' ? '승인됨' : '취소됨'}
+                                  {application.status === 'pending' ? 'Pending' : 
+                                   application.status === 'approved' ? 'Approved' : 'Cancelled'}
                                 </span>
                               </div>
                               
                               <div className="text-xs text-gray-500">
-                                신청일: {new Date(application.applied_at).toLocaleDateString('ko-KR')}
+                                Applied: {new Date(application.applied_at).toLocaleDateString('en-US')}
                               </div>
                               
                               {application.notes && (
                                 <div className="mt-2 p-2 bg-white rounded text-sm text-gray-700 border border-emerald-200">
-                                  <strong>메모:</strong> {application.notes}
+                                  <strong>Note:</strong> {application.notes}
                                 </div>
                               )}
                             </div>
@@ -853,7 +853,7 @@ export default function MyQuotesPage() {
                       <div className="mt-6">
                         <div className="mb-4">
                           <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            받은 견적서 ({quoteCount}개)
+                            Received Quotes ({quoteCount})
                           </h3>
                         </div>
                         
@@ -865,10 +865,10 @@ export default function MyQuotesPage() {
                               <div key={contractorQuote.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                                 <div className="mb-3">
                                   <h4 className="font-semibold text-lg text-gray-900">
-                                    {contractorQuote.contractors?.company_name || '업체명 없음'}
+                                    {contractorQuote.contractors?.company_name || 'Company Name Not Available'}
                                   </h4>
                                   <p className="text-sm text-gray-600">
-                                    담당자: {contractorQuote.contractors?.contact_name || '담당자 정보 없음'}
+                                    Contact: {contractorQuote.contractors?.contact_name || 'Contact Info Not Available'}
                                   </p>
                                 </div>
                                 
@@ -880,12 +880,12 @@ export default function MyQuotesPage() {
                                 
                                 <div className="mb-3">
                                   <p className="text-sm text-gray-700">
-                                    {contractorQuote.description || '설명 없음'}
+                                    {contractorQuote.description || 'No description'}
                                   </p>
                                 </div>
                                 
                                 <div className="text-sm text-gray-500 mb-4">
-                                  제출일: {new Date(contractorQuote.created_at).toLocaleDateString('ko-KR')}
+                                  Submitted: {new Date(contractorQuote.created_at).toLocaleDateString('en-US')}
                                 </div>
                                 
                                 <div className="space-y-2">
@@ -894,15 +894,15 @@ export default function MyQuotesPage() {
                                    (quote.status === 'bidding' && quote.selected_contractor_id === contractorQuote.contractor_id) ? (
                                     <div className="space-y-2">
                                       <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded text-sm font-medium text-center">
-                                        ✓ 선택된 업체
+                                        ✓ Selected Contractor
                                       </div>
                                       <div className="w-full px-4 py-2 bg-emerald-50 text-emerald-700 rounded text-sm text-center border border-emerald-200">
-                                        📞 {contractorQuote.contractors?.company_name || '업체'}가 입력해주신 전화번호로 연락드릴 예정입니다
+                                        📞 {contractorQuote.contractors?.company_name || 'Contractor'} will contact you at the phone number you provided
                                       </div>
                                     </div>
                                   ) : contractorQuote.status === 'rejected' ? (
                                     <div className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm font-medium text-center">
-                                      미선택
+                                      Not Selected
                                     </div>
                                   ) : (
                                     // ✅ contractor-selected, in-progress, completed 상태일 때는 선택 버튼 숨기기
@@ -923,7 +923,7 @@ export default function MyQuotesPage() {
                                             : 'bg-blue-600 text-white hover:bg-blue-700'
                                         }`}
                                       >
-                                        {selectingContractor === quote.id ? '처리 중...' : '업체 선택하기'}
+                                        {selectingContractor === quote.id ? 'Processing...' : 'Select Contractor'}
                                       </button>
                                     )
                                   )}
@@ -944,12 +944,12 @@ export default function MyQuotesPage() {
                                       {isDownloading ? (
                                         <>
                                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
-                                          다운로드 중...
+                                          Downloading...
                                         </>
                                       ) : (
                                         <>
                                           <Download className="w-4 h-4 mr-2" />
-                                          견적서 다운로드
+                                          Download Quote
                                         </>
                                       )}
                                     </button>
