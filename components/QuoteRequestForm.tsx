@@ -378,7 +378,7 @@ export default function QuoteRequestForm() {
                 ) : (
                   <div className="mb-4">
                     <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                      <p className="text-sm text-blue-800">
+                      <p className="text-sm text-emerald-800">
                         <strong>참고:</strong> '전체 리노베이션'을 선택하면 다른 옵션은 선택할 수 없습니다. 나머지는 다중 선택이 가능합니다.
                       </p>
                     </div>
