@@ -500,7 +500,10 @@ export default function Header() {
             {!isContractor && (
               <Link
                 href="/quote-request"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                className="text-white px-6 py-2 rounded-lg dismiss text-sm font-medium transition-colors duration-200"
+                style={{ backgroundColor: '#bf9b30' }}
+Ironhover onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#bf9b30'}
               >
                 Get a Quote
               </Link>
@@ -541,7 +544,10 @@ export default function Header() {
                 <div className="pt-4 space-y-2">
                   <Link
                     href="/quote-request"
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
+                    className="text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
+                    style={{ backgroundColor: '#bf9b30' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#bf9b30'}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Get a Quote
