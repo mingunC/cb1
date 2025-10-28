@@ -541,10 +541,10 @@ export default function Header() {
                 <div className="pt-4 space-y-2">
                   <Link
                     href="/quote-request"
-                    className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    견적 요청
+                    Get a Quote
                   </Link>
                 </div>
               )}
