@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import Image from 'next/image'
 
 export default function HeroSection() {
   const [isContractor, setIsContractor] = useState(false)
@@ -42,18 +41,13 @@ export default function HeroSection() {
 
   return (
     <section className="relative h-[600px] lg:h-[700px] overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0">
-        <Image
-          src="/luxury-sofa.jpg"
-          alt="Luxury Interior"
-          fill
-          className="object-cover"
-          sizes="100vw"
-          priority
-        />
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70"></div>
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
+        {/* Overlay Pattern */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }}></div>
       </div>
 
       {/* Content Container */}
