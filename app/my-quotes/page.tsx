@@ -358,12 +358,7 @@ export default function MyQuotesPage() {
 
       console.log('API response:', result)
       
-      // 성공 시 즉시 데이터 새로고침하여 UI 업데이트
-      if (user?.id) {
-        await fetchQuotes(user.id)
-      }
-
-      // 선택된 업체 정보 가져오기 (로컬 데이터에서)
+      // 선택된 업체 정보 가져오기 (로컬 데이터에서 먼저)
       const selectedQuote = quotes.find(q => q.id === projectId)
       const selectedContractorQuote = selectedQuote?.contractor_quotes?.find(cq => cq.id === contractorQuoteId)
       const contractorInfo = selectedContractorQuote?.contractors?.company_name || '선택된 업체'
@@ -371,6 +366,11 @@ export default function MyQuotesPage() {
       const phoneNumber = selectedContractorQuote?.contractors?.phone || '등록된 전화번호'
 
       toast.success(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.`)
+      
+      // 성공 메시지 표시 후 백그라운드에서 데이터 새로고침
+      if (user?.id) {
+        fetchQuotes(user.id).catch(err => console.error('Error refreshing quotes:', err))
+      }
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
