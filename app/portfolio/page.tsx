@@ -131,7 +131,7 @@ function PortfolioContent() {
               placeholder="업체명, 프로젝트명으로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ function PortfolioContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
             <p className="text-gray-600">로딩 중...</p>
           </div>
         ) : filteredPortfolios.length === 0 ? (
@@ -278,7 +278,7 @@ function PortfolioContent() {
                       <h3 className="font-semibold">{selectedPortfolio.contractor.company_name}</h3>
                     </div>
                   </div>
-                  <Link href="/pros" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+                  <Link href="/pros" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
                     업체 보기
                   </Link>
                 </div>
@@ -325,7 +325,7 @@ function PortfolioContent() {
                 </div>
               )}
 
-              <Link href="/quote-request" className="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-center">
+              <Link href="/quote-request" className="block w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-center">
                 견적 문의하기
               </Link>
             </div>
@@ -341,7 +341,7 @@ export default function PortfolioGalleryPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600">포트폴리오를 불러오는 중...</p>
         </div>
       </div>

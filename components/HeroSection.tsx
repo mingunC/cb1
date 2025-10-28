@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import Image from 'next/image'
 
 export default function HeroSection() {
   const [isContractor, setIsContractor] = useState(false)
-  const [activeTab, setActiveTab] = useState('PAST')
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -40,42 +40,75 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="relative h-[600px] lg:h-[700px] overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950">
-        {/* Overlay Pattern */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-          backgroundSize: '40px 40px'
-        }}></div>
-      </div>
+    <>
+      {/* Hero Section */}
+      <section className="relative h-[700px] lg:h-[800px] overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/luxury-sofa.jpg"
+            alt="Luxury Interior"
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
 
-      {/* Content Container */}
-      <div className="relative z-10 h-full flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl text-center mx-auto">
-          {/* Main Title */}
-          <h1 className="text-5xl lg:text-7xl font-bold text-white mb-12 leading-tight tracking-tight">
-            Across<br/>Canada
-          </h1>
-          
-          {/* Tabs */}
-          <div className="flex justify-center gap-4 mb-8">
-            {['PAST', 'PRESENT', 'FUTURE'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
-                  activeTab === tab
-                    ? 'bg-white/90 text-gray-900'
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+        {/* Content Container */}
+        <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full">
+            {/* Main Layout: Title Left, Info Box Right */}
+            <div className="grid lg:grid-cols-2 gap-12 items-start mb-12">
+              {/* Left: Main Title */}
+              <div className="max-w-2xl">
+                <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight mb-6">
+                  Trusted Renovation Experts Across Canada
+                </h1>
+              </div>
+
+              {/* Right: Info Box */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 shadow-lg">
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  Canada Beaver simplifies the complex process of furnishing all-inclusive, boutique & high-end hotels, and luxury residences in Canada.
+                </p>
+                <Link
+                  href="/quote-request"
+                  onClick={handleQuoteRequest}
+                  className={`inline-flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 ${
+                    isContractor 
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                      : 'bg-white border-2 border-gray-300 text-gray-900 hover:bg-gray-50 shadow-md'
+                  }`}
+                >
+                  Start Your Furnishing Journey
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Statistics Boxes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-8 py-6 shadow-lg">
+                <div className="text-4xl font-bold text-gray-900 mb-2">150+</div>
+                <div className="text-sm text-gray-600 uppercase tracking-wide">Premium Partners</div>
+              </div>
+              
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-8 py-6 shadow-lg">
+                <div className="text-4xl font-bold text-gray-900 mb-2">15+</div>
+                <div className="text-sm text-gray-600 uppercase tracking-wide">Years of Excellence</div>
+              </div>
+              
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-8 py-6 shadow-lg">
+                <div className="text-4xl font-bold text-gray-900 mb-2">98%</div>
+                <div className="text-sm text-gray-600 uppercase tracking-wide">Client Satisfaction</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }

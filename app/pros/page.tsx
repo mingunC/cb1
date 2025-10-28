@@ -244,7 +244,7 @@ export default function ContractorsListingPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
             <p className="text-gray-600">로딩 중...</p>
           </div>
         ) : filteredContractors.length === 0 ? (
@@ -323,10 +323,10 @@ export default function ContractorsListingPage() {
               {selectedContractor.cover_image ? (
                 <img src={selectedContractor.cover_image} alt={selectedContractor.company_name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center">
                   <div className="text-center">
                     <h2 className="text-white text-4xl font-bold mb-2">{selectedContractor.company_name}</h2>
-                    <p className="text-blue-100 text-lg">Professional Services</p>
+                    <p className="text-emerald-100 text-lg">Professional Services</p>
                   </div>
                 </div>
               )}
@@ -340,7 +340,7 @@ export default function ContractorsListingPage() {
                 {selectedContractor.logo_url ? (
                   <img src={selectedContractor.logo_url} alt={selectedContractor.company_name} className="w-20 h-20 rounded-lg object-cover" />
                 ) : (
-                  <div className="w-20 h-20 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
                     <span className="text-white font-bold text-2xl">
                       {selectedContractor.company_name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
                     </span>
@@ -373,7 +373,7 @@ export default function ContractorsListingPage() {
                 <div className="flex flex-wrap gap-2">
                   {selectedContractor.specialties.length > 0 ? (
                     selectedContractor.specialties.map((specialty, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                      <span key={index} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm">
                         {specialty}
                       </span>
                     ))
@@ -425,9 +425,9 @@ export default function ContractorsListingPage() {
                     <ImageIcon className="h-5 w-5" />
                     포트폴리오 보기
                   </Link>
-                  <button onClick={() => handleSMSConsultation(selectedContractor)} className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">
+                  <button onClick={() => handleSMSConsultation(selectedContractor)} className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">
                     <MessageCircle className="h-5 w-5" />
-                    상담 신청
+                    Request Consultation
                   </button>
                 </div>
               </div>
