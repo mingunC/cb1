@@ -42,7 +42,7 @@ export default function HeroSection() {
   return (
     <>
       {/* Hero Section - Mobile Optimized */}
-      <section className="relative h-[500px] sm:h-[600px] lg:h-[700px] overflow-hidden">
+      <section className="relative min-h-[600px] sm:h-[600px] lg:h-[700px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -58,7 +58,7 @@ export default function HeroSection() {
         </div>
 
         {/* Content Container */}
-        <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-0">
+        <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-8 lg:py-0">
           <div className="w-full">
             {/* Main Layout: Stacked on Mobile, Side by Side on Desktop */}
             <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start mb-8 lg:mb-12">
