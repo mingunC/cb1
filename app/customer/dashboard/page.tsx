@@ -55,6 +55,7 @@ export default function CustomerDashboard() {
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
+        setIsLoading(false)  // ⭐ 추가!
         router.push('/login')
         return
       }
@@ -62,6 +63,7 @@ export default function CustomerDashboard() {
       await loadProjects(user.id)
     } catch (error) {
       console.error('Error:', error)
+      setIsLoading(false)  // ⭐ 추가!
       router.push('/login')
     }
   }
@@ -437,38 +439,58 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f1e8] to-[#f0ebe0]">
       {/* 헤더 */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-[#daa520]/20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20 py-4">
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/')}
-                className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
+                className="flex items-center text-gray-600 hover:text-[#2c5f4e] transition-colors mr-6"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
-                홈으로
+                <span className="font-light">홈으로</span>
               </button>
-              <h1 className="text-xl font-bold text-gray-900">내 견적</h1>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#c4a05a] to-[#daa520] rounded-full flex items-center justify-center shadow-lg">
+                  <Calendar className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-serif font-light text-[#2c5f4e]">My Quotes</h1>
+                  <p className="text-sm text-gray-500 font-light">내 견적 관리</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <p className="text-gray-600 mb-6">견적요청 내역과 받은 견적서를 비교해보세요.</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <p className="text-gray-600 text-lg font-light leading-relaxed">
+            견적요청 내역과 받은 견적서를 비교해보세요.
+          </p>
+        </div>
         
         {projects.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-600 text-lg mb-4">아직 제출한 견적요청서가 없습니다</p>
-            <button
-              onClick={() => router.push('/quote-request')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-            >
-              견적 요청하기
-            </button>
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-[#daa520]/20 p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#c4a05a] to-[#daa520] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Calendar className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-serif font-light text-[#2c5f4e] mb-4">No Quotes Yet</h3>
+              <p className="text-gray-600 text-lg mb-8 font-light">
+                아직 제출한 견적요청서가 없습니다
+              </p>
+              <button
+                onClick={() => router.push('/quote-request')}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#c4a05a] to-[#daa520] text-white rounded-full hover:from-[#b8944e] hover:to-[#c89510] transition-all duration-300 shadow-lg hover:shadow-xl font-medium text-base"
+              >
+                견적 요청하기
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
@@ -488,8 +510,8 @@ export default function CustomerDashboard() {
               })
 
               return (
-                <div key={project.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="p-6">
+                <div key={project.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#daa520]/20 overflow-hidden hover:shadow-xl transition-all duration-300">
+                  <div className="p-8">
                     {/* 프로젝트 헤더 */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -506,10 +528,10 @@ export default function CustomerDashboard() {
                     </div>
 
                     {/* 프로젝트 정보 */}
-                    <div className="space-y-2 text-sm mb-4">
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                        {project.full_address}
+                    <div className="space-y-3 text-sm mb-6">
+                      <div className="flex items-center text-gray-700 font-light">
+                        <MapPin className="w-5 h-5 mr-3 text-[#daa520] flex-shrink-0" />
+                        <span>{project.full_address}</span>
                       </div>
                       <div>
                         <p className="text-gray-700 font-medium">
@@ -655,22 +677,22 @@ export default function CustomerDashboard() {
 
                     {/* 프로젝트 시작 버튼 */}
                     {canStartProject && (
-                      <div className="mt-6 border-t pt-6 bg-gradient-to-br from-blue-50 to-purple-50 -m-6 p-6 rounded-b-lg">
-                        <div className="text-center mb-6">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">프로젝트를 시작해주세요!</h3>
-                          <p className="text-sm text-gray-700 mb-4 flex items-center justify-center gap-2">
+                      <div className="mt-8 border-t border-[#daa520]/20 pt-8 bg-gradient-to-br from-[#f5f1e8] to-[#f0ebe0] -m-8 p-8 rounded-b-2xl">
+                        <div className="text-center mb-8">
+                          <h3 className="text-2xl font-serif font-light text-[#2c5f4e] mb-3">프로젝트를 시작해주세요!</h3>
+                          <p className="text-sm text-gray-700 mb-4 flex items-center justify-center gap-2 font-light">
                             <CheckCircle className="w-5 h-5 text-green-600" />
                             업체와 연락하여 공사 일정을 확정하세요
                           </p>
                         </div>
-                        <p className="text-sm text-blue-800 mb-4 text-center">
+                        <p className="text-sm text-gray-600 mb-6 text-center font-light">
                           준비가 완료되고 프로젝트를 시작하실 때 시작버튼을 눌러주세요.
                         </p>
                         <button
                           onClick={() => handleStartProject(project.id)}
-                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-lg font-bold text-lg flex items-center justify-center gap-3 shadow-lg transform transition-all hover:scale-105"
+                          className="w-full bg-gradient-to-r from-[#c4a05a] to-[#daa520] hover:from-[#b8944e] hover:to-[#c89510] text-white px-6 py-4 rounded-full font-medium text-base flex items-center justify-center gap-3 shadow-lg transform transition-all hover:scale-105"
                         >
-                          <Play className="w-6 h-6" />
+                          <Play className="w-5 h-5" />
                           프로젝트 시작
                         </button>
                       </div>

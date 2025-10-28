@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, Fragment, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban } from 'lucide-react'
@@ -19,9 +19,6 @@ interface Props {
 
 export default function IntegratedContractorDashboard({ initialContractorData }: Props) {
   const router = useRouter()
-  
-  // 중복 실행 방지용 ref
-  const isLoadingProjectsRef = useRef(false)
   
   // 상태 관리
   const [projects, setProjects] = useState<Project[]>([])
@@ -59,14 +56,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       console.error('No contractor data available')
       return
     }
-    
-    // 중복 실행 방지
-    if (isLoadingProjectsRef.current) {
-      console.log('⏭️ loadProjects already in progress, skipping...')
-      return
-    }
-    
-    isLoadingProjectsRef.current = true
     
     try {
       setIsLoading(true)
@@ -227,7 +216,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setError('프로젝트를 불러오는 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
-      isLoadingProjectsRef.current = false
       console.log('🏁 loadProjects finished')
     }
   }, [contractorData, loadSelectedContractorNames])
@@ -581,38 +569,40 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     }
     
     return (
-      <div className={`bg-white rounded-lg p-6 ${getBorderColor()} transition-all`}>
+      <div className={`bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-[#daa520]/20 hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-xl font-serif font-light text-[#2c5f4e] mb-2">
               {getSpaceTypeLabel()}
             </h3>
-            <div className="flex items-center text-sm text-gray-600 mt-1">
-              <User className="w-4 h-4 mr-1" />
-              <span className="font-medium">{getCustomerName()}</span>
+            <div className="flex items-center text-sm text-gray-600 mt-1 mb-3">
+              <User className="w-4 h-4 mr-2 text-[#daa520]" />
+              <span className="font-light">{getCustomerName()}</span>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
-              프로젝트: {getProjectTypeLabel()}
-            </p>
-            <p className="text-sm text-gray-500">
-              예산: {getBudgetLabel()}
-            </p>
-            <p className="text-sm text-gray-500">
-              시작시기: {getTimelineLabel()}
-            </p>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 font-light">
+                프로젝트: {getProjectTypeLabel()}
+              </p>
+              <p className="text-sm text-gray-600 font-light">
+                예산: {getBudgetLabel()}
+              </p>
+              <p className="text-sm text-gray-600 font-light">
+                시작시기: {getTimelineLabel()}
+              </p>
+            </div>
           </div>
           <div className="ml-4">
             {getStatusBadge()}
           </div>
         </div>
         
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center text-gray-600">
-            <Calendar className="w-4 h-4 mr-2" />
+        <div className="space-y-3 text-sm mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center text-gray-600 font-light">
+            <Calendar className="w-4 h-4 mr-3 text-[#daa520]" />
             방문 희망일: {getVisitDate()}
           </div>
-          <div className="flex items-center text-gray-600">
-            <MapPin className="w-4 h-4 mr-2" />
+          <div className="flex items-center text-gray-600 font-light">
+            <MapPin className="w-4 h-4 mr-3 text-[#daa520]" />
             {project.full_address || project.postal_code || '주소 미입력'}
           </div>
           
@@ -758,27 +748,35 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   }
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f1e8] to-[#f0ebe0]">
       {/* 헤더 */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-[#daa520]/20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-12">
+          <div className="flex justify-between items-center h-20 py-4">
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/')}
-                className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
+                className="flex items-center text-gray-600 hover:text-[#2c5f4e] transition-colors mr-6"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                홈으로
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                <span className="font-light">홈으로</span>
               </button>
-              <h1 className="text-lg font-semibold text-gray-900">
-                {contractorData?.company_name || '업체 대시보드'}
-              </h1>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#c4a05a] to-[#daa520] rounded-full flex items-center justify-center shadow-lg">
+                  <Briefcase className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-serif font-light text-[#2c5f4e]">
+                    {contractorData?.company_name || 'Partners Dashboard'}
+                  </h1>
+                  <p className="text-sm text-gray-500 font-light">업체 대시보드</p>
+                </div>
+              </div>
             </div>
             <button
               onClick={refreshData}
               disabled={isRefreshing}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg text-sm font-light transition-all"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               새로고침
@@ -792,14 +790,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         {/* 상단 메뉴 버튼들 */}
         
         {/* 탭 네비게이션 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#daa520]/20 mb-8">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
               <button
                 onClick={() => setActiveTab('projects')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'projects'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#daa520] text-[#2c5f4e]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -807,9 +805,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               </button>
               <button
                 onClick={() => router.push('/contractor/profile')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#daa520] text-[#2c5f4e]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -817,9 +815,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'portfolio'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#daa520] text-[#2c5f4e]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -833,45 +831,53 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         {activeTab === 'projects' && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {statusCounts['bidding'] > 0 && (
-              <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-300 rounded-lg p-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-orange-600 font-medium">입찰 중</p>
-                    <p className="text-2xl font-bold text-orange-700">{statusCounts['bidding']}</p>
+                    <p className="text-sm text-gray-600 font-light mb-1">입찰 중</p>
+                    <p className="text-3xl font-serif font-light text-[#2c5f4e]">{statusCounts['bidding']}</p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-orange-500" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-orange-500" />
+                  </div>
                 </div>
               </div>
             )}
             {statusCounts['selected'] > 0 && (
-              <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-300 rounded-lg p-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-600 font-medium">선정된 프로젝트</p>
-                    <p className="text-2xl font-bold text-green-700">{statusCounts['selected']}</p>
+                    <p className="text-sm text-gray-600 font-light mb-1">선정된 프로젝트</p>
+                    <p className="text-3xl font-serif font-light text-green-600">{statusCounts['selected']}</p>
                   </div>
-                  <Trophy className="w-8 h-8 text-green-500" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center">
+                    <Trophy className="w-6 h-6 text-green-600" />
+                  </div>
                 </div>
               </div>
             )}
             {statusCounts['quoted'] > 0 && (
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-300 rounded-lg p-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 font-medium">제출한 견적서</p>
-                    <p className="text-2xl font-bold text-purple-700">{statusCounts['quoted']}</p>
+                    <p className="text-sm text-gray-600 font-light mb-1">제출한 견적서</p>
+                    <p className="text-3xl font-serif font-light text-purple-600">{statusCounts['quoted']}</p>
                   </div>
-                  <Eye className="w-8 h-8 text-purple-500" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
+                    <Eye className="w-6 h-6 text-purple-600" />
+                  </div>
                 </div>
               </div>
             )}
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 rounded-lg p-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">전체 프로젝트</p>
-                  <p className="text-2xl font-bold text-blue-700">{statusCounts['all']}</p>
+                  <p className="text-sm text-gray-600 font-light mb-1">전체 프로젝트</p>
+                  <p className="text-3xl font-serif font-light text-[#2c5f4e]">{statusCounts['all']}</p>
                 </div>
-                <Calendar className="w-8 h-8 text-blue-500" />
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                </div>
               </div>
             </div>
           </div>
