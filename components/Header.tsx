@@ -500,7 +500,7 @@ export default function Header() {
             {!isContractor && (
               <Link
                 href="/quote-request"
-                className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
               >
                 Get a Quote
               </Link>
@@ -541,7 +541,7 @@ export default function Header() {
                 <div className="pt-4 space-y-2">
                   <Link
                     href="/quote-request"
-                    className="bg-amber-600 hover:bg-amber-700 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
+                    className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Get a Quote
