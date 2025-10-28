@@ -32,7 +32,7 @@ export default function QuoteRequestPage() {
     }
 
     checkAuth()
-  }, [router])
+  }, [])
 
   // 로딩 중
   if (isLoading) {
