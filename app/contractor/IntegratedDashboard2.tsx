@@ -761,16 +761,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 <span className="font-light">홈으로</span>
               </button>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#c4a05a] to-[#daa520] rounded-full flex items-center justify-center shadow-lg">
-                  <Briefcase className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-serif font-light text-[#2c5f4e]">
-                    {contractorData?.company_name || 'Partners Dashboard'}
-                  </h1>
-                </div>
-              </div>
             </div>
             <button
               onClick={refreshData}
