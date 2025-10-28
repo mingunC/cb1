@@ -61,7 +61,7 @@ export default function HeroSection() {
         <div className="relative z-10 h-full flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-0">
           <div className="w-full">
             {/* Main Layout: Stacked on Mobile, Side by Side on Desktop */}
-            <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start mb-6 lg:mb-12">
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start mb-8 lg:mb-12">
               {/* Main Title */}
               <div className="max-w-2xl">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight mb-4 lg:mb-6">
