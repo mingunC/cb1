@@ -79,6 +79,7 @@ export default function MyQuotesPage() {
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null)
   const [downloadingQuotes, setDownloadingQuotes] = useState<Set<string>>(new Set())
   const [startingProject, setStartingProject] = useState<string | null>(null)
+  const [selectingContractor, setSelectingContractor] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -310,11 +311,18 @@ export default function MyQuotesPage() {
 
   // 업체 선택 처리 함수 - API 라우트 사용
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
+    // 중복 클릭 방지
+    if (selectingContractor) {
+      console.log('Already processing contractor selection')
+      return
+    }
+    
     try {
       if (!confirm('이 업체를 선택하시겠습니까? 선택 후에는 변경할 수 없습니다.')) {
         return
       }
 
+      setSelectingContractor(projectId)
       console.log('Selecting contractor:', { contractorQuoteId, projectId, contractorId })
 
       // API 호출하여 서버에서 데이터베이스 업데이트
@@ -334,11 +342,26 @@ export default function MyQuotesPage() {
 
       if (!response.ok) {
         console.error('API error:', result)
+        
+        // 이미 선정된 경우는 성공으로 처리 (중복 클릭 방지)
+        if (result.message && result.message.includes('이미 업체가 선정된')) {
+          console.log('✅ Project already has selected contractor, refreshing data')
+          if (user?.id) {
+            await fetchQuotes(user.id)
+          }
+          return
+        }
+        
         toast.error(result.error || '업체 선택 중 오류가 발생했습니다.')
         return
       }
 
       console.log('API response:', result)
+      
+      // 성공 시 즉시 데이터 새로고침하여 UI 업데이트
+      if (user?.id) {
+        await fetchQuotes(user.id)
+      }
 
       // 선택된 업체 정보 가져오기 (로컬 데이터에서)
       const selectedQuote = quotes.find(q => q.id === projectId)
@@ -349,14 +372,11 @@ export default function MyQuotesPage() {
 
       toast.success(`업체가 성공적으로 선택되었습니다!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''}가 입력해주신 전화번호(${phoneNumber})로 연락드릴 예정입니다.`)
       
-      // 데이터 새로고침
-      if (user?.id) {
-        await fetchQuotes(user.id)
-      }
-      
     } catch (error) {
       console.error('Error selecting contractor:', error)
       toast.error('업체 선택 중 오류가 발생했습니다.')
+    } finally {
+      setSelectingContractor(null)
     }
   }
 
@@ -896,9 +916,14 @@ export default function MyQuotesPage() {
                                           });
                                           handleSelectContractor(contractorQuote.id, quote.id, contractorQuote.contractor_id);
                                         }}
-                                        className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                        disabled={selectingContractor === quote.id}
+                                        className={`w-full px-4 py-2 rounded ${
+                                          selectingContractor === quote.id 
+                                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                                        }`}
                                       >
-                                        업체 선택하기
+                                        {selectingContractor === quote.id ? '처리 중...' : '업체 선택하기'}
                                       </button>
                                     )
                                   )}
