@@ -76,19 +76,20 @@ export default function ProsSection() {
 
   return (
     <>
-      <section className="py-20 bg-emerald-950">
+      <section className="py-24 bg-gradient-to-b from-emerald-950 to-emerald-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 섹션 헤더 */}
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 tracking-tight">
               Meet Our Elite Partners
             </h2>
-            <p className="text-xl text-white/80 max-w-3xl mx-auto">
+            <div className="w-24 h-1 bg-amber-600 mx-auto mb-6"></div>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               Trusted professionals ready to transform your space
             </p>
-            <div className="mt-8 flex justify-center">
-              <button className="border-2 border-white text-white bg-transparent hover:bg-white/10 px-8 py-3 rounded-lg font-semibold transition-colors">
-                Browse Professionals
+            <div className="mt-10 flex justify-center">
+              <button className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-emerald-950 px-10 py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg">
+                Explore All Professionals
               </button>
             </div>
           </div>
