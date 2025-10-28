@@ -1027,7 +1027,7 @@ export default function MyQuotesPage() {
                   )}
 
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">현재 상태</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Current Status</h4>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       {(() => {
                         const statusInfo = getStatusColor(selectedQuote.status)
