@@ -1002,7 +1002,7 @@ export default function MyQuotesPage() {
                         projectTypeMap[type] || type
                       ).join(', ')}</p>
                       <p><strong>Budget:</strong> {formatBudget(selectedQuote.budget)}</p>
-                      <p><strong>일정:</strong> {timelineMap[selectedQuote.timeline] || selectedQuote.timeline}</p>
+                      <p><strong>Timeline:</strong> {timelineMap[selectedQuote.timeline] || selectedQuote.timeline}</p>
                     </div>
                   </div>
 
