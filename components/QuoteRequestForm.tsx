@@ -273,7 +273,7 @@ export default function QuoteRequestForm() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">견적 요청 완료!</h2>
           <p className="text-gray-600 mb-6">
             견적 요청이 성공적으로 제출되었습니다.<br />
-            관리자 승인 후 업체들이 견적을 제출할 예정입니다.
+            관리자 승인 후 업체들이 방문 할 예정입니다.
           </p>
           <button
             onClick={() => window.location.href = '/my-quotes'}
