@@ -557,7 +557,7 @@ export default function QuoteRequestForm() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
+            <div className="flex gap-4 mt-8">
               <button
                 type="button"
                 onClick={prevStep}
@@ -575,7 +575,7 @@ export default function QuoteRequestForm() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                  className="px-10 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300"
                 >
                   Next →
                 </button>
