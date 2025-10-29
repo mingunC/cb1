@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
@@ -13,6 +13,7 @@ interface QuoteFormData {
   fullAddress: string
   visitDate: string
   description: string
+  phone: string
 }
 
 const spaceTypes = [
@@ -58,6 +59,7 @@ export default function QuoteRequestForm() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
+  const phoneInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState<QuoteFormData>({
     spaceType: '',
     projectTypes: [],
@@ -66,7 +68,8 @@ export default function QuoteRequestForm() {
     postalCode: '',
     fullAddress: '',
     visitDate: '',
-    description: ''
+    description: '',
+    phone: ''
   })
 
   const onSubmit = async (e?: React.FormEvent) => {
@@ -108,7 +111,8 @@ export default function QuoteRequestForm() {
         full_address: formData.fullAddress,
         visit_date: formData.visitDate || null,
         description: formData.description,
-        photos: [],  // 일단 빈 배열로
+        phone: formData.phone,
+        photos: [],
         status: 'pending'
       }
       
@@ -206,6 +210,10 @@ export default function QuoteRequestForm() {
           alert('프로젝트 설명을 입력해주세요.')
           return false
         }
+        if (!formData.phone || formData.phone.trim() === '') {
+          alert('전화번호를 입력해주세요.')
+          return false
+        }
         break
     }
     return true
@@ -260,9 +268,67 @@ export default function QuoteRequestForm() {
     }
   }
 
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const cleaned = value.replace(/\D/g, '')
+    
+    // 최대 10자리까지만 허용
+    const limited = cleaned.slice(0, 10)
+    
+    // 캐나다 전화번호 형식으로 포맷팅 (123) 123-1234
+    if (limited.length === 0) {
+      return ''
+    } else if (limited.length <= 3) {
+      return `(${limited})`
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
+    }
+  }
+
   const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPostalCode(e.target.value)
     setFormData(prev => ({ ...prev, postalCode: formatted }))
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const previousValue = formData.phone
+    const inputValue = input.value
+    const cursorPosition = input.selectionStart || 0
+    
+    // 숫자만 추출
+    const cleaned = inputValue.replace(/\D/g, '')
+    const previousCleaned = previousValue.replace(/\D/g, '')
+    
+    // 포맷팅 적용
+    const formatted = formatPhoneNumber(inputValue)
+    
+    // 커서 위치 계산: 현재 커서 앞의 숫자 개수를 기준으로
+    const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
+    
+    // 포맷된 문자열에서 같은 숫자 위치 찾기
+    let newCursorPosition = formatted.length
+    let count = 0
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
+        count++
+        if (count === beforeCursor) {
+          newCursorPosition = i + 1
+          break
+        }
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, phone: formatted }))
+    
+    // 커서 위치 복원 (다음 렌더링 후)
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
+      }
+    }, 0)
   }
 
   if (isCompleted) {
@@ -552,6 +618,19 @@ export default function QuoteRequestForm() {
                     />
                   </div>
                   
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                    <input
+                      ref={phoneInputRef}
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
+                      placeholder="e.g. (416) 555-0100"
+                    />
+                    <p className="text-sm text-gray-600 mt-2">For contractors to contact you directly</p>
+                  </div>
                 </div>
               </div>
             )}
