@@ -18,21 +18,23 @@ export default function QuoteRequestPage() {
         
         if (!session || !session.user) {
           console.log('No session found, redirecting to login')
+          setIsLoading(false)  // ⚡ 즉시 로딩 해제
           router.push('/login')
           return
         }
         
         console.log('Session found for user:', session.user.email)
         setIsAuthenticated(true)
-        setIsLoading(false)
+        setIsLoading(false)  // ⚡ 즉시 로딩 해제
       } catch (error) {
         console.error('Auth check error:', error)
+        setIsLoading(false)  // ⚡ 에러 시에도 즉시 로딩 해제
         router.push('/login')
       }
     }
 
     checkAuth()
-  }, []) // 빈 배열로 변경하여 한 번만 실행
+  }, [router])
 
   // 로딩 중
   if (isLoading) {
