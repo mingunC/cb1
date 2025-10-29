@@ -40,6 +40,7 @@ export const STATUS_CONFIGS = {
   'quoted': { color: 'bg-yellow-100 text-yellow-800', label: 'Quote Submitted' },
   'selected': { color: 'bg-green-100 text-green-800', label: 'Selected' },
   'not-selected': { color: 'bg-orange-100 text-orange-800', label: 'Not Selected' },
+  'failed-bid': { color: 'bg-red-100 text-red-800', label: 'Failed Bid' },
   'completed': { color: 'bg-gray-100 text-gray-800', label: 'Completed' },
   'cancelled': { color: 'bg-red-100 text-red-800', label: 'Cancelled' }
 } as const
@@ -53,7 +54,8 @@ export const FILTER_OPTIONS = [
   'site-visit-completed', 
   'quoted', 
   'selected', 
-  'not-selected'
+  'not-selected',
+  'failed-bid'
 ] as const
 
 // Budget option labels
