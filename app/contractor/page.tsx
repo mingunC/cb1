@@ -1,133 +1,122 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import IntegratedContractorDashboard from './IntegratedDashboard2'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [contractorData, setContractorData] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const mountedRef = useRef(false)
-  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    // 이미 마운트되었으면 중복 실행 방지
-    if (mountedRef.current) return
-    mountedRef.current = true
-
-    // AbortController로 비동기 작업 취소 가능하게
-    abortControllerRef.current = new AbortController()
+    let isMounted = true
 
     const checkAuth = async () => {
-      console.log('🚀 Contractor page auth check starting...')
+      console.log('🚀 Starting contractor auth check...')
       
       try {
         const supabase = createBrowserClient()
         
-        // 세션이 완전히 로드될 때까지 대기
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
-        // 세션 체크
+        // 1. 세션 확인
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        // 컴포넌트가 언마운트되었으면 중단
-        if (abortControllerRef.current?.signal.aborted) return
+        if (!isMounted) return
         
-        console.log('📋 Session status:', {
+        console.log('📋 Session check:', {
           hasSession: !!session,
           userId: session?.user?.id,
           email: session?.user?.email,
           error: sessionError
         })
         
-        if (!session) {
-          console.log('❌ No session found, redirecting to login')
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError)
+          setError('세션 확인 중 오류가 발생했습니다.')
           setIsLoading(false)
+          return
+        }
+        
+        if (!session) {
+          console.log('❌ No session - redirecting to login')
           router.push('/contractor-login')
           return
         }
         
-        // Contractor 정보 확인
+        // 2. Contractor 정보 조회
         const { data: contractor, error: contractorError } = await supabase
           .from('contractors')
           .select('*')
           .eq('user_id', session.user.id)
           .single()
           
-        // 컴포넌트가 언마운트되었으면 중단
-        if (abortControllerRef.current?.signal.aborted) return
+        if (!isMounted) return
         
         console.log('🏢 Contractor lookup:', {
           found: !!contractor,
-          data: contractor,
-          status: contractor?.status,
           error: contractorError
         })
         
-        if (!contractor) {
-          console.log('❌ Not a contractor, checking user type...')
-          
-          // users 테이블에서 user_type 확인
-          const { data: userData } = await supabase
-            .from('users')
-            .select('user_type')
-            .eq('id', session.user.id)
-            .maybeSingle()
-          
-          // 컴포넌트가 언마운트되었으면 중단
-          if (abortControllerRef.current?.signal.aborted) return
-          
-          if (userData?.user_type === 'contractor') {
-            // users 테이블에는 contractor로 등록되어 있지만
-            // contractors 테이블에는 데이터가 없는 경우
-            console.log('⚠️ User is marked as contractor but no contractor data found')
-            setIsLoading(false)
-            router.push('/contractor-signup?error=missing_contractor_data')
-          } else {
-            // 일반 사용자인 경우
-            console.log('❌ Not a contractor user')
-            setIsLoading(false)
+        if (contractorError) {
+          if (contractorError.code === 'PGRST116') {
+            // No rows found
+            console.log('❌ Not a contractor - redirecting to signup')
             router.push('/contractor-signup')
+            return
           }
+          
+          console.error('❌ Contractor lookup error:', contractorError)
+          setError('업체 정보를 불러오는 중 오류가 발생했습니다.')
+          setIsLoading(false)
           return
         }
         
-        console.log('✅ Authentication successful, rendering dashboard')
-        console.log('📊 Contractor data for dashboard:', {
-          contractor,
-          userId: session.user.id,
-          id: contractor.id
-        })
+        if (!contractor) {
+          console.log('❌ No contractor data - redirecting to signup')
+          router.push('/contractor-signup')
+          return
+        }
         
-        // 상태를 한 번에 업데이트 (렌더링 최소화)
+        // 3. 성공 - 상태 업데이트
+        console.log('✅ Auth successful, contractor ID:', contractor.id)
         setContractorData(contractor)
-        setIsAuthenticated(true)
         setIsLoading(false)
         
       } catch (error) {
-        console.error('🔥 Auth check error:', error)
+        console.error('🔥 Unexpected error:', error)
+        if (!isMounted) return
         
-        // 컴포넌트가 언마운트되었으면 중단
-        if (abortControllerRef.current?.signal.aborted) return
-        
+        setError('예상치 못한 오류가 발생했습니다.')
         setIsLoading(false)
-        router.push('/contractor-login')
       }
     }
     
     checkAuth()
     
-    // Cleanup function - 컴포넌트 언마운트 시 실행
+    // Cleanup
     return () => {
-      console.log('🧹 Cleaning up contractor page...')
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
+      isMounted = false
     }
   }, [router])
+
+  // 에러 발생 시
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">⚠️ {error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // 로딩 중
   if (isLoading) {
@@ -141,17 +130,17 @@ export default function ContractorPage() {
     )
   }
   
-  // 인증되지 않은 경우
-  if (!isAuthenticated || !contractorData) {
+  // contractor 데이터가 없으면 (리다이렉션 전)
+  if (!contractorData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">리다이렉션 중...</p>
+          <p className="text-gray-600">페이지를 이동하는 중...</p>
         </div>
       </div>
     )
   }
   
-  // 인증된 경우 - 새 대시보드 컴포넌트 사용
+  // 정상 렌더링
   return <IntegratedContractorDashboard initialContractorData={contractorData} />
 }
