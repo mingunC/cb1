@@ -20,8 +20,21 @@ export const createBrowserClient = () => {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'supabase.auth.token',
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'supabase-js-web'
+      }
     }
+  })
+
+  // 세션 상태 변경 리스너 추가
+  browserClient.auth.onAuthStateChange((event, session) => {
+    console.log('🔐 Auth state changed:', event, session?.user?.id)
   })
 
   return browserClient
