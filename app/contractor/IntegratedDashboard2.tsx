@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban, AlertCircle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -25,7 +25,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [contractorData, setContractorData] = useState<ContractorData | null>(initialContractorData)
-  const [projectFilter, setProjectFilter] = useState<ProjectStatus | 'all' | 'bidding'>('all')
+  const [projectFilter, setProjectFilter] = useState<ProjectStatus | 'all' | 'bidding' | 'failed-bid'>('all')
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'projects' | 'profile' | 'portfolio'>('projects')
   const [selectedContractorNames, setSelectedContractorNames] = useState<Record<string, string>>({})
@@ -169,7 +169,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           hasQuote
         })
         
-        let projectStatus: ProjectStatus
+        let projectStatus: ProjectStatus | 'failed-bid'
         
         if (isSelected) {
           projectStatus = 'selected'
@@ -177,6 +177,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           projectStatus = 'not-selected'
         } else if (project.status === 'bidding') {
           projectStatus = 'bidding'
+        } else if (project.status === 'bidding-closed' && hasSiteVisit && !hasQuote) {
+          // 입찰이 종료되었는데 현장방문은 했지만 견적서를 제출하지 않은 경우
+          projectStatus = 'failed-bid'
         } else if (hasQuote) {
           projectStatus = 'quote-submitted'
         } else if (hasSiteVisitCompleted) {
@@ -367,12 +370,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     if (projectFilter === 'bidding') {
       return projects.filter(p => p.projectStatus === 'bidding')
     }
+    if (projectFilter === 'failed-bid') {
+      return projects.filter(p => p.projectStatus === 'failed-bid')
+    }
     return projects.filter(p => p.projectStatus === projectFilter)
   }, [projects, projectFilter])
   
   // 상태별 카운트
   const statusCounts = useMemo(() => {
-    const counts: Record<ProjectStatus | 'all' | 'bidding', number> = {
+    const counts: Record<ProjectStatus | 'all' | 'bidding' | 'failed-bid', number> = {
       'all': projects.length,
       'pending': 0,
       'approved': 0,
@@ -383,7 +389,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       'selected': 0,
       'not-selected': 0,
       'completed': 0,
-      'cancelled': 0
+      'cancelled': 0,
+      'failed-bid': 0
     }
     
     projects.forEach(p => {
@@ -418,7 +425,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   // 프로젝트 카드를 렌더링하는 컴포넌트
   const SimpleProjectCard = ({ project }: { project: Project }) => {
     const getStatusBadge = () => {
-      const statusConfig: Record<ProjectStatus | 'bidding', { label: string; color: string; icon?: any }> = {
+      const statusConfig: Record<ProjectStatus | 'bidding' | 'failed-bid', { label: string; color: string; icon?: any }> = {
         'pending': { label: 'Pending', color: 'bg-gray-100 text-gray-700' },
         'approved': { label: '✅ Approved - Apply Site Visit', color: 'bg-green-100 text-green-700' },
         'site-visit-applied': { label: 'Site Visit Applied', color: 'bg-blue-100 text-blue-700' },
@@ -439,6 +446,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           label: 'Not Selected',
           color: 'bg-orange-100 text-orange-800',
           icon: X
+        },
+        'failed-bid': {
+          label: 'Failed Bid',
+          color: 'bg-red-100 text-red-800',
+          icon: AlertCircle
         },
         'completed': { label: 'Project Completed', color: 'bg-gray-500 text-white' },
         'cancelled': { label: 'Cancelled', color: 'bg-gray-300 text-gray-600' }
@@ -563,6 +575,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     const getBorderColor = () => {
       if (project.projectStatus === 'selected') return 'border-green-500 border-2 shadow-lg'
       if (project.projectStatus === 'not-selected') return 'border-red-300 border-2'
+      if (project.projectStatus === 'failed-bid') return 'border-red-500 border-2 shadow-lg'
       if (project.projectStatus === 'bidding') return 'border-orange-500 border-2 shadow-lg'
       if (project.projectStatus === 'approved') return 'border-blue-300 border-2'
       return 'border-gray-200'
@@ -646,8 +659,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </div>
           )}
           
+          {/* Failed Bid 상태 안내 */}
+          {project.projectStatus === 'failed-bid' && (
+            <div className="mt-3 pt-3 border-t bg-red-50 -m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-red-700 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Failed to submit quote before deadline.
+              </p>
+            </div>
+          )}
+          
           {/* 현장방문 정보 */}
-          {project.site_visit_application && project.projectStatus !== 'bidding' && (
+          {project.site_visit_application && project.projectStatus !== 'bidding' && project.projectStatus !== 'failed-bid' && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-sm text-blue-600">
                 Site Visit {project.site_visit_application.status === 'completed' ? 'Completed' : 'Applied'}
