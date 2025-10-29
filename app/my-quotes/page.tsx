@@ -288,7 +288,6 @@ export default function MyQuotesPage() {
     return ['pending', 'approved', 'site-visit-pending', 'site-visit-completed'].includes(status)
   }
 
-  // ✅ 업체 선택 처리 - 즉시 로컬 상태 업데이트
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     if (selectingContractor) {
       console.log('Already processing contractor selection')
@@ -303,12 +302,10 @@ export default function MyQuotesPage() {
       setSelectingContractor(projectId)
       console.log('Selecting contractor:', { contractorQuoteId, projectId, contractorId })
 
-      // ✅ 1단계: 즉시 로컬 상태 업데이트 (낙관적 UI 업데이트)
       const selectedQuote = quotes.find(q => q.id === projectId)
       const selectedContractorQuote = selectedQuote?.contractor_quotes?.find(cq => cq.id === contractorQuoteId)
       
       if (selectedQuote && selectedContractorQuote) {
-        // 로컬 상태 즉시 업데이트
         setQuotes(prevQuotes => prevQuotes.map(quote => {
           if (quote.id === projectId) {
             return {
@@ -324,15 +321,13 @@ export default function MyQuotesPage() {
           return quote
         }))
 
-        // 즉시 성공 메시지 표시
         const contractorInfo = selectedContractorQuote.contractors?.company_name || 'Selected Contractor'
         const contactName = selectedContractorQuote.contractors?.contact_name || ''
         const phoneNumber = selectedContractorQuote.contractors?.phone || 'registered phone number'
         
-        toast.success(`Contractor selected successfully!\\n\\n${contractorInfo} ${contactName ? `(${contactName})` : ''} will contact you at ${phoneNumber}.`)
+        toast.success(`Contractor selected successfully!\n\n${contractorInfo} ${contactName ? `(${contactName})` : ''} will contact you at ${phoneNumber}.`)
       }
 
-      // ✅ 2단계: 백그라운드에서 API 호출 (검증 목적)
       const response = await fetch('/api/contractor-selection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,7 +338,6 @@ export default function MyQuotesPage() {
 
       if (!response.ok && !result.message?.includes('이미 업체가 선정된')) {
         console.error('API error:', result)
-        // API 실패 시 롤백
         if (user?.id) {
           await fetchQuotes(user.id)
         }
@@ -355,7 +349,6 @@ export default function MyQuotesPage() {
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
-      // 에러 발생 시 데이터 새로고침
       if (user?.id) {
         await fetchQuotes(user.id)
       }
@@ -367,7 +360,7 @@ export default function MyQuotesPage() {
 
   const handleStartProject = async (projectId: string) => {
     try {
-      if (!confirm('Do you want to start the project?\\n\\nPlease coordinate with the contractor and schedule before clicking this button.')) {
+      if (!confirm('Do you want to start the project?\n\nPlease coordinate with the contractor and schedule before clicking this button.')) {
         return
       }
 
@@ -447,14 +440,15 @@ export default function MyQuotesPage() {
       }
 
       let filePath = originalUrl.trim()
-      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\\\', '\\\\contractor-quotes\\\\']
+      const bucketPrefixes = ['contractor-quotes/', '/contractor-quotes/', 'contractor-quotes\\', '\\contractor-quotes\\']
       for (const prefix of bucketPrefixes) {
         if (filePath.startsWith(prefix)) {
           filePath = filePath.substring(prefix.length)
         }
       }
 
-      filePath = filePath.replace(/^\\/+|\\/+$/g, '')
+      // 정규식 수정: 슬래시는 이스케이프 불필요
+      filePath = filePath.replace(/^\/+|\/+$/g, '')
 
       const supabase = createBrowserClient()
       const { data: publicUrlData } = supabase.storage
@@ -493,10 +487,10 @@ export default function MyQuotesPage() {
 
   if (isLoading) {
     return (
-      <div className=\"min-h-screen bg-gray-50 flex items-center justify-center\">
-        <div className=\"text-center\">
-          <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto\"></div>
-          <p className=\"mt-4 text-gray-600\">Loading...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -504,13 +498,13 @@ export default function MyQuotesPage() {
 
   if (!isAuthorized) {
     return (
-      <div className=\"min-h-screen bg-gray-50 flex items-center justify-center\">
-        <div className=\"text-center\">
-          <h1 className=\"text-2xl font-bold text-gray-900 mb-4\">Access Denied</h1>
-          <p className=\"text-gray-600 mb-4\">Please log in with a customer account.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">Please log in with a customer account.</p>
           <button
             onClick={() => router.push('/login')}
-            className=\"bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg\"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg"
           >
             Go to Login
           </button>
@@ -520,30 +514,30 @@ export default function MyQuotesPage() {
   }
 
   return (
-    <div className=\"min-h-screen bg-gray-50\">
-      <div className=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8\">
-        <div className=\"mb-8\">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className=\"flex items-center text-gray-600 hover:text-gray-900 mb-4\"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
-            <ArrowLeft className=\"h-5 w-5 mr-2\" />
+            <ArrowLeft className="h-5 w-5 mr-2" />
             Back
           </button>
-          <h1 className=\"text-3xl font-bold text-gray-900\">My Quotes</h1>
-          <p className=\"mt-2 text-gray-600\">Compare your quote requests with contractor quotes.</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Quotes</h1>
+          <p className="mt-2 text-gray-600">Compare your quote requests with contractor quotes.</p>
         </div>
 
-        <div className=\"space-y-6\">
+        <div className="space-y-6">
           {quotes.length === 0 ? (
-            <div className=\"bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center\">
-              <FileText className=\"h-12 w-12 text-gray-400 mx-auto mb-4\" />
-              <h3 className=\"text-lg font-medium text-gray-900 mb-2\">No quote requests yet</h3>
-              <p className=\"text-gray-600 mb-4\">Create a new quote request.</p>
-              <div className=\"mt-6\">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No quote requests yet</h3>
+              <p className="text-gray-600 mb-4">Create a new quote request.</p>
+              <div className="mt-6">
                 <button
                   onClick={() => router.push('/quote-request')}
-                  className=\"bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg\"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg"
                 >
                   Request a Quote
                 </button>
@@ -564,10 +558,119 @@ export default function MyQuotesPage() {
               const isProjectCompleted = quote.status === 'completed'
               
               return (
-                <div key={quote.id} className=\"bg-white rounded-lg shadow-sm border border-gray-200\">
-                  <div className=\"p-6\">
-                    {/* [나머지 렌더링 코드는 동일하므로 생략 - 너무 길어서] */}
+                <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  {/* 상태 배지 */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
+                      <IconComponent className="h-4 w-4 mr-2" />
+                      {statusInfo.text}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(quote.created_at).toLocaleDateString()}
+                    </div>
                   </div>
+
+                  {/* 프로젝트 정보 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {spaceTypeMap[quote.space_type] || quote.space_type}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {quote.project_types.map(pt => projectTypeMap[pt] || pt).join(', ')}
+                      </p>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <div className="flex items-center mb-1">
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        {formatBudget(quote.budget)}
+                      </div>
+                      <div className="flex items-center mb-1">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {timelineMap[quote.timeline] || quote.timeline}
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {quote.postal_code}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 견적서 목록 */}
+                  {quoteCount > 0 && (
+                    <div className="mt-4 border-t pt-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">
+                        Contractor Quotes ({quoteCount})
+                      </h4>
+                      <div className="space-y-3">
+                        {quote.contractor_quotes?.map((cq) => (
+                          <div key={cq.id} className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {cq.contractors?.company_name || 'Company'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  ${cq.price?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {cq.pdf_url && (
+                                  <button
+                                    onClick={() => downloadQuote(cq.id)}
+                                    disabled={downloadingQuotes.has(cq.id)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm flex items-center disabled:opacity-50"
+                                  >
+                                    {downloadingQuotes.has(cq.id) ? (
+                                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Download className="h-4 w-4 mr-2" />
+                                    )}
+                                    View Quote
+                                  </button>
+                                )}
+                                {cq.status === 'submitted' && quote.status === 'bidding' && (
+                                  <button
+                                    onClick={() => handleSelectContractor(cq.id, quote.id, cq.contractor_id)}
+                                    disabled={selectingContractor === quote.id}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                                  >
+                                    {selectingContractor === quote.id ? 'Selecting...' : 'Select'}
+                                  </button>
+                                )}
+                                {cq.status === 'accepted' && (
+                                  <span className="text-green-600 font-medium">Selected</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 프로젝트 시작 버튼 */}
+                  {canStartProject && (
+                    <div className="mt-4 border-t pt-4">
+                      <button
+                        onClick={() => handleStartProject(quote.id)}
+                        disabled={startingProject === quote.id}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center disabled:opacity-50"
+                      >
+                        {startingProject === quote.id ? (
+                          <>
+                            <Loader className="h-5 w-5 mr-2 animate-spin" />
+                            Starting...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-5 w-5 mr-2" />
+                            Start Project
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             })
