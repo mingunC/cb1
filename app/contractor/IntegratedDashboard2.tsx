@@ -251,14 +251,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   // ✅ 현장방문 신청 함수
   const handleSiteVisitApplication = async (project: Project) => {
     if (!contractorData?.id) {
-      toast.error('업체 정보를 찾을 수 없습니다')
+      toast.error('Contractor information not found')
       return
     }
 
     try {
       const supabase = createBrowserClient()
       
-      // 이미 신청했는지 확인
+      // Check if already applied
       const { data: existing } = await supabase
         .from('site_visit_applications')
         .select('*')
@@ -271,7 +271,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         return
       }
 
-      // 현장방문 신청 삽입
+      // Insert site visit application
       const { error: insertError } = await supabase
         .from('site_visit_applications')
         .insert({
@@ -288,7 +288,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
 
       toast.success('Site visit application submitted successfully')
-      await loadProjects() // 데이터 새로고침
+      await loadProjects() // Refresh data
     } catch (error) {
       console.error('Error applying for site visit:', error)
       toast.error('Error applying for site visit')
@@ -297,38 +297,38 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 입찰 참여 함수
   const handleJoinBidding = (project: Project) => {
-    console.log('🎯 입찰 참여하기 버튼 클릭됨!', { projectId: project.id, contractorId: contractorData?.id })
+    console.log('🎯 Join bidding button clicked!', { projectId: project.id, contractorId: contractorData?.id })
     
     setSelectedProject(project)
     setShowQuoteModal(true)
     
-    toast.success('견적서 작성 모달을 여는 중...')
+    toast.success('Opening quote modal...')
   }
   
   // 입찰 취소 함수
   const handleCancelBidding = async (project: Project) => {
-    console.log('🚫 입찰 취소 시도:', { projectId: project.id, quote: project.quote })
-    console.log('🔍 Quote 객체 구조:', JSON.stringify(project.quote, null, 2))
+    console.log('🚫 Cancel bidding attempt:', { projectId: project.id, quote: project.quote })
+    console.log('🔍 Quote object structure:', JSON.stringify(project.quote, null, 2))
     
     if (!project.quote) {
-      console.error('❌ 견적서 정보가 없습니다:', project.quote)
-      toast.error('견적서 정보를 찾을 수 없습니다')
+      console.error('❌ Quote information not found:', project.quote)
+      toast.error('Quote information not found')
       return
     }
     
-    // quote 객체에서 id 찾기
+    // Find id from quote object
     const quoteId = project.quote.id || project.quote.quote_id
     if (!quoteId) {
-      console.error('❌ 견적서 ID를 찾을 수 없습니다:', project.quote)
-      toast.error('견적서 ID를 찾을 수 없습니다')
+      console.error('❌ Quote ID not found:', project.quote)
+      toast.error('Quote ID not found')
       return
     }
     
-    const confirmed = window.confirm('입찰을 취소하시겠습니까? 제출한 견적서가 삭제됩니다.')
+    const confirmed = window.confirm('Are you sure you want to cancel the bidding? The submitted quote will be deleted.')
     if (!confirmed) return
     
     try {
-      console.log('🗑️ 견적서 삭제 중:', quoteId)
+      console.log('🗑️ Deleting quote:', quoteId)
       const supabase = createBrowserClient()
       const { error } = await supabase
         .from('contractor_quotes')
@@ -336,22 +336,22 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         .eq('id', quoteId)
       
       if (error) {
-        console.error('❌ 삭제 오류:', error)
+        console.error('❌ Deletion error:', error)
         throw error
       }
       
-      console.log('✅ 견적서 삭제 완료')
-      toast.success('입찰을 취소하셨습니다.')
+      console.log('✅ Quote deleted successfully')
+      toast.success('Bidding has been cancelled.')
       await loadProjects()
     } catch (error) {
       console.error('Failed to cancel bidding:', error)
-      toast.error('입찰 취소에 실패했습니다')
+      toast.error('Failed to cancel bidding')
     }
   }
   
   // 견적서 제출 완료 핸들러
   const handleQuoteSubmitted = async () => {
-    console.log('✅ 견적서 제출 완료')
+    console.log('✅ Quote submitted successfully')
     setShowQuoteModal(false)
     setSelectedProject(null)
     await loadProjects()
@@ -759,7 +759,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 className="flex items-center text-gray-600 hover:text-[#2c5f4e] transition-colors mr-6"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
-                <span className="font-light">홈으로</span>
+                <span className="font-light">Home</span>
               </button>
             </div>
             <button
@@ -768,7 +768,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg text-sm font-light transition-all"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              새로고침
+              Refresh
             </button>
           </div>
         </div>
@@ -800,7 +800,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Profile 관리
+                Profile Management
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
@@ -810,7 +810,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Portfolio 관리
+                Portfolio Management
               </button>
             </nav>
           </div>
@@ -823,7 +823,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 font-light mb-1">입찰 중</p>
+                    <p className="text-sm text-gray-600 font-light mb-1">Bidding</p>
                     <p className="text-3xl font-serif font-light text-[#2c5f4e]">{statusCounts['bidding']}</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
@@ -836,7 +836,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 font-light mb-1">선정된 프로젝트</p>
+                    <p className="text-sm text-gray-600 font-light mb-1">Selected Projects</p>
                     <p className="text-3xl font-serif font-light text-green-600">{statusCounts['selected']}</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center">
@@ -849,7 +849,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 font-light mb-1">제출한 견적서</p>
+                    <p className="text-sm text-gray-600 font-light mb-1">Submitted Quotes</p>
                     <p className="text-3xl font-serif font-light text-purple-600">{statusCounts['quoted']}</p>
                   </div>
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
@@ -861,7 +861,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#daa520]/20 p-6 shadow-lg hover:shadow-xl transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-light mb-1">전체 프로젝트</p>
+                  <p className="text-sm text-gray-600 font-light mb-1">Total Projects</p>
                   <p className="text-3xl font-serif font-light text-[#2c5f4e]">{statusCounts['all']}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
@@ -884,16 +884,16 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  프로젝트 목록 ({filteredProjects.length}개)
+                  Project List ({filteredProjects.length})
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  ✅ 참여 중인 프로젝트만 표시됩니다
+                  ✅ Only projects you are participating in are shown
                 </p>
               </div>
               
               {filteredProjects.length === 0 ? (
                 <div className="px-6 py-12 text-center text-gray-500">
-                  {projects.length === 0 ? '참여 중인 프로젝트가 없습니다.' : '해당하는 프로젝트가 없습니다.'}
+                  {projects.length === 0 ? 'No projects you are participating in.' : 'No matching projects.'}
                 </div>
               ) : (
                 <div className="p-6">
@@ -929,7 +929,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           project={selectedProject}
           contractorId={contractorData.id}
           onClose={() => {
-            console.log('❌ Modal 닫기')
+            console.log('❌ Closing modal')
             setShowQuoteModal(false)
             setSelectedProject(null)
           }}

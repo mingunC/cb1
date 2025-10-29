@@ -55,15 +55,15 @@ export default function QuoteModal({
     const file = e.target.files?.[0]
     if (file) {
       if (file.type !== 'application/pdf') {
-        toast.error('PDF 파일만 업로드 가능합니다')
+        toast.error('Only PDF files are allowed')
         return
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB 제한
-        toast.error('파일 크기는 10MB 이하여야 합니다')
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error('File size must be 10MB or less')
         return
       }
       setPdfFile(file)
-      toast.success('파일이 선택되었습니다')
+      toast.success('File selected')
     }
   }
 
@@ -73,7 +73,7 @@ export default function QuoteModal({
     // input 요소 초기화
     const input = document.getElementById('pdf-upload') as HTMLInputElement
     if (input) input.value = ''
-    toast.success('파일이 제거되었습니다')
+    toast.success('File removed')
   }
 
   // 모달 상태 초기화
@@ -127,12 +127,12 @@ export default function QuoteModal({
     if (!project || !contractorId) return
 
     if (!pdfFile) {
-      toast.error('상세 견적서 PDF 파일을 업로드해주세요.')
+      toast.error('Please upload a detailed quote PDF file.')
       return
     }
 
     if (isSubmitting) {
-      console.log('이미 제출 중입니다')
+      console.log('Already submitting')
       return
     }
 
@@ -157,7 +157,7 @@ export default function QuoteModal({
 
       if (error) throw error
 
-      toast.success('견적서가 성공적으로 제출되었습니다!')
+      toast.success('Quote submitted successfully!')
       setIsSubmitting(false)
       
       setTimeout(() => {
@@ -165,8 +165,8 @@ export default function QuoteModal({
       }, 100)
       
     } catch (error) {
-      console.error('견적서 제출 오류:', error)
-      toast.error('견적서 제출 중 오류가 발생했습니다')
+      console.error('Quote submission error:', error)
+      toast.error('An error occurred while submitting the quote')
       setIsSubmitting(false)
     }
   }
@@ -191,7 +191,7 @@ export default function QuoteModal({
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold text-gray-800">
-                {mode === 'create' ? '견적서 작성' : '제출된 견적서'}
+                {mode === 'create' ? 'Create Quote' : 'Submitted Quote'}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 {project.full_address}
@@ -214,7 +214,7 @@ export default function QuoteModal({
               <div>
                 <label htmlFor="price" className="flex items-center gap-3 mb-3">
                   <DollarSign className="h-5 w-5 text-amber-500" />
-                  <span className="text-md font-semibold text-gray-700">총 견적 금액 (CAD)</span>
+                  <span className="text-md font-semibold text-gray-700">Total Quote Amount (CAD)</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
@@ -234,7 +234,7 @@ export default function QuoteModal({
               <div>
                 <label htmlFor="detailed-description" className="flex items-center gap-3 mb-3">
                   <FileText className="h-5 w-5 text-amber-500" />
-                  <span className="text-md font-semibold text-gray-700">상세 작업 내용</span>
+                  <span className="text-md font-semibold text-gray-700">Detailed Work Description</span>
                 </label>
                 <textarea
                   id="detailed-description"
@@ -242,7 +242,7 @@ export default function QuoteModal({
                   onChange={(e) => setDetailedDescription(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition resize-none"
                   rows={6}
-                  placeholder="고객에게 어필할 수 있는 작업 내용을 작성해주세요 (선택사항)"
+                  placeholder="Write work details that appeal to customers (Optional)"
                 />
               </div>
 
@@ -250,7 +250,7 @@ export default function QuoteModal({
               <div>
                 <label className="flex items-center gap-3 mb-3">
                   <Upload className="h-5 w-5 text-amber-500" />
-                  <span className="text-md font-semibold text-gray-700">상세 견적서 (PDF) *</span>
+                  <span className="text-md font-semibold text-gray-700">Detailed Quote (PDF) *</span>
                 </label>
                 
                 {/* 파일이 선택되지 않았을 때 */}
@@ -267,10 +267,10 @@ export default function QuoteModal({
                       <div className="flex flex-col items-center justify-center">
                         <Upload className="h-12 w-12 text-gray-400 mb-3" />
                         <p className="text-gray-700 font-semibold text-lg mb-1">
-                          파일을 선택하거나 여기에 드래그하세요
+                          Select a file or drag it here
                         </p>
                         <p className="text-sm text-gray-500">
-                          PDF 파일만 가능 (최대 10MB)
+                          PDF files only (Max 10MB)
                         </p>
                       </div>
                     </label>
@@ -286,13 +286,13 @@ export default function QuoteModal({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                            <span className="text-sm font-semibold text-green-700">파일 선택 완료</span>
+                            <span className="text-sm font-semibold text-green-700">File Selected</span>
                           </div>
                           <p className="text-gray-900 font-semibold text-lg break-words mb-1">
                             {pdfFile.name}
                           </p>
                           <p className="text-sm text-gray-600">
-                            크기: {formatFileSize(pdfFile.size)}
+                            Size: {formatFileSize(pdfFile.size)}
                           </p>
                         </div>
                       </div>
@@ -300,7 +300,7 @@ export default function QuoteModal({
                         type="button"
                         onClick={handleRemoveFile}
                         className="ml-4 p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
-                        title="파일 제거"
+                        title="Remove file"
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -320,7 +320,7 @@ export default function QuoteModal({
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-green-500 text-green-700 rounded-md hover:bg-green-50 transition-colors cursor-pointer font-medium text-sm"
                       >
                         <Upload className="h-4 w-4" />
-                        다른 파일 선택
+                        Select Different File
                       </label>
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export default function QuoteModal({
                   onClick={handleClose}
                   className="px-6 py-2 text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-semibold"
                 >
-                  취소
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -344,9 +344,9 @@ export default function QuoteModal({
                   {isSubmitting ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      제출 중...
+                      Submitting...
                     </>
-                  ) : '견적서 제출'}
+                  ) : 'Submit Quote'}
                 </button>
               </div>
             </form>
@@ -354,7 +354,7 @@ export default function QuoteModal({
             /* View Mode */
             <div className="space-y-6">
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-500 mb-1">견적 금액</h3>
+                <h3 className="text-sm font-semibold text-gray-500 mb-1">Quote Amount</h3>
                 <p className="text-3xl font-bold text-amber-600">
                   ${priceDisplay || '0'} <span className="text-xl font-medium text-gray-500">CAD</span>
                 </p>
@@ -363,7 +363,7 @@ export default function QuoteModal({
               <div className="space-y-4">
                 {detailedDescription && (
                   <div>
-                    <h3 className="text-md font-semibold text-gray-800 mb-2">상세 작업 내용</h3>
+                    <h3 className="text-md font-semibold text-gray-800 mb-2">Detailed Work Description</h3>
                     <p className="text-gray-600 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-md">
                       {detailedDescription}
                     </p>
@@ -373,20 +373,20 @@ export default function QuoteModal({
 
               {project.contractor_quote?.pdf_url && (
                 <div>
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">첨부된 상세 견적서</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">Attached Detailed Quote</h3>
                   <button
                     onClick={async () => {
                       if (!project.contractor_quote?.pdf_url) return
                       try {
                         await downloadQuote(project.contractor_quote.pdf_url)
                       } catch (error) {
-                        toast.error('PDF 파일을 다운로드할 수 없습니다.')
+                        toast.error('Unable to download PDF file.')
                       }
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm"
                   >
                     <FileText className="h-4 w-4 text-red-500" />
-                    {project.contractor_quote.pdf_filename || '견적서 다운로드'}
+                    {project.contractor_quote.pdf_filename || 'Download Quote'}
                   </button>
                 </div>
               )}
@@ -396,7 +396,7 @@ export default function QuoteModal({
                   onClick={handleClose}
                   className="px-6 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-semibold"
                 >
-                  닫기
+                  Close
                 </button>
               </div>
             </div>

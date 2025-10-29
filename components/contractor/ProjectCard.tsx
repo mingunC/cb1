@@ -56,7 +56,7 @@ const ProjectCard = React.memo(({
   const selectedContractorName = project.selected_contractor?.company_name
 
   // 디버깅 로그
-  debugLog('🔴 현장방문 버튼 조건:', {
+  debugLog('🔴 Site visit button condition:', {
     projectId: project.id,
     projectStatus: project.status,
     canApply,
@@ -96,13 +96,13 @@ const ProjectCard = React.memo(({
             )
           }) || (
             <div className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-              프로젝트
+              Project
             </div>
           )}
         </div>
         
         <div className="text-sm text-gray-600">
-          <span className="font-medium">예산: </span>
+          <span className="font-medium">Budget: </span>
           {BUDGET_LABELS[project.budget] || project.budget}
         </div>
       </div>
@@ -112,14 +112,14 @@ const ProjectCard = React.memo(({
         {/* 기본 정보 */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex flex-col">
-            <span className="text-gray-500 font-medium text-xs">일정</span>
+            <span className="text-gray-500 font-medium text-xs">Timeline</span>
             <span className="text-gray-900 font-medium">
               {TIMELINE_LABELS[project.timeline] || project.timeline}
             </span>
           </div>
           
           <div className="flex flex-col">
-            <span className="text-gray-500 font-medium text-xs">방문일</span>
+            <span className="text-gray-500 font-medium text-xs">Visit Date</span>
             <span className="text-gray-900 font-medium">{visitDate}</span>
           </div>
         </div>
@@ -135,7 +135,7 @@ const ProjectCard = React.memo(({
           <div className="flex items-start gap-2 text-sm text-gray-600">
             <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <span className="font-medium text-gray-700">요구사항:</span>
+              <span className="font-medium text-gray-700">Requirements:</span>
               <p className="mt-1 text-gray-600 line-clamp-3">{project.description}</p>
             </div>
           </div>
@@ -144,17 +144,17 @@ const ProjectCard = React.memo(({
         {/* 등록일 */}
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="h-4 w-4" />
-          <span>등록일: {formatDate(project.created_at)}</span>
+          <span>Created: {formatDate(project.created_at)}</span>
         </div>
 
         {/* 견적 정보 */}
         {project.contractor_quote && (
           <div className="p-3 bg-gray-50 rounded-md">
             <p className="text-sm text-gray-700 font-medium">
-              제출 견적: ${project.contractor_quote.price.toLocaleString()}
+              Submitted Quote: ${project.contractor_quote.price.toLocaleString()}
             </p>
             {project.contractor_quote.status === 'accepted' && (
-              <p className="text-sm text-green-600 mt-1 font-medium">✓ 고객이 선택했습니다</p>
+              <p className="text-sm text-green-600 mt-1 font-medium">✓ Customer selected</p>
             )}
           </div>
         )}
@@ -163,7 +163,7 @@ const ProjectCard = React.memo(({
         {isNotSelected && selectedContractorName && (
           <div className="p-3 bg-orange-50 rounded-md border border-orange-200">
             <p className="text-sm text-orange-800 font-medium">
-              고객이 타업체를 선택했습니다.
+              Customer selected another contractor.
             </p>
           </div>
         )}
@@ -177,7 +177,7 @@ const ProjectCard = React.memo(({
           {siteVisitMissed && (
             <div className="w-full px-4 py-2 bg-red-100 text-red-800 rounded-md text-sm font-medium flex items-center justify-center gap-2">
               <XCircle className="h-4 w-4" />
-              현장방문 누락
+              Site Visit Missed
             </div>
           )}
           
@@ -188,7 +188,7 @@ const ProjectCard = React.memo(({
               className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              현장방문 신청
+              Apply Site Visit
             </button>
           )}
           
@@ -204,7 +204,7 @@ const ProjectCard = React.memo(({
               }`}
             >
               <Minus className="h-4 w-4" />
-              {project.site_visit_application.is_cancelled ? '취소됨' : '현장방문 취소'}
+              {project.site_visit_application.is_cancelled ? 'Cancelled' : 'Cancel Site Visit'}
             </button>
           )}
           
@@ -217,7 +217,7 @@ const ProjectCard = React.memo(({
               className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
             >
               <FileText className="h-4 w-4" />
-              견적서 작성
+              Write Quote
             </button>
           )}
           
@@ -228,7 +228,7 @@ const ProjectCard = React.memo(({
               className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
             >
               <Eye className="h-4 w-4" />
-              견적서 보기
+              View Quote
             </button>
           )}
           

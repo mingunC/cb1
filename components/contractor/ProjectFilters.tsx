@@ -19,14 +19,14 @@ const ProjectFilters = React.memo(({
   
   const getFilterLabel = (status: string) => {
     const labels: Record<string, string> = {
-      'all': '전체',
-      'bidding': '입찰 중',
-      'approved': '승인됨',
-      'site-visit-applied': '현장방문 신청',
-      'site-visit-completed': '현장방문 완료',
-      'quoted': '견적 제출',
-      'selected': '선택됨',
-      'not-selected': '미선택'
+      'all': 'All',
+      'bidding': 'Bidding',
+      'approved': 'Approved',
+      'site-visit-applied': 'Site Visit Applied',
+      'site-visit-completed': 'Site Visit Completed',
+      'quoted': 'Quote Submitted',
+      'selected': 'Selected',
+      'not-selected': 'Not Selected'
     }
     return labels[status] || status
   }

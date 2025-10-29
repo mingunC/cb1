@@ -1,20 +1,20 @@
 // 페이지네이션
 export const ITEMS_PER_PAGE = 9
 
-// 프로젝트 타입 매핑
+// Project type mapping
 export const PROJECT_TYPE_MAP = {
-  'kitchen': { label: '주방', color: 'bg-orange-100 text-orange-700' },
-  'bathroom': { label: '욕실', color: 'bg-blue-100 text-blue-700' },
-  'basement': { label: '지하실', color: 'bg-gray-100 text-gray-700' },
-  'flooring': { label: '바닥재', color: 'bg-amber-100 text-amber-700' },
-  'painting': { label: '페인팅', color: 'bg-purple-100 text-purple-700' },
-  'full_renovation': { label: '전체 리노베이션', color: 'bg-red-100 text-red-700' },
-  'office': { label: '사무실', color: 'bg-indigo-100 text-indigo-700' },
-  'retail': { label: '상가/매장', color: 'bg-green-100 text-green-700' },
-  'restaurant': { label: '카페/식당', color: 'bg-yellow-100 text-yellow-700' },
-  'education': { label: '학원/교육', color: 'bg-pink-100 text-pink-700' },
-  'hospitality': { label: '숙박/병원', color: 'bg-teal-100 text-teal-700' },
-  'other': { label: '기타', color: 'bg-gray-100 text-gray-700' }
+  'kitchen': { label: 'Kitchen', color: 'bg-orange-100 text-orange-700' },
+  'bathroom': { label: 'Bathroom', color: 'bg-blue-100 text-blue-700' },
+  'basement': { label: 'Basement', color: 'bg-gray-100 text-gray-700' },
+  'flooring': { label: 'Flooring', color: 'bg-amber-100 text-amber-700' },
+  'painting': { label: 'Painting', color: 'bg-purple-100 text-purple-700' },
+  'full_renovation': { label: 'Full Renovation', color: 'bg-red-100 text-red-700' },
+  'office': { label: 'Office', color: 'bg-indigo-100 text-indigo-700' },
+  'retail': { label: 'Retail/Store', color: 'bg-green-100 text-green-700' },
+  'restaurant': { label: 'Cafe/Restaurant', color: 'bg-yellow-100 text-yellow-700' },
+  'education': { label: 'Education', color: 'bg-pink-100 text-pink-700' },
+  'hospitality': { label: 'Hospitality/Hospital', color: 'bg-teal-100 text-teal-700' },
+  'other': { label: 'Other', color: 'bg-gray-100 text-gray-700' }
 } as const
 
 // 부동산 타입 매핑
@@ -30,18 +30,18 @@ export const SPACE_TYPE_MAP = {
   'condo-apartment': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' }
 } as const
 
-// 상태별 설정
+// Status configurations
 export const STATUS_CONFIGS = {
-  'pending': { color: 'bg-gray-100 text-gray-800', label: '대기중' },
-  'approved': { color: 'bg-green-100 text-green-800', label: '승인됨' },
-  'site-visit-applied': { color: 'bg-purple-100 text-purple-800', label: '현장방문 신청' },
-  'site-visit-completed': { color: 'bg-indigo-100 text-indigo-800', label: '현장방문 완료' },
-  'bidding': { color: 'bg-orange-100 text-orange-800', label: '입찰 중' },
-  'quoted': { color: 'bg-yellow-100 text-yellow-800', label: '견적서 제출' },
-  'selected': { color: 'bg-green-100 text-green-800', label: '선택됨' },
-  'not-selected': { color: 'bg-orange-100 text-orange-800', label: '미선택' },
-  'completed': { color: 'bg-gray-100 text-gray-800', label: '완료' },
-  'cancelled': { color: 'bg-red-100 text-red-800', label: '취소' }
+  'pending': { color: 'bg-gray-100 text-gray-800', label: 'Pending' },
+  'approved': { color: 'bg-green-100 text-green-800', label: 'Approved' },
+  'site-visit-applied': { color: 'bg-purple-100 text-purple-800', label: 'Site Visit Applied' },
+  'site-visit-completed': { color: 'bg-indigo-100 text-indigo-800', label: 'Site Visit Completed' },
+  'bidding': { color: 'bg-orange-100 text-orange-800', label: 'Bidding' },
+  'quoted': { color: 'bg-yellow-100 text-yellow-800', label: 'Quote Submitted' },
+  'selected': { color: 'bg-green-100 text-green-800', label: 'Selected' },
+  'not-selected': { color: 'bg-orange-100 text-orange-800', label: 'Not Selected' },
+  'completed': { color: 'bg-gray-100 text-gray-800', label: 'Completed' },
+  'cancelled': { color: 'bg-red-100 text-red-800', label: 'Cancelled' }
 } as const
 
 // 필터 옵션
@@ -56,19 +56,19 @@ export const FILTER_OPTIONS = [
   'not-selected'
 ] as const
 
-// 예산 옵션 레이블
+// Budget option labels
 export const BUDGET_LABELS: Record<string, string> = {
-  'under_50k': '$50,000 미만',
+  'under_50k': 'Under $50,000',
   '50k_100k': '$50,000-$100,000',
-  'over_100k': '$100,000 이상'
+  'over_100k': 'Over $100,000'
 }
 
-// 타임라인 레이블
+// Timeline labels
 export const TIMELINE_LABELS: Record<string, string> = {
-  'immediate': '즉시 시작',
-  '1_month': '1개월 내',
-  '3_months': '3개월 내',
-  'planning': '계획중'
+  'immediate': 'Start Immediately',
+  '1_month': 'Within 1 Month',
+  '3_months': 'Within 3 Months',
+  'planning': 'Planning'
 }
 
 // 개발 환경 전용 디버깅 프로젝트 ID

@@ -10,10 +10,10 @@ export default function ContractorPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [contractorData, setContractorData] = useState<any>(null)
   const router = useRouter()
-  const authCheckRef = useRef(false) // 중복 실행 방지용 ref
+  const authCheckRef = useRef(false) // Prevent duplicate execution
 
   useEffect(() => {
-    // 이미 체크 중이면 중복 실행 방지
+    // Prevent duplicate execution if already checking
     if (authCheckRef.current) return
     authCheckRef.current = true
 
@@ -23,7 +23,7 @@ export default function ContractorPage() {
       try {
         const supabase = createBrowserClient()
         
-        // 세션 체크 - 타임아웃 설정
+        // Session check - timeout setting
         const sessionPromise = supabase.auth.getSession()
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Session check timeout')), 5000)
@@ -48,7 +48,7 @@ export default function ContractorPage() {
           return
         }
         
-        // Contractor 정보 확인 - 타임아웃 설정
+        // Verify contractor information - timeout setting
         const contractorPromise = supabase
           .from('contractors')
           .select('*')
@@ -74,7 +74,7 @@ export default function ContractorPage() {
         if (!contractor) {
           console.log('❌ Not a contractor, checking user type...')
           
-          // users 테이블에서 user_type 확인
+          // Check user_type from users table
           const { data: userData } = await supabase
             .from('users')
             .select('user_type')
@@ -82,13 +82,13 @@ export default function ContractorPage() {
             .maybeSingle()
           
           if (userData?.user_type === 'contractor') {
-            // users 테이블에는 contractor로 등록되어 있지만
-            // contractors 테이블에는 데이터가 없는 경우
+            // User is registered as contractor in users table
+            // but no data in contractors table
             console.log('⚠️ User is marked as contractor but no contractor data found')
             setIsLoading(false)
             router.push('/contractor-signup?error=missing_contractor_data')
           } else {
-            // 일반 사용자인 경우
+            // Regular user case
             console.log('❌ Not a contractor user')
             setIsLoading(false)
             router.push('/contractor-signup')
@@ -111,9 +111,9 @@ export default function ContractorPage() {
         console.error('🔥 Auth check error:', error)
         setIsLoading(false)
         
-        // 타임아웃 에러인 경우 재시도 옵션 제공
+        // Provide retry option for timeout errors
         if (error instanceof Error && error.message.includes('timeout')) {
-          const retry = confirm('인증 확인이 지연되고 있습니다. 다시 시도하시겠습니까?')
+          const retry = confirm('Authentication check is delayed. Would you like to try again?')
           if (retry) {
             window.location.reload()
           } else {
@@ -133,30 +133,30 @@ export default function ContractorPage() {
     }
   }, [router])
 
-  // 로딩 중
+  // Loading
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">인증 확인 중...</p>
-          <p className="mt-2 text-sm text-gray-500">시간이 오래 걸리는 경우 페이지를 새로고침해주세요.</p>
+          <p className="mt-4 text-gray-600">Verifying authentication...</p>
+          <p className="mt-2 text-sm text-gray-500">If it takes too long, please refresh the page.</p>
         </div>
       </div>
     )
   }
   
-  // 인증되지 않은 경우
+  // Not authenticated
   if (!isAuthenticated || !contractorData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">리다이렉션 중...</p>
+          <p className="text-gray-600">Redirecting...</p>
         </div>
       </div>
     )
   }
   
-  // 인증된 경우 - 새 대시보드 컴포넌트 사용
+  // Authenticated - use new dashboard component
   return <IntegratedContractorDashboard initialContractorData={contractorData} />
 }
