@@ -139,16 +139,66 @@ export async function POST(request: NextRequest) {
       updateResults.updatedProject = updatedProject
       console.log('✅ Project status updated to:', updatedProject?.status)
 
-      // 6. 업체 정보 조회 (이메일 발송용)
+      // 6. ✅ 업체 정보 조회 (이메일 발송용) - 개선된 로직
+      console.log('🔍 업체 정보 조회 시작, contractor_id:', acceptedQuote?.contractor_id)
+      
       const { data: contractorInfo, error: contractorError } = await supabase
         .from('contractors')
         .select('*')
         .eq('id', acceptedQuote?.contractor_id)
         .single()
 
-      if (contractorError || !contractorInfo) {
-        console.error('업체 정보 조회 실패:', contractorError)
+      if (contractorError) {
+        console.error('❌ contractors 테이블 조회 실패:', contractorError)
+      } else {
+        console.log('✅ contractors 테이블 조회 성공:', {
+          id: contractorInfo?.id,
+          company_name: contractorInfo?.company_name,
+          email: contractorInfo?.email || '(비어있음)',
+          user_id: contractorInfo?.user_id
+        })
       }
+
+      // ✅ 이메일이 비어있으면 users 테이블에서 조회
+      let contractorEmail = contractorInfo?.email
+      let emailSource = 'contractors'
+
+      if (!contractorEmail && contractorInfo?.user_id) {
+        console.log('📧 contractors.email이 비어있음. users 테이블에서 조회 시도...')
+        
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', contractorInfo.user_id)
+          .single()
+
+        if (!userError && userData?.email) {
+          contractorEmail = userData.email
+          emailSource = 'users'
+          console.log('✅ users 테이블에서 이메일 찾음:', contractorEmail)
+        } else {
+          console.log('❌ users 테이블에도 이메일 없음:', userError?.message)
+        }
+      }
+
+      // ✅ users 테이블에도 없으면 auth.users에서 조회
+      if (!contractorEmail && contractorInfo?.user_id) {
+        console.log('📧 users 테이블에도 없음. auth.users에서 조회 시도...')
+        
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(
+          contractorInfo.user_id
+        )
+
+        if (!authError && authUser?.user?.email) {
+          contractorEmail = authUser.user.email
+          emailSource = 'auth.users'
+          console.log('✅ auth.users에서 이메일 찾음:', contractorEmail)
+        } else {
+          console.log('❌ auth.users에도 이메일 없음:', authError?.message)
+        }
+      }
+
+      console.log('📧 최종 이메일 주소:', contractorEmail || '(없음)', '출처:', emailSource)
 
       // 7. ✅ 고객 정보 조회 (users 테이블 + quote_requests 테이블)
       const { data: customerInfo, error: customerError } = await supabase
@@ -171,12 +221,14 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 8. 이메일 발송 (실패해도 전체 프로세스는 계속 진행)
-      if (contractorInfo?.email) {
+      // 8. ✅ 이메일 발송 (실패해도 전체 프로세스는 계속 진행)
+      if (contractorEmail) {
         try {
+          console.log('📧 이메일 발송 시작:', contractorEmail)
+          
           // ✅ 업체에게 선정 알림 이메일 발송 (고객 정보 포함)
           const contractorEmailHtml = createSelectionEmailTemplate(
-            contractorInfo.contact_name || contractorInfo.company_name,
+            contractorInfo?.contact_name || contractorInfo?.company_name || '업체',
             currentProject,
             acceptedQuote,
             {
@@ -188,12 +240,12 @@ export async function POST(request: NextRequest) {
           )
 
           await sendEmail({
-            to: contractorInfo.email,
+            to: contractorEmail,
             subject: `🎉 축하합니다! "${currentProject.space_type}" 프로젝트에 선정되셨습니다`,
             html: contractorEmailHtml
           })
 
-          console.log('✅ Selection notification email sent to contractor')
+          console.log('✅ Selection notification email sent to contractor:', contractorEmail, `(출처: ${emailSource})`)
 
           // 고객에게도 알림 이메일 발송 (옵션)
           if (customerInfo?.email) {
@@ -214,8 +266,10 @@ export async function POST(request: NextRequest) {
           }
         } catch (emailError: any) {
           // 이메일 발송 실패는 전체 프로세스를 중단시키지 않음
-          console.error('이메일 발송 실패 (프로세스는 계속됨):', emailError)
+          console.error('❌ 이메일 발송 실패 (프로세스는 계속됨):', emailError)
         }
+      } else {
+        console.warn('⚠️ 업체 이메일을 찾을 수 없어 이메일을 발송하지 않습니다')
       }
 
       // 9. ✅ 최종 검증 - 프로젝트 상태가 'contractor-selected'로 변경되었는지 확인
@@ -238,7 +292,8 @@ export async function POST(request: NextRequest) {
         message: '업체 선택이 완료되었습니다. 업체가 연락드릴 예정입니다.',
         projectStatus: 'contractor-selected',  // ✅ 변경
         updatedAt: updatedProject?.updated_at,
-        emailSent: !!contractorInfo?.email,
+        emailSent: !!contractorEmail,
+        emailSource: contractorEmail ? emailSource : null,
         details: {
           acceptedQuoteId: acceptedQuote?.id,
           rejectedCount: rejectedQuotes?.length || 0,
