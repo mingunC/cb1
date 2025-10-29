@@ -11,14 +11,10 @@ export default function QuoteRequestPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    let mounted = true
-    
     const checkAuth = async () => {
       try {
         const supabase = createBrowserClient()
         const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!mounted) return
         
         if (!session || !session.user) {
           console.log('No session found, redirecting to login')
@@ -28,24 +24,15 @@ export default function QuoteRequestPage() {
         
         console.log('Session found for user:', session.user.email)
         setIsAuthenticated(true)
+        setIsLoading(false)
       } catch (error) {
         console.error('Auth check error:', error)
-        if (mounted) {
-          router.push('/login')
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false)
-        }
+        router.push('/login')
       }
     }
 
     checkAuth()
-    
-    return () => {
-      mounted = false
-    }
-  }, [router])
+  }, []) // 빈 배열로 변경하여 한 번만 실행
 
   // 로딩 중
   if (isLoading) {
