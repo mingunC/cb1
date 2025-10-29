@@ -8,6 +8,7 @@ export type ProjectStatus =
   | 'quoted'               // 견적서 제출함
   | 'selected'             // 고객에게 선택됨
   | 'not-selected'         // 선택 안됨
+  | 'failed-bid'           // 입찰 실패 (현장방문했지만 견적서 미제출)
   | 'completed'            // 완료됨
   | 'cancelled'            // 취소됨
 
@@ -69,7 +70,12 @@ export interface Project {
   }
   
   // 프로젝트 상태 (클라이언트 계산용)
-  projectStatus?: ProjectStatus | 'bidding'
+  projectStatus?: ProjectStatus | 'bidding' | 'failed-bid'
+  
+  // 추가된 helper 속성들
+  siteVisit?: any
+  quote?: any
+  contractorNames?: Record<string, string>
 }
 
 // 업체 데이터 인터페이스
@@ -102,7 +108,7 @@ export interface ProjectCardProps {
 
 // 필터 Props
 export interface ProjectFiltersProps {
-  currentFilter: ProjectStatus | 'all' | 'bidding'
-  onFilterChange: (filter: ProjectStatus | 'all' | 'bidding') => void
-  statusCounts: Record<ProjectStatus | 'all' | 'bidding', number>
+  currentFilter: ProjectStatus | 'all' | 'bidding' | 'failed-bid'
+  onFilterChange: (filter: ProjectStatus | 'all' | 'bidding' | 'failed-bid') => void
+  statusCounts: Record<ProjectStatus | 'all' | 'bidding' | 'failed-bid', number>
 }
