@@ -82,6 +82,7 @@ export default function MyQuotesPage() {
   const [startingProject, setStartingProject] = useState<string | null>(null)
   const [selectingContractor, setSelectingContractor] = useState<string | null>(null)
   const [collapsedQuotes, setCollapsedQuotes] = useState<Set<string>>(new Set())
+  const [collapsedSiteVisits, setCollapsedSiteVisits] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   useEffect(() => {
@@ -203,6 +204,7 @@ export default function MyQuotesPage() {
       // 기본적으로 모든 견적서 섹션을 접혀있게 설정
       if (quotesData && quotesData.length > 0) {
         setCollapsedQuotes(new Set(quotesData.map(q => q.id)))
+        setCollapsedSiteVisits(new Set(quotesData.map(q => q.id)))
       }
       
     } catch (error) {
@@ -600,6 +602,77 @@ export default function MyQuotesPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* 현장방문 신청 목록 - 새로 추가 */}
+                  {siteVisitCount > 0 && (
+                    <div className="mt-4 border-t pt-4">
+                      <button
+                        onClick={() => {
+                          setCollapsedSiteVisits(prev => {
+                            const newSet = new Set(prev)
+                            if (newSet.has(quote.id)) {
+                              newSet.delete(quote.id)
+                            } else {
+                              newSet.add(quote.id)
+                            }
+                            return newSet
+                          })
+                        }}
+                        className="w-full flex items-center justify-between font-semibold text-gray-900 mb-3 hover:text-emerald-600 transition-colors"
+                      >
+                        <span>Site Visit Applications ({siteVisitCount})</span>
+                        {collapsedSiteVisits.has(quote.id) ? (
+                          <ChevronDown className="h-5 w-5" />
+                        ) : (
+                          <ChevronUp className="h-5 w-5" />
+                        )}
+                      </button>
+                      {!collapsedSiteVisits.has(quote.id) && (
+                        <div className="space-y-3">
+                          {quote.site_visit_applications?.map((app) => (
+                            <div key={app.id} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center mb-2">
+                                    <Building className="h-5 w-5 text-blue-600 mr-2" />
+                                    <p className="font-medium text-gray-900">
+                                      {app.contractors?.company_name || 'Company'}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1 text-sm text-gray-600">
+                                    <div className="flex items-center">
+                                      <User className="h-4 w-4 mr-2" />
+                                      <span>{app.contractors?.contact_name || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <Calendar className="h-4 w-4 mr-2" />
+                                      <span>Applied: {new Date(app.applied_at).toLocaleDateString()}</span>
+                                    </div>
+                                    {app.notes && (
+                                      <div className="mt-2 p-2 bg-white rounded border border-blue-100">
+                                        <p className="text-xs text-gray-600">{app.notes}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="ml-4">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    app.status === 'approved' 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : app.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* 견적서 목록 */}
                   {quoteCount > 0 && (
