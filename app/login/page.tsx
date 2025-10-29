@@ -225,7 +225,7 @@ export default function LoginPage() {
             {/* 이메일 입력 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일
+                Email
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
