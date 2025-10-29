@@ -10,12 +10,16 @@ export default function ContractorPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [contractorData, setContractorData] = useState<any>(null)
   const router = useRouter()
-  const authCheckRef = useRef(false) // Prevent duplicate execution
+  const mountedRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    // Prevent duplicate execution if already checking
-    if (authCheckRef.current) return
-    authCheckRef.current = true
+    // 이미 마운트되었으면 중복 실행 방지
+    if (mountedRef.current) return
+    mountedRef.current = true
+
+    // AbortController로 비동기 작업 취소 가능하게
+    abortControllerRef.current = new AbortController()
 
     const checkAuth = async () => {
       console.log('🚀 Contractor page auth check starting...')
@@ -23,16 +27,14 @@ export default function ContractorPage() {
       try {
         const supabase = createBrowserClient()
         
-        // Session check - timeout setting
-        const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 5000)
-        )
+        // 세션이 완전히 로드될 때까지 대기
+        await new Promise(resolve => setTimeout(resolve, 100))
         
-        const { data: { session }, error: sessionError } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]) as any
+        // 세션 체크
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        // 컴포넌트가 언마운트되었으면 중단
+        if (abortControllerRef.current?.signal.aborted) return
         
         console.log('📋 Session status:', {
           hasSession: !!session,
@@ -48,21 +50,15 @@ export default function ContractorPage() {
           return
         }
         
-        // Verify contractor information - timeout setting
-        const contractorPromise = supabase
+        // Contractor 정보 확인
+        const { data: contractor, error: contractorError } = await supabase
           .from('contractors')
           .select('*')
           .eq('user_id', session.user.id)
           .single()
           
-        const contractorTimeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Contractor lookup timeout')), 5000)
-        )
-        
-        const { data: contractor, error: contractorError } = await Promise.race([
-          contractorPromise,
-          contractorTimeoutPromise
-        ]) as any
+        // 컴포넌트가 언마운트되었으면 중단
+        if (abortControllerRef.current?.signal.aborted) return
         
         console.log('🏢 Contractor lookup:', {
           found: !!contractor,
@@ -74,21 +70,24 @@ export default function ContractorPage() {
         if (!contractor) {
           console.log('❌ Not a contractor, checking user type...')
           
-          // Check user_type from users table
+          // users 테이블에서 user_type 확인
           const { data: userData } = await supabase
             .from('users')
             .select('user_type')
             .eq('id', session.user.id)
             .maybeSingle()
           
+          // 컴포넌트가 언마운트되었으면 중단
+          if (abortControllerRef.current?.signal.aborted) return
+          
           if (userData?.user_type === 'contractor') {
-            // User is registered as contractor in users table
-            // but no data in contractors table
+            // users 테이블에는 contractor로 등록되어 있지만
+            // contractors 테이블에는 데이터가 없는 경우
             console.log('⚠️ User is marked as contractor but no contractor data found')
             setIsLoading(false)
             router.push('/contractor-signup?error=missing_contractor_data')
           } else {
-            // Regular user case
+            // 일반 사용자인 경우
             console.log('❌ Not a contractor user')
             setIsLoading(false)
             router.push('/contractor-signup')
@@ -103,60 +102,56 @@ export default function ContractorPage() {
           id: contractor.id
         })
         
+        // 상태를 한 번에 업데이트 (렌더링 최소화)
         setContractorData(contractor)
         setIsAuthenticated(true)
         setIsLoading(false)
         
       } catch (error) {
         console.error('🔥 Auth check error:', error)
-        setIsLoading(false)
         
-        // Provide retry option for timeout errors
-        if (error instanceof Error && error.message.includes('timeout')) {
-          const retry = confirm('Authentication check is delayed. Would you like to try again?')
-          if (retry) {
-            window.location.reload()
-          } else {
-            router.push('/contractor-login')
-          }
-        } else {
-          router.push('/contractor-login')
-        }
+        // 컴포넌트가 언마운트되었으면 중단
+        if (abortControllerRef.current?.signal.aborted) return
+        
+        setIsLoading(false)
+        router.push('/contractor-login')
       }
     }
     
     checkAuth()
     
-    // Cleanup function
+    // Cleanup function - 컴포넌트 언마운트 시 실행
     return () => {
-      authCheckRef.current = false
+      console.log('🧹 Cleaning up contractor page...')
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
   }, [router])
 
-  // Loading
+  // 로딩 중
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verifying authentication...</p>
-          <p className="mt-2 text-sm text-gray-500">If it takes too long, please refresh the page.</p>
+          <p className="mt-4 text-gray-600">인증 확인 중...</p>
         </div>
       </div>
     )
   }
   
-  // Not authenticated
+  // 인증되지 않은 경우
   if (!isAuthenticated || !contractorData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Redirecting...</p>
+          <p className="text-gray-600">리다이렉션 중...</p>
         </div>
       </div>
     )
   }
   
-  // Authenticated - use new dashboard component
+  // 인증된 경우 - 새 대시보드 컴포넌트 사용
   return <IntegratedContractorDashboard initialContractorData={contractorData} />
 }
