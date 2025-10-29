@@ -100,7 +100,10 @@ export default function QuoteRequestForm() {
         return
       }
 
-      // 2. 데이터 준비 (quote_requests 테이블 스키마에 맞춤)
+      // 2. 데이터 준비
+      console.log('Step 2: Preparing data...')
+      console.log('Form data:', formData)
+
       const insertData = {
         customer_id: user.id,
         space_type: formData.spaceType,
@@ -111,14 +114,27 @@ export default function QuoteRequestForm() {
         full_address: formData.fullAddress,
         visit_date: formData.visitDate || null,
         description: formData.description,
-        phone: formData.phone,
         photos: [],
         status: 'pending'
       }
-      
-      console.log('Insert data prepared:', JSON.stringify(insertData, null, 2))
 
-      // 3. 직접 삽입 시도
+      console.log('Insert data prepared:', insertData)
+      console.log('Data types:', {
+        customer_id: typeof insertData.customer_id,
+        space_type: typeof insertData.space_type,
+        project_types: Array.isArray(insertData.project_types),
+        budget: typeof insertData.budget,
+        timeline: typeof insertData.timeline,
+        postal_code: typeof insertData.postal_code,
+        full_address: typeof insertData.full_address,
+        visit_date: insertData.visit_date,
+        description: typeof insertData.description,
+        photos: Array.isArray(insertData.photos),
+        status: typeof insertData.status
+      })
+
+      // 3. 데이터베이스에 삽입
+      console.log('Step 3: Inserting to database...')
       const { data: result, error: insertError } = await supabase
         .from('quote_requests')
         .insert(insertData)
