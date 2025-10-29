@@ -3,9 +3,9 @@ import { ProjectStatus } from '@/types/contractor'
 import { FILTER_OPTIONS } from '@/constants/contractor'
 
 interface ProjectFiltersProps {
-  currentFilter: ProjectStatus | 'all' | 'bidding'
-  onFilterChange: (filter: ProjectStatus | 'all' | 'bidding') => void
-  statusCounts: Record<ProjectStatus | 'all' | 'bidding', number>
+  currentFilter: ProjectStatus | 'all' | 'bidding' | 'failed-bid'
+  onFilterChange: (filter: ProjectStatus | 'all' | 'bidding' | 'failed-bid') => void
+  statusCounts: Record<ProjectStatus | 'all' | 'bidding' | 'failed-bid', number>
 }
 
 /**
@@ -26,7 +26,8 @@ const ProjectFilters = React.memo(({
       'site-visit-completed': 'Site Visit Completed',
       'quoted': 'Quote Submitted',
       'selected': 'Selected',
-      'not-selected': 'Not Selected'
+      'not-selected': 'Not Selected',
+      'failed-bid': 'Failed Bid'
     }
     return labels[status] || status
   }
@@ -37,18 +38,20 @@ const ProjectFilters = React.memo(({
         {FILTER_OPTIONS.map(status => (
           <button
             key={status}
-            onClick={() => onFilterChange(status as ProjectStatus | 'all' | 'bidding')}
+            onClick={() => onFilterChange(status as ProjectStatus | 'all' | 'bidding' | 'failed-bid')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               currentFilter === status
                 ? status === 'bidding'
                   ? 'bg-orange-600 text-white'
+                  : status === 'failed-bid'
+                  ? 'bg-red-600 text-white'
                   : 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {getFilterLabel(status)}
             <span className="ml-2 text-xs">
-              ({statusCounts[status as ProjectStatus | 'all' | 'bidding']})
+              ({statusCounts[status as ProjectStatus | 'all' | 'bidding' | 'failed-bid']})
             </span>
           </button>
         ))}
