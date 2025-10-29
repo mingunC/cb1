@@ -762,10 +762,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
         </div>
         
-        {/* 디버그 정보 */}
-        <div className="mt-2 pt-2 border-t text-xs text-gray-400">
+        {/* 디버그 정보 - 숨김 */}
+        {/* <div className="mt-2 pt-2 border-t text-xs text-gray-400">
           <p>ID: {project.id.slice(0, 8)} | DB Status: {project.status} | Project Status: {project.projectStatus} | Has Quote: {project.quote ? 'Yes' : 'No'} | Has Site Visit: {project.siteVisit ? 'Yes' : 'No'}</p>
-        </div>
+        </div> */}
       </div>
     )
   }

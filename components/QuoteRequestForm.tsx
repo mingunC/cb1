@@ -114,6 +114,7 @@ export default function QuoteRequestForm() {
         full_address: formData.fullAddress,
         visit_date: formData.visitDate || null,
         description: formData.description,
+        phone: formData.phone,
         photos: [],
         status: 'pending'
       }
@@ -129,6 +130,7 @@ export default function QuoteRequestForm() {
         full_address: typeof insertData.full_address,
         visit_date: insertData.visit_date,
         description: typeof insertData.description,
+        phone: typeof insertData.phone,
         photos: Array.isArray(insertData.photos),
         status: typeof insertData.status
       })
