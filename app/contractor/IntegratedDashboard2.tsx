@@ -253,7 +253,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
   // ✅ 현장방문 신청 함수
   const handleSiteVisitApplication = async (project: Project) => {
+    console.log('🚀 Apply Site Visit clicked!', {
+      projectId: project.id,
+      contractorId: contractorData?.id,
+      hasContractorData: !!contractorData
+    })
+
     if (!contractorData?.id) {
+      console.error('❌ No contractor ID')
       toast.error('Contractor information not found')
       return
     }
@@ -261,40 +268,69 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     try {
       const supabase = createBrowserClient()
       
+      console.log('📝 Step 1: Checking existing applications...')
       // Check if already applied
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('site_visit_applications')
         .select('*')
         .eq('project_id', project.id)
         .eq('contractor_id', contractorData.id)
         .maybeSingle()
 
+      console.log('Existing application check:', { 
+        existing, 
+        checkError: checkError?.message 
+      })
+
+      if (checkError) {
+        console.error('❌ Check error:', checkError)
+        toast.error(`Check failed: ${checkError.message}`)
+        return
+      }
+
       if (existing) {
+        console.log('⚠️ Already applied')
         toast.error('Site visit already applied')
         return
       }
 
+      console.log('📝 Step 2: Inserting site visit application...')
       // Insert site visit application
-      const { error: insertError } = await supabase
+      const insertData = {
+        project_id: project.id,
+        contractor_id: contractorData.id,
+        status: 'pending',
+        applied_at: new Date().toISOString()
+      }
+      
+      console.log('Insert data:', insertData)
+
+      const { data: result, error: insertError } = await supabase
         .from('site_visit_applications')
-        .insert({
-          project_id: project.id,
-          contractor_id: contractorData.id,
-          status: 'pending',
-          applied_at: new Date().toISOString()
-        })
+        .insert(insertData)
+        .select()
+        .single()
+
+      console.log('Insert result:', { 
+        success: !!result,
+        result,
+        error: insertError?.message,
+        errorCode: insertError?.code,
+        errorDetails: insertError?.details
+      })
 
       if (insertError) {
-        console.error('Site visit application error:', insertError)
-        toast.error('Site visit application failed')
+        console.error('❌ Site visit application error:', insertError)
+        toast.error(`Site visit application failed: ${insertError.message}`)
         return
       }
 
+      console.log('✅ Site visit applied successfully!')
       toast.success('Site visit application submitted successfully')
       await loadProjects() // Refresh data
-    } catch (error) {
-      console.error('Error applying for site visit:', error)
-      toast.error('Error applying for site visit')
+    } catch (error: any) {
+      console.error('💥 Error applying for site visit:', error)
+      toast.error(`Error: ${error.message}`)
     }
   }
   
