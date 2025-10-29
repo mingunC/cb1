@@ -26,12 +26,12 @@ export default function AdminPage() {
       try {
         console.log('🔍 Admin: 사용자 확인 시작')
         
-        // localStorage에서 직접 세션 읽기
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const projectRef = supabaseUrl?.split('//')[1]?.split('.')[0]
+        // Supabase의 getSession을 사용하여 세션 확인
+        const supabase = createBrowserClient()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        if (!projectRef) {
-          console.error('❌ Supabase 프로젝트 설정을 찾을 수 없습니다')
+        if (sessionError) {
+          console.error('❌ 세션 확인 오류:', sessionError)
           if (isMounted) {
             setIsLoading(false)
             router.push('/login')
@@ -39,15 +39,7 @@ export default function AdminPage() {
           return
         }
         
-        const storageKey = `sb-${projectRef}-auth-token`
-        const sessionData = localStorage.getItem(storageKey)
-        
-        console.log('📋 세션 확인:', {
-          hasSession: !!sessionData,
-          storageKey
-        })
-        
-        if (!sessionData) {
+        if (!session) {
           console.log('❌ 세션 없음 - 로그인 페이지로 이동')
           if (isMounted) {
             setIsLoading(false)
@@ -56,8 +48,7 @@ export default function AdminPage() {
           return
         }
         
-        const session = JSON.parse(sessionData)
-        const userEmail = session?.user?.email
+        const userEmail = session.user.email
         
         console.log('👤 사용자 이메일:', userEmail)
         
@@ -143,14 +134,6 @@ export default function AdminPage() {
       console.log('🚪 로그아웃 시작')
       const supabase = createBrowserClient()
       await supabase.auth.signOut()
-      
-      // localStorage 세션도 삭제
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const projectRef = supabaseUrl?.split('//')[1]?.split('.')[0]
-      if (projectRef) {
-        const storageKey = `sb-${projectRef}-auth-token`
-        localStorage.removeItem(storageKey)
-      }
       
       console.log('✅ 로그아웃 완료')
       router.push('/')
