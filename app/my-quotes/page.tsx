@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { getQuoteRequests } from '@/lib/supabase/quotes'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User, Home, Play, Loader } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User, Home, Play, Loader, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface QuoteRequest {
@@ -81,6 +81,7 @@ export default function MyQuotesPage() {
   const [downloadingQuotes, setDownloadingQuotes] = useState<Set<string>>(new Set())
   const [startingProject, setStartingProject] = useState<string | null>(null)
   const [selectingContractor, setSelectingContractor] = useState<string | null>(null)
+  const [collapsedQuotes, setCollapsedQuotes] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   useEffect(() => {
@@ -199,6 +200,10 @@ export default function MyQuotesPage() {
       console.log('Successfully fetched quotes:', quotesData?.length || 0)
       setQuotes(quotesData || [])
       setContractorQuotes([])
+      // 기본적으로 모든 견적서 섹션을 접혀있게 설정
+      if (quotesData && quotesData.length > 0) {
+        setCollapsedQuotes(new Set(quotesData.map(q => q.id)))
+      }
       
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -524,7 +529,7 @@ export default function MyQuotesPage() {
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">My Quotes</h1>
+          <h1 className="text-3xl font-bold text-gray-900">My Page</h1>
           <p className="mt-2 text-gray-600">Compare your quote requests with contractor quotes.</p>
         </div>
 
@@ -599,59 +604,82 @@ export default function MyQuotesPage() {
                   {/* 견적서 목록 */}
                   {quoteCount > 0 && (
                     <div className="mt-4 border-t pt-4">
-                      <h4 className="font-semibold text-gray-900 mb-3">
-                        Contractor Quotes ({quoteCount})
-                      </h4>
-                      <div className="space-y-3">
-                        {quote.contractor_quotes?.map((cq) => (
-                          <div key={cq.id} className="bg-gray-50 rounded-lg p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {cq.contractors?.company_name || 'Company'}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  ${cq.price?.toLocaleString() || '0'}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                {cq.pdf_url && (
-                                  <button
-                                    onClick={() => downloadQuote(cq.id)}
-                                    disabled={downloadingQuotes.has(cq.id)}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm flex items-center disabled:opacity-50"
-                                  >
-                                    {downloadingQuotes.has(cq.id) ? (
-                                      <Loader className="h-4 w-4 mr-2 animate-spin" />
-                                    ) : (
-                                      <Download className="h-4 w-4 mr-2" />
-                                    )}
-                                    View Quote
-                                  </button>
-                                )}
-                                {cq.status === 'submitted' && quote.status === 'bidding' && (
-                                  <button
-                                    onClick={() => handleSelectContractor(cq.id, quote.id, cq.contractor_id)}
-                                    disabled={selectingContractor === quote.id}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
-                                  >
-                                    {selectingContractor === quote.id ? 'Selecting...' : 'Select'}
-                                  </button>
-                                )}
-                                {cq.status === 'accepted' && (
-                                  <span className="text-green-600 font-medium">Selected</span>
-                                )}
+                      <button
+                        onClick={() => {
+                          setCollapsedQuotes(prev => {
+                            const newSet = new Set(prev)
+                            if (newSet.has(quote.id)) {
+                              newSet.delete(quote.id)
+                            } else {
+                              newSet.add(quote.id)
+                            }
+                            return newSet
+                          })
+                        }}
+                        className="w-full flex items-center justify-between font-semibold text-gray-900 mb-3 hover:text-emerald-600 transition-colors"
+                      >
+                        <span>Contractor Quotes ({quoteCount})</span>
+                        {collapsedQuotes.has(quote.id) ? (
+                          <ChevronDown className="h-5 w-5" />
+                        ) : (
+                          <ChevronUp className="h-5 w-5" />
+                        )}
+                      </button>
+                      {!collapsedQuotes.has(quote.id) && (
+                        <div className="space-y-3">
+                          {quote.contractor_quotes?.map((cq) => (
+                            <div key={cq.id} className="bg-gray-50 rounded-lg p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900">
+                                    {cq.contractors?.company_name || 'Company'}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    ${cq.price?.toLocaleString() || '0'}
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  {cq.pdf_url && (
+                                    <button
+                                      onClick={() => downloadQuote(cq.id)}
+                                      disabled={downloadingQuotes.has(cq.id)}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm flex items-center disabled:opacity-50"
+                                    >
+                                      {downloadingQuotes.has(cq.id) ? (
+                                        <Loader className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <Download className="h-4 w-4 mr-2" />
+                                      )}
+                                      View Quote
+                                    </button>
+                                  )}
+                                  {cq.status === 'submitted' && quote.status === 'bidding' && (
+                                    <button
+                                      onClick={() => handleSelectContractor(cq.id, quote.id, cq.contractor_id)}
+                                      disabled={selectingContractor === quote.id}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                                    >
+                                      {selectingContractor === quote.id ? 'Selecting...' : 'Select'}
+                                    </button>
+                                  )}
+                                  {cq.status === 'accepted' && (
+                                    <span className="text-green-600 font-medium">Selected</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* 프로젝트 시작 버튼 */}
                   {canStartProject && (
                     <div className="mt-4 border-t pt-4">
+                      <p className="text-base font-medium text-gray-700 mb-3">
+                        Please press this button after finalizing the detailed schedule and signing the contract with your professional partner.
+                      </p>
                       <button
                         onClick={() => handleStartProject(quote.id)}
                         disabled={startingProject === quote.id}

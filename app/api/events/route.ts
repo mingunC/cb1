@@ -13,7 +13,7 @@ const createServerClient = async (request: NextRequest) => {
   console.log('🔐 API: Authorization 헤더 확인:', {
     hasAuthHeader: !!authHeader,
     hasToken: !!token,
-    tokenPrefix: token?.substring(0, 20) + '...'
+    tokenPrefix: token ? token.substring(0, 20) + '...' : 'none'
   })
   
   const supabase = createSupabaseServerClient(
