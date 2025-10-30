@@ -93,19 +93,7 @@ export async function POST(request: NextRequest) {
       title: validatedData.title.substring(0, 30) + '...'
     })
 
-    // 고객 정보 확인
-    console.log('👤 고객 정보 확인 중...')
-    const { data: customerData, error: customerError } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .single()
-
-    if (customerError || !customerData) {
-      console.error('❌ 고객 정보 조회 실패:', customerError)
-      return NextResponse.json({ error: '고객 정보를 찾을 수 없습니다.' }, { status: 404 })
-    }
-    console.log('✅ 고객 정보 확인 완료')
+    // ❌ 고객 정보 확인 단계 제거 - 인증된 사용자면 user.id가 이미 있음
 
     // 견적서 정보 확인
     console.log('📋 견적서 정보 확인 중...')
