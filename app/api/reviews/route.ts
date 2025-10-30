@@ -8,7 +8,7 @@ import { z } from 'zod'
 const reviewSchema = z.object({
   contractor_id: z.string().uuid(),
   quote_id: z.string().uuid(),
-  // ✅ 0.5부터 허용
+  // ✅ 0.5부터 5까지 허용
   rating: z.number().min(0.5).max(5),
   title: z.string().min(1).max(100),
   comment: z.string().min(10).max(1000),
@@ -60,6 +60,8 @@ async function authenticateUser(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 POST /api/reviews 시작')
+    
     // 인증된 사용자 확인
     const { user, error: authError } = await authenticateUser(request)
     
@@ -70,65 +72,94 @@ export async function POST(request: NextRequest) {
     })
 
     if (authError || !user) {
+      console.error('❌ 인증 실패')
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
-    // Supabase 클라이언트 생성 (인증된 사용자로)
-    const supabase = createClient(
+    // Supabase 클라이언트 생성 (SERVICE ROLE KEY 사용)
+    const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY! // ✅ SERVICE ROLE 사용
     )
 
     // 요청 데이터 파싱 및 검증
     const body = await request.json()
+    console.log('📦 요청 바디:', JSON.stringify(body, null, 2))
+    
     const validatedData = reviewSchema.parse(body)
+    console.log('✅ 검증 완료:', {
+      contractor_id: validatedData.contractor_id,
+      quote_id: validatedData.quote_id,
+      rating: validatedData.rating,
+      title: validatedData.title.substring(0, 30) + '...'
+    })
 
-    // 고객 정보 확인
-    const { data: customerData, error: customerError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .single()
+    // ❌ 고객 정보 확인 단계 제거 - 인증된 사용자면 user.id가 이미 있음
 
-    if (customerError || !customerData) {
-      return NextResponse.json({ error: '고객 정보를 찾을 수 없습니다.' }, { status: 404 })
-    }
-
-    // 견적서 정보 확인 - ✅ 명확한 FK 지정
-    const { data: quoteData, error: quoteError } = await supabase
+    // 견적서 정보 확인
+    console.log('📋 견적서 정보 확인 중...')
+    const { data: quoteData, error: quoteError } = await supabaseAdmin
       .from('contractor_quotes')
       .select(`
         id,
         contractor_id,
         status,
-        quote_requests!contractor_quotes_project_id_fkey (
-          id,
-          customer_id,
-          status
-        )
+        project_id
       `)
       .eq('id', validatedData.quote_id)
       .eq('contractor_id', validatedData.contractor_id)
       .single()
 
+    console.log('📋 견적서 조회 결과:', { 
+      found: !!quoteData, 
+      error: quoteError?.message,
+      data: quoteData 
+    })
+
     if (quoteError || !quoteData) {
+      console.error('❌ 견적서 조회 실패:', quoteError)
       return NextResponse.json({ error: '견적서를 찾을 수 없습니다.' }, { status: 404 })
     }
 
+    // 프로젝트 정보 확인
+    console.log('📂 프로젝트 정보 확인 중...')
+    const { data: projectData, error: projectError } = await supabaseAdmin
+      .from('quote_requests')
+      .select('id, customer_id, status')
+      .eq('id', quoteData.project_id)
+      .single()
+
+    console.log('📂 프로젝트 조회 결과:', { 
+      found: !!projectData, 
+      error: projectError?.message,
+      customer_id: projectData?.customer_id,
+      status: projectData?.status
+    })
+
+    if (projectError || !projectData) {
+      console.error('❌ 프로젝트 조회 실패:', projectError)
+      return NextResponse.json({ error: '프로젝트를 찾을 수 없습니다.' }, { status: 404 })
+    }
+
     // 고객이 해당 견적서의 소유자인지 확인
-    if ((quoteData.quote_requests as any)?.customer_id !== user.id) {
+    if (projectData.customer_id !== user.id) {
+      console.error('❌ 권한 없음 - customer_id 불일치')
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
     }
+    console.log('✅ 권한 확인 완료')
 
     // 견적서가 수락된 상태인지 확인
     if (quoteData.status !== 'accepted') {
+      console.error('❌ 견적서 상태가 accepted가 아님:', quoteData.status)
       return NextResponse.json({ 
         error: '선택된 견적서에만 리뷰를 남길 수 있습니다.' 
       }, { status: 400 })
     }
+    console.log('✅ 견적서 상태 확인 완료 (accepted)')
 
     // ✅ 고객이 한번이라도 bidding을 이용한 적이 있는지 확인
-    const { data: userProjects, error: userProjectsError } = await supabase
+    console.log('🔍 Bidding 이용 경험 확인 중...')
+    const { data: userProjects, error: userProjectsError } = await supabaseAdmin
       .from('quote_requests')
       .select('id')
       .eq('customer_id', user.id)
@@ -136,56 +167,82 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (userProjectsError || !userProjects || userProjects.length === 0) {
+      console.error('❌ Bidding 이용 경험 없음')
       return NextResponse.json({ 
         error: 'bidding을 이용한 경험이 있는 경우에만 리뷰를 작성할 수 있습니다.' 
       }, { status: 403 })
     }
+    console.log('✅ Bidding 이용 경험 확인 완료')
 
     // ✅ 해당 프로젝트가 bidding 단계를 거쳤는지 확인
-    const projectStatus = (quoteData.quote_requests as any)?.status
+    const projectStatus = projectData.status
     const allowedStatuses = ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed']
     
     if (!allowedStatuses.includes(projectStatus)) {
+      console.error('❌ 프로젝트가 bidding 단계를 거치지 않음:', projectStatus)
       return NextResponse.json({ 
         error: 'bidding 단계를 거친 프로젝트에만 리뷰를 남길 수 있습니다.' 
       }, { status: 400 })
     }
+    console.log('✅ 프로젝트 상태 확인 완료:', projectStatus)
 
     // 이미 리뷰를 남겼는지 확인
-    const { data: existingReview, error: existingError } = await supabase
+    console.log('🔍 중복 리뷰 확인 중...')
+    const { data: existingReview, error: existingError } = await supabaseAdmin
       .from('reviews')
       .select('id')
       .eq('contractor_id', validatedData.contractor_id)
       .eq('customer_id', user.id)
       .eq('quote_id', validatedData.quote_id)
-      .single()
+      .maybeSingle() // ✅ single 대신 maybeSingle 사용
+
+    console.log('🔍 중복 리뷰 확인 결과:', { 
+      exists: !!existingReview,
+      error: existingError?.message 
+    })
 
     if (existingReview) {
+      console.error('❌ 이미 리뷰가 존재함')
       return NextResponse.json({ 
         error: '이미 해당 견적서에 대한 리뷰를 남기셨습니다.' 
       }, { status: 400 })
     }
 
     // 리뷰 생성
-    const { data: reviewData, error: reviewError } = await supabase
+    console.log('💾 리뷰 생성 중...')
+    const reviewInsertData = {
+      contractor_id: validatedData.contractor_id,
+      customer_id: user.id,
+      quote_id: validatedData.quote_id,
+      rating: validatedData.rating,
+      title: validatedData.title,
+      comment: validatedData.comment,
+      photos: validatedData.photos,
+      is_verified: true
+    }
+    
+    console.log('💾 리뷰 데이터:', JSON.stringify(reviewInsertData, null, 2))
+    
+    const { data: reviewData, error: reviewError } = await supabaseAdmin
       .from('reviews')
-      .insert({
-        contractor_id: validatedData.contractor_id,
-        customer_id: user.id,
-        quote_id: validatedData.quote_id,
-        rating: validatedData.rating,
-        title: validatedData.title,
-        comment: validatedData.comment,
-        photos: validatedData.photos,
-        is_verified: true // 공사 완료 고객의 리뷰는 자동으로 검증됨
-      })
+      .insert(reviewInsertData)
       .select()
       .single()
 
     if (reviewError) {
-      console.error('리뷰 생성 오류:', reviewError)
-      return NextResponse.json({ error: '리뷰 생성에 실패했습니다.' }, { status: 500 })
+      console.error('❌ 리뷰 생성 오류:', {
+        message: reviewError.message,
+        details: reviewError.details,
+        hint: reviewError.hint,
+        code: reviewError.code
+      })
+      return NextResponse.json({ 
+        error: '리뷰 생성에 실패했습니다.',
+        details: reviewError.message 
+      }, { status: 500 })
     }
+
+    console.log('✅ 리뷰 생성 성공:', reviewData?.id)
 
     return NextResponse.json({ 
       success: true, 
@@ -194,16 +251,20 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('리뷰 POST API 오류:', error)
+    console.error('❌ 리뷰 POST API 오류:', error)
     
     if (error instanceof z.ZodError) {
+      console.error('❌ Zod 검증 오류:', error.errors)
       return NextResponse.json({ 
         error: '입력 데이터가 올바르지 않습니다.',
         details: error.errors 
       }, { status: 400 })
     }
 
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return NextResponse.json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }
 
