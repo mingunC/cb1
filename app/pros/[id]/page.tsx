@@ -7,10 +7,11 @@ import {
   Star, Award, Calendar, Users, 
   CheckCircle, Phone, Mail, Globe, Clock, Building,
   Briefcase, Shield, ChevronLeft, X, MessageCircle, Image as ImageIcon,
-  ArrowLeft
+  ArrowLeft, Reply, Edit2, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 import ReviewForm from '@/components/ReviewForm'
+import toast from 'react-hot-toast'
 
 interface Contractor {
   id: string
@@ -52,6 +53,8 @@ interface Review {
   photos: string[]
   is_verified: boolean
   created_at: string
+  contractor_reply: string | null
+  contractor_reply_date: string | null
   customer: {
     first_name: string | null
     last_name: string | null
@@ -70,13 +73,40 @@ export default function ContractorDetailPage() {
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [portfolioCount, setPortfolioCount] = useState(0)
   const [completedProjects, setCompletedProjects] = useState(0)
+  const [isContractorOwner, setIsContractorOwner] = useState(false)
+  const [replyingToReviewId, setReplyingToReviewId] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false)
 
   useEffect(() => {
     if (contractorId) {
       fetchContractorDetails()
       fetchReviews()
+      checkContractorOwnership()
     }
   }, [contractorId])
+
+  const checkContractorOwnership = async () => {
+    try {
+      const supabase = createBrowserClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) return
+
+      const { data: contractorData } = await supabase
+        .from('contractors')
+        .select('user_id')
+        .eq('id', contractorId)
+        .single()
+
+      if (contractorData && contractorData.user_id === user.id) {
+        setIsContractorOwner(true)
+      }
+    } catch (error) {
+      console.error('Error checking ownership:', error)
+    }
+  }
 
   const fetchContractorDetails = async () => {
     try {
@@ -182,6 +212,8 @@ export default function ContractorDetailPage() {
           photos,
           is_verified,
           created_at,
+          contractor_reply,
+          contractor_reply_date,
           users!customer_id (
             first_name,
             last_name,
@@ -207,6 +239,8 @@ export default function ContractorDetailPage() {
         photos: Array.isArray(review.photos) ? review.photos : [],
         is_verified: review.is_verified,
         created_at: review.created_at,
+        contractor_reply: review.contractor_reply,
+        contractor_reply_date: review.contractor_reply_date,
         customer: {
           first_name: review.users?.first_name || null,
           last_name: review.users?.last_name || null,
@@ -220,6 +254,89 @@ export default function ContractorDetailPage() {
     }
   }
 
+  const handleSubmitReply = async (reviewId: string) => {
+    if (!replyText.trim() || replyText.length < 10) {
+      toast.error('답글은 최소 10자 이상이어야 합니다.')
+      return
+    }
+
+    setIsSubmittingReply(true)
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        toast.error('로그인이 필요합니다.')
+        return
+      }
+
+      const isEditing = editingReplyId === reviewId
+      const url = `/api/reviews/${reviewId}/reply`
+      const method = isEditing ? 'PATCH' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ reply_text: replyText })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(isEditing ? '답글이 수정되었습니다.' : '답글이 작성되었습니다.')
+        setReplyingToReviewId(null)
+        setEditingReplyId(null)
+        setReplyText('')
+        fetchReviews()
+      } else {
+        toast.error(result.error || '답글 작성에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('Reply submit error:', error)
+      toast.error('오류가 발생했습니다.')
+    } finally {
+      setIsSubmittingReply(false)
+    }
+  }
+
+  const handleDeleteReply = async (reviewId: string) => {
+    if (!confirm('답글을 삭제하시겠습니까?')) return
+
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        toast.error('로그인이 필요합니다.')
+        return
+      }
+
+      const response = await fetch(`/api/reviews/${reviewId}/reply`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('답글이 삭제되었습니다.')
+        fetchReviews()
+      } else {
+        toast.error(result.error || '답글 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('Reply delete error:', error)
+      toast.error('오류가 발생했습니다.')
+    }
+  }
+
   const handleSMSConsultation = (contractor: Contractor) => {
     const message = encodeURIComponent(`[${contractor.company_name}] Requesting a consultation/quote.`)
     const phoneNumber = contractor.phone.replace(/[^0-9]/g, '')
@@ -229,7 +346,7 @@ export default function ContractorDetailPage() {
 
   const handleReviewSuccess = () => {
     fetchReviews()
-    fetchContractorDetails() // 리뷰 수 업데이트를 위해
+    fetchContractorDetails()
   }
 
   if (isLoading) {
@@ -257,7 +374,6 @@ export default function ContractorDetailPage() {
     )
   }
 
-  // 평균 별점 계산
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : contractor.rating || 0
@@ -398,12 +514,14 @@ export default function ContractorDetailPage() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">Reviews ({reviews.length})</h2>
-            <button
-              onClick={() => setShowReviewForm(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
-            >
-              Write a Review
-            </button>
+            {!isContractorOwner && (
+              <button
+                onClick={() => setShowReviewForm(true)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
+              >
+                Write a Review
+              </button>
+            )}
           </div>
 
           {reviews.length === 0 ? (
@@ -458,6 +576,124 @@ export default function ContractorDetailPage() {
                           className="w-full h-24 object-cover rounded-lg"
                         />
                       ))}
+                    </div>
+                  )}
+
+                  {/* 업체 답글 */}
+                  {review.contractor_reply && (
+                    <div className="mt-4 ml-8 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Reply className="h-4 w-4 text-gray-500" />
+                          <span className="font-semibold text-sm text-gray-700">
+                            {contractor.company_name} 답글
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">
+                            {new Date(review.contractor_reply_date!).toLocaleDateString('en-CA')}
+                          </span>
+                          {isContractorOwner && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingReplyId(review.id)
+                                  setReplyText(review.contractor_reply!)
+                                  setReplyingToReviewId(review.id)
+                                }}
+                                className="p-1 text-blue-600 hover:text-blue-800"
+                                title="답글 수정"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReply(review.id)}
+                                className="p-1 text-red-600 hover:text-red-800"
+                                title="답글 삭제"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {review.contractor_reply}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 답글 작성 폼 */}
+                  {isContractorOwner && !review.contractor_reply && (
+                    <div className="mt-4 ml-8">
+                      {replyingToReviewId === review.id ? (
+                        <div>
+                          <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="리뷰에 대한 답글을 작성하세요... (최소 10자)"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                            rows={3}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => handleSubmitReply(review.id)}
+                              disabled={isSubmittingReply}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:opacity-50"
+                            >
+                              {isSubmittingReply ? '제출 중...' : '답글 작성'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReplyingToReviewId(null)
+                                setReplyText('')
+                              }}
+                              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setReplyingToReviewId(review.id)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                        >
+                          <Reply className="h-4 w-4" />
+                          답글 달기
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 답글 수정 폼 */}
+                  {isContractorOwner && editingReplyId === review.id && replyingToReviewId === review.id && (
+                    <div className="mt-4 ml-8">
+                      <textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        rows={3}
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => handleSubmitReply(review.id)}
+                          disabled={isSubmittingReply}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:opacity-50"
+                        >
+                          {isSubmittingReply ? '수정 중...' : '답글 수정'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingReplyId(null)
+                            setReplyingToReviewId(null)
+                            setReplyText('')
+                          }}
+                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                        >
+                          취소
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
