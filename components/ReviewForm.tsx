@@ -52,6 +52,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
   const [selectedQuote, setSelectedQuote] = useState<AvailableQuote | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const {
     register,
@@ -76,25 +77,34 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
   useEffect(() => {
     const fetchAvailableQuotes = async () => {
       setIsLoading(true)
+      setLoadError(null)
+      
       try {
         console.log('🔍 Fetching available quotes for contractor:', contractorId)
         
         // ✅ 클라이언트에서 세션 토큰 가져오기
         const supabase = createBrowserClient()
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        if (!session) {
+        if (sessionError || !session) {
+          console.error('❌ Session error:', sessionError)
+          setLoadError('Login is required.')
           toast.error('Login is required.')
-          setTimeout(() => onClose(), 1000)
+          setTimeout(() => onClose(), 2000)
           return
         }
 
         const response = await fetch('/api/reviews', {
           credentials: 'include',
           headers: {
-            'Authorization': `Bearer ${session.access_token}` // ✅ 토큰 전달
+            'Authorization': `Bearer ${session.access_token}`
           }
         })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
         const result = await response.json()
 
         console.log('📦 API Response:', result)
@@ -114,16 +124,19 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           
           if (contractorQuotes.length === 0) {
             console.warn('⚠️ No eligible projects found for this contractor')
+            setLoadError('There are no projects available to review.')
             toast.error('There are no projects available to review.')
-            setTimeout(() => onClose(), 3000)
           }
         } else {
           console.error('❌ API Error:', result.error)
+          setLoadError(result.error || 'Failed to fetch quotes.')
           toast.error(result.error || 'Failed to fetch quotes.')
         }
       } catch (error) {
         console.error('❌ Fetch quotes error:', error)
-        toast.error('An error occurred while fetching quotes.')
+        const errorMessage = error instanceof Error ? error.message : 'An error occurred while fetching quotes.'
+        setLoadError(errorMessage)
+        toast.error(errorMessage)
       } finally {
         setIsLoading(false)
       }
@@ -184,7 +197,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}` // ✅ 토큰 전달
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           ...data,
@@ -216,6 +229,29 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading quotes...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ✅ 로딩 완료 후 에러가 있으면 에러 상태 표시
+  if (loadError) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <X className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Reviews</h3>
+            <p className="text-sm text-gray-500 mb-6">{loadError}</p>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
