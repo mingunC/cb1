@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     // 인증된 사용자 확인
     const { user, error: authError } = await authenticateUser(request)
     
-    console.log('🔐 리뷰 API - 인증 확인:', {
+    console.log('🔐 리뷰 POST API - 인증 확인:', {
       user: user?.id,
       email: user?.email,
       authError: authError?.message
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('리뷰 API 오류:', error)
+    console.error('리뷰 POST API 오류:', error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
@@ -250,7 +250,32 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // ✅ 고객이 리뷰를 남길 수 있는 견적서 목록 조회 - 명확한 FK 지정
+    // ✅ 2단계 쿼리: 먼저 project_id 목록을 가져온 후 join
+    // Step 1: 사용자의 프로젝트 ID 목록 가져오기
+    const { data: userProjectIds, error: projectIdsError } = await supabase
+      .from('quote_requests')
+      .select('id')
+      .eq('customer_id', user.id)
+      .in('status', ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed'])
+
+    if (projectIdsError) {
+      console.error('프로젝트 ID 조회 오류:', projectIdsError)
+      return NextResponse.json({ error: '프로젝트 조회에 실패했습니다.' }, { status: 500 })
+    }
+
+    const projectIds = userProjectIds?.map(p => p.id) || []
+    
+    if (projectIds.length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        data: [],
+        message: 'bidding을 이용한 경험이 있는 경우에만 리뷰를 작성할 수 있습니다.'
+      })
+    }
+
+    console.log('📋 사용자의 프로젝트 ID:', projectIds)
+
+    // Step 2: 해당 프로젝트의 견적서 가져오기
     const { data: quotesData, error: quotesError } = await supabase
       .from('contractor_quotes')
       .select(`
@@ -259,23 +284,14 @@ export async function GET(request: NextRequest) {
         description,
         status,
         created_at,
+        project_id,
         contractors!inner (
           id,
           company_name,
           contact_name
-        ),
-        quote_requests!contractor_quotes_project_id_fkey!inner (
-          id,
-          space_type,
-          budget,
-          address,
-          full_address,
-          status,
-          customer_id
         )
       `)
-      .eq('quote_requests.customer_id', user.id)
-      .in('quote_requests.status', ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed'])
+      .in('project_id', projectIds)
       .in('status', ['submitted', 'accepted'])
       .order('created_at', { ascending: false })
 
@@ -286,6 +302,25 @@ export async function GET(request: NextRequest) {
 
     console.log('📦 조회된 견적서 수:', quotesData?.length || 0)
 
+    // Step 3: 프로젝트 정보 가져오기
+    const { data: projectsData, error: projectsDataError } = await supabase
+      .from('quote_requests')
+      .select('id, space_type, budget, full_address, status')
+      .in('id', projectIds)
+
+    if (projectsDataError) {
+      console.error('프로젝트 상세 조회 오류:', projectsDataError)
+    }
+
+    // 프로젝트 정보를 맵으로 변환
+    const projectsMap = new Map(projectsData?.map(p => [p.id, p]) || [])
+
+    // 견적서에 프로젝트 정보 추가
+    const quotesWithProjects = quotesData?.map(quote => ({
+      ...quote,
+      quote_requests: projectsMap.get(quote.project_id)
+    })) || []
+
     // 이미 리뷰를 남긴 견적서 ID 목록 조회
     const { data: reviewedQuotes, error: reviewedError } = await supabase
       .from('reviews')
@@ -295,9 +330,9 @@ export async function GET(request: NextRequest) {
     const reviewedQuoteIds = reviewedQuotes?.map(r => r.quote_id) || []
 
     // 리뷰를 남기지 않은 견적서만 필터링
-    const availableQuotes = quotesData?.filter(quote => 
+    const availableQuotes = quotesWithProjects.filter(quote => 
       !reviewedQuoteIds.includes(quote.id)
-    ) || []
+    )
 
     console.log('✅ 리뷰 가능한 견적서 수:', availableQuotes.length)
 
