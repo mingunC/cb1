@@ -77,7 +77,9 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
       setIsLoading(true)
       try {
         console.log('🔍 Fetching available quotes for contractor:', contractorId)
-        const response = await fetch('/api/reviews')
+        const response = await fetch('/api/reviews', {
+          credentials: 'include' // ✅ 쿠키 포함
+        })
         const result = await response.json()
 
         console.log('📦 API Response:', result)
@@ -135,6 +137,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
     try {
       const response = await fetch('/api/reviews', {
         method: 'POST',
+        credentials: 'include', // ✅ 쿠키 포함
         headers: {
           'Content-Type': 'application/json',
         },
