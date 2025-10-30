@@ -122,7 +122,7 @@ export default function ContractorDetailPage() {
         .eq('contractor_id', contractorId)
         .in('status', ['completed', 'accepted'])
 
-      // 리뷰 개수
+      // Review count
       const { count: reviewCount } = await supabase
         .from('reviews')
         .select('*', { count: 'exact', head: true })
@@ -133,23 +133,23 @@ export default function ContractorDetailPage() {
 
       const formattedContractor: Contractor = {
         id: contractorData.id,
-        company_name: contractorData.company_name || '업체명 없음',
-        contact_name: contractorData.contact_name || '담당자 없음',
-        phone: contractorData.phone || '전화번호 없음',
-        email: contractorData.email || '이메일 없음',
+        company_name: contractorData.company_name || 'No company name',
+        contact_name: contractorData.contact_name || 'No contact person',
+        phone: contractorData.phone || 'No phone number',
+        email: contractorData.email || 'No email',
         website: contractorData.website,
         logo_url: contractorData.company_logo,
         cover_image: contractorData.company_logo,
-        description: contractorData.description || '업체 소개가 없습니다.',
+        description: contractorData.description || 'No company description provided.',
         established_year: contractorData.years_in_business ? new Date().getFullYear() - contractorData.years_in_business : undefined,
         employee_count: '정보 없음',
-        service_areas: contractorData.address ? [contractorData.address] : ['서울', '경기'],
+        service_areas: contractorData.address ? [contractorData.address] : ['Seoul', 'Gyeonggi'],
         specialties: Array.isArray(contractorData.specialties) ? contractorData.specialties : [],
-        certifications: ['실내건축공사업'],
+        certifications: ['Interior construction license'],
         rating: contractorData.rating || 0,
         review_count: reviewCount || 0,
         completed_projects: completedQuotes || 0,
-        response_time: '문의 후 안내',
+        response_time: 'We will contact you shortly',
         min_budget: undefined,
         is_verified: true,
         is_premium: false,
@@ -210,7 +210,7 @@ export default function ContractorDetailPage() {
         customer: {
           first_name: review.users?.first_name || null,
           last_name: review.users?.last_name || null,
-          email: review.users?.email || '익명'
+          email: review.users?.email || 'Anonymous'
         }
       }))
 
@@ -221,7 +221,7 @@ export default function ContractorDetailPage() {
   }
 
   const handleSMSConsultation = (contractor: Contractor) => {
-    const message = encodeURIComponent(`[${contractor.company_name}] 견적 상담 요청합니다.`)
+    const message = encodeURIComponent(`[${contractor.company_name}] Requesting a consultation/quote.`)
     const phoneNumber = contractor.phone.replace(/[^0-9]/g, '')
     const smsURI = `sms:${phoneNumber}${/iPhone|iPad|iPod/.test(navigator.userAgent) ? '&' : '?'}body=${message}`
     window.location.href = smsURI
@@ -237,7 +237,7 @@ export default function ContractorDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -248,9 +248,9 @@ export default function ContractorDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">업체를 찾을 수 없습니다.</p>
+          <p className="text-gray-500">Contractor not found.</p>
           <Link href="/pros" className="mt-4 inline-block text-emerald-600 hover:text-emerald-700">
-            업체 목록으로 돌아가기
+            Back to contractors
           </Link>
         </div>
       </div>
@@ -264,7 +264,7 @@ export default function ContractorDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 상단 네비게이션 */}
+      {/* Top navigation */}
       <div className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
@@ -272,12 +272,12 @@ export default function ContractorDetailPage() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span>뒤로가기</span>
+            <span>Back</span>
           </button>
         </div>
       </div>
 
-      {/* 커버 이미지 */}
+      {/* Cover image */}
       <div className="relative h-64">
         {contractor.cover_image ? (
           <img src={contractor.cover_image} alt={contractor.company_name} className="w-full h-full object-cover" />
@@ -292,7 +292,7 @@ export default function ContractorDetailPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 업체 정보 헤더 */}
+        {/* Contractor header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6 -mt-20 relative z-10">
           <div className="flex items-start gap-4 mb-6">
             {contractor.logo_url ? (
@@ -309,7 +309,7 @@ export default function ContractorDetailPage() {
                 <h1 className="text-2xl font-bold">{contractor.company_name}</h1>
                 {contractor.is_verified && (
                   <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
-                    인증업체
+                    Verified
                   </span>
                 )}
               </div>
@@ -317,18 +317,18 @@ export default function ContractorDetailPage() {
                 <div className="flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 fill-current" />
                   <span className="font-medium ml-1">{averageRating.toFixed(1)}</span>
-                  <span className="ml-1">(리뷰 {reviews.length}개)</span>
+                  <span className="ml-1">({reviews.length} reviews)</span>
                 </div>
-                {contractor.established_year && <span>설립 {contractor.established_year}년</span>}
+                {contractor.established_year && <span>Established in {contractor.established_year}</span>}
               </div>
             </div>
           </div>
 
           <p className="text-gray-700 mb-6">{contractor.description}</p>
 
-          {/* 전문분야 */}
+          {/* Specialties */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-3">전문분야</h3>
+            <h3 className="font-semibold mb-3">Specialties</h3>
             <div className="flex flex-wrap gap-2">
               {contractor.specialties.length > 0 ? (
                 contractor.specialties.map((specialty, index) => (
@@ -337,14 +337,14 @@ export default function ContractorDetailPage() {
                   </span>
                 ))
               ) : (
-                <span className="text-gray-500 text-sm">전문분야 정보 없음</span>
+                <span className="text-gray-500 text-sm">No specialty information</span>
               )}
             </div>
           </div>
 
-          {/* 서비스 지역 */}
+          {/* Service areas */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-3">서비스 지역</h3>
+            <h3 className="font-semibold mb-3">Service Areas</h3>
             <div className="flex flex-wrap gap-2">
               {contractor.service_areas.map((area, index) => (
                 <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
@@ -354,9 +354,9 @@ export default function ContractorDetailPage() {
             </div>
           </div>
 
-          {/* 연락처 */}
+          {/* Contact */}
           <div className="border-t pt-6">
-            <h3 className="font-semibold mb-3">연락처</h3>
+            <h3 className="font-semibold mb-3">Contact</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gray-400" />
@@ -384,7 +384,7 @@ export default function ContractorDetailPage() {
             <div className="flex gap-3">
               <Link href={`/portfolio?contractor=${contractor.id}`} className="flex-1 px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium flex items-center justify-center gap-2">
                 <ImageIcon className="h-5 w-5" />
-                포트폴리오 보기
+                View Portfolio
               </Link>
               <button onClick={() => handleSMSConsultation(contractor)} className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">
                 <MessageCircle className="h-5 w-5" />
@@ -394,22 +394,22 @@ export default function ContractorDetailPage() {
           </div>
         </div>
 
-        {/* 후기 섹션 */}
+        {/* Reviews section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">후기 ({reviews.length}개)</h2>
+            <h2 className="text-xl font-bold">Reviews ({reviews.length})</h2>
             <button
               onClick={() => setShowReviewForm(true)}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
             >
-              후기 작성하기
+              Write a Review
             </button>
           </div>
 
           {reviews.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p>아직 작성된 후기가 없습니다.</p>
+              <p>No reviews yet.</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -427,7 +427,7 @@ export default function ContractorDetailPage() {
                           <CheckCircle className="h-4 w-4 text-green-500" />
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((rating) => (
                           <Star
                             key={rating}
@@ -440,9 +440,9 @@ export default function ContractorDetailPage() {
                         ))}
                       </div>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      {new Date(review.created_at).toLocaleDateString('ko-KR')}
-                    </span>
+        <span className="text-sm text-gray-500">
+          {new Date(review.created_at).toLocaleDateString('en-CA')}
+        </span>
                   </div>
                   
                   <h3 className="font-semibold text-gray-900 mb-2">{review.title}</h3>
