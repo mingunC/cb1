@@ -287,11 +287,11 @@ export default function ContractorsListingPage() {
                   <div className="flex justify-between items-center pt-3 border-t">
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <Briefcase className="h-4 w-4" />
-                      <span>상세보기</span>
+                      <span>Details</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <ImageIcon className="h-4 w-4" />
-                      <span>포트폴리오</span>
+                      <span>Portfolio</span>
                     </div>
                   </div>
                 </div>
