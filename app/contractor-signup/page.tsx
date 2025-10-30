@@ -27,10 +27,10 @@ export default function ContractorSignupPage() {
   
   const router = useRouter()
 
-  // 전문분야 옵션
+  // Specialty options
   const specialtyOptions = [
-    { value: 'residential', label: '주거공간' },
-    { value: 'commercial', label: '상업공간' }
+    { value: 'residential', label: 'Residential' },
+    { value: 'commercial', label: 'Commercial' }
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,13 +38,13 @@ export default function ContractorSignupPage() {
     setIsLoading(true)
     setError('')
 
-    // 비밀번호 확인
+    // Password confirmation
     if (formData.password !== formData.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.')
+      setError('Passwords do not match.')
       return
     }
 
-    // 비밀번호 요구사항 확인
+    // Check password requirements
     const passwordRequirements = {
       minLength: formData.password.length >= 8,
       hasUpperCase: /[A-Z]/.test(formData.password),
@@ -54,20 +54,20 @@ export default function ContractorSignupPage() {
     }
 
     if (!Object.values(passwordRequirements).every(req => req)) {
-      setError('비밀번호 요구사항을 모두 충족해야 합니다.')
+      setError('Please meet all password requirements.')
       return
     }
 
-    // 필수 필드 확인
+    // Required fields
     if (!formData.businessName || !formData.contactName || !formData.phone || !formData.address || formData.specialties.length === 0) {
-      setError('모든 필드를 입력하고 최소 하나의 전문분야를 선택해주세요.')
+      setError('Please fill in all fields and select at least one specialty.')
       return
     }
 
     try {
       const supabase = createBrowserClient()
       
-      // 업체로 회원가입
+      // Sign up as contractor
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -76,7 +76,7 @@ export default function ContractorSignupPage() {
       if (error) {
         setError(error.message)
       } else if (data.user) {
-        // 업체 프로필 정보를 contractors 테이블에 직접 저장 (users 테이블에는 저장하지 않음)
+        // Save contractor profile into contractors table (not in users)
         try {
           const { error: contractorError } = await supabase
             .from('contractors')
@@ -97,19 +97,19 @@ export default function ContractorSignupPage() {
             })
 
           if (contractorError) {
-            console.error('Contractors 테이블 저장 오류:', contractorError)
-            throw new Error('업체 프로필 저장에 실패했습니다.')
+            console.error('Error saving to contractors table:', contractorError)
+            throw new Error('Failed to save contractor profile.')
           }
 
-          alert('업체 회원가입이 완료되었습니다!')
+          alert('Contractor signup completed!')
           router.push('/')
         } catch (profileError) {
-          console.error('업체 프로필 저장 오류:', profileError)
-          setError('업체 프로필 저장 중 오류가 발생했습니다.')
+          console.error('Contractor profile save error:', profileError)
+          setError('An error occurred while saving your contractor profile.')
         }
       }
     } catch (err) {
-      setError('회원가입 중 오류가 발생했습니다.')
+      setError('An error occurred during signup.')
     } finally {
       setIsLoading(false)
     }
@@ -122,7 +122,7 @@ export default function ContractorSignupPage() {
     })
   }
 
-  // 전문분야 선택 핸들러
+  // Specialty selection handler
   const handleSpecialtyChange = (specialty: string, checked: boolean) => {
     if (checked) {
       setFormData({
@@ -140,30 +140,30 @@ export default function ContractorSignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* 뒤로가기 버튼 */}
+        {/* Back button */}
         <Link href="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
           <ArrowLeft className="h-6 w-6" />
         </Link>
         <div className="text-center">
           <Building2 className="mx-auto h-12 w-12 text-blue-600" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            업체 회원가입
+            Contractor Signup
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            전문 업체로 등록하여 고객들과 연결되세요
+            Register your business and connect with customers.
           </p>
         </div>
         <p className="mt-2 text-center text-sm text-gray-600">
-          일반 고객이신가요?{' '}
+          Are you a customer?{' '}
           <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-            고객 회원가입
+            Customer Signup
           </Link>
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* 오류 메시지 */}
+          {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
               <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
@@ -172,10 +172,10 @@ export default function ContractorSignupPage() {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* 사업체명 */}
+            {/* Business name */}
             <div>
               <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">
-                사업체명 *
+                Business Name *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -189,15 +189,15 @@ export default function ContractorSignupPage() {
                   value={formData.businessName}
                   onChange={handleInputChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="예: ABC 인테리어"
+                  placeholder="e.g., ABC Renovations"
                 />
               </div>
             </div>
 
-            {/* 담당자명 */}
+            {/* Contact name */}
             <div>
               <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
-                담당자명 *
+                Contact Name *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -211,15 +211,15 @@ export default function ContractorSignupPage() {
                   value={formData.contactName}
                   onChange={handleInputChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="예: 홍길동"
+                  placeholder="e.g., Jane Doe"
                 />
               </div>
             </div>
 
-            {/* 연락처 */}
+            {/* Phone */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                연락처 *
+                Phone *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -233,15 +233,15 @@ export default function ContractorSignupPage() {
                   value={formData.phone}
                   onChange={handleInputChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="예: 010-1234-5678"
+                  placeholder="e.g., (416) 555-0123"
                 />
               </div>
             </div>
 
-            {/* 주소 */}
+            {/* Address */}
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                사업장 주소 *
+                Business Address *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -255,15 +255,15 @@ export default function ContractorSignupPage() {
                   value={formData.address}
                   onChange={handleInputChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="예: 서울시 강남구 테헤란로 123"
+                  placeholder="e.g., 123 Main St, North York, ON"
                 />
               </div>
             </div>
 
-            {/* 전문분야 */}
+            {/* Specialties */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                전문분야 * (다중선택 가능)
+                Specialties * (multi-select)
               </label>
               <div className="space-y-2">
                 {specialtyOptions.map((option) => (
@@ -279,14 +279,14 @@ export default function ContractorSignupPage() {
                 ))}
               </div>
               {formData.specialties.length === 0 && (
-                <p className="text-red-500 text-sm mt-1">최소 하나의 전문분야를 선택해주세요.</p>
+                <p className="text-red-500 text-sm mt-1">Please select at least one specialty.</p>
               )}
             </div>
 
-            {/* 이메일 입력 */}
+            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일 *
+                Email *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -305,10 +305,10 @@ export default function ContractorSignupPage() {
               </div>
             </div>
 
-            {/* 비밀번호 입력 */}
+            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                비밀번호 *
+                Password *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -339,38 +339,38 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
               
-              {/* 비밀번호 요구사항 */}
+              {/* Password requirements */}
               <div className="mt-2 space-y-1">
-                <div className="text-xs text-gray-600 font-medium mb-2">비밀번호 요구사항:</div>
+                <div className="text-xs text-gray-600 font-medium mb-2">Password requirements:</div>
                 <div className="space-y-1">
                   <div className={`flex items-center text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    최소 8자 이상
+                    At least 8 characters
                   </div>
                   <div className={`flex items-center text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    대문자 포함
+                    Includes an uppercase letter
                   </div>
                   <div className={`flex items-center text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    소문자 포함
+                    Includes a lowercase letter
                   </div>
                   <div className={`flex items-center text-xs ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    숫자 포함
+                    Includes a number
                   </div>
                   <div className={`flex items-center text-xs ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    특수문자 포함
+                    Includes a special character
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 비밀번호 확인 */}
+            {/* Confirm password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                비밀번호 확인 *
+                Confirm Password *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -407,32 +407,32 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
               
-              {/* 비밀번호 일치 확인 */}
+              {/* Password match indicator */}
               {formData.confirmPassword && (
                 <div className="mt-2">
                   {formData.password === formData.confirmPassword ? (
                     <div className="flex items-center text-xs text-green-600">
                       <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                      비밀번호가 일치합니다
+                      Passwords match
                     </div>
                   ) : (
                     <div className="flex items-center text-xs text-red-600">
                       <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
-                      비밀번호가 일치하지 않습니다
+                      Passwords do not match
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* 회원가입 버튼 */}
+            {/* Submit */}
             <div>
               <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? '업체 회원가입 중...' : '업체로 회원가입'}
+                {isLoading ? 'Signing up contractor...' : 'Sign up as contractor'}
               </button>
             </div>
           </form>
