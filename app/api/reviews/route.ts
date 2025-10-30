@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
 
@@ -13,32 +14,53 @@ const reviewSchema = z.object({
   photos: z.array(z.string()).optional().default([])
 })
 
+// ✅ Authorization 헤더에서 사용자 인증
+async function authenticateUser(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // Authorization 헤더로 인증
+    const token = authHeader.substring(7)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    console.log('🔐 Token 인증:', { user: user?.id, error: error?.message })
+    return { user, error }
+  }
+  
+  // 쿠키로 인증 (fallback)
+  const cookieStore = cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+  
+  const { data: { user }, error } = await supabase.auth.getUser()
+  console.log('🔐 Cookie 인증:', { user: user?.id, error: error?.message })
+  return { user, error }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Server Component에서는 setAll이 작동하지 않을 수 있음
-            }
-          },
-        },
-      }
-    )
-
     // 인증된 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { user, error: authError } = await authenticateUser(request)
     
     console.log('🔐 리뷰 API - 인증 확인:', {
       user: user?.id,
@@ -49,6 +71,12 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
+
+    // Supabase 클라이언트 생성 (인증된 사용자로)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     // 요청 데이터 파싱 및 검증
     const body = await request.json()
@@ -181,41 +209,24 @@ export async function POST(request: NextRequest) {
 // 고객이 리뷰를 남길 수 있는 견적서 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Server Component에서는 setAll이 작동하지 않을 수 있음
-            }
-          },
-        },
-      }
-    )
-
     // 인증된 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { user, error: authError } = await authenticateUser(request)
     
     console.log('🔐 리뷰 GET API - 인증 확인:', {
       user: user?.id,
       email: user?.email,
-      authError: authError?.message,
-      cookies: cookieStore.getAll().map(c => c.name).join(', ')
+      authError: authError?.message
     })
 
     if (authError || !user) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
+
+    // Supabase 클라이언트 생성
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     // ✅ 고객이 한번이라도 bidding을 이용한 적이 있는지 확인
     const { data: projectsWithBidding, error: biddingCheckError } = await supabase
