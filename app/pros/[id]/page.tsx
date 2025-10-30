@@ -47,7 +47,7 @@ interface Review {
   contractor_id: string
   customer_id: string
   quote_id: string | null
-  rating: number
+  rating: number | null
   title: string
   comment: string
   photos: string[]
@@ -374,10 +374,6 @@ export default function ContractorDetailPage() {
     )
   }
 
-  const averageRating = reviews.length > 0
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-    : contractor.rating || 0
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top navigation */}
@@ -543,22 +539,10 @@ export default function ContractorDetailPage() {
                           <CheckCircle className="h-4 w-4 text-green-500" />
                         )}
                       </div>
-          <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <Star
-                            key={rating}
-                            className={`h-4 w-4 ${
-                              rating <= review.rating
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
                     </div>
-        <span className="text-sm text-gray-500">
-          {new Date(review.created_at).toLocaleDateString('en-CA')}
-        </span>
+                    <span className="text-sm text-gray-500">
+                      {new Date(review.created_at).toLocaleDateString('en-CA')}
+                    </span>
                   </div>
                   
                   <h3 className="font-semibold text-gray-900 mb-2">{review.title}</h3>
