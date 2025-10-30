@@ -29,6 +29,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasQuoteRequests, setHasQuoteRequests] = useState<boolean | null>(null)
+  const [isContractor, setIsContractor] = useState(false)
 
   const {
     register,
@@ -44,9 +45,9 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
     }
   })
 
-  // 견적요청 이용 경험 확인
+  // 업체 계정 여부 및 견적요청 이용 경험 확인
   useEffect(() => {
-    const checkQuoteRequests = async () => {
+    const checkEligibility = async () => {
       setIsLoading(true)
       
       try {
@@ -60,6 +61,25 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           return
         }
 
+        // 1. 먼저 업체 계정인지 확인
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          const { data: contractorData } = await supabase
+            .from('contractors')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+
+          if (contractorData) {
+            console.log('❌ User is a contractor - cannot write reviews')
+            setIsContractor(true)
+            setIsLoading(false)
+            return
+          }
+        }
+
+        // 2. 일반 고객이면 견적요청 이용 경험 확인
         const response = await fetch('/api/reviews', {
           credentials: 'include',
           headers: {
@@ -90,7 +110,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
       }
     }
 
-    checkQuoteRequests()
+    checkEligibility()
   }, [onClose])
 
   const onSubmit = async (data: ReviewFormData) => {
@@ -138,6 +158,29 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Checking eligibility...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 업체 계정이면 리뷰 작성 불가
+  if (isContractor) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <X className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">업체 계정은 리뷰 작성 불가</h3>
+            <p className="text-sm text-gray-500 mb-6">업체 계정으로는 다른 업체에 리뷰를 작성할 수 없습니다. 일반 고객 계정으로 로그인해주세요.</p>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
