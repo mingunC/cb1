@@ -182,7 +182,7 @@ export default function ContractorDetailPage() {
           photos,
           is_verified,
           created_at,
-          users!reviews_customer_id_fkey (
+          users!customer_id (
             first_name,
             last_name,
             email
@@ -479,4 +479,3 @@ export default function ContractorDetailPage() {
     </div>
   )
 }
-
