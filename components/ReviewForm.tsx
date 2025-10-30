@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Star, X, Send } from 'lucide-react'
+import { X, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
-// Review form schema
+// Review form schema - rating 제거
 const reviewFormSchema = z.object({
   contractor_id: z.string(),
-  rating: z.number().min(0.5, 'Please select a rating'),
   title: z.string().min(1, 'Please enter a title').max(100, 'Title must be 100 characters or less'),
   comment: z.string().min(10, 'Review must be at least 10 characters').max(1000, 'Review must be 1000 characters or less'),
   photos: z.array(z.string()).optional().default([])
@@ -34,21 +33,16 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors }
   } = useForm<ReviewFormData>({
     resolver: zodResolver(reviewFormSchema),
     defaultValues: {
       contractor_id: contractorId,
-      rating: 0,
       title: '',
       comment: '',
       photos: []
     }
   })
-
-  const watchedRating = watch('rating')
 
   // 견적요청 이용 경험 확인
   useEffect(() => {
@@ -98,31 +92,6 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
 
     checkQuoteRequests()
   }, [onClose])
-
-  const getFillPercent = (starIndex: number) => {
-    const value = watch('rating') || 0
-    const diff = value - (starIndex - 1)
-    return Math.max(0, Math.min(100, diff * 100))
-  }
-
-  const handleStarClick = (index: number, e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
-    const target = e.currentTarget
-    const rect = target.getBoundingClientRect()
-    let clientX: number | null = null
-
-    // Mouse
-    if ('nativeEvent' in e && (e as any).nativeEvent && (e as any).nativeEvent.clientX !== undefined) {
-      clientX = (e as any).nativeEvent.clientX
-    }
-    // Touch
-    if (clientX === null && 'changedTouches' in e && (e as React.TouchEvent<HTMLButtonElement>).changedTouches?.length) {
-      clientX = (e as React.TouchEvent<HTMLButtonElement>).changedTouches[0].clientX
-    }
-
-    const isHalf = clientX !== null ? (clientX - rect.left) < rect.width / 2 : false
-    const value = isHalf ? index - 0.5 : index
-    setValue('rating', value, { shouldValidate: true })
-  }
 
   const onSubmit = async (data: ReviewFormData) => {
     setIsSubmitting(true)
@@ -214,38 +183,6 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Rating */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Rating *
-            </label>
-          <div className="flex space-x-1">
-            {[1, 2, 3, 4, 5].map((idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={(e) => handleStarClick(idx, e)}
-                onTouchEnd={(e) => handleStarClick(idx, e)}
-                className="relative focus:outline-none h-8 w-8"
-                aria-label={`Rate ${idx} star${idx > 1 ? 's' : ''}`}
-              >
-                {/* Base (empty) star */}
-                <Star className="absolute inset-0 h-8 w-8 text-gray-300" />
-                {/* Filled portion */}
-                <div
-                  className="absolute top-0 left-0 h-8 overflow-hidden"
-                  style={{ width: `${getFillPercent(idx)}%` }}
-                >
-                  <Star className="h-8 w-8 text-yellow-400 fill-current" />
-                </div>
-              </button>
-            ))}
-          </div>
-            {errors.rating && (
-              <p className="text-red-500 text-sm mt-1">{errors.rating.message}</p>
-            )}
-          </div>
-
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -269,7 +206,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
             </label>
             <textarea
               {...register('comment')}
-              rows={4}
+              rows={6}
               placeholder="Please write a detailed review of your experience with this contractor"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
