@@ -82,10 +82,27 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // ✅ 프로젝트가 완료된 상태인지 확인 (중요!)
-    if ((quoteData.quote_requests as any)?.status !== 'completed') {
+    // ✅ 고객이 한번이라도 bidding을 이용한 적이 있는지 확인
+    const { data: userProjects, error: userProjectsError } = await supabase
+      .from('quote_requests')
+      .select('id')
+      .eq('customer_id', user.id)
+      .in('status', ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed'])
+      .limit(1)
+
+    if (userProjectsError || !userProjects || userProjects.length === 0) {
       return NextResponse.json({ 
-        error: '프로젝트가 완료된 경우에만 리뷰를 남길 수 있습니다. 프로젝트가 아직 진행 중입니다.' 
+        error: 'bidding을 이용한 경험이 있는 경우에만 리뷰를 작성할 수 있습니다.' 
+      }, { status: 403 })
+    }
+
+    // ✅ 해당 프로젝트가 bidding 단계를 거쳤는지 확인
+    const projectStatus = (quoteData.quote_requests as any)?.status
+    const allowedStatuses = ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed']
+    
+    if (!allowedStatuses.includes(projectStatus)) {
+      return NextResponse.json({ 
+        error: 'bidding 단계를 거친 프로젝트에만 리뷰를 남길 수 있습니다.' 
       }, { status: 400 })
     }
 
@@ -167,7 +184,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
-    // 고객이 리뷰를 남길 수 있는 견적서 목록 조회 (프로젝트가 완료된 경우만)
+    // ✅ 고객이 한번이라도 bidding을 이용한 적이 있는지 확인
+    const { data: projectsWithBidding, error: biddingCheckError } = await supabase
+      .from('quote_requests')
+      .select('id')
+      .eq('customer_id', user.id)
+      .in('status', ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed'])
+      .limit(1)
+
+    if (biddingCheckError) {
+      console.error('Bidding 확인 오류:', biddingCheckError)
+      return NextResponse.json({ error: '권한 확인에 실패했습니다.' }, { status: 500 })
+    }
+
+    // 한번이라도 bidding을 이용한 적이 없다면 리뷰 작성 권한 없음
+    if (!projectsWithBidding || projectsWithBidding.length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        data: [],
+        message: 'bidding을 이용한 경험이 있는 경우에만 리뷰를 작성할 수 있습니다.'
+      })
+    }
+
+    // 고객이 리뷰를 남길 수 있는 견적서 목록 조회
+    // bidding 단계를 거친 프로젝트의 견적서들만 조회
     const { data: quotesData, error: quotesError } = await supabase
       .from('contractor_quotes')
       .select(`
@@ -190,8 +230,8 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('quote_requests.customer_id', user.id)
-      .eq('status', 'accepted')
-      .eq('quote_requests.status', 'completed') // ✅ 프로젝트가 완료된 경우만
+      .in('quote_requests.status', ['bidding', 'quote-submitted', 'bidding-closed', 'contractor-selected', 'in-progress', 'completed'])
+      .in('status', ['submitted', 'accepted'])
       .order('created_at', { ascending: false })
 
     if (quotesError) {

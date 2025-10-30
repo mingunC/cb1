@@ -193,52 +193,60 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* 견적서 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               리뷰를 남길 공사 선택 * {availableQuotes.length > 0 && `(${availableQuotes.length}개)`}
             </label>
-            
             {availableQuotes.length === 0 ? (
               <div className="p-4 border border-gray-200 rounded-lg text-center text-gray-500">
                 리뷰를 남길 수 있는 완료된 공사가 없습니다.
               </div>
             ) : (
-              <div className="space-y-3">
-                {availableQuotes.map((quote) => (
-                  <div
-                    key={quote.id}
-                    onClick={() => handleQuoteSelect(quote)}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedQuote?.id === quote.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
+              <>
+                <select
+                  value={selectedQuote?.id || ''}
+                  onChange={(e) => {
+                    const quote = availableQuotes.find(q => q.id === e.target.value)
+                    if (quote) {
+                      handleQuoteSelect(quote)
+                    }
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+                >
+                  <option value="">-- 프로젝트를 선택해주세요 --</option>
+                  {availableQuotes.map((quote) => (
+                    <option key={quote.id} value={quote.id}>
+                      {quote.quote_requests.space_type} 리노베이션 - {quote.quote_requests.full_address || quote.quote_requests.address || '주소 정보 없음'} (${quote.price.toLocaleString()}) - {new Date(quote.created_at).toLocaleDateString('ko-KR')}
+                    </option>
+                  ))}
+                </select>
+                {selectedQuote && (
+                  <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {quote.quote_requests.space_type} 리노베이션
+                          {selectedQuote.quote_requests.space_type} 리노베이션
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
-                          {quote.quote_requests.full_address || quote.quote_requests.address || '주소 정보 없음'}
+                          {selectedQuote.quote_requests.full_address || selectedQuote.quote_requests.address || '주소 정보 없음'}
                         </p>
-                        {quote.description && (
+                        {selectedQuote.description && (
                           <p className="text-sm text-gray-500 mt-1">
-                            {quote.description}
+                            {selectedQuote.description}
                           </p>
                         )}
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          ₩{quote.price.toLocaleString()}
+                          ${selectedQuote.price.toLocaleString()}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(quote.created_at).toLocaleDateString('ko-KR')}
+                          {new Date(selectedQuote.created_at).toLocaleDateString('ko-KR')}
                         </p>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
             {errors.quote_id && (
               <p className="text-red-500 text-sm mt-1">{errors.quote_id.message}</p>
