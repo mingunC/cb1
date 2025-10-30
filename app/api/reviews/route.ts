@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
 
     console.log('📋 사용자의 프로젝트 ID:', projectIds)
 
-    // Step 2: 해당 프로젝트의 견적서 가져오기
+    // Step 2: 해당 프로젝트의 견적서 가져오기 - ⚠️ status 필터 완화
     const { data: quotesData, error: quotesError } = await supabase
       .from('contractor_quotes')
       .select(`
@@ -292,8 +292,19 @@ export async function GET(request: NextRequest) {
         )
       `)
       .in('project_id', projectIds)
-      .in('status', ['submitted', 'accepted'])
+      // ⚠️ 디버깅을 위해 status 필터를 제거하거나 더 많은 status 포함
+      // .in('status', ['submitted', 'accepted'])
       .order('created_at', { ascending: false })
+
+    console.log('📦 전체 견적서 조회 결과:', {
+      count: quotesData?.length || 0,
+      quotes: quotesData?.map(q => ({
+        id: q.id,
+        status: q.status,
+        project_id: q.project_id,
+        contractor: q.contractors
+      }))
+    })
 
     if (quotesError) {
       console.error('견적서 조회 오류:', quotesError)
@@ -321,6 +332,16 @@ export async function GET(request: NextRequest) {
       quote_requests: projectsMap.get(quote.project_id)
     })) || []
 
+    console.log('📦 프로젝트 정보가 추가된 견적서:', {
+      count: quotesWithProjects.length,
+      details: quotesWithProjects.map(q => ({
+        quote_id: q.id,
+        quote_status: q.status,
+        project_status: q.quote_requests?.status,
+        contractor: q.contractors.company_name
+      }))
+    })
+
     // 이미 리뷰를 남긴 견적서 ID 목록 조회
     const { data: reviewedQuotes, error: reviewedError } = await supabase
       .from('reviews')
@@ -328,6 +349,7 @@ export async function GET(request: NextRequest) {
       .eq('customer_id', user.id)
 
     const reviewedQuoteIds = reviewedQuotes?.map(r => r.quote_id) || []
+    console.log('📝 이미 리뷰를 남긴 견적서 ID:', reviewedQuoteIds)
 
     // 리뷰를 남기지 않은 견적서만 필터링
     const availableQuotes = quotesWithProjects.filter(quote => 
