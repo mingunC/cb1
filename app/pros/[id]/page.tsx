@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { 
@@ -79,57 +79,30 @@ export default function ContractorDetailPage() {
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [isSubmittingReply, setIsSubmittingReply] = useState(false)
 
-  useEffect(() => {
-    if (contractorId) {
-      fetchContractorDetails()
-      fetchReviews()
-      checkContractorOwnership()
-    }
-  }, [contractorId])
-
-  const checkContractorOwnership = async () => {
+  const checkContractorOwnership = useCallback(async () => {
     try {
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       
-      console.log('🔍 Checking contractor ownership:', {
-        currentUserId: user?.id,
-        contractorId: contractorId
-      })
-      
       if (!user) {
-        console.log('❌ No user logged in')
         setIsContractorOwner(false)
         return
       }
 
-      const { data: contractorData, error } = await supabase
+      const { data: contractorData } = await supabase
         .from('contractors')
         .select('user_id')
         .eq('id', contractorId)
         .single()
 
-      console.log('📊 Contractor data:', {
-        contractorUserId: contractorData?.user_id,
-        currentUserId: user.id,
-        isOwner: contractorData?.user_id === user.id,
-        error: error?.message
-      })
-
-      if (contractorData && contractorData.user_id === user.id) {
-        console.log('✅ User IS the contractor owner')
-        setIsContractorOwner(true)
-      } else {
-        console.log('❌ User is NOT the contractor owner')
-        setIsContractorOwner(false)
-      }
+      setIsContractorOwner(contractorData?.user_id === user.id)
     } catch (error) {
-      console.error('❌ Error checking ownership:', error)
+      console.error('Error checking ownership:', error)
       setIsContractorOwner(false)
     }
-  }
+  }, [contractorId])
 
-  const fetchContractorDetails = async () => {
+  const fetchContractorDetails = useCallback(async () => {
     try {
       setIsLoading(true)
       const supabase = createBrowserClient()
@@ -160,20 +133,17 @@ export default function ContractorDetailPage() {
         return
       }
 
-      // 포트폴리오 개수
       const { count: portfolioCount } = await supabase
         .from('portfolios')
         .select('*', { count: 'exact', head: true })
         .eq('contractor_id', contractorId)
 
-      // 완료 프로젝트 수
       const { count: completedQuotes } = await supabase
         .from('contractor_quotes')
         .select('*', { count: 'exact', head: true })
         .eq('contractor_id', contractorId)
         .in('status', ['completed', 'accepted'])
 
-      // Review count
       const { count: reviewCount } = await supabase
         .from('reviews')
         .select('*', { count: 'exact', head: true })
@@ -214,9 +184,9 @@ export default function ContractorDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [contractorId])
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const supabase = createBrowserClient()
       
@@ -273,7 +243,15 @@ export default function ContractorDetailPage() {
     } catch (error) {
       console.error('Error fetching reviews:', error)
     }
-  }
+  }, [contractorId])
+
+  useEffect(() => {
+    if (contractorId) {
+      fetchContractorDetails()
+      fetchReviews()
+      checkContractorOwnership()
+    }
+  }, [contractorId, fetchContractorDetails, fetchReviews, checkContractorOwnership])
 
   const handleSubmitReply = async (reviewId: string) => {
     if (!replyText.trim() || replyText.length < 10) {
@@ -312,7 +290,7 @@ export default function ContractorDetailPage() {
         setReplyingToReviewId(null)
         setEditingReplyId(null)
         setReplyText('')
-        fetchReviews()
+        await fetchReviews()
       } else {
         toast.error(result.error || '답글 작성에 실패했습니다.')
       }
@@ -348,7 +326,7 @@ export default function ContractorDetailPage() {
 
       if (result.success) {
         toast.success('답글이 삭제되었습니다.')
-        fetchReviews()
+        await fetchReviews()
       } else {
         toast.error(result.error || '답글 삭제에 실패했습니다.')
       }
@@ -394,8 +372,6 @@ export default function ContractorDetailPage() {
       </div>
     )
   }
-
-  console.log('🎨 Rendering page - isContractorOwner:', isContractorOwner)
 
   return (
     <div className="min-h-screen bg-gray-50">
