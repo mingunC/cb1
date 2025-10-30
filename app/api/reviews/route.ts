@@ -4,10 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
 
-// 리뷰 작성 스키마
+// 리뷰 작성 스키마 - rating 제거
 const reviewSchema = z.object({
   contractor_id: z.string().uuid(),
-  rating: z.number().min(0.5).max(5),
   title: z.string().min(1).max(100),
   comment: z.string().min(10).max(1000),
   photos: z.array(z.string()).optional().default([])
@@ -87,7 +86,6 @@ export async function POST(request: NextRequest) {
     const validatedData = reviewSchema.parse(body)
     console.log('✅ 검증 완료:', {
       contractor_id: validatedData.contractor_id,
-      rating: validatedData.rating,
       title: validatedData.title.substring(0, 30) + '...'
     })
 
@@ -128,13 +126,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // ✅ 리뷰 생성 (quote_id 없이)
+    // ✅ 리뷰 생성 (rating 제거)
     console.log('💾 리뷰 생성 중...')
     const reviewInsertData = {
       contractor_id: validatedData.contractor_id,
       customer_id: user.id,
-      quote_id: null, // quote_id는 nullable
-      rating: validatedData.rating,
+      quote_id: null,
+      rating: null, // rating을 null로 설정
       title: validatedData.title,
       comment: validatedData.comment,
       photos: validatedData.photos,
