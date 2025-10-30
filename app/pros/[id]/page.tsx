@@ -505,8 +505,13 @@ export default function ContractorDetailPage() {
 
         {/* Reviews section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">Reviews ({reviews.length})</h2>
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-200">
+            <h2 className="text-xl font-bold flex items-center">
+              Reviews
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                {reviews.length}
+              </span>
+            </h2>
             {!isContractorOwner && (
               <button
                 onClick={() => setShowReviewForm(true)}
@@ -524,8 +529,8 @@ export default function ContractorDetailPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {reviews.map((review) => (
-                <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+              {reviews.map((review, index) => (
+                <div key={review.id} className={`border-b border-gray-200 pb-6 last:border-b-0 last:pb-0 ${index === 0 ? 'pt-4 mt-2' : ''}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
