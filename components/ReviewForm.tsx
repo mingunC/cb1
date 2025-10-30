@@ -12,7 +12,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 const reviewFormSchema = z.object({
   contractor_id: z.string(),
   quote_id: z.string(),
-  rating: z.number().min(1, '별점을 선택해주세요'),
+  rating: z.number().min(0.5, '별점을 선택해주세요'),
   title: z.string().min(1, '제목을 입력해주세요').max(100, '제목은 100자 이하로 입력해주세요'),
   comment: z.string().min(10, '리뷰 내용은 최소 10자 이상 입력해주세요').max(1000, '리뷰 내용은 1000자 이하로 입력해주세요'),
   photos: z.array(z.string()).optional().default([])
@@ -132,8 +132,29 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
     fetchAvailableQuotes()
   }, [contractorId, onClose])
 
-  const handleRatingClick = (rating: number) => {
-    setValue('rating', rating)
+  const getFillPercent = (starIndex: number) => {
+    const value = watch('rating') || 0
+    const diff = value - (starIndex - 1)
+    return Math.max(0, Math.min(100, diff * 100))
+  }
+
+  const handleStarClick = (index: number, e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
+    const target = e.currentTarget
+    const rect = target.getBoundingClientRect()
+    let clientX: number | null = null
+
+    // Mouse
+    if ('nativeEvent' in e && (e as any).nativeEvent && (e as any).nativeEvent.clientX !== undefined) {
+      clientX = (e as any).nativeEvent.clientX
+    }
+    // Touch
+    if (clientX === null && 'changedTouches' in e && (e as React.TouchEvent<HTMLButtonElement>).changedTouches?.length) {
+      clientX = (e as React.TouchEvent<HTMLButtonElement>).changedTouches[0].clientX
+    }
+
+    const isHalf = clientX !== null ? (clientX - rect.left) < rect.width / 2 : false
+    const value = isHalf ? index - 0.5 : index
+    setValue('rating', value, { shouldValidate: true })
   }
 
   const handleQuoteSelect = (quote: AvailableQuote) => {
@@ -285,24 +306,28 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
             <label className="block text-sm font-medium text-gray-700 mb-3">
               별점 *
             </label>
-            <div className="flex space-x-1">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <button
-                  key={rating}
-                  type="button"
-                  onClick={() => handleRatingClick(rating)}
-                  className="focus:outline-none"
+          <div className="flex space-x-1">
+            {[1, 2, 3, 4, 5].map((idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={(e) => handleStarClick(idx, e)}
+                onTouchEnd={(e) => handleStarClick(idx, e)}
+                className="relative focus:outline-none h-8 w-8"
+                aria-label={`Rate ${idx} star${idx > 1 ? 's' : ''}`}
+              >
+                {/* Base (empty) star */}
+                <Star className="absolute inset-0 h-8 w-8 text-gray-300" />
+                {/* Filled portion */}
+                <div
+                  className="absolute top-0 left-0 h-8 overflow-hidden"
+                  style={{ width: `${getFillPercent(idx)}%` }}
                 >
-                  <Star
-                    className={`h-8 w-8 ${
-                      rating <= watchedRating
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    } transition-colors`}
-                  />
-                </button>
-              ))}
-            </div>
+                  <Star className="h-8 w-8 text-yellow-400 fill-current" />
+                </div>
+              </button>
+            ))}
+          </div>
             {errors.rating && (
               <p className="text-red-500 text-sm mt-1">{errors.rating.message}</p>
             )}
