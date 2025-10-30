@@ -431,9 +431,7 @@ export default function ContractorDetailPage() {
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center">
-                  <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                  <span className="font-medium ml-1">{averageRating.toFixed(1)}</span>
-                  <span className="ml-1">({reviews.length} reviews)</span>
+                  <span className="ml-0">({reviews.length} reviews)</span>
                 </div>
                 {contractor.established_year && <span>Established in {contractor.established_year}</span>}
               </div>
