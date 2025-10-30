@@ -8,7 +8,8 @@ import { z } from 'zod'
 const reviewSchema = z.object({
   contractor_id: z.string().uuid(),
   quote_id: z.string().uuid(),
-  rating: z.number().min(1).max(5),
+  // ✅ 0.5부터 허용
+  rating: z.number().min(0.5).max(5),
   title: z.string().min(1).max(100),
   comment: z.string().min(10).max(1000),
   photos: z.array(z.string()).optional().default([])
