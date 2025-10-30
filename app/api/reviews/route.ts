@@ -222,14 +222,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
-    // Supabase 클라이언트 생성
-    const supabase = createClient(
+    // ⚠️ SERVICE ROLE KEY를 사용하여 RLS 우회
+    const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     // ✅ 고객이 한번이라도 bidding을 이용한 적이 있는지 확인
-    const { data: projectsWithBidding, error: biddingCheckError } = await supabase
+    const { data: projectsWithBidding, error: biddingCheckError } = await supabaseAdmin
       .from('quote_requests')
       .select('id')
       .eq('customer_id', user.id)
@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
 
     // ✅ 2단계 쿼리: 먼저 project_id 목록을 가져온 후 join
     // Step 1: 사용자의 프로젝트 ID 목록 가져오기
-    const { data: userProjectIds, error: projectIdsError } = await supabase
+    const { data: userProjectIds, error: projectIdsError } = await supabaseAdmin
       .from('quote_requests')
       .select('id')
       .eq('customer_id', user.id)
@@ -275,8 +275,8 @@ export async function GET(request: NextRequest) {
 
     console.log('📋 사용자의 프로젝트 ID:', projectIds)
 
-    // Step 2: 해당 프로젝트의 견적서 가져오기 - ⚠️ !inner를 제거하여 LEFT JOIN으로 변경
-    const { data: quotesData, error: quotesError } = await supabase
+    // Step 2: 해당 프로젝트의 견적서 가져오기 - ⚠️ SERVICE ROLE로 RLS 우회
+    const { data: quotesData, error: quotesError } = await supabaseAdmin
       .from('contractor_quotes')
       .select(`
         id,
@@ -290,10 +290,10 @@ export async function GET(request: NextRequest) {
       .in('project_id', projectIds)
       .order('created_at', { ascending: false })
 
-    console.log('📦 contractor_quotes 조회 결과:', {
+    console.log('📦 contractor_quotes 조회 결과 (SERVICE ROLE):', {
       count: quotesData?.length || 0,
       error: quotesError,
-      quotes: quotesData?.map(q => ({
+      quotes: quotesData?.slice(0, 3).map(q => ({
         id: q.id,
         status: q.status,
         project_id: q.project_id,
@@ -316,7 +316,7 @@ export async function GET(request: NextRequest) {
 
     // Step 2.5: contractor 정보 별도로 조회
     const contractorIds = [...new Set(quotesData.map(q => q.contractor_id))]
-    const { data: contractorsData, error: contractorsError } = await supabase
+    const { data: contractorsData, error: contractorsError } = await supabaseAdmin
       .from('contractors')
       .select('id, company_name, contact_name')
       .in('id', contractorIds)
@@ -324,14 +324,14 @@ export async function GET(request: NextRequest) {
     console.log('👷 contractors 조회 결과:', {
       count: contractorsData?.length || 0,
       error: contractorsError,
-      contractors: contractorsData
+      contractors: contractorsData?.slice(0, 3)
     })
 
     // contractor 정보를 맵으로 변환
     const contractorsMap = new Map(contractorsData?.map(c => [c.id, c]) || [])
 
     // Step 3: 프로젝트 정보 가져오기
-    const { data: projectsData, error: projectsDataError } = await supabase
+    const { data: projectsData, error: projectsDataError } = await supabaseAdmin
       .from('quote_requests')
       .select('id, space_type, budget, full_address, status')
       .in('id', projectIds)
@@ -365,7 +365,7 @@ export async function GET(request: NextRequest) {
 
     console.log('📦 프로젝트 정보가 추가된 견적서:', {
       count: quotesWithDetails.length,
-      details: quotesWithDetails.map(q => ({
+      details: quotesWithDetails.slice(0, 3).map(q => ({
         quote_id: q.id,
         quote_status: q.status,
         project_status: q.quote_requests?.status,
@@ -374,7 +374,7 @@ export async function GET(request: NextRequest) {
     })
 
     // 이미 리뷰를 남긴 견적서 ID 목록 조회
-    const { data: reviewedQuotes, error: reviewedError } = await supabase
+    const { data: reviewedQuotes, error: reviewedError } = await supabaseAdmin
       .from('reviews')
       .select('quote_id')
       .eq('customer_id', user.id)
