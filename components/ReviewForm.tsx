@@ -164,7 +164,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
     )
   }
 
-  // 업체 계정이면 리뷰 작성 불가
+  // Contractor accounts cannot write reviews for other contractors
   if (isContractor) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -173,11 +173,11 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
               <X className="h-6 w-6 text-red-600" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">업체 계정은 리뷰 작성 불가</h3>
-            <p className="text-sm text-gray-500 mb-6">업체 계정으로는 다른 업체에 리뷰를 작성할 수 없습니다. 일반 고객 계정으로 로그인해주세요.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Contractor accounts cannot write reviews</h3>
+            <p className="text-sm text-gray-500 mb-6">You can’t write a review for another contractor while logged in with a contractor account. Please sign in with a customer account.</p>
             <button
               onClick={onClose}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
             >
               Close
             </button>
@@ -195,11 +195,11 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
               <X className="h-6 w-6 text-red-600" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">견적요청 이용 필요</h3>
-            <p className="text-sm text-gray-500 mb-6">견적요청을 이용한 경험이 있어야 리뷰를 작성할 수 있습니다.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Review requires prior quote requests</h3>
+            <p className="text-sm text-gray-500 mb-6">You need to have used the quote request process at least once before writing a review.</p>
             <button
               onClick={onClose}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
             >
               Close
             </button>
