@@ -92,19 +92,40 @@ export default function ContractorDetailPage() {
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       
-      if (!user) return
+      console.log('🔍 Checking contractor ownership:', {
+        currentUserId: user?.id,
+        contractorId: contractorId
+      })
+      
+      if (!user) {
+        console.log('❌ No user logged in')
+        setIsContractorOwner(false)
+        return
+      }
 
-      const { data: contractorData } = await supabase
+      const { data: contractorData, error } = await supabase
         .from('contractors')
         .select('user_id')
         .eq('id', contractorId)
         .single()
 
+      console.log('📊 Contractor data:', {
+        contractorUserId: contractorData?.user_id,
+        currentUserId: user.id,
+        isOwner: contractorData?.user_id === user.id,
+        error: error?.message
+      })
+
       if (contractorData && contractorData.user_id === user.id) {
+        console.log('✅ User IS the contractor owner')
         setIsContractorOwner(true)
+      } else {
+        console.log('❌ User is NOT the contractor owner')
+        setIsContractorOwner(false)
       }
     } catch (error) {
-      console.error('Error checking ownership:', error)
+      console.error('❌ Error checking ownership:', error)
+      setIsContractorOwner(false)
     }
   }
 
@@ -373,6 +394,8 @@ export default function ContractorDetailPage() {
       </div>
     )
   }
+
+  console.log('🎨 Rendering page - isContractorOwner:', isContractorOwner)
 
   return (
     <div className="min-h-screen bg-gray-50">
