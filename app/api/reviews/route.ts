@@ -15,7 +15,7 @@ const reviewSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 // 고객이 리뷰를 남길 수 있는 견적서 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -209,7 +209,8 @@ export async function GET(request: NextRequest) {
     console.log('🔐 리뷰 GET API - 인증 확인:', {
       user: user?.id,
       email: user?.email,
-      authError: authError?.message
+      authError: authError?.message,
+      cookies: cookieStore.getAll().map(c => c.name).join(', ')
     })
 
     if (authError || !user) {
