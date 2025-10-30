@@ -5,7 +5,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { 
   Search, Filter, MapPin, Star, Award, Calendar, Users, 
   CheckCircle, Phone, Mail, Globe, Clock, Building,
-  Briefcase, Shield, ChevronRight, X, MessageCircle, Image as ImageIcon
+  Briefcase, Shield, ChevronRight, MessageCircle, Image as ImageIcon
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -63,8 +63,6 @@ export default function ContractorsListingPage() {
     rating: 'all',
     sortBy: 'rating'
   })
-  const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null)
-  const [selectedContractorDetails, setSelectedContractorDetails] = useState<{portfolio_count: number, completed_projects: number} | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
@@ -141,40 +139,6 @@ export default function ContractorsListingPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // ✅ 새로운 함수: 업체 상세 정보 로드 (모달 열릴 때만)
-  const loadContractorDetails = async (contractorId: string) => {
-    try {
-      const supabase = createBrowserClient()
-      
-      // 포트폴리오 개수
-      const { count: portfolioCount } = await supabase
-        .from('portfolios')
-        .select('*', { count: 'exact', head: true })
-        .eq('contractor_id', contractorId)
-
-      // 완료 프로젝트 수
-      const { count: completedQuotes } = await supabase
-        .from('contractor_quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('contractor_id', contractorId)
-        .in('status', ['completed', 'selected'])
-
-      setSelectedContractorDetails({
-        portfolio_count: portfolioCount || 0,
-        completed_projects: completedQuotes || 0
-      })
-    } catch (error) {
-      console.error('Error loading contractor details:', error)
-    }
-  }
-
-  const handleSMSConsultation = (contractor: Contractor) => {
-    const message = encodeURIComponent(`[${contractor.company_name}] 견적 상담 요청합니다.`)
-    const phoneNumber = contractor.phone.replace(/[^0-9]/g, '')
-    const smsURI = `sms:${phoneNumber}${/iPhone|iPad|iPod/.test(navigator.userAgent) ? '&' : '?'}body=${message}`
-    window.location.href = smsURI
   }
 
   useEffect(() => {
@@ -255,14 +219,10 @@ export default function ContractorsListingPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredContractors.map(contractor => (
-              <div
+              <Link
                 key={contractor.id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => {
-                  setSelectedContractor(contractor)
-                  setSelectedContractorDetails(null) // 리셋
-                  loadContractorDetails(contractor.id) // 상세 정보 로드
-                }}
+                href={`/pros/${contractor.id}`}
+                className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow cursor-pointer block"
               >
                 <div className="relative h-48 overflow-hidden rounded-t-lg">
                   {contractor.cover_image ? (
@@ -310,131 +270,11 @@ export default function ContractorsListingPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
       </div>
-
-      {selectedContractor && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setSelectedContractor(null)}>
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="relative h-64">
-              {selectedContractor.cover_image ? (
-                <img src={selectedContractor.cover_image} alt={selectedContractor.company_name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-white text-4xl font-bold mb-2">{selectedContractor.company_name}</h2>
-                    <p className="text-emerald-100 text-lg">Professional Services</p>
-                  </div>
-                </div>
-              )}
-              <button onClick={() => setSelectedContractor(null)} className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <div className="flex items-start gap-4 mb-6">
-                {selectedContractor.logo_url ? (
-                  <img src={selectedContractor.logo_url} alt={selectedContractor.company_name} className="w-20 h-20 rounded-lg object-cover" />
-                ) : (
-                  <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
-                    <span className="text-white font-bold text-2xl">
-                      {selectedContractor.company_name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold">{selectedContractor.company_name}</h2>
-                    {selectedContractor.is_verified && (
-                      <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
-                        인증업체
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="font-medium ml-1">{selectedContractor.rating}</span>
-                      <span className="ml-1">(리뷰 {selectedContractor.review_count}개)</span>
-                    </div>
-                    {selectedContractor.established_year && <span>설립 {selectedContractor.established_year}년</span>}
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-gray-700 mb-6">{selectedContractor.description}</p>
-
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">전문분야</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedContractor.specialties.length > 0 ? (
-                    selectedContractor.specialties.map((specialty, index) => (
-                      <span key={index} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm">
-                        {specialty}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500 text-sm">전문분야 정보 없음</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">서비스 지역</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedContractor.service_areas.map((area, index) => (
-                    <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                      {area}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">연락처</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">{selectedContractor.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">{selectedContractor.email}</span>
-                  </div>
-                  {selectedContractor.website && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-gray-400" />
-                      <a 
-                        href={selectedContractor.website.startsWith('http') ? selectedContractor.website : `https://${selectedContractor.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {selectedContractor.website}
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-3">
-                  <Link href={`/portfolio?contractor=${selectedContractor.id}`} className="flex-1 px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium flex items-center justify-center gap-2">
-                    <ImageIcon className="h-5 w-5" />
-                    포트폴리오 보기
-                  </Link>
-                  <button onClick={() => handleSMSConsultation(selectedContractor)} className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">
-                    <MessageCircle className="h-5 w-5" />
-                    Request Consultation
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

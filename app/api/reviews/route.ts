@@ -75,10 +75,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
     }
 
-    // 견적서가 수락된 상태인지 확인 (공사 완료)
+    // 견적서가 수락된 상태인지 확인
     if (quoteData.status !== 'accepted') {
       return NextResponse.json({ 
-        error: '공사가 완료된 견적서에만 리뷰를 남길 수 있습니다.' 
+        error: '선택된 견적서에만 리뷰를 남길 수 있습니다.' 
+      }, { status: 400 })
+    }
+
+    // ✅ 프로젝트가 완료된 상태인지 확인 (중요!)
+    if ((quoteData.quote_requests as any)?.status !== 'completed') {
+      return NextResponse.json({ 
+        error: '프로젝트가 완료된 경우에만 리뷰를 남길 수 있습니다. 프로젝트가 아직 진행 중입니다.' 
       }, { status: 400 })
     }
 
@@ -160,7 +167,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
-    // 고객이 리뷰를 남길 수 있는 견적서 목록 조회
+    // 고객이 리뷰를 남길 수 있는 견적서 목록 조회 (프로젝트가 완료된 경우만)
     const { data: quotesData, error: quotesError } = await supabase
       .from('contractor_quotes')
       .select(`
@@ -178,11 +185,13 @@ export async function GET(request: NextRequest) {
           id,
           space_type,
           budget,
-          address
+          address,
+          status
         )
       `)
       .eq('quote_requests.customer_id', user.id)
       .eq('status', 'accepted')
+      .eq('quote_requests.status', 'completed') // ✅ 프로젝트가 완료된 경우만
       .order('created_at', { ascending: false })
 
     if (quotesError) {
