@@ -101,7 +101,7 @@ export default function ContractorsListingPage() {
         setContractors([])
         setFilteredContractors([])
       } else {
-        // ✅ 추가 쿼리 없이 즉시 포맷팅
+        // 1) 기본 데이터 포맷팅
         const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => ({
           id: contractor.id,
           company_name: contractor.company_name || '업체명 없음',
@@ -118,7 +118,7 @@ export default function ContractorsListingPage() {
           specialties: Array.isArray(contractor.specialties) ? contractor.specialties : [],
           certifications: ['실내건축공사업'],
           rating: contractor.rating || 0,
-          review_count: 0,
+          review_count: 0, // 아래에서 실제 리뷰 수로 덮어씀
           completed_projects: 0, // 상세보기 클릭 시 로드
           response_time: '문의 후 안내',
           min_budget: undefined,
@@ -129,10 +129,36 @@ export default function ContractorsListingPage() {
           created_at: contractor.created_at
         }))
 
-        console.log('✅ 업체 목록 로드 완료:', formattedContractors.length, '개')
+        // 2) 리뷰 수 일괄 조회 후 매핑
+        const contractorIds = formattedContractors.map(c => c.id)
+        let reviewCountMap = new Map<string, number>()
+        if (contractorIds.length > 0) {
+          const { data: reviewsList, error: reviewsError } = await supabase
+            .from('reviews')
+            .select('contractor_id')
+            .in('contractor_id', contractorIds)
 
-        setContractors(formattedContractors)
-        setFilteredContractors(formattedContractors)
+          if (reviewsError) {
+            console.error('Error fetching review counts:', reviewsError)
+          } else if (reviewsList) {
+            // 클라이언트에서 개수 집계
+            reviewCountMap = reviewsList.reduce((map, row) => {
+              const id = row.contractor_id as string
+              map.set(id, (map.get(id) || 0) + 1)
+              return map
+            }, new Map<string, number>())
+          }
+        }
+
+        const contractorsWithCounts = formattedContractors.map(c => ({
+          ...c,
+          review_count: reviewCountMap.get(c.id) || 0
+        }))
+
+        console.log('✅ 업체 목록 로드 완료:', contractorsWithCounts.length, '개')
+
+        setContractors(contractorsWithCounts)
+        setFilteredContractors(contractorsWithCounts)
       }
     } catch (error) {
       console.error('Error:', error)
@@ -251,8 +277,7 @@ export default function ContractorsListingPage() {
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900">{contractor.company_name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium">{contractor.rating}</span>
+                        <span className="text-sm text-gray-600">({contractor.review_count} reviews)</span>
                       </div>
                     </div>
                   </div>
