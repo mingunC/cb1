@@ -41,7 +41,8 @@ interface AvailableQuote {
     id: string
     space_type: string
     budget: string
-    address: string
+    full_address?: string
+    address?: string
   }
 }
 
@@ -75,25 +76,37 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
     const fetchAvailableQuotes = async () => {
       setIsLoading(true)
       try {
+        console.log('🔍 Fetching available quotes for contractor:', contractorId)
         const response = await fetch('/api/reviews')
         const result = await response.json()
 
+        console.log('📦 API Response:', result)
+
         if (result.success) {
+          console.log('✅ Total quotes received:', result.data.length)
+          
           // 해당 업체의 견적서만 필터링
-          const contractorQuotes = result.data.filter((quote: AvailableQuote) => 
-            quote.contractors.id === contractorId
-          )
+          const contractorQuotes = result.data.filter((quote: AvailableQuote) => {
+            const matches = quote.contractors.id === contractorId
+            console.log(`🔍 Quote ${quote.id}: contractor ${quote.contractors.id} ${matches ? '✅ MATCH' : '❌ NO MATCH'}`)
+            return matches
+          })
+          
+          console.log('✅ Filtered contractor quotes:', contractorQuotes.length, contractorQuotes)
           setAvailableQuotes(contractorQuotes)
           
           if (contractorQuotes.length === 0) {
+            console.warn('⚠️ No completed projects found for this contractor')
             toast.error('리뷰를 남길 수 있는 완료된 공사가 없습니다.')
-            onClose()
+            // Don't close immediately to see the debug info
+            setTimeout(() => onClose(), 3000)
           }
         } else {
+          console.error('❌ API Error:', result.error)
           toast.error(result.error || '견적서 조회에 실패했습니다.')
         }
       } catch (error) {
-        console.error('견적서 조회 오류:', error)
+        console.error('❌ 견적서 조회 오류:', error)
         toast.error('견적서 조회 중 오류가 발생했습니다.')
       } finally {
         setIsLoading(false)
@@ -181,45 +194,52 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           {/* 견적서 선택 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              리뷰를 남길 공사 선택 *
+              리뷰를 남길 공사 선택 * {availableQuotes.length > 0 && `(${availableQuotes.length}개)`}
             </label>
-            <div className="space-y-3">
-              {availableQuotes.map((quote) => (
-                <div
-                  key={quote.id}
-                  onClick={() => handleQuoteSelect(quote)}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedQuote?.id === quote.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {quote.quote_requests.space_type} 리노베이션
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {quote.quote_requests.address}
-                      </p>
-                      {quote.description && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {quote.description}
+            
+            {availableQuotes.length === 0 ? (
+              <div className="p-4 border border-gray-200 rounded-lg text-center text-gray-500">
+                리뷰를 남길 수 있는 완료된 공사가 없습니다.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableQuotes.map((quote) => (
+                  <div
+                    key={quote.id}
+                    onClick={() => handleQuoteSelect(quote)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selectedQuote?.id === quote.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          {quote.quote_requests.space_type} 리노베이션
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {quote.quote_requests.full_address || quote.quote_requests.address || '주소 정보 없음'}
                         </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        ₩{quote.price.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(quote.created_at).toLocaleDateString('ko-KR')}
-                      </p>
+                        {quote.description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {quote.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          ₩{quote.price.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(quote.created_at).toLocaleDateString('ko-KR')}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {errors.quote_id && (
               <p className="text-red-500 text-sm mt-1">{errors.quote_id.message}</p>
             )}
@@ -299,7 +319,7 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !selectedQuote}
+              disabled={isSubmitting || !selectedQuote || availableQuotes.length === 0}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
               {isSubmitting ? (
