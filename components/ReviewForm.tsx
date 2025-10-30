@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Star, X, Camera, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { createBrowserClient } from '@/lib/supabase/clients'
 
 // 리뷰 작성 스키마
 const reviewFormSchema = z.object({
@@ -77,8 +78,22 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
       setIsLoading(true)
       try {
         console.log('🔍 Fetching available quotes for contractor:', contractorId)
+        
+        // ✅ 클라이언트에서 세션 토큰 가져오기
+        const supabase = createBrowserClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session) {
+          toast.error('로그인이 필요합니다.')
+          setTimeout(() => onClose(), 1000)
+          return
+        }
+
         const response = await fetch('/api/reviews', {
-          credentials: 'include' // ✅ 쿠키 포함
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}` // ✅ 토큰 전달
+          }
         })
         const result = await response.json()
 
@@ -100,7 +115,6 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           if (contractorQuotes.length === 0) {
             console.warn('⚠️ No completed projects found for this contractor')
             toast.error('리뷰를 남길 수 있는 완료된 공사가 없습니다.')
-            // Don't close immediately to see the debug info
             setTimeout(() => onClose(), 3000)
           }
         } else {
@@ -135,11 +149,21 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
 
     setIsSubmitting(true)
     try {
+      // ✅ 클라이언트에서 세션 토큰 가져오기
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        toast.error('로그인이 필요합니다.')
+        return
+      }
+
       const response = await fetch('/api/reviews', {
         method: 'POST',
-        credentials: 'include', // ✅ 쿠키 포함
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}` // ✅ 토큰 전달
         },
         body: JSON.stringify({
           ...data,
