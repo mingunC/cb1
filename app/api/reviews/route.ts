@@ -21,21 +21,16 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return cookieStore.getAll()
           },
-          set(name: string, value: string, options: any) {
+          setAll(cookiesToSet) {
             try {
-              cookieStore.set(name, value, options)
-            } catch (error) {
-              // Server component에서는 set이 작동하지 않을 수 있음
-            }
-          },
-          remove(name: string, options: any) {
-            try {
-              cookieStore.set(name, '', options)
-            } catch (error) {
-              // Server component에서는 remove가 작동하지 않을 수 있음
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Server Component에서는 setAll이 작동하지 않을 수 있음
             }
           },
         },
@@ -192,21 +187,16 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return cookieStore.getAll()
           },
-          set(name: string, value: string, options: any) {
+          setAll(cookiesToSet) {
             try {
-              cookieStore.set(name, value, options)
-            } catch (error) {
-              // Server component에서는 set이 작동하지 않을 수 있음
-            }
-          },
-          remove(name: string, options: any) {
-            try {
-              cookieStore.set(name, '', options)
-            } catch (error) {
-              // Server component에서는 remove가 작동하지 않을 수 있음
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Server Component에서는 setAll이 작동하지 않을 수 있음
             }
           },
         },
