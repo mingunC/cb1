@@ -93,14 +93,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '고객 정보를 찾을 수 없습니다.' }, { status: 404 })
     }
 
-    // 견적서 정보 확인 (공사 완료 상태인지 확인)
+    // 견적서 정보 확인 - ✅ 명확한 FK 지정
     const { data: quoteData, error: quoteError } = await supabase
       .from('contractor_quotes')
       .select(`
         id,
         contractor_id,
         status,
-        quote_requests!inner (
+        quote_requests!contractor_quotes_project_id_fkey (
           id,
           customer_id,
           status
@@ -250,8 +250,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 고객이 리뷰를 남길 수 있는 견적서 목록 조회
-    // bidding 단계를 거친 프로젝트의 견적서들만 조회
+    // ✅ 고객이 리뷰를 남길 수 있는 견적서 목록 조회 - 명확한 FK 지정
     const { data: quotesData, error: quotesError } = await supabase
       .from('contractor_quotes')
       .select(`
@@ -265,13 +264,14 @@ export async function GET(request: NextRequest) {
           company_name,
           contact_name
         ),
-        quote_requests!inner (
+        quote_requests!contractor_quotes_project_id_fkey!inner (
           id,
           space_type,
           budget,
           address,
           full_address,
-          status
+          status,
+          customer_id
         )
       `)
       .eq('quote_requests.customer_id', user.id)
