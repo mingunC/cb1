@@ -24,12 +24,33 @@ export async function POST(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
+          set(name: string, value: string, options: any) {
+            try {
+              cookieStore.set(name, value, options)
+            } catch (error) {
+              // Server component에서는 set이 작동하지 않을 수 있음
+            }
+          },
+          remove(name: string, options: any) {
+            try {
+              cookieStore.set(name, '', options)
+            } catch (error) {
+              // Server component에서는 remove가 작동하지 않을 수 있음
+            }
+          },
         },
       }
     )
 
     // 인증된 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    console.log('🔐 리뷰 API - 인증 확인:', {
+      user: user?.id,
+      email: user?.email,
+      authError: authError?.message
+    })
+
     if (authError || !user) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
@@ -174,12 +195,33 @@ export async function GET(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
+          set(name: string, value: string, options: any) {
+            try {
+              cookieStore.set(name, value, options)
+            } catch (error) {
+              // Server component에서는 set이 작동하지 않을 수 있음
+            }
+          },
+          remove(name: string, options: any) {
+            try {
+              cookieStore.set(name, '', options)
+            } catch (error) {
+              // Server component에서는 remove가 작동하지 않을 수 있음
+            }
+          },
         },
       }
     )
 
     // 인증된 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    console.log('🔐 리뷰 GET API - 인증 확인:', {
+      user: user?.id,
+      email: user?.email,
+      authError: authError?.message
+    })
+
     if (authError || !user) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
@@ -240,6 +282,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '견적서 조회에 실패했습니다.' }, { status: 500 })
     }
 
+    console.log('📦 조회된 견적서 수:', quotesData?.length || 0)
+
     // 이미 리뷰를 남긴 견적서 ID 목록 조회
     const { data: reviewedQuotes, error: reviewedError } = await supabase
       .from('reviews')
@@ -252,6 +296,8 @@ export async function GET(request: NextRequest) {
     const availableQuotes = quotesData?.filter(quote => 
       !reviewedQuoteIds.includes(quote.id)
     ) || []
+
+    console.log('✅ 리뷰 가능한 견적서 수:', availableQuotes.length)
 
     return NextResponse.json({ 
       success: true, 
