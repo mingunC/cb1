@@ -111,7 +111,7 @@ export default function ContractorsListingPage() {
           website: contractor.website,
           logo_url: contractor.company_logo,
           cover_image: contractor.company_logo,
-          description: contractor.description || '업체 소개가 없습니다.',
+          description: contractor.description || 'No company description.',
           established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
           employee_count: '정보 없음',
           service_areas: contractor.address ? [contractor.address] : ['서울', '경기'],
