@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
 
     console.log('📋 사용자의 프로젝트 ID:', projectIds)
 
-    // Step 2: 해당 프로젝트의 견적서 가져오기 - ⚠️ status 필터 완화
+    // Step 2: 해당 프로젝트의 견적서 가져오기 - ⚠️ !inner를 제거하여 LEFT JOIN으로 변경
     const { data: quotesData, error: quotesError } = await supabase
       .from('contractor_quotes')
       .select(`
@@ -285,24 +285,19 @@ export async function GET(request: NextRequest) {
         status,
         created_at,
         project_id,
-        contractors!inner (
-          id,
-          company_name,
-          contact_name
-        )
+        contractor_id
       `)
       .in('project_id', projectIds)
-      // ⚠️ 디버깅을 위해 status 필터를 제거하거나 더 많은 status 포함
-      // .in('status', ['submitted', 'accepted'])
       .order('created_at', { ascending: false })
 
-    console.log('📦 전체 견적서 조회 결과:', {
+    console.log('📦 contractor_quotes 조회 결과:', {
       count: quotesData?.length || 0,
+      error: quotesError,
       quotes: quotesData?.map(q => ({
         id: q.id,
         status: q.status,
         project_id: q.project_id,
-        contractor: q.contractors
+        contractor_id: q.contractor_id
       }))
     })
 
@@ -311,7 +306,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '견적서 조회에 실패했습니다.' }, { status: 500 })
     }
 
-    console.log('📦 조회된 견적서 수:', quotesData?.length || 0)
+    if (!quotesData || quotesData.length === 0) {
+      console.log('⚠️ 견적서가 없습니다')
+      return NextResponse.json({ 
+        success: true, 
+        data: []
+      })
+    }
+
+    // Step 2.5: contractor 정보 별도로 조회
+    const contractorIds = [...new Set(quotesData.map(q => q.contractor_id))]
+    const { data: contractorsData, error: contractorsError } = await supabase
+      .from('contractors')
+      .select('id, company_name, contact_name')
+      .in('id', contractorIds)
+
+    console.log('👷 contractors 조회 결과:', {
+      count: contractorsData?.length || 0,
+      error: contractorsError,
+      contractors: contractorsData
+    })
+
+    // contractor 정보를 맵으로 변환
+    const contractorsMap = new Map(contractorsData?.map(c => [c.id, c]) || [])
 
     // Step 3: 프로젝트 정보 가져오기
     const { data: projectsData, error: projectsDataError } = await supabase
@@ -326,15 +343,29 @@ export async function GET(request: NextRequest) {
     // 프로젝트 정보를 맵으로 변환
     const projectsMap = new Map(projectsData?.map(p => [p.id, p]) || [])
 
-    // 견적서에 프로젝트 정보 추가
-    const quotesWithProjects = quotesData?.map(quote => ({
-      ...quote,
-      quote_requests: projectsMap.get(quote.project_id)
-    })) || []
+    // 견적서에 contractor와 프로젝트 정보 추가
+    const quotesWithDetails = quotesData
+      .map(quote => {
+        const contractor = contractorsMap.get(quote.contractor_id)
+        const project = projectsMap.get(quote.project_id)
+        
+        // contractor 정보가 없으면 제외
+        if (!contractor) {
+          console.warn(`⚠️ Quote ${quote.id}: contractor ${quote.contractor_id} not found`)
+          return null
+        }
+        
+        return {
+          ...quote,
+          contractors: contractor,
+          quote_requests: project
+        }
+      })
+      .filter((q): q is NonNullable<typeof q> => q !== null)
 
     console.log('📦 프로젝트 정보가 추가된 견적서:', {
-      count: quotesWithProjects.length,
-      details: quotesWithProjects.map(q => ({
+      count: quotesWithDetails.length,
+      details: quotesWithDetails.map(q => ({
         quote_id: q.id,
         quote_status: q.status,
         project_status: q.quote_requests?.status,
@@ -352,7 +383,7 @@ export async function GET(request: NextRequest) {
     console.log('📝 이미 리뷰를 남긴 견적서 ID:', reviewedQuoteIds)
 
     // 리뷰를 남기지 않은 견적서만 필터링
-    const availableQuotes = quotesWithProjects.filter(quote => 
+    const availableQuotes = quotesWithDetails.filter(quote => 
       !reviewedQuoteIds.includes(quote.id)
     )
 
