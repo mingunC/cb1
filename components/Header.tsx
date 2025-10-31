@@ -391,7 +391,7 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-bold transition-all duration-200 hover:bg-gray-100 rounded-lg"
               >
                 {item.name}
               </Link>
@@ -532,7 +532,7 @@ export default function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-600 hover:text-gray-900 block px-3 py-2 text-base font-medium"
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 block px-3 py-2 text-base font-bold rounded-lg transition-all duration-200"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
