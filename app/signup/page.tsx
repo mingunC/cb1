@@ -28,19 +28,19 @@ export default function SignupPage() {
     setIsLoading(true)
     setError('')
 
-    // 비밀번호 확인
+    // Password confirmation
     if (formData.password !== formData.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.')
+      setError('Passwords do not match.')
       return
     }
 
-    // 필수 필드 확인
+    // Required fields check
     if (!formData.firstName || !formData.lastName || !formData.mobileNumber) {
-      setError('모든 필드를 입력해주세요.')
+      setError('Please fill in all fields.')
       return
     }
 
-    // 비밀번호 요구사항 확인
+    // Password requirements check
     const passwordRequirements = {
       minLength: formData.password.length >= 8,
       hasUpperCase: /[A-Z]/.test(formData.password),
@@ -50,7 +50,7 @@ export default function SignupPage() {
     }
 
     if (!Object.values(passwordRequirements).every(req => req)) {
-      setError('비밀번호 요구사항을 모두 충족해야 합니다.')
+      setError('Password must meet all requirements.')
       return
     }
 
@@ -94,8 +94,8 @@ export default function SignupPage() {
             })
 
           if (userError) {
-            console.error('Users 테이블 저장 오류:', userError)
-            // 이미 존재하는 사용자일 수 있으므로 업데이트 시도
+            console.error('Users table save error:', userError)
+            // User may already exist, try to update
             const { error: updateError } = await supabase
               .from('users')
               .update({
@@ -108,22 +108,22 @@ export default function SignupPage() {
               .eq('id', data.user.id)
 
             if (updateError) {
-              console.error('Users 테이블 업데이트 오류:', updateError)
+              console.error('Users table update error:', updateError)
             }
           } else {
-            console.log('Users 테이블 저장 성공!')
+            console.log('Users table save successful!')
           }
         } catch (userTableError) {
-          console.error('Users 테이블 처리 오류:', userTableError)
+          console.error('Users table processing error:', userTableError)
         }
         
-        // 회원가입 성공 시 홈페이지로 리다이렉트
-        alert('회원가입이 완료되었습니다!')
+        // Redirect to home page after successful signup
+        alert('Sign up completed!')
         router.push('/')
       }
     } catch (err) {
-      console.error('Signup error:', err) // 디버깅용
-      setError('회원가입 중 오류가 발생했습니다.')
+      console.error('Signup error:', err)
+      setError('An error occurred during sign up.')
     } finally {
       setIsLoading(false)
     }
@@ -139,30 +139,30 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* 뒤로가기 버튼 */}
+        {/* Back button */}
         <Link href="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
           <ArrowLeft className="h-6 w-6" />
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          계정 만들기
+          Create Account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          이미 계정이 있으신가요?{' '}
+          Already have an account?{' '}
           <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            로그인
+            Sign In
           </Link>
         </p>
         <p className="mt-2 text-center text-sm text-gray-600">
-          전문 업체이신가요?{' '}
+          Are you a professional contractor?{' '}
           <Link href="/contractor-signup" className="font-medium text-green-600 hover:text-green-500">
-            업체 회원가입
+            Contractor Signup
           </Link>
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* 오류 메시지 */}
+          {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
               <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
@@ -171,10 +171,10 @@ export default function SignupPage() {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* 이메일 입력 */}
+            {/* Email input */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일
+                Email
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -193,12 +193,12 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* 이름 입력 */}
+            {/* Name input */}
             <div className="grid grid-cols-2 gap-4">
-              {/* 이름 */}
+              {/* First Name */}
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  이름 *
+                  First Name *
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -212,15 +212,15 @@ export default function SignupPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="이름"
+                    placeholder="First Name"
                   />
                 </div>
               </div>
 
-              {/* 성 */}
+              {/* Last Name */}
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  성 *
+                  Last Name *
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -234,16 +234,16 @@ export default function SignupPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="성"
+                    placeholder="Last Name"
                   />
                 </div>
               </div>
             </div>
 
-            {/* 전화번호 입력 */}
+            {/* Phone number input */}
             <div>
               <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700">
-                전화번호 *
+                Phone Number *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -257,15 +257,15 @@ export default function SignupPage() {
                   value={formData.mobileNumber}
                   onChange={handleInputChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="010-1234-5678"
+                  placeholder="(416) 555-1234"
                 />
               </div>
             </div>
 
-            {/* 비밀번호 입력 */}
+            {/* Password input */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                비밀번호
+                Password
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -296,38 +296,38 @@ export default function SignupPage() {
                 </div>
               </div>
               
-              {/* 비밀번호 요구사항 */}
+              {/* Password requirements */}
               <div className="mt-2 space-y-1">
-                <div className="text-xs text-gray-600 font-medium mb-2">비밀번호 요구사항:</div>
+                <div className="text-xs text-gray-600 font-medium mb-2">Password Requirements:</div>
                 <div className="space-y-1">
                   <div className={`flex items-center text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    최소 8자 이상
+                    At least 8 characters
                   </div>
                   <div className={`flex items-center text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    대문자 포함
+                    Contains uppercase letter
                   </div>
                   <div className={`flex items-center text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    소문자 포함
+                    Contains lowercase letter
                   </div>
                   <div className={`flex items-center text-xs ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    숫자 포함
+                    Contains number
                   </div>
                   <div className={`flex items-center text-xs ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    특수문자 포함
+                    Contains special character
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 비밀번호 확인 */}
+            {/* Confirm password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                비밀번호 확인
+                Confirm Password
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -364,32 +364,32 @@ export default function SignupPage() {
                 </div>
               </div>
               
-              {/* 비밀번호 일치 확인 */}
+              {/* Password match confirmation */}
               {formData.confirmPassword && (
                 <div className="mt-2">
                   {formData.password === formData.confirmPassword ? (
                     <div className="flex items-center text-xs text-green-600">
                       <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                      비밀번호가 일치합니다
+                      Passwords match
                     </div>
                   ) : (
                     <div className="flex items-center text-xs text-red-600">
                       <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
-                      비밀번호가 일치하지 않습니다
+                      Passwords do not match
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* 회원가입 버튼 */}
+            {/* Sign up button */}
             <div>
               <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? '회원가입 중...' : '회원가입'}
+                {isLoading ? 'Signing up...' : 'Sign Up'}
               </button>
             </div>
           </form>
