@@ -74,10 +74,13 @@ export default function ContractorDetailPage() {
   const [portfolioCount, setPortfolioCount] = useState(0)
   const [completedProjects, setCompletedProjects] = useState(0)
   const [isContractorOwner, setIsContractorOwner] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [replyingToReviewId, setReplyingToReviewId] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [isSubmittingReply, setIsSubmittingReply] = useState(false)
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+  const [editReviewData, setEditReviewData] = useState({ title: '', comment: '', rating: null as number | null })
 
   const checkContractorOwnership = useCallback(async () => {
     try {
@@ -86,8 +89,11 @@ export default function ContractorDetailPage() {
       
       if (!user) {
         setIsContractorOwner(false)
+        setCurrentUserId(null)
         return
       }
+
+      setCurrentUserId(user.id)
 
       const { data: contractorData } = await supabase
         .from('contractors')
@@ -99,6 +105,7 @@ export default function ContractorDetailPage() {
     } catch (error) {
       console.error('Error checking ownership:', error)
       setIsContractorOwner(false)
+      setCurrentUserId(null)
     }
   }, [contractorId])
 
@@ -341,6 +348,87 @@ export default function ContractorDetailPage() {
     }
   }
 
+  const handleEditReview = async (reviewId: string) => {
+    if (!editReviewData.title.trim() || !editReviewData.comment.trim()) {
+      toast.error('제목과 내용을 모두 입력해주세요.')
+      return
+    }
+
+    if (editReviewData.comment.length < 10) {
+      toast.error('리뷰 내용은 최소 10자 이상이어야 합니다.')
+      return
+    }
+
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        toast.error('로그인이 필요합니다.')
+        return
+      }
+
+      const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify(editReviewData)
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('리뷰가 수정되었습니다.')
+        setEditingReviewId(null)
+        setEditReviewData({ title: '', comment: '', rating: null })
+        await fetchReviews()
+      } else {
+        toast.error(result.error || '리뷰 수정에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('Review edit error:', error)
+      toast.error('오류가 발생했습니다.')
+    }
+  }
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('리뷰를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
+
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        toast.error('로그인이 필요합니다.')
+        return
+      }
+
+      const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('리뷰가 삭제되었습니다.')
+        await fetchReviews()
+        await fetchContractorDetails()
+      } else {
+        toast.error(result.error || '리뷰 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('Review delete error:', error)
+      toast.error('오류가 발생했습니다.')
+    }
+  }
+
   const handleSMSConsultation = (contractor: Contractor) => {
     const message = encodeURIComponent(`[${contractor.company_name}] Requesting a consultation/quote.`)
     const phoneNumber = contractor.phone.replace(/[^0-9]/g, '')
@@ -534,161 +622,232 @@ export default function ContractorDetailPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {reviews.map((review, index) => (
-                <div key={review.id} className={`border-b border-gray-200 pb-6 last:border-b-0 last:pb-0 ${index === 0 ? 'pt-4 mt-2' : ''}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900">
-                          {review.customer.first_name && review.customer.last_name
-                            ? `${review.customer.first_name} ${review.customer.last_name}`
-                            : review.customer.email?.split('@')[0] || '익명'}
-                        </span>
-                        {review.is_verified && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {new Date(review.created_at).toLocaleDateString('en-CA')}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-semibold text-gray-900 mb-2">{review.title}</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{review.comment}</p>
-                  
-                  {review.photos.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                      {review.photos.map((photo, index) => (
-                        <img
-                          key={index}
-                          src={photo}
-                          alt={`Review photo ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                      ))}
-                    </div>
-                  )}
+              {reviews.map((review, index) => {
+                const isReviewOwner = currentUserId === review.customer_id
+                const isEditingThisReview = editingReviewId === review.id
 
-                  {/* 업체 답글 */}
-                  {review.contractor_reply && (
-                    <div className="mt-4 ml-8 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Reply className="h-4 w-4 text-gray-500" />
-                          <span className="font-semibold text-sm text-gray-700">
-                            {contractor.company_name} 답글
+                return (
+                  <div key={review.id} className={`border-b border-gray-200 pb-6 last:border-b-0 last:pb-0 ${index === 0 ? 'pt-4 mt-2' : ''}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-gray-900">
+                            {review.customer.first_name && review.customer.last_name
+                              ? `${review.customer.first_name} ${review.customer.last_name}`
+                              : review.customer.email?.split('@')[0] || '익명'}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">
-                            {new Date(review.contractor_reply_date!).toLocaleDateString('en-CA')}
-                          </span>
-                          {isContractorOwner && (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => {
-                                  setEditingReplyId(review.id)
-                                  setReplyText(review.contractor_reply!)
-                                  setReplyingToReviewId(review.id)
-                                }}
-                                className="p-1 text-blue-600 hover:text-blue-800"
-                                title="답글 수정"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteReply(review.id)}
-                                className="p-1 text-red-600 hover:text-red-800"
-                                title="답글 삭제"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
+                          {review.is_verified && (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {review.contractor_reply}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* 답글 작성 폼 */}
-                  {isContractorOwner && !review.contractor_reply && (
-                    <div className="mt-4 ml-8">
-                      {replyingToReviewId === review.id ? (
-                        <div>
-                          <textarea
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            placeholder="리뷰에 대한 답글을 작성하세요... (최소 10자)"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                            rows={3}
-                          />
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              onClick={() => handleSubmitReply(review.id)}
-                              disabled={isSubmittingReply}
-                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:opacity-50"
-                            >
-                              {isSubmittingReply ? '제출 중...' : '답글 작성'}
-                            </button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">
+                          {new Date(review.created_at).toLocaleDateString('en-CA')}
+                        </span>
+                        {/* 고객 본인만 수정/삭제 가능 */}
+                        {isReviewOwner && !isEditingThisReview && (
+                          <div className="flex gap-1">
                             <button
                               onClick={() => {
-                                setReplyingToReviewId(null)
-                                setReplyText('')
+                                setEditingReviewId(review.id)
+                                setEditReviewData({
+                                  title: review.title,
+                                  comment: review.comment,
+                                  rating: review.rating
+                                })
                               }}
-                              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                              className="p-1 text-blue-600 hover:text-blue-800"
+                              title="리뷰 수정"
                             >
-                              취소
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview(review.id)}
+                              className="p-1 text-red-600 hover:text-red-800"
+                              title="리뷰 삭제"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setReplyingToReviewId(review.id)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-                        >
-                          <Reply className="h-4 w-4" />
-                          답글 달기
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 답글 수정 폼 */}
-                  {isContractorOwner && editingReplyId === review.id && replyingToReviewId === review.id && (
-                    <div className="mt-4 ml-8">
-                      <textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        rows={3}
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => handleSubmitReply(review.id)}
-                          disabled={isSubmittingReply}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:opacity-50"
-                        >
-                          {isSubmittingReply ? '수정 중...' : '답글 수정'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingReplyId(null)
-                            setReplyingToReviewId(null)
-                            setReplyText('')
-                          }}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
-                        >
-                          취소
-                        </button>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                    
+                    {isEditingThisReview ? (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={editReviewData.title}
+                          onChange={(e) => setEditReviewData({ ...editReviewData, title: e.target.value })}
+                          placeholder="리뷰 제목"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <textarea
+                          value={editReviewData.comment}
+                          onChange={(e) => setEditReviewData({ ...editReviewData, comment: e.target.value })}
+                          placeholder="리뷰 내용 (최소 10자)"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          rows={4}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditReview(review.id)}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm"
+                          >
+                            수정 완료
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingReviewId(null)
+                              setEditReviewData({ title: '', comment: '', rating: null })
+                            }}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="font-semibold text-gray-900 mb-2">{review.title}</h3>
+                        <p className="text-gray-700 whitespace-pre-wrap">{review.comment}</p>
+                      </>
+                    )}
+                    
+                    {review.photos.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                        {review.photos.map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`Review photo ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 업체 답글 */}
+                    {review.contractor_reply && (
+                      <div className="mt-4 ml-8 p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Reply className="h-4 w-4 text-gray-500" />
+                            <span className="font-semibold text-sm text-gray-700">
+                              {contractor.company_name} 답글
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">
+                              {new Date(review.contractor_reply_date!).toLocaleDateString('en-CA')}
+                            </span>
+                            {isContractorOwner && (
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => {
+                                    setEditingReplyId(review.id)
+                                    setReplyText(review.contractor_reply!)
+                                    setReplyingToReviewId(review.id)
+                                  }}
+                                  className="p-1 text-blue-600 hover:text-blue-800"
+                                  title="답글 수정"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteReply(review.id)}
+                                  className="p-1 text-red-600 hover:text-red-800"
+                                  title="답글 삭제"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {review.contractor_reply}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 답글 작성 폼 */}
+                    {isContractorOwner && !review.contractor_reply && (
+                      <div className="mt-4 ml-8">
+                        {replyingToReviewId === review.id ? (
+                          <div>
+                            <textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="리뷰에 대한 답글을 작성하세요... (최소 10자)"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                              rows={3}
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => handleSubmitReply(review.id)}
+                                disabled={isSubmittingReply}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:opacity-50"
+                              >
+                                {isSubmittingReply ? '제출 중...' : '답글 작성'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setReplyingToReviewId(null)
+                                  setReplyText('')
+                                }}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setReplyingToReviewId(review.id)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          >
+                            <Reply className="h-4 w-4" />
+                            답글 달기
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 답글 수정 폼 */}
+                    {isContractorOwner && editingReplyId === review.id && replyingToReviewId === review.id && (
+                      <div className="mt-4 ml-8">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                          rows={3}
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleSubmitReply(review.id)}
+                            disabled={isSubmittingReply}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:opacity-50"
+                          >
+                            {isSubmittingReply ? '수정 중...' : '답글 수정'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingReplyId(null)
+                              setReplyingToReviewId(null)
+                              setReplyText('')
+                            }}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
