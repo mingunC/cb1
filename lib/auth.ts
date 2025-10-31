@@ -1,5 +1,4 @@
 import { createBrowserClient } from '@/lib/supabase/clients';
-import { createServerClient } from '@/lib/supabase/server-clients';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import type { NextRequest, NextResponse } from 'next/server';
 
@@ -76,36 +75,6 @@ export async function signIn(credentials: AuthCredentials): Promise<AuthResult> 
   }
 }
 
-// 서버 사이드 로그인 (API 라우트용)
-export async function signInServer(credentials: AuthCredentials): Promise<AuthResult> {
-  const supabase = createServerClient();
-  
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email.trim().toLowerCase(),
-      password: credentials.password,
-    });
-
-    if (error || !data.user) {
-      return { success: false, error: 'Authentication failed' };
-    }
-
-    const userTypeResult = await getUserTypeAndDataServer(data.user.id);
-    
-    return {
-      success: true,
-      user: data.user,
-      userType: userTypeResult.userType,
-      contractorData: userTypeResult.contractorData,
-      redirectTo: getRedirectPath(userTypeResult.userType, userTypeResult.contractorData)
-    };
-
-  } catch (error: any) {
-    console.error('Server login error:', error);
-    return { success: false, error: 'Internal server error' };
-  }
-}
-
 // ✅ 최적화: 사용자 타입과 관련 데이터 조회 (클라이언트)
 async function getUserTypeAndData(userId: string): Promise<{
   success: boolean;
@@ -168,56 +137,6 @@ async function getUserTypeAndData(userId: string): Promise<{
   } catch (error: any) {
     console.error('getUserTypeAndData error:', error);
     return { success: false, error: '사용자 정보 조회 중 오류가 발생했습니다.' };
-  }
-}
-
-// 서버 사이드 사용자 타입 조회
-async function getUserTypeAndDataServer(userId: string): Promise<{
-  success: boolean;
-  userType?: 'customer' | 'contractor' | 'admin';
-  contractorData?: any;
-}> {
-  const supabase = createServerClient();
-
-  try {
-    // ✅ 최적화: 필요한 필드만 조회 + status 필터
-    const { data: contractorData } = await supabase
-      .from('contractors')
-      .select('id, company_name, status')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .maybeSingle();
-
-    if (contractorData) {
-      return {
-        success: true,
-        userType: 'contractor',
-        contractorData
-      };
-    }
-
-    // ✅ 최적화: user_type만 조회
-    const { data: userData } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (userData && userData.user_type !== 'contractor') {
-      return {
-        success: true,
-        userType: userData.user_type as 'customer' | 'admin'
-      };
-    }
-
-    return {
-      success: true,
-      userType: 'customer'
-    };
-
-  } catch (error) {
-    console.error('Server getUserTypeAndData error:', error);
-    return { success: false };
   }
 }
 
