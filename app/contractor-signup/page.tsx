@@ -151,6 +151,13 @@ export default function ContractorSignupPage() {
     setIsLoading(true)
     setError('')
 
+    console.log('🚀 폼 제출 시작:', {
+      businessName: formData.businessName,
+      contactName: formData.contactName,
+      specialties: formData.specialties,
+      isExistingUser
+    })
+
     // 입력 검증
     if (!formData.businessName || !formData.contactName || !formData.phone || !formData.address || formData.specialties.length === 0) {
       setError('Please fill in all required fields and select at least one specialty.')
@@ -186,12 +193,14 @@ export default function ContractorSignupPage() {
 
       // 신규 회원가입인 경우
       if (!isExistingUser) {
+        console.log('📝 신규 회원가입 진행 중...')
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         })
         
         if (signUpError) {
+          console.error('❌ 회원가입 오류:', signUpError)
           setError(signUpError.message)
           setIsLoading(false)
           return
@@ -204,8 +213,10 @@ export default function ContractorSignupPage() {
         }
         
         userId = data.user.id
+        console.log('✅ 회원가입 완료, userId:', userId)
       }
 
+      console.log('📝 users 테이블 업데이트 중...')
       // users 테이블 업데이트 (upsert 사용)
       const { error: userError } = await supabase
         .from('users')
@@ -222,35 +233,41 @@ export default function ContractorSignupPage() {
         })
 
       if (userError) {
-        console.error('Users table upsert error:', userError)
+        console.error('❌ users 테이블 upsert 오류:', userError)
         throw new Error('Failed to update user profile: ' + userError.message)
       }
+      console.log('✅ users 테이블 업데이트 완료')
 
+      console.log('📝 contractors 테이블에 저장 중...')
       // contractors 테이블에 업체 정보 저장
+      const contractorData = {
+        user_id: userId,
+        company_name: formData.businessName,
+        contact_name: formData.contactName,
+        phone: formData.phone,
+        email: formData.email,
+        address: formData.address,
+        status: 'active',
+        specialties: JSON.stringify(formData.specialties), // JSONB를 위해 JSON.stringify 사용
+        years_experience: 0,
+        portfolio_count: 0,
+        rating: 0.0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      console.log('📤 contractors 테이블 데이터:', contractorData)
+
       const { error: contractorError } = await supabase
         .from('contractors')
-        .insert({
-          user_id: userId,
-          company_name: formData.businessName,
-          contact_name: formData.contactName,
-          phone: formData.phone,
-          email: formData.email,
-          address: formData.address,
-          status: 'active',
-          specialties: formData.specialties,
-          years_experience: 0,
-          portfolio_count: 0,
-          rating: 0.0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(contractorData)
 
       if (contractorError) {
-        console.error('Contractor table insert error:', contractorError)
+        console.error('❌ contractors 테이블 insert 오류:', contractorError)
         throw new Error('Failed to save contractor profile: ' + contractorError.message)
       }
 
-      console.log('✅ Contractor 등록 완료')
+      console.log('✅ Contractor 등록 완료!')
       toast.success('Contractor registration completed!')
       
       // localStorage 캐시 업데이트
@@ -260,7 +277,7 @@ export default function ContractorSignupPage() {
       router.push('/contractor')
       
     } catch (err: any) {
-      console.error('Signup error:', err)
+      console.error('❌ Signup error:', err)
       setError(err.message || 'An error occurred during signup.')
     } finally {
       setIsLoading(false)
