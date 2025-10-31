@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 
 // PATCH: 고객이 자신의 리뷰 수정
 export async function PATCH(
@@ -9,7 +9,23 @@ export async function PATCH(
   try {
     console.log('🔍 PATCH /api/reviews/[id] - Starting...')
     
-    const supabase = await createServerClient()
+    // Request 객체에서 직접 쿠키 읽기
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              request.cookies.set(name, value)
+            )
+          },
+        },
+      }
+    )
     
     console.log('🔍 Getting user session...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -98,7 +114,24 @@ export async function DELETE(
   try {
     console.log('🔍 DELETE /api/reviews/[id] - Starting...')
     
-    const supabase = await createServerClient()
+    // Request 객체에서 직접 쿠키 읽기
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              request.cookies.set(name, value)
+            )
+          },
+        },
+      }
+    )
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     console.log('🔍 Auth result:', { 
