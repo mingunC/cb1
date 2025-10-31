@@ -230,70 +230,70 @@ export default function ContractorProfile() {
     try {
       const supabase = createBrowserClient()
       
-      // Update only columns that exist in contractors table
+      // 🔥 변경: 최소한의 데이터만 업데이트 (성능 최적화)
       const updateData = {
-        company_name: formData.company_name,
-        description: formData.description,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        website: formData.website,
+        company_name: formData.company_name.trim(),
+        description: formData.description.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        address: formData.address.trim(),
+        website: formData.website.trim(),
         specialties: formData.specialties,
-        years_in_business: formData.years_in_business,
-        updated_at: new Date().toISOString()
+        years_in_business: formData.years_in_business
       }
 
       console.log('📝 Attempting DB update:', updateData)
       console.log('Profile ID:', profile.id)
 
-      // Add timeout (10 seconds)
-      const updatePromise = supabase
-        .from('contractors')
-        .update(updateData)
-        .eq('id', profile.id)
-        .select()
+      // 🔥 변경: 타임아웃 30초로 증가 & AbortController 사용
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30초
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout (10 seconds)')), 10000)
-      )
+      try {
+        const { data, error } = await supabase
+          .from('contractors')
+          .update(updateData)
+          .eq('id', profile.id)
+          .select()
+          .abortSignal(controller.signal)
 
-      const { data, error } = await Promise.race([
-        updatePromise,
-        timeoutPromise
-      ]) as any
+        clearTimeout(timeoutId)
 
-      console.log('✅ Update result:', { data, error })
-
-      if (error) {
-        console.error('❌ Save error:', error)
-        console.error('Error code:', error.code)
-        console.error('Error message:', error.message)
-        console.error('Error details:', error.details)
-        
-        // Handle specific errors
-        if (error.code === '42703') {
-          toast.error('Database column missing. Please contact administrator.')
-        } else if (error.code === '42501') {
-          toast.error('Permission denied. Please check RLS policies.')
-        } else {
-          toast.error(`Save failed: ${error.message}`)
+        if (error) {
+          console.error('❌ Save error:', error)
+          console.error('Error code:', error.code)
+          console.error('Error message:', error.message)
+          
+          // Handle specific errors
+          if (error.code === '42703') {
+            toast.error('Database column missing. Please contact administrator.')
+          } else if (error.code === '42501') {
+            toast.error('Permission denied. Please check RLS policies.')
+          } else if (error.code === 'PGRST116') {
+            toast.error('Update conflict. Please refresh and try again.')
+          } else {
+            toast.error(`Save failed: ${error.message}`)
+          }
+          return
         }
-        return
-      }
 
-      // Success
-      console.log('✅ Save successful!')
-      setProfile(prev => prev ? { ...prev, ...updateData } : null)
-      toast.success('Profile updated successfully!')
+        // Success
+        console.log('✅ Save successful!', data)
+        setProfile(prev => prev ? { ...prev, ...updateData } : null)
+        toast.success('Profile updated successfully!')
+        
+      } catch (abortError: any) {
+        if (abortError.name === 'AbortError') {
+          console.error('❌ Request aborted (timeout)')
+          toast.error('Save is taking too long. Please check your connection and try again.')
+        } else {
+          throw abortError
+        }
+      }
       
     } catch (error: any) {
       console.error('❌ Unexpected error:', error)
-      
-      if (error.message === 'Request timeout (10 seconds)') {
-        toast.error('Save is taking too long. Please check your network connection.')
-      } else {
-        toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
-      }
+      toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
     } finally {
       setIsSaving(false)
       console.log('💾 Profile save process ended')
