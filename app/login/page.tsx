@@ -190,13 +190,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-6">
-          <div className="h-16 w-16 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-2xl">R</span>
-          </div>
-        </div>
-
         <h2 className="text-center text-3xl font-extrabold text-gray-900">
           Customer Login
         </h2>
