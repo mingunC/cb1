@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, Phone, MapPin, Check } from 'lucide-react'
@@ -29,6 +29,72 @@ export default function ContractorSignupPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createBrowserClient()
+  const phoneInputRef = useRef<HTMLInputElement>(null)
+
+  // Format phone number to (XXX) XXX - XXXX format
+  const formatPhoneNumber = (value: string) => {
+    // Extract only digits
+    const cleaned = value.replace(/\D/g, '')
+    
+    // Limit to 10 digits
+    const limited = cleaned.slice(0, 10)
+    
+    // Format as (XXX) XXX - XXXX
+    if (limited.length === 0) {
+      return ''
+    } else if (limited.length <= 3) {
+      return `(${limited})`
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)} - ${limited.slice(6)}`
+    }
+  }
+
+  // Handle phone number input change with cursor position management
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const previousValue = formData.phone
+    const inputValue = input.value
+    const cursorPosition = input.selectionStart || 0
+    
+    // Extract only digits
+    const cleaned = inputValue.replace(/\D/g, '')
+    const previousCleaned = previousValue.replace(/\D/g, '')
+    
+    // Check if it's a deletion (going backwards)
+    const isDeletion = cleaned.length < previousCleaned.length
+    
+    // Apply formatting
+    const formatted = formatPhoneNumber(inputValue)
+    
+    // Calculate cursor position: count digits before cursor
+    const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
+    
+    // Find position in formatted string
+    let newCursorPosition = formatted.length
+    let count = 0
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
+        count++
+        if (count === beforeCursor) {
+          // If deletion, position after the digit; if insertion, position after format character
+          newCursorPosition = isDeletion ? i + 1 : i + 1
+          break
+        }
+      }
+    }
+    
+    // Update state
+    setFormData(prev => ({ ...prev, phone: formatted }))
+    
+    // Restore cursor position
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
+      }
+    }, 0)
+  }
 
   // Specialty options
   const specialtyOptions = [
@@ -341,24 +407,25 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
 
-              {/* Phone */}
+              {/* Phone Number */}
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Phone *
+                  Phone Number *
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Phone className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
+                    ref={phoneInputRef}
                     id="phone"
                     name="phone"
                     type="tel"
                     required
                     value={formData.phone}
-                    onChange={handleInputChange}
+                    onChange={handlePhoneChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="e.g., (416) 555-0123"
+                    placeholder="(416) 555 - 1234"
                   />
                 </div>
               </div>
