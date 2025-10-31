@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone } from 'lucide-react'
@@ -22,6 +22,72 @@ export default function SignupPage() {
   })
   
   const router = useRouter()
+  const phoneInputRef = useRef<HTMLInputElement>(null)
+
+  // Format phone number to (XXX) XXX-XXXX format
+  const formatPhoneNumber = (value: string) => {
+    // Extract only digits
+    const cleaned = value.replace(/\D/g, '')
+    
+    // Limit to 10 digits
+    const limited = cleaned.slice(0, 10)
+    
+    // Format as (XXX) XXX-XXXX
+    if (limited.length === 0) {
+      return ''
+    } else if (limited.length <= 3) {
+      return `(${limited})`
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
+    }
+  }
+
+  // Handle phone number input change with cursor position management
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const previousValue = formData.mobileNumber
+    const inputValue = input.value
+    const cursorPosition = input.selectionStart || 0
+    
+    // Extract only digits
+    const cleaned = inputValue.replace(/\D/g, '')
+    const previousCleaned = previousValue.replace(/\D/g, '')
+    
+    // Check if it's a deletion (going backwards)
+    const isDeletion = cleaned.length < previousCleaned.length
+    
+    // Apply formatting
+    const formatted = formatPhoneNumber(inputValue)
+    
+    // Calculate cursor position: count digits before cursor
+    const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
+    
+    // Find position in formatted string
+    let newCursorPosition = formatted.length
+    let count = 0
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
+        count++
+        if (count === beforeCursor) {
+          // If deletion, position after the digit; if insertion, position after format character
+          newCursorPosition = isDeletion ? i + 1 : i + 1
+          break
+        }
+      }
+    }
+    
+    // Update state
+    setFormData(prev => ({ ...prev, mobileNumber: formatted }))
+    
+    // Restore cursor position
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
+      }
+    }, 0)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -250,12 +316,13 @@ export default function SignupPage() {
                   <Phone className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
+                  ref={phoneInputRef}
                   id="mobileNumber"
                   name="mobileNumber"
                   type="tel"
                   required
                   value={formData.mobileNumber}
-                  onChange={handleInputChange}
+                  onChange={handlePhoneChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="(416) 555-1234"
                 />
