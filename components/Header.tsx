@@ -377,12 +377,11 @@ export default function Header() {
           {/* 로고 */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                Renovation
-              </span>
+              <img
+                src="/logo.png"
+                alt="Canada Beaver"
+                className="h-12 object-contain"
+              />
             </Link>
           </div>
 
