@@ -41,6 +41,7 @@ export default function ContractorSignupPage() {
     // Password confirmation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.')
+      setIsLoading(false)
       return
     }
 
@@ -50,17 +51,19 @@ export default function ContractorSignupPage() {
       hasUpperCase: /[A-Z]/.test(formData.password),
       hasLowerCase: /[a-z]/.test(formData.password),
       hasNumber: /[0-9]/.test(formData.password),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password)
+      hasSpecialChar: /[!@#$%^&*(),.?\":{}|<>]/.test(formData.password)
     }
 
     if (!Object.values(passwordRequirements).every(req => req)) {
       setError('Please meet all password requirements.')
+      setIsLoading(false)
       return
     }
 
     // Required fields
     if (!formData.businessName || !formData.contactName || !formData.phone || !formData.address || formData.specialties.length === 0) {
       setError('Please fill in all fields and select at least one specialty.')
+      setIsLoading(false)
       return
     }
 
@@ -76,8 +79,29 @@ export default function ContractorSignupPage() {
       if (error) {
         setError(error.message)
       } else if (data.user) {
-        // Save contractor profile into contractors table (not in users)
         try {
+          // 1. users 테이블에 contractor로 저장 (upsert 사용)
+          const { error: userError } = await supabase
+            .from('users')
+            .upsert({
+              id: data.user.id,
+              email: formData.email,
+              user_type: 'contractor',
+              first_name: formData.contactName.split(' ')[0] || formData.contactName,
+              last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
+              phone: formData.phone,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
+            })
+
+          if (userError) {
+            console.error('Users table upsert error:', userError)
+            throw new Error('Failed to save user profile.')
+          }
+
+          // 2. contractors 테이블에 업체 정보 저장
           const { error: contractorError } = await supabase
             .from('contractors')
             .insert({
@@ -359,8 +383,8 @@ export default function ContractorSignupPage() {
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     Includes a number
                   </div>
-                  <div className={`flex items-center text-xs ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                    <div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <div className={`flex items-center text-xs ${/[!@#$%^&*(),.?\":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                    <div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&*(),.?\":{}|<>]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     Includes a special character
                   </div>
                 </div>
