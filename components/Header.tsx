@@ -158,7 +158,7 @@ export default function Header() {
       if (contractorData && isMounted.current) {
         setContractorProfile(contractorData)
         setUserProfile(null)
-        const finalDisplayName = contractorData.company_name || contractorData.contact_name || email?.split('@')[0] || 'User'
+        const finalDisplayName = contractorData.company_name || contractorData.contact_name || email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
         // localStorage에 캐시 저장
@@ -196,7 +196,7 @@ export default function Header() {
                            firstName !== 'User' &&
                            firstName !== 'user'
         
-        const finalDisplayName = isValidName ? fullName : email?.split('@')[0] || 'User'
+        const finalDisplayName = isValidName ? fullName : email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
         // localStorage에 캐시 저장
@@ -210,7 +210,7 @@ export default function Header() {
         // 기본값 설정
         setUserProfile({ user_type: 'customer' })
         setContractorProfile(null)
-        const finalDisplayName = email?.split('@')[0] || 'User'
+        const finalDisplayName = email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
         // localStorage에 캐시 저장
@@ -225,7 +225,7 @@ export default function Header() {
     } catch (error) {
       console.error('Error loading profile:', error)
       if (isMounted.current) {
-        setDisplayName(email?.split('@')[0] || 'User')
+        setDisplayName(email?.split('@')[0] || '')
         currentUserId.current = userId // 에러가 나도 로드 완료로 표시
       }
     }
