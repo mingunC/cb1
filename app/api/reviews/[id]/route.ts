@@ -9,6 +9,10 @@ export async function PATCH(
   try {
     console.log('🔍 PATCH /api/reviews/[id] - Starting...')
     
+    // 쿠키 디버깅
+    const allCookies = request.cookies.getAll()
+    console.log('🍪 All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
+    
     // Request 객체에서 직접 쿠키 읽기
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -113,6 +117,10 @@ export async function DELETE(
 ) {
   try {
     console.log('🔍 DELETE /api/reviews/[id] - Starting...')
+    
+    // 쿠키 디버깅
+    const allCookies = request.cookies.getAll()
+    console.log('🍪 All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
     
     // Request 객체에서 직접 쿠키 읽기
     const supabase = createServerClient(
