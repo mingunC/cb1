@@ -475,7 +475,7 @@ export default function Header() {
                     href="/contractor"
                     className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full hover:bg-green-200 transition-colors"
                   >
-                    Pros
+                    Partners
                   </Link>
                 )}
               </div>
