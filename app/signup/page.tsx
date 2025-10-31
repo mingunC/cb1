@@ -24,7 +24,7 @@ export default function SignupPage() {
   const router = useRouter()
   const phoneInputRef = useRef<HTMLInputElement>(null)
 
-  // Format phone number to (XXX) XXX-XXXX format
+  // Format phone number to (XXX) XXX - XXXX format
   const formatPhoneNumber = (value: string) => {
     // Extract only digits
     const cleaned = value.replace(/\D/g, '')
@@ -32,7 +32,7 @@ export default function SignupPage() {
     // Limit to 10 digits
     const limited = cleaned.slice(0, 10)
     
-    // Format as (XXX) XXX-XXXX
+    // Format as (XXX) XXX - XXXX
     if (limited.length === 0) {
       return ''
     } else if (limited.length <= 3) {
@@ -40,7 +40,7 @@ export default function SignupPage() {
     } else if (limited.length <= 6) {
       return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
     } else {
-      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)} - ${limited.slice(6)}`
     }
   }
 
@@ -324,7 +324,7 @@ export default function SignupPage() {
                   value={formData.mobileNumber}
                   onChange={handlePhoneChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="(416) 555-1234"
+                  placeholder="(416) 555 - 1234"
                 />
               </div>
             </div>
