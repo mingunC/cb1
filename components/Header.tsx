@@ -382,9 +382,6 @@ export default function Header() {
                 alt="Canada Beaver"
                 className="h-12 object-contain"
               />
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                Canada Beaver
-              </span>
             </Link>
           </div>
 
