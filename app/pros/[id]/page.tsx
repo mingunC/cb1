@@ -188,6 +188,7 @@ export default function ContractorDetailPage() {
 
   const fetchReviews = useCallback(async () => {
     try {
+      console.log('🔍 fetchReviews started for contractor:', contractorId)
       const supabase = createBrowserClient()
       
       const { data: reviewsData, error } = await supabase
@@ -214,8 +215,11 @@ export default function ContractorDetailPage() {
         .eq('contractor_id', contractorId)
         .order('created_at', { ascending: false })
 
+      console.log('📊 Reviews query result:', { reviewsData, error })
+      console.log('📊 Number of reviews:', reviewsData?.length)
+
       if (error) {
-        console.error('Error fetching reviews:', error)
+        console.error('❌ Error fetching reviews:', error)
         return
       }
 
@@ -239,9 +243,10 @@ export default function ContractorDetailPage() {
         }
       }))
 
+      console.log('✅ Formatted reviews:', formattedReviews)
       setReviews(formattedReviews)
     } catch (error) {
-      console.error('Error fetching reviews:', error)
+      console.error('❌ Unexpected error fetching reviews:', error)
     }
   }, [contractorId])
 
