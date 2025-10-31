@@ -380,7 +380,7 @@ export default function Header() {
               <img
                 src="/logo.png"
                 alt="Canada Beaver"
-                className="h-12 object-contain"
+                className="h-8 sm:h-10 md:h-12 object-contain w-auto"
               />
             </Link>
           </div>
