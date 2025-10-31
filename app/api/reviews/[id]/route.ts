@@ -7,12 +7,22 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔍 PATCH /api/reviews/[id] - Starting...')
+    
     const supabase = await createServerClient()
+    
+    console.log('🔍 Getting user session...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    console.log('🔍 Auth result:', { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      authError: authError?.message 
+    })
 
     if (authError || !user) {
       return NextResponse.json(
-        { success: false, error: 'Authentication required' },
+        { success: false, error: 'Authentication required', details: authError?.message },
         { status: 401 }
       )
     }
@@ -21,12 +31,20 @@ export async function PATCH(
     const body = await request.json()
     const { title, comment, rating } = body
 
+    console.log('🔍 Review update request:', { reviewId, userId: user.id })
+
     // 리뷰 소유권 확인
     const { data: review, error: fetchError } = await supabase
       .from('reviews')
       .select('customer_id')
       .eq('id', reviewId)
       .single()
+
+    console.log('🔍 Review ownership check:', { 
+      review, 
+      fetchError: fetchError?.message,
+      matches: review?.customer_id === user.id
+    })
 
     if (fetchError || !review) {
       return NextResponse.json(
@@ -54,16 +72,17 @@ export async function PATCH(
       .eq('id', reviewId)
 
     if (updateError) {
-      console.error('Review update error:', updateError)
+      console.error('❌ Review update error:', updateError)
       return NextResponse.json(
         { success: false, error: 'Failed to update review' },
         { status: 500 }
       )
     }
 
+    console.log('✅ Review updated successfully')
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('❌ Unexpected error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -77,8 +96,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔍 DELETE /api/reviews/[id] - Starting...')
+    
     const supabase = await createServerClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    console.log('🔍 Auth result:', { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      authError: authError?.message 
+    })
 
     if (authError || !user) {
       return NextResponse.json(
@@ -117,16 +144,17 @@ export async function DELETE(
       .eq('id', reviewId)
 
     if (deleteError) {
-      console.error('Review delete error:', deleteError)
+      console.error('❌ Review delete error:', deleteError)
       return NextResponse.json(
         { success: false, error: 'Failed to delete review' },
         { status: 500 }
       )
     }
 
+    console.log('✅ Review deleted successfully')
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('❌ Unexpected error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
