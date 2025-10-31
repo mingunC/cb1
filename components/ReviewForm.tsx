@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X, Send } from 'lucide-react'
+import { X, Send, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
@@ -181,6 +181,22 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
           >
             <X className="h-6 w-6" />
           </button>
+        </div>
+
+        {/* 중요 안내 */}
+        <div className="mx-6 mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-900 mb-1">
+                Important Notice
+              </h3>
+              <p className="text-sm text-amber-800">
+                Once you submit your review, you <strong>cannot edit or delete</strong> it. 
+                Please make sure to write your review carefully and accurately.
+              </p>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
