@@ -34,7 +34,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '주거공간',
+    category: 'Residential',
     year: new Date().getFullYear().toString(),
     project_address: '',
     images: [] as File[]
@@ -57,7 +57,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
         .order('created_at', { ascending: false })
       
       if (error) {
-        console.error('포트폴리오 로드 에러:', error)
+        console.error('Portfolio load error:', error)
       } else {
         const transformedData = (data || []).map(p => ({
           ...p,
@@ -89,7 +89,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     const remainingSlots = MAX_IMAGES - currentImageCount
     
     if (files.length > remainingSlots) {
-      alert(`최대 ${MAX_IMAGES}개의 이미지만 업로드 가능합니다.`)
+      alert(`You can upload up to ${MAX_IMAGES} images.`)
       return
     }
 
@@ -100,12 +100,12 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
       const fileExt = file.name.split('.').pop()?.toLowerCase()
       
       if (!fileExt || !ALLOWED_IMAGE_EXTENSIONS.includes(fileExt)) {
-        invalidFiles.push(`${file.name} (지원하지 않는 형식)`)
+        invalidFiles.push(`${file.name} (unsupported format)`)
         return
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        invalidFiles.push(`${file.name} (최대 5MB)`)
+        invalidFiles.push(`${file.name} (max 5MB)`)
         return
       }
 
@@ -113,7 +113,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     })
 
     if (invalidFiles.length > 0) {
-      alert('다음 파일들은 업로드할 수 없습니다:\n\n' + invalidFiles.join('\n'))
+      alert('The following files cannot be uploaded:\n\n' + invalidFiles.join('\n'))
     }
 
     if (validFiles.length === 0) return
@@ -152,12 +152,12 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     e.preventDefault()
     
     if (!formData.title || !formData.description) {
-      alert('제목과 설명을 입력해주세요.')
+      alert('Please enter a title and description.')
       return
     }
 
     if (formData.images.length === 0 && !editingProject) {
-      alert('최소 1개 이상의 이미지를 업로드해주세요.')
+      alert('Please upload at least 1 image.')
       return
     }
 
@@ -177,7 +177,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
             .upload(fileName, file)
 
           if (uploadError) {
-            console.error('이미지 업로드 에러:', uploadError)
+            console.error('Image upload error:', uploadError)
             continue
           }
 
@@ -190,7 +190,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
       }
 
       if (imageUrls.length === 0) {
-        alert('이미지 업로드에 실패했습니다.')
+        alert('Image upload failed.')
         return
       }
 
@@ -211,8 +211,8 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
           .eq('id', editingProject.id)
 
         if (error) {
-          console.error('포트폴리오 수정 에러:', error)
-          alert('포트폴리오 수정에 실패했습니다.')
+          console.error('Portfolio update error:', error)
+          alert('Failed to update portfolio.')
           return
         }
       } else {
@@ -221,19 +221,19 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
           .insert(portfolioData)
 
         if (error) {
-          console.error('포트폴리오 생성 에러:', error)
-          alert('포트폴리오 생성에 실패했습니다.')
+          console.error('Portfolio creation error:', error)
+          alert('Failed to create portfolio.')
           return
         }
       }
 
-      alert(editingProject ? '포트폴리오가 수정되었습니다.' : '포트폴리오가 추가되었습니다.')
+      alert(editingProject ? 'Portfolio updated successfully.' : 'Portfolio added successfully.')
       await fetchProjects()
       cancelForm()
       onPortfolioUpdate?.()
     } catch (error) {
       console.error('Error:', error)
-      alert('포트폴리오 저장에 실패했습니다.')
+      alert('Failed to save portfolio.')
     } finally {
       setIsUploading(false)
     }
@@ -254,7 +254,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
   }
 
   const handleDelete = async (projectId: string) => {
-    if (!confirm('이 프로젝트를 삭제하시겠습니까?')) return
+    if (!confirm('Are you sure you want to delete this project?')) return
 
     try {
       const supabase = createBrowserClient()
@@ -265,17 +265,17 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
         .eq('id', projectId)
 
       if (error) {
-        console.error('삭제 에러:', error)
-        alert('프로젝트 삭제에 실패했습니다.')
+        console.error('Delete error:', error)
+        alert('Failed to delete project.')
         return
       }
 
-      alert('프로젝트가 삭제되었습니다.')
+      alert('Project deleted successfully.')
       await fetchProjects()
       onPortfolioUpdate?.()
     } catch (error) {
       console.error('Error deleting project:', error)
-      alert('프로젝트 삭제에 실패했습니다.')
+      alert('Failed to delete project.')
     }
   }
 
@@ -285,7 +285,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     setFormData({
       title: '',
       description: '',
-      category: '주거공간',
+      category: 'Residential',
       year: new Date().getFullYear().toString(),
       project_address: '',
       images: []
@@ -299,16 +299,16 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">포트폴리오 관리</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Portfolio Management</h3>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">총 {projects.length}개 프로젝트</span>
+          <span className="text-sm text-gray-500">Total {projects.length} projects</span>
           {!showAddForm && (
             <button
               onClick={() => setShowAddForm(true)}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4 mr-2" />
-              프로젝트 추가
+              Add Project
             </button>
           )}
         </div>
@@ -317,7 +317,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
       {isLoading && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">포트폴리오를 불러오는 중...</p>
+          <p className="mt-4 text-gray-600">Loading portfolios...</p>
         </div>
       )}
 
@@ -327,7 +327,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-medium text-gray-900">
-                  {editingProject ? '프로젝트 수정' : '새 프로젝트 추가'}
+                  {editingProject ? 'Edit Project' : 'Add New Project'}
                 </h4>
                 <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600">
                   <X className="h-5 w-5" />
@@ -337,20 +337,20 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트 제목 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Project Title *</label>
                     <input
                       type="text"
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="예: 모던 아파트 리노베이션"
+                      placeholder="e.g., Modern Apartment Renovation"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">카테고리 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                     <select
                       name="category"
                       value={formData.category}
@@ -358,28 +358,28 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="주거공간">주거공간</option>
-                      <option value="상업공간">상업공간</option>
+                      <option value="Residential">Residential</option>
+                      <option value="Commercial">Commercial</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트 설명 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Description *</label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="프로젝트에 대한 상세한 설명을 입력해주세요."
+                    placeholder="Enter a detailed description of the project."
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">완료 연도 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Completion Year *</label>
                     <input
                       type="number"
                       name="year"
@@ -393,21 +393,21 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트 주소</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
                     <input
                       type="text"
                       name="project_address"
                       value={formData.project_address}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="예: 서울시 강남구 테헤란로 123"
+                      placeholder="e.g., 123 Main St, Toronto, ON"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    프로젝트 이미지 * (최대 {MAX_IMAGES}개)
+                    Project Images * (Max {MAX_IMAGES} images)
                   </label>
                   <div className="space-y-3">
                     {imagePreviews.length > 0 && (
@@ -451,10 +451,10 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                         >
                           <Upload className="h-8 w-8 text-gray-400 mb-2" />
                           <span className="text-sm text-gray-600">
-                            이미지 추가 ({imagePreviews.length}/{MAX_IMAGES})
+                            Add Images ({imagePreviews.length}/{MAX_IMAGES})
                           </span>
                           <span className="text-xs text-gray-500 mt-1">
-                            JPG, PNG, GIF, WEBP (최대 5MB)
+                            JPG, PNG, GIF, WEBP (Max 5MB)
                           </span>
                         </label>
                       </div>
@@ -468,14 +468,14 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                     onClick={cancelForm}
                     className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
                   >
-                    취소
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isUploading}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {isUploading ? '저장 중...' : editingProject ? '수정' : '추가'}
+                    {isUploading ? 'Saving...' : editingProject ? 'Update' : 'Add'}
                   </button>
                 </div>
               </form>
@@ -499,7 +499,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                   )}
                   {project.images && project.images.length > 1 && (
                     <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                      +{project.images.length - 1} 더보기
+                      +{project.images.length - 1} More
                     </div>
                   )}
                 </div>
@@ -521,14 +521,14 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                       className="flex-1 flex items-center justify-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
                     >
                       <Edit3 className="h-4 w-4 mr-1" />
-                      수정
+                      Edit
                     </button>
                     <button
                       onClick={() => handleDelete(project.id)}
                       className="flex-1 flex items-center justify-center px-3 py-2 text-sm text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      삭제
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -541,14 +541,14 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ImageIcon className="w-8 h-8 text-gray-400" />
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">포트폴리오가 없습니다</h4>
-              <p className="text-gray-500 mb-4">첫 번째 프로젝트를 추가해보세요.</p>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No portfolios available</h4>
+              <p className="text-gray-500 mb-4">Try adding your first project.</p>
               <button
                 onClick={() => setShowAddForm(true)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                프로젝트 추가
+                Add Project
               </button>
             </div>
           )}
