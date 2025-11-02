@@ -239,6 +239,12 @@ export default function ContractorProfile() {
       return
     }
 
+    // ✅ 유효성 검사 추가
+    if (!formData.company_name.trim()) {
+      toast.error('Company name is required')
+      return
+    }
+
     setIsSaving(true)
     console.log('💾 Profile save started...')
     console.log('Data to save:', formData)
@@ -246,7 +252,7 @@ export default function ContractorProfile() {
     try {
       const supabase = createBrowserClient()
       
-      // 최소한의 데이터만 업데이트 (성능 최적화)
+      // 🔥 수정: 모든 필드 포함
       const updateData = {
         company_name: formData.company_name.trim(),
         description: formData.description.trim(),
@@ -255,7 +261,9 @@ export default function ContractorProfile() {
         address: formData.address.trim(),
         website: formData.website.trim(),
         specialties: formData.specialties,
-        years_in_business: formData.years_in_business
+        years_in_business: formData.years_in_business,
+        license_number: formData.license_number.trim(),  // ✅ 추가
+        insurance: formData.insurance.trim()             // ✅ 추가
       }
 
       console.log('📝 Attempting DB update:', updateData)
@@ -423,7 +431,7 @@ export default function ContractorProfile() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company Name
+                Company Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
