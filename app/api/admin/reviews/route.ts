@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 const ADMIN_EMAIL = 'cmgg919@gmail.com'
 
 // Supabase 클라이언트 생성 함수
-function getSupabaseClient() {
+function getSupabaseClient(request?: Request) {
   const cookieStore = cookies()
   
   // 모든 쿠키 로깅
@@ -17,31 +17,41 @@ function getSupabaseClient() {
     valueLength: c.value?.length || 0
   })))
   
-  // Supabase 쿠키 찾기 (여러 형식 시도)
-  const authCookie = 
-    cookieStore.get('sb-access-token') ||
-    cookieStore.get('sb-refresh-token') ||
-    allCookies.find(c => c.name.includes('auth-token')) ||
-    allCookies.find(c => c.name.startsWith('sb-'))
+  // Authorization 헤더에서 토큰 추출 (우선순위 1)
+  let accessToken: string | null = null
+  if (request) {
+    const authHeader = request.headers.get('Authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      accessToken = authHeader.substring(7)
+      console.log('✅ [API] Got access token from Authorization header')
+    }
+  }
+  
+  // 쿠키에서 토큰 추출 (우선순위 2)
+  if (!accessToken) {
+    const authCookie = 
+      cookieStore.get('sb-access-token') ||
+      cookieStore.get('sb-refresh-token') ||
+      allCookies.find(c => c.name.includes('auth-token')) ||
+      allCookies.find(c => c.name.startsWith('sb-'))
 
-  console.log('🔑 [API] Auth cookie found:', {
-    name: authCookie?.name || 'none',
-    hasValue: !!authCookie?.value,
-    valueLength: authCookie?.value?.length || 0
-  })
+    console.log('🔑 [API] Auth cookie found:', {
+      name: authCookie?.name || 'none',
+      hasValue: !!authCookie?.value,
+      valueLength: authCookie?.value?.length || 0
+    })
 
-  // 쿠키에서 액세스 토큰 추출
-  let accessToken = null
-  if (authCookie && authCookie.value) {
-    try {
-      // JSON 형식일 수 있음
-      const parsed = JSON.parse(authCookie.value)
-      accessToken = parsed.access_token || parsed.accessToken
-      console.log('✅ [API] Parsed access token from JSON cookie')
-    } catch {
-      // 그냥 문자열일 수 있음
-      accessToken = authCookie.value
-      console.log('✅ [API] Using cookie value as access token')
+    if (authCookie && authCookie.value) {
+      try {
+        // JSON 형식일 수 있음
+        const parsed = JSON.parse(authCookie.value)
+        accessToken = parsed.access_token || parsed.accessToken
+        console.log('✅ [API] Parsed access token from JSON cookie')
+      } catch {
+        // 그냥 문자열일 수 있음
+        accessToken = authCookie.value
+        console.log('✅ [API] Using cookie value as access token')
+      }
     }
   }
 
@@ -70,7 +80,7 @@ export async function GET(request: Request) {
   console.log('⏰ [API] Timestamp:', new Date().toISOString())
   
   try {
-    const supabase = getSupabaseClient()
+    const supabase = getSupabaseClient(request)
     
     // 세션 확인
     console.log('🔍 [API] Checking session...')
@@ -194,7 +204,7 @@ export async function DELETE(request: Request) {
   console.log('\n🗑️ [API] ==================== DELETE /api/admin/reviews ====================')
   
   try {
-    const supabase = getSupabaseClient()
+    const supabase = getSupabaseClient(request)
     
     // 관리자 권한 확인
     const { data: { session } } = await supabase.auth.getSession()
@@ -243,7 +253,7 @@ export async function PATCH(request: Request) {
   console.log('\n✏️ [API] ==================== PATCH /api/admin/reviews ====================')
   
   try {
-    const supabase = getSupabaseClient()
+    const supabase = getSupabaseClient(request)
     
     // 관리자 권한 확인
     const { data: { session } } = await supabase.auth.getSession()
