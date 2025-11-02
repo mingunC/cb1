@@ -63,16 +63,17 @@ export default function AdminReviewsPage() {
     is_verified: false
   })
   const [error, setError] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuthorization()
   }, [])
 
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && accessToken) {
       fetchReviews()
     }
-  }, [isAuthorized])
+  }, [isAuthorized, accessToken])
 
   useEffect(() => {
     filterReviews()
@@ -91,6 +92,7 @@ export default function AdminReviewsPage() {
       }
 
       console.log('✅ Session found:', session.user.email)
+      console.log('🔑 Access token:', session.access_token ? 'present' : 'missing')
 
       if (session.user.email !== 'cmgg919@gmail.com') {
         console.error('❌ Not admin:', session.user.email)
@@ -100,6 +102,7 @@ export default function AdminReviewsPage() {
       }
 
       console.log('✅ Admin authorized')
+      setAccessToken(session.access_token)
       setIsAuthorized(true)
     } catch (error) {
       console.error('❌ Authorization error:', error)
@@ -112,10 +115,18 @@ export default function AdminReviewsPage() {
   const fetchReviews = async () => {
     try {
       console.log('📥 Fetching reviews...')
+      console.log('🔑 Using access token:', accessToken ? 'yes' : 'no')
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch('/api/admin/reviews')
+      const response = await fetch('/api/admin/reviews', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
       
       console.log('📊 Response status:', response.status)
       
@@ -173,7 +184,11 @@ export default function AdminReviewsPage() {
 
     try {
       const response = await fetch(`/api/admin/reviews?id=${reviewId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
       })
 
       const data = await response.json()
@@ -207,8 +222,10 @@ export default function AdminReviewsPage() {
     try {
       const response = await fetch('/api/admin/reviews', {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           id: editingReview.id,
