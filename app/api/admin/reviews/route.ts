@@ -8,13 +8,47 @@ const ADMIN_EMAIL = 'cmgg919@gmail.com'
 // Supabase 클라이언트 생성 함수
 function getSupabaseClient() {
   const cookieStore = cookies()
-  const accessToken = cookieStore.get('sb-access-token')?.value
-  const refreshToken = cookieStore.get('sb-refresh-token')?.value
+  
+  // 모든 쿠키 로깅
+  const allCookies = cookieStore.getAll()
+  console.log('🍪 [API] All cookies:', allCookies.map(c => ({
+    name: c.name,
+    hasValue: !!c.value,
+    valueLength: c.value?.length || 0
+  })))
+  
+  // Supabase 쿠키 찾기 (여러 형식 시도)
+  const authCookie = 
+    cookieStore.get('sb-access-token') ||
+    cookieStore.get('sb-refresh-token') ||
+    allCookies.find(c => c.name.includes('auth-token')) ||
+    allCookies.find(c => c.name.startsWith('sb-'))
 
-  console.log('🍪 [API] Cookies check:', {
-    hasAccessToken: !!accessToken,
-    hasRefreshToken: !!refreshToken,
-    accessTokenLength: accessToken?.length || 0
+  console.log('🔑 [API] Auth cookie found:', {
+    name: authCookie?.name || 'none',
+    hasValue: !!authCookie?.value,
+    valueLength: authCookie?.value?.length || 0
+  })
+
+  // 쿠키에서 액세스 토큰 추출
+  let accessToken = null
+  if (authCookie && authCookie.value) {
+    try {
+      // JSON 형식일 수 있음
+      const parsed = JSON.parse(authCookie.value)
+      accessToken = parsed.access_token || parsed.accessToken
+      console.log('✅ [API] Parsed access token from JSON cookie')
+    } catch {
+      // 그냥 문자열일 수 있음
+      accessToken = authCookie.value
+      console.log('✅ [API] Using cookie value as access token')
+    }
+  }
+
+  console.log('🔐 [API] Access token:', {
+    hasToken: !!accessToken,
+    tokenLength: accessToken?.length || 0,
+    tokenPreview: accessToken ? `${accessToken.substring(0, 20)}...` : 'none'
   })
 
   return createClient(
@@ -32,40 +66,49 @@ function getSupabaseClient() {
 
 // GET /api/admin/reviews - 모든 리뷰 조회
 export async function GET(request: Request) {
-  console.log('🔍 [API] GET /api/admin/reviews - Starting...')
+  console.log('\n🔍 [API] ==================== GET /api/admin/reviews ====================')
+  console.log('⏰ [API] Timestamp:', new Date().toISOString())
   
   try {
     const supabase = getSupabaseClient()
     
     // 세션 확인
+    console.log('🔍 [API] Checking session...')
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    console.log('📧 [API] Session check:', {
+    console.log('📧 [API] Session result:', {
       hasSession: !!session,
       email: session?.user?.email || 'no-email',
       userId: session?.user?.id || 'no-id',
-      error: sessionError?.message || 'no-error'
+      hasError: !!sessionError,
+      errorMessage: sessionError?.message || 'no-error'
     })
     
     if (sessionError) {
-      console.error('❌ [API] Session error:', sessionError)
-      return NextResponse.json({ error: 'Session error: ' + sessionError.message }, { status: 401 })
+      console.error('❌ [API] Session error details:', sessionError)
+      return NextResponse.json({ 
+        error: 'Session error',
+        details: sessionError.message 
+      }, { status: 401 })
     }
     
     if (!session) {
-      console.error('❌ [API] No session found')
-      return NextResponse.json({ error: 'No session found' }, { status: 401 })
+      console.error('❌ [API] No session found - user may need to re-login')
+      return NextResponse.json({ 
+        error: 'No session found',
+        message: 'Please log in again'
+      }, { status: 401 })
     }
 
     const userEmail = session.user.email
-    console.log('📧 [API] User email:', userEmail)
+    console.log('📧 [API] User email from session:', userEmail)
 
     if (userEmail !== ADMIN_EMAIL) {
-      console.error('❌ [API] Not admin:', userEmail)
+      console.error('❌ [API] User is not admin:', userEmail, 'Expected:', ADMIN_EMAIL)
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    console.log('✅ [API] Admin authorized:', userEmail)
+    console.log('✅ [API] Admin authorization successful:', userEmail)
 
     // URL에서 쿼리 파라미터 추출
     const { searchParams } = new URL(request.url)
@@ -73,9 +116,10 @@ export async function GET(request: Request) {
     const customerId = searchParams.get('customer_id')
     const hasReply = searchParams.get('has_reply')
 
-    console.log('🔍 [API] Query params:', { contractorId, customerId, hasReply })
+    console.log('🔍 [API] Query parameters:', { contractorId, customerId, hasReply })
 
     // 리뷰 조회
+    console.log('📊 [API] Building query...')
     let query = supabase
       .from('reviews')
       .select(`
@@ -106,14 +150,18 @@ export async function GET(request: Request) {
 
     // 필터 적용
     if (contractorId) {
+      console.log('🔍 [API] Filtering by contractor:', contractorId)
       query = query.eq('contractor_id', contractorId)
     }
     if (customerId) {
+      console.log('🔍 [API] Filtering by customer:', customerId)
       query = query.eq('customer_id', customerId)
     }
     if (hasReply === 'true') {
+      console.log('🔍 [API] Filtering: has reply')
       query = query.not('contractor_reply', 'is', null)
     } else if (hasReply === 'false') {
+      console.log('🔍 [API] Filtering: no reply')
       query = query.is('contractor_reply', null)
     }
 
@@ -121,26 +169,34 @@ export async function GET(request: Request) {
     const { data: reviews, error } = await query
 
     if (error) {
-      console.error('❌ [API] Error fetching reviews:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ [API] Database error:', error)
+      return NextResponse.json({ 
+        error: 'Database error',
+        details: error.message 
+      }, { status: 500 })
     }
 
-    console.log(`✅ [API] Fetched ${reviews?.length || 0} reviews`)
+    console.log(`✅ [API] Successfully fetched ${reviews?.length || 0} reviews`)
+    console.log('🔍 [API] ==================== END ====================\n')
     return NextResponse.json({ reviews: reviews || [] })
   } catch (error: any) {
     console.error('❌ [API] Unexpected error:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+    console.error('❌ [API] Stack trace:', error.stack)
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 })
   }
 }
 
 // DELETE /api/admin/reviews?id=xxx - 리뷰 삭제
 export async function DELETE(request: Request) {
-  console.log('🗑️ [API] DELETE /api/admin/reviews - Starting...')
+  console.log('\n🗑️ [API] ==================== DELETE /api/admin/reviews ====================')
   
   try {
     const supabase = getSupabaseClient()
     
-    // 관리자 권한 확인 (이메일 기반)
+    // 관리자 권한 확인
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       console.error('❌ [API] No session for DELETE')
@@ -174,6 +230,7 @@ export async function DELETE(request: Request) {
     }
 
     console.log('✅ [API] Review deleted successfully')
+    console.log('🗑️ [API] ==================== END ====================\n')
     return NextResponse.json({ success: true, message: 'Review deleted successfully' })
   } catch (error: any) {
     console.error('❌ [API] Unexpected error:', error)
@@ -183,12 +240,12 @@ export async function DELETE(request: Request) {
 
 // PATCH /api/admin/reviews - 리뷰 수정
 export async function PATCH(request: Request) {
-  console.log('✏️ [API] PATCH /api/admin/reviews - Starting...')
+  console.log('\n✏️ [API] ==================== PATCH /api/admin/reviews ====================')
   
   try {
     const supabase = getSupabaseClient()
     
-    // 관리자 권한 확인 (이메일 기반)
+    // 관리자 권한 확인
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       console.error('❌ [API] No session for PATCH')
@@ -208,7 +265,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Review ID required' }, { status: 400 })
     }
 
-    console.log('✏️ [API] Updating review:', id)
+    console.log('✏️ [API] Updating review:', id, 'with data:', { 
+      hasTitle: !!title, 
+      hasComment: !!comment, 
+      rating, 
+      hasReply: !!contractor_reply, 
+      is_verified 
+    })
 
     // 업데이트할 데이터 준비
     const updateData: any = {}
@@ -239,6 +302,7 @@ export async function PATCH(request: Request) {
     }
 
     console.log('✅ [API] Review updated successfully')
+    console.log('✏️ [API] ==================== END ====================\n')
     return NextResponse.json({ success: true, review: data })
   } catch (error: any) {
     console.error('❌ [API] Unexpected error:', error)
