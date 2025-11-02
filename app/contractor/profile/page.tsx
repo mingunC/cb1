@@ -230,7 +230,7 @@ export default function ContractorProfile() {
     try {
       const supabase = createBrowserClient()
       
-      // 🔥 변경: 최소한의 데이터만 업데이트 (성능 최적화)
+      // 최소한의 데이터만 업데이트 (성능 최적화)
       const updateData = {
         company_name: formData.company_name.trim(),
         description: formData.description.trim(),
@@ -245,55 +245,51 @@ export default function ContractorProfile() {
       console.log('📝 Attempting DB update:', updateData)
       console.log('Profile ID:', profile.id)
 
-      // 🔥 변경: 타임아웃 30초로 증가 & AbortController 사용
+      // 타임아웃 처리
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30초
 
-      try {
-        const { data, error } = await supabase
-          .from('contractors')
-          .update(updateData)
-          .eq('id', profile.id)
-          .select()
-          .abortSignal(controller.signal)
+      const { data, error } = await supabase
+        .from('contractors')
+        .update(updateData)
+        .eq('id', profile.id)
+        .select()
+        .abortSignal(controller.signal)
 
-        clearTimeout(timeoutId)
+      clearTimeout(timeoutId)
 
-        if (error) {
-          console.error('❌ Save error:', error)
-          console.error('Error code:', error.code)
-          console.error('Error message:', error.message)
-          
-          // Handle specific errors
-          if (error.code === '42703') {
-            toast.error('Database column missing. Please contact administrator.')
-          } else if (error.code === '42501') {
-            toast.error('Permission denied. Please check RLS policies.')
-          } else if (error.code === 'PGRST116') {
-            toast.error('Update conflict. Please refresh and try again.')
-          } else {
-            toast.error(`Save failed: ${error.message}`)
-          }
-          return
-        }
-
-        // Success
-        console.log('✅ Save successful!', data)
-        setProfile(prev => prev ? { ...prev, ...updateData } : null)
-        toast.success('Profile updated successfully!')
+      if (error) {
+        console.error('❌ Save error:', error)
+        console.error('Error code:', error.code)
+        console.error('Error message:', error.message)
         
-      } catch (abortError: any) {
-        if (abortError.name === 'AbortError') {
-          console.error('❌ Request aborted (timeout)')
+        // Handle specific errors
+        if (error.code === '42703') {
+          toast.error('Database column missing. Please contact administrator.')
+        } else if (error.code === '42501') {
+          toast.error('Permission denied. Please check RLS policies.')
+        } else if (error.code === 'PGRST116') {
+          toast.error('Update conflict. Please refresh and try again.')
+        } else if (error.name === 'AbortError') {
           toast.error('Save is taking too long. Please check your connection and try again.')
         } else {
-          throw abortError
+          toast.error(`Save failed: ${error.message}`)
         }
+        return
       }
+
+      // Success
+      console.log('✅ Save successful!', data)
+      setProfile(prev => prev ? { ...prev, ...updateData } : null)
+      toast.success('Profile updated successfully!')
       
     } catch (error: any) {
       console.error('❌ Unexpected error:', error)
-      toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
+      if (error.name === 'AbortError') {
+        toast.error('Save is taking too long. Please check your connection and try again.')
+      } else {
+        toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
+      }
     } finally {
       setIsSaving(false)
       console.log('💾 Profile save process ended')
