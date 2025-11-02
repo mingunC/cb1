@@ -69,36 +69,39 @@ export async function GET(request: Request) {
   try {
     const supabase = await createServerClient(request)
     
-    // 세션 확인
-    console.log('🔍 [API] Checking session...')
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // ❌ 기존 코드 (쿠키만 확인)
+    // const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    console.log('📧 [API] Session result:', {
-      hasSession: !!session,
-      email: session?.user?.email || 'no-email',
-      userId: session?.user?.id || 'no-id',
-      hasError: !!sessionError,
-      errorMessage: sessionError?.message || 'no-error'
+    // ✅ 새 코드 (Authorization 헤더 토큰 검증)
+    console.log('🔍 [API] Checking user from token...')
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log('📧 [API] User result:', {
+      hasUser: !!user,
+      email: user?.email || 'no-email',
+      userId: user?.id || 'no-id',
+      hasError: !!userError,
+      errorMessage: userError?.message || 'no-error'
     })
     
-    if (sessionError) {
-      console.error('❌ [API] Session error details:', sessionError)
+    if (userError) {
+      console.error('❌ [API] User error details:', userError)
       return NextResponse.json({ 
-        error: 'Session error',
-        details: sessionError.message 
+        error: 'Authentication error',
+        details: userError.message 
       }, { status: 401 })
     }
     
-    if (!session) {
-      console.error('❌ [API] No session found - user may need to re-login')
+    if (!user) {
+      console.error('❌ [API] No user found - invalid or expired token')
       return NextResponse.json({ 
         error: 'No session found',
         message: 'Please log in again'
       }, { status: 401 })
     }
 
-    const userEmail = session.user.email
-    console.log('📧 [API] User email from session:', userEmail)
+    const userEmail = user.email
+    console.log('📧 [API] User email from token:', userEmail)
 
     if (userEmail !== ADMIN_EMAIL) {
       console.error('❌ [API] User is not admin:', userEmail, 'Expected:', ADMIN_EMAIL)
@@ -193,15 +196,15 @@ export async function DELETE(request: Request) {
   try {
     const supabase = await createServerClient(request)
     
-    // 관리자 권한 확인
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      console.error('❌ [API] No session for DELETE')
+    // ✅ getSession() 대신 getUser() 사용
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error('❌ [API] No user for DELETE')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.user.email !== ADMIN_EMAIL) {
-      console.error('❌ [API] Not admin for DELETE:', session.user.email)
+    if (user.email !== ADMIN_EMAIL) {
+      console.error('❌ [API] Not admin for DELETE:', user.email)
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -242,15 +245,15 @@ export async function PATCH(request: Request) {
   try {
     const supabase = await createServerClient(request)
     
-    // 관리자 권한 확인
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      console.error('❌ [API] No session for PATCH')
+    // ✅ getSession() 대신 getUser() 사용
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error('❌ [API] No user for PATCH')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.user.email !== ADMIN_EMAIL) {
-      console.error('❌ [API] Not admin for PATCH:', session.user.email)
+    if (user.email !== ADMIN_EMAIL) {
+      console.error('❌ [API] Not admin for PATCH:', user.email)
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
