@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -6,8 +6,8 @@ import { cookies } from 'next/headers'
 const ADMIN_EMAIL = 'cmgg919@gmail.com'
 
 // Supabase 클라이언트 생성 함수
-function getSupabaseClient(request?: Request) {
-  const cookieStore = cookies()
+async function createServerClient(request: Request) {
+  const cookieStore = await cookies()
   
   // 모든 쿠키 로깅
   const allCookies = cookieStore.getAll()
@@ -17,61 +17,48 @@ function getSupabaseClient(request?: Request) {
     valueLength: c.value?.length || 0
   })))
   
-  // Authorization 헤더에서 토큰 추출 (우선순위 1)
-  let accessToken: string | null = null
-  if (request) {
-    const authHeader = request.headers.get('Authorization')
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      accessToken = authHeader.substring(7)
-      console.log('✅ [API] Got access token from Authorization header')
-    }
-  }
+  // Authorization 헤더에서 토큰 가져오기
+  const authHeader = request.headers.get('Authorization')
+  const token = authHeader?.replace('Bearer ', '')
   
-  // 쿠키에서 토큰 추출 (우선순위 2)
-  if (!accessToken) {
-    const authCookie = 
-      cookieStore.get('sb-access-token') ||
-      cookieStore.get('sb-refresh-token') ||
-      allCookies.find(c => c.name.includes('auth-token')) ||
-      allCookies.find(c => c.name.startsWith('sb-'))
-
-    console.log('🔑 [API] Auth cookie found:', {
-      name: authCookie?.name || 'none',
-      hasValue: !!authCookie?.value,
-      valueLength: authCookie?.value?.length || 0
-    })
-
-    if (authCookie && authCookie.value) {
-      try {
-        // JSON 형식일 수 있음
-        const parsed = JSON.parse(authCookie.value)
-        accessToken = parsed.access_token || parsed.accessToken
-        console.log('✅ [API] Parsed access token from JSON cookie')
-      } catch {
-        // 그냥 문자열일 수 있음
-        accessToken = authCookie.value
-        console.log('✅ [API] Using cookie value as access token')
-      }
-    }
-  }
-
-  console.log('🔐 [API] Access token:', {
-    hasToken: !!accessToken,
-    tokenLength: accessToken?.length || 0,
-    tokenPreview: accessToken ? `${accessToken.substring(0, 20)}...` : 'none'
+  console.log('🔐 [API] Authorization 헤더 확인:', {
+    hasAuthHeader: !!authHeader,
+    hasToken: !!token,
+    tokenPrefix: token ? token.substring(0, 20) + '...' : 'none'
   })
-
-  return createClient(
+  
+  const supabase = createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set(name, value, options)
+          } catch (error) {
+            // Handle errors in middleware
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set(name, '', { ...options, maxAge: 0 })
+          } catch (error) {
+            // Handle errors in middleware
+          }
+        },
+      },
       global: {
-        headers: accessToken ? {
-          Authorization: `Bearer ${accessToken}`
+        headers: token ? {
+          Authorization: `Bearer ${token}`
         } : {}
       }
     }
   )
+
+  return supabase
 }
 
 // GET /api/admin/reviews - 모든 리뷰 조회
@@ -80,7 +67,7 @@ export async function GET(request: Request) {
   console.log('⏰ [API] Timestamp:', new Date().toISOString())
   
   try {
-    const supabase = getSupabaseClient(request)
+    const supabase = await createServerClient(request)
     
     // 세션 확인
     console.log('🔍 [API] Checking session...')
@@ -204,7 +191,7 @@ export async function DELETE(request: Request) {
   console.log('\n🗑️ [API] ==================== DELETE /api/admin/reviews ====================')
   
   try {
-    const supabase = getSupabaseClient(request)
+    const supabase = await createServerClient(request)
     
     // 관리자 권한 확인
     const { data: { session } } = await supabase.auth.getSession()
@@ -253,7 +240,7 @@ export async function PATCH(request: Request) {
   console.log('\n✏️ [API] ==================== PATCH /api/admin/reviews ====================')
   
   try {
-    const supabase = getSupabaseClient(request)
+    const supabase = await createServerClient(request)
     
     // 관리자 권한 확인
     const { data: { session } } = await supabase.auth.getSession()
