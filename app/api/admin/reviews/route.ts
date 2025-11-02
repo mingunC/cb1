@@ -1,44 +1,71 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 // 관리자 이메일 상수
 const ADMIN_EMAIL = 'cmgg919@gmail.com'
 
+// Supabase 클라이언트 생성 함수
+function getSupabaseClient() {
+  const cookieStore = cookies()
+  const accessToken = cookieStore.get('sb-access-token')?.value
+  const refreshToken = cookieStore.get('sb-refresh-token')?.value
+
+  console.log('🍪 [API] Cookies check:', {
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken,
+    accessTokenLength: accessToken?.length || 0
+  })
+
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: accessToken ? {
+          Authorization: `Bearer ${accessToken}`
+        } : {}
+      }
+    }
+  )
+}
+
 // GET /api/admin/reviews - 모든 리뷰 조회
 export async function GET(request: Request) {
+  console.log('🔍 [API] GET /api/admin/reviews - Starting...')
+  
   try {
-    console.log('🔍 [API] GET /api/admin/reviews - Starting...')
+    const supabase = getSupabaseClient()
     
-    // cookies를 함수로 호출
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    
-    // 관리자 권한 확인 (이메일 기반)
+    // 세션 확인
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
     console.log('📧 [API] Session check:', {
       hasSession: !!session,
       email: session?.user?.email || 'no-email',
+      userId: session?.user?.id || 'no-id',
       error: sessionError?.message || 'no-error'
     })
     
     if (sessionError) {
       console.error('❌ [API] Session error:', sessionError)
-      return NextResponse.json({ error: 'Session error' }, { status: 401 })
+      return NextResponse.json({ error: 'Session error: ' + sessionError.message }, { status: 401 })
     }
     
     if (!session) {
       console.error('❌ [API] No session found')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'No session found' }, { status: 401 })
     }
 
-    if (session.user.email !== ADMIN_EMAIL) {
-      console.error('❌ [API] Not admin:', session.user.email)
+    const userEmail = session.user.email
+    console.log('📧 [API] User email:', userEmail)
+
+    if (userEmail !== ADMIN_EMAIL) {
+      console.error('❌ [API] Not admin:', userEmail)
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    console.log('✅ [API] Admin authorized:', session.user.email)
+    console.log('✅ [API] Admin authorized:', userEmail)
 
     // URL에서 쿼리 파라미터 추출
     const { searchParams } = new URL(request.url)
@@ -90,6 +117,7 @@ export async function GET(request: Request) {
       query = query.is('contractor_reply', null)
     }
 
+    console.log('📊 [API] Executing query...')
     const { data: reviews, error } = await query
 
     if (error) {
@@ -107,11 +135,10 @@ export async function GET(request: Request) {
 
 // DELETE /api/admin/reviews?id=xxx - 리뷰 삭제
 export async function DELETE(request: Request) {
+  console.log('🗑️ [API] DELETE /api/admin/reviews - Starting...')
+  
   try {
-    console.log('🗑️ [API] DELETE /api/admin/reviews - Starting...')
-    
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = getSupabaseClient()
     
     // 관리자 권한 확인 (이메일 기반)
     const { data: { session } } = await supabase.auth.getSession()
@@ -156,11 +183,10 @@ export async function DELETE(request: Request) {
 
 // PATCH /api/admin/reviews - 리뷰 수정
 export async function PATCH(request: Request) {
+  console.log('✏️ [API] PATCH /api/admin/reviews - Starting...')
+  
   try {
-    console.log('✏️ [API] PATCH /api/admin/reviews - Starting...')
-    
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = getSupabaseClient()
     
     // 관리자 권한 확인 (이메일 기반)
     const { data: { session } } = await supabase.auth.getSession()
