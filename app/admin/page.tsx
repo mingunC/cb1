@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Users, FileText, Settings, LogOut, Image, TrendingUp, Clock, CheckCircle, Gift } from 'lucide-react'
+import { ArrowLeft, Users, FileText, Settings, LogOut, Image, TrendingUp, Clock, CheckCircle, Gift, MessageCircle, Star } from 'lucide-react'
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null)
@@ -15,7 +15,9 @@ export default function AdminPage() {
     monthlyQuotes: 0,
     activeProjects: 0,
     completedProjects: 0,
-    activeEvents: 0
+    activeEvents: 0,
+    totalReviews: 0,
+    reviewsWithoutReply: 0
   })
   const router = useRouter()
 
@@ -103,14 +105,18 @@ export default function AdminPage() {
         monthlyResult,
         activeResult,
         completedResult,
-        eventsResult
+        eventsResult,
+        reviewsResult,
+        reviewsNoReplyResult
       ] = await Promise.all([
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('contractors').select('*', { count: 'exact', head: true }),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['site-visit-pending', 'site-visit-completed', 'bidding']),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-        supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_active', true)
+        supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('reviews').select('*', { count: 'exact', head: true }),
+        supabase.from('reviews').select('*', { count: 'exact', head: true }).is('contractor_reply', null)
       ])
       
       const newStats = {
@@ -119,7 +125,9 @@ export default function AdminPage() {
         monthlyQuotes: monthlyResult.count || 0,
         activeProjects: activeResult.count || 0,
         completedProjects: completedResult.count || 0,
-        activeEvents: eventsResult.count || 0
+        activeEvents: eventsResult.count || 0,
+        totalReviews: reviewsResult.count || 0,
+        reviewsWithoutReply: reviewsNoReplyResult.count || 0
       }
       
       console.log('✅ 통계 로드 완료:', newStats)
@@ -187,6 +195,14 @@ export default function AdminPage() {
       href: '/admin/contractors',
       color: 'bg-green-500',
       stats: `${stats.totalContractors}개 업체`
+    },
+    {
+      title: '리뷰 관리',
+      description: '고객 리뷰와 업체 답글을 관리합니다',
+      icon: Star,
+      href: '/admin/reviews',
+      color: 'bg-amber-500',
+      stats: `${stats.reviewsWithoutReply}개 답글 대기`
     },
     {
       title: '이벤트 관리',
@@ -300,20 +316,20 @@ export default function AdminPage() {
           
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-indigo-100 rounded-lg p-3">
-                <FileText className="h-6 w-6 text-indigo-600" />
+              <div className="bg-amber-100 rounded-lg p-3">
+                <MessageCircle className="h-6 w-6 text-amber-600" />
               </div>
-              <span className="text-sm font-semibold text-indigo-600">이번달</span>
+              <span className="text-sm font-semibold text-amber-600">리뷰</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.monthlyQuotes}</p>
-            <p className="text-sm text-gray-600">월간 견적</p>
+            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalReviews}</p>
+            <p className="text-sm text-gray-600">전체 리뷰</p>
           </div>
         </div>
 
         {/* 빠른 메뉴 */}
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-4">빠른 메뉴</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
             {adminMenuItems.map((item, index) => {
               const IconComponent = item.icon
               return (
