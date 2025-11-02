@@ -72,6 +72,22 @@ export default function ContractorProfile() {
 
       if (contractor) {
         setProfile(contractor)
+        
+        // specialties 파싱 (JSON 문자열인 경우 처리)
+        let parsedSpecialties: string[] = []
+        if (contractor.specialties) {
+          if (Array.isArray(contractor.specialties)) {
+            parsedSpecialties = contractor.specialties
+          } else if (typeof contractor.specialties === 'string') {
+            try {
+              parsedSpecialties = JSON.parse(contractor.specialties)
+            } catch (e) {
+              console.error('Failed to parse specialties:', e)
+              parsedSpecialties = []
+            }
+          }
+        }
+        
         setFormData({
           company_name: contractor.company_name || '',
           description: contractor.description || '',
@@ -79,7 +95,7 @@ export default function ContractorProfile() {
           email: contractor.email || session.user.email || '',
           address: contractor.address || '',
           website: contractor.website || '',
-          specialties: contractor.specialties || [],
+          specialties: parsedSpecialties,
           years_in_business: contractor.years_in_business || 0,
           license_number: contractor.license_number || '',
           insurance: contractor.insurance || ''
