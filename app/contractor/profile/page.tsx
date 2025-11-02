@@ -74,19 +74,25 @@ export default function ContractorProfile() {
         setProfile(contractor)
         
         // specialties 파싱 (JSON 문자열인 경우 처리)
+        console.log('🔍 Raw specialties from DB:', contractor.specialties)
+        console.log('🔍 Type:', typeof contractor.specialties, Array.isArray(contractor.specialties))
+        
         let parsedSpecialties: string[] = []
         if (contractor.specialties) {
           if (Array.isArray(contractor.specialties)) {
             parsedSpecialties = contractor.specialties
           } else if (typeof contractor.specialties === 'string') {
             try {
+              console.log('🔍 Parsing string:', contractor.specialties)
               parsedSpecialties = JSON.parse(contractor.specialties)
             } catch (e) {
               console.error('Failed to parse specialties:', e)
+              console.error('Raw value:', contractor.specialties)
               parsedSpecialties = []
             }
           }
         }
+        console.log('✅ Parsed specialties:', parsedSpecialties)
         
         setFormData({
           company_name: contractor.company_name || '',
