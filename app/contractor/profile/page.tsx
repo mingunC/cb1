@@ -47,7 +47,7 @@ export default function ContractorProfile() {
 
   useEffect(() => {
     loadProfile()
-  }, []) // 의존성 배열 비워두기 - 마운트 시 한 번만 실행
+  }, [])
 
   const loadProfile = async () => {
     try {
@@ -73,9 +73,8 @@ export default function ContractorProfile() {
       if (contractor) {
         setProfile(contractor)
         
-        // specialties 파싱 (JSON 문자열인 경우 처리)
+        // specialties 파싱
         console.log('🔍 Raw specialties from DB:', contractor.specialties)
-        console.log('🔍 Type:', typeof contractor.specialties, Array.isArray(contractor.specialties))
         
         let parsedSpecialties: string[] = []
         if (contractor.specialties) {
@@ -83,16 +82,13 @@ export default function ContractorProfile() {
             parsedSpecialties = contractor.specialties
           } else if (typeof contractor.specialties === 'string') {
             try {
-              console.log('🔍 Parsing string:', contractor.specialties)
               parsedSpecialties = JSON.parse(contractor.specialties)
             } catch (e) {
               console.error('Failed to parse specialties:', e)
-              console.error('Raw value:', contractor.specialties)
               parsedSpecialties = []
             }
           }
         }
-        console.log('✅ Parsed specialties:', parsedSpecialties)
         
         setFormData({
           company_name: contractor.company_name || '',
@@ -107,19 +103,13 @@ export default function ContractorProfile() {
           insurance: contractor.insurance || ''
         })
         
-        // Set logo preview if URL exists
         if (contractor.company_logo) {
-          console.log('✅ Logo URL loaded:', contractor.company_logo)
           setLogoPreview(contractor.company_logo)
         }
       }
     } catch (error: any) {
       console.error('Profile load failed:', error)
-      if (error.code === '42703') {
-        toast.error('Database setup error: Please run add-profile-columns.sql.')
-      } else {
-        toast.error('Failed to load profile')
-      }
+      toast.error('Failed to load profile')
     } finally {
       setIsLoading(false)
     }
@@ -129,17 +119,14 @@ export default function ContractorProfile() {
     const file = event.target.files?.[0]
     if (!file) return
 
-      // Reset file input (allow reselecting same file)
-      event.target.value = ''
+    event.target.value = ''
 
-    // Validate file extension
     const fileExt = file.name.split('.').pop()?.toLowerCase()
     if (!fileExt || !ALLOWED_IMAGE_EXTENSIONS.includes(fileExt)) {
       toast.error(`Unsupported file format. Supported: ${ALLOWED_IMAGE_EXTENSIONS.join(', ')}`)
       return
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       toast.error(`File size must be ${Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB or less`)
       return
@@ -151,74 +138,45 @@ export default function ContractorProfile() {
     }
 
     setIsUploadingLogo(true)
-    console.log('📤 Logo upload started...')
     
     try {
       const supabase = createBrowserClient()
       const fileName = `${profile.id}-${Date.now()}.${fileExt}`
       const filePath = `contractor-logos/${fileName}`
 
-      // 1. Upload file
-      console.log('1️⃣ Uploading file:', filePath)
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('portfolios')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })
 
-      if (uploadError) {
-        console.error('❌ Upload failed:', uploadError)
-        throw uploadError
-      }
+      if (uploadError) throw uploadError
 
-      console.log('✅ Upload successful:', uploadData)
-
-      // 2. Generate public URL
       const { data: { publicUrl } } = supabase.storage
         .from('portfolios')
         .getPublicUrl(filePath)
 
-      console.log('2️⃣ Public URL generated:', publicUrl)
-
-      // 3. Update preview immediately
       setLogoPreview(publicUrl)
-      console.log('3️⃣ Preview updated')
 
-      // 4. Save to DB
-      console.log('4️⃣ Saving to DB...')
       const { error: updateError } = await supabase
         .from('contractors')
-        .update({ 
-          company_logo: publicUrl,
-          updated_at: new Date().toISOString()
-        })
+        .update({ company_logo: publicUrl })
         .eq('id', profile.id)
 
       if (updateError) {
-        console.error('❌ DB save failed:', updateError)
-        
-        // If company_logo column doesn't exist
-        if (updateError.code === '42703') {
-          toast.error('Database setup required: Please run add-profile-columns.sql')
-        } else {
-          toast.warning('Logo uploaded but failed to save')
-        }
+        toast.warning('Logo uploaded but failed to save')
       } else {
-        console.log('✅ DB save successful')
         toast.success('Logo uploaded successfully!')
-        
-        // Update profile state only (don't call loadProfile)
         setProfile(prev => prev ? { ...prev, company_logo: publicUrl } : null)
       }
       
     } catch (error: any) {
-      console.error('❌ Logo upload error:', error)
+      console.error('Logo upload error:', error)
       setLogoPreview(null)
       toast.error(error.message || 'Failed to upload logo')
     } finally {
       setIsUploadingLogo(false)
-      console.log('📤 Logo upload process ended')
     }
   }
 
@@ -245,7 +203,6 @@ export default function ContractorProfile() {
       return
     }
 
-    // ✅ 유효성 검사 추가
     if (!formData.company_name.trim()) {
       toast.error('Company name is required')
       return
@@ -253,72 +210,60 @@ export default function ContractorProfile() {
 
     setIsSaving(true)
     console.log('💾 Profile save started...')
-    console.log('Data to save:', formData)
     
     try {
       const supabase = createBrowserClient()
       
-      // 🔥 수정: 모든 필드 포함
       const updateData = {
         company_name: formData.company_name.trim(),
-        description: formData.description.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email.trim(),
-        address: formData.address.trim(),
-        website: formData.website.trim(),
-        specialties: formData.specialties, // ✅ 배열 그대로 저장
-        years_in_business: formData.years_in_business,
-        license_number: formData.license_number.trim(),
-        insurance: formData.insurance.trim()
+        description: formData.description.trim() || null,
+        phone: formData.phone.trim() || null,
+        email: formData.email.trim() || null,
+        address: formData.address.trim() || null,
+        website: formData.website.trim() || null,
+        specialties: formData.specialties,
+        years_in_business: formData.years_in_business || 0,
+        license_number: formData.license_number.trim() || null,
+        insurance: formData.insurance.trim() || null
       }
 
-      console.log('📝 Attempting DB update:', updateData)
-      console.log('Profile ID:', profile.id)
-      console.log('Specialties type:', Array.isArray(formData.specialties) ? 'Array' : typeof formData.specialties)
-      console.log('Specialties data:', formData.specialties)
+      console.log('📝 Update data:', updateData)
+      console.log('🆔 Profile ID:', profile.id)
 
-      // 타임아웃 처리
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30초
-
-      const { data, error } = await supabase
+      // 🔥 단순화: select() 제거, 타임아웃 10초로 단축
+      const updatePromise = supabase
         .from('contractors')
         .update(updateData)
         .eq('id', profile.id)
-        .select()
-        .abortSignal(controller.signal)
 
-      clearTimeout(timeoutId)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+
+      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any
 
       if (error) {
         console.error('❌ Save error:', error)
-        console.error('Error code:', error.code)
-        console.error('Error message:', error.message)
         
-        // Handle specific errors
-        if (error.code === '42703') {
-          toast.error('Database column missing. Please contact administrator.')
+        if (error.message === 'Request timeout') {
+          toast.error('Save is taking too long. Please check your connection.')
         } else if (error.code === '42501') {
-          toast.error('Permission denied. Please check RLS policies.')
-        } else if (error.code === 'PGRST116') {
-          toast.error('Update conflict. Please refresh and try again.')
-        } else if (error.name === 'AbortError') {
-          toast.error('Save is taking too long. Please check your connection and try again.')
+          toast.error('Permission denied. Please re-login.')
         } else {
           toast.error(`Save failed: ${error.message}`)
         }
         return
       }
 
-      // Success
-      console.log('✅ Save successful!', data)
+      console.log('✅ Save successful!')
       setProfile(prev => prev ? { ...prev, ...updateData } : null)
       toast.success('Profile updated successfully!')
       
     } catch (error: any) {
       console.error('❌ Unexpected error:', error)
-      if (error.name === 'AbortError') {
-        toast.error('Save is taking too long. Please check your connection and try again.')
+      
+      if (error.message === 'Request timeout') {
+        toast.error('Save is taking too long. Please check your connection.')
       } else {
         toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
       }
@@ -397,13 +342,9 @@ export default function ContractorProfile() {
                     src={logoPreview} 
                     alt="Company Logo" 
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error('❌ Image load failed:', logoPreview)
-                      toast.error('Cannot load image')
+                    onError={() => {
+                      console.error('Image load failed')
                       setLogoPreview(null)
-                    }}
-                    onLoad={() => {
-                      console.log('✅ Image load successful')
                     }}
                   />
                 ) : (
