@@ -69,10 +69,7 @@ export async function GET(request: Request) {
   try {
     const supabase = await createServerClient(request)
     
-    // ❌ 기존 코드 (쿠키만 확인)
-    // const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    // ✅ 새 코드 (Authorization 헤더 토큰 검증)
+    // ✅ getUser()로 Authorization 헤더 토큰 검증
     console.log('🔍 [API] Checking user from token...')
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
@@ -196,7 +193,7 @@ export async function DELETE(request: Request) {
   try {
     const supabase = await createServerClient(request)
     
-    // ✅ getSession() 대신 getUser() 사용
+    // ✅ getUser()로 토큰 검증
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       console.error('❌ [API] No user for DELETE')
@@ -245,7 +242,7 @@ export async function PATCH(request: Request) {
   try {
     const supabase = await createServerClient(request)
     
-    // ✅ getSession() 대신 getUser() 사용
+    // ✅ getUser()로 토큰 검증
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       console.error('❌ [API] No user for PATCH')
@@ -257,9 +254,9 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    // 요청 본문 파싱
+    // 요청 본문 파싱 (rating 제거)
     const body = await request.json()
-    const { id, title, comment, rating, contractor_reply, is_verified } = body
+    const { id, title, comment, contractor_reply, is_verified } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Review ID required' }, { status: 400 })
@@ -268,16 +265,14 @@ export async function PATCH(request: Request) {
     console.log('✏️ [API] Updating review:', id, 'with data:', { 
       hasTitle: !!title, 
       hasComment: !!comment, 
-      rating, 
       hasReply: !!contractor_reply, 
       is_verified 
     })
 
-    // 업데이트할 데이터 준비
+    // 업데이트할 데이터 준비 (rating 제거)
     const updateData: any = {}
     if (title !== undefined) updateData.title = title
     if (comment !== undefined) updateData.comment = comment
-    if (rating !== undefined) updateData.rating = rating
     if (contractor_reply !== undefined) {
       updateData.contractor_reply = contractor_reply
       if (contractor_reply) {
