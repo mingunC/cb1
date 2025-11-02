@@ -230,43 +230,58 @@ export default function ContractorProfile() {
       console.log('📝 Update data:', updateData)
       console.log('🆔 Profile ID:', profile.id)
 
-      // 🔥 단순화: select() 제거, 타임아웃 10초로 단축
+      // ✅ 수정: 타임아웃 처리를 더 명확하게
+      const timeoutMs = 15000 // 15초
+      let timeoutId: NodeJS.Timeout
+
       const updatePromise = supabase
         .from('contractors')
         .update(updateData)
         .eq('id', profile.id)
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
-      )
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Request timeout - the update is taking too long'))
+        }, timeoutMs)
+      })
 
-      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any
+      try {
+        const result = await Promise.race([updatePromise, timeoutPromise]) as any
+        clearTimeout(timeoutId!)
 
-      if (error) {
-        console.error('❌ Save error:', error)
-        
-        if (error.message === 'Request timeout') {
-          toast.error('Save is taking too long. Please check your connection.')
-        } else if (error.code === '42501') {
-          toast.error('Permission denied. Please re-login.')
-        } else {
-          toast.error(`Save failed: ${error.message}`)
+        const { error } = result
+
+        if (error) {
+          console.error('❌ Save error:', error)
+          
+          if (error.code === '42501') {
+            toast.error('Permission denied. Please re-login.')
+          } else if (error.code === 'PGRST116') {
+            toast.error('Profile not found. Please refresh the page.')
+          } else {
+            toast.error(`Save failed: ${error.message}`)
+          }
+          return
         }
-        return
-      }
 
-      console.log('✅ Save successful!')
-      setProfile(prev => prev ? { ...prev, ...updateData } : null)
-      toast.success('Profile updated successfully!')
+        console.log('✅ Save successful!')
+        setProfile(prev => prev ? { ...prev, ...updateData } : null)
+        toast.success('Profile updated successfully!')
+        
+      } catch (raceError: any) {
+        clearTimeout(timeoutId!)
+        
+        if (raceError.message.includes('timeout')) {
+          console.error('❌ Timeout error')
+          toast.error('Save is taking too long. Please check your connection and try again.')
+        } else {
+          throw raceError
+        }
+      }
       
     } catch (error: any) {
       console.error('❌ Unexpected error:', error)
-      
-      if (error.message === 'Request timeout') {
-        toast.error('Save is taking too long. Please check your connection.')
-      } else {
-        toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
-      }
+      toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
     } finally {
       setIsSaving(false)
       console.log('💾 Profile save process ended')
