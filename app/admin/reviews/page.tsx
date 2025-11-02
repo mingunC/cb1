@@ -5,13 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { 
   ArrowLeft, 
-  Star, 
   Trash2, 
   Edit2, 
   Check, 
   X,
   Search,
-  Filter,
   MessageCircle,
   User,
   Building,
@@ -58,7 +56,6 @@ export default function AdminReviewsPage() {
   const [editFormData, setEditFormData] = useState({
     title: '',
     comment: '',
-    rating: 5,
     contractor_reply: '',
     is_verified: false
   })
@@ -210,7 +207,6 @@ export default function AdminReviewsPage() {
     setEditFormData({
       title: review.title,
       comment: review.comment,
-      rating: review.rating || 5,
       contractor_reply: review.contractor_reply || '',
       is_verified: review.is_verified
     })
@@ -253,7 +249,6 @@ export default function AdminReviewsPage() {
     setEditFormData({
       title: '',
       comment: '',
-      rating: 5,
       contractor_reply: '',
       is_verified: false
     })
@@ -412,20 +407,6 @@ export default function AdminReviewsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        평점
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        value={editFormData.rating}
-                        onChange={(e) => setEditFormData({ ...editFormData, rating: parseInt(e.target.value) })}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         업체 답글
                       </label>
                       <textarea
@@ -480,16 +461,6 @@ export default function AdminReviewsPage() {
                               인증됨
                             </span>
                           )}
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < (review.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
                         </div>
                         <p className="text-gray-700 mb-3">{review.comment}</p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
