@@ -260,14 +260,16 @@ export default function ContractorProfile() {
         email: formData.email.trim(),
         address: formData.address.trim(),
         website: formData.website.trim(),
-        specialties: formData.specialties,
+        specialties: formData.specialties, // ✅ 배열 그대로 저장
         years_in_business: formData.years_in_business,
-        license_number: formData.license_number.trim(),  // ✅ 추가
-        insurance: formData.insurance.trim()             // ✅ 추가
+        license_number: formData.license_number.trim(),
+        insurance: formData.insurance.trim()
       }
 
       console.log('📝 Attempting DB update:', updateData)
       console.log('Profile ID:', profile.id)
+      console.log('Specialties type:', Array.isArray(formData.specialties) ? 'Array' : typeof formData.specialties)
+      console.log('Specialties data:', formData.specialties)
 
       // 타임아웃 처리
       const controller = new AbortController()
