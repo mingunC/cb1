@@ -152,6 +152,21 @@ export default function ContractorDetailPage() {
       setPortfolioCount(portfolioCount || 0)
       setCompletedProjects(completedQuotes || 0)
 
+      // specialties 파싱 (JSON 문자열인 경우 처리)
+      let parsedSpecialties: string[] = []
+      if (contractorData.specialties) {
+        if (Array.isArray(contractorData.specialties)) {
+          parsedSpecialties = contractorData.specialties
+        } else if (typeof contractorData.specialties === 'string') {
+          try {
+            parsedSpecialties = JSON.parse(contractorData.specialties)
+          } catch (e) {
+            console.error('Failed to parse specialties:', e)
+            parsedSpecialties = []
+          }
+        }
+      }
+
       const formattedContractor: Contractor = {
         id: contractorData.id,
         company_name: contractorData.company_name || 'No company name',
@@ -165,7 +180,7 @@ export default function ContractorDetailPage() {
         established_year: contractorData.years_in_business ? new Date().getFullYear() - contractorData.years_in_business : undefined,
         employee_count: '정보 없음',
         service_areas: contractorData.address ? [contractorData.address] : ['Seoul', 'Gyeonggi'],
-        specialties: Array.isArray(contractorData.specialties) ? contractorData.specialties : [],
+        specialties: parsedSpecialties,
         certifications: ['Interior construction license'],
         rating: contractorData.rating || 0,
         review_count: reviewCount || 0,
@@ -438,7 +453,7 @@ export default function ContractorDetailPage() {
             </div>
           </div>
 
-          <p className="text-gray-700 mb-6">{contractor.description}</p>
+          <p className="text-gray-700 mb-6 whitespace-pre-wrap">{contractor.description}</p>
 
           {/* Specialties */}
           <div className="mb-6">

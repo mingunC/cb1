@@ -102,32 +102,49 @@ export default function ContractorsListingPage() {
         setFilteredContractors([])
       } else {
         // 1) 기본 데이터 포맷팅
-        const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => ({
-          id: contractor.id,
-          company_name: contractor.company_name || '업체명 없음',
-          contact_name: contractor.contact_name || '담당자 없음',
-          phone: contractor.phone || '전화번호 없음',
-          email: contractor.email || '이메일 없음',
-          website: contractor.website,
-          logo_url: contractor.company_logo,
-          cover_image: contractor.company_logo,
-          description: contractor.description || 'No company description.',
-          established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
-          employee_count: '정보 없음',
-          service_areas: contractor.address ? [contractor.address] : ['서울', '경기'],
-          specialties: Array.isArray(contractor.specialties) ? contractor.specialties : [],
-          certifications: ['실내건축공사업'],
-          rating: contractor.rating || 0,
-          review_count: 0, // 아래에서 실제 리뷰 수로 덮어씀
-          completed_projects: 0, // 상세보기 클릭 시 로드
-          response_time: '문의 후 안내',
-          min_budget: undefined,
-          is_verified: true,
-          is_premium: false,
-          portfolio_count: 0, // 상세보기 클릭 시 로드
-          recent_projects: [],
-          created_at: contractor.created_at
-        }))
+        const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => {
+          // specialties 파싱 (JSON 문자열인 경우 처리)
+          let parsedSpecialties: string[] = []
+          if (contractor.specialties) {
+            if (Array.isArray(contractor.specialties)) {
+              parsedSpecialties = contractor.specialties
+            } else if (typeof contractor.specialties === 'string') {
+              try {
+                parsedSpecialties = JSON.parse(contractor.specialties)
+              } catch (e) {
+                console.error('Failed to parse specialties:', e)
+                parsedSpecialties = []
+              }
+            }
+          }
+
+          return {
+            id: contractor.id,
+            company_name: contractor.company_name || '업체명 없음',
+            contact_name: contractor.contact_name || '담당자 없음',
+            phone: contractor.phone || '전화번호 없음',
+            email: contractor.email || '이메일 없음',
+            website: contractor.website,
+            logo_url: contractor.company_logo,
+            cover_image: contractor.company_logo,
+            description: contractor.description || 'No company description.',
+            established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
+            employee_count: '정보 없음',
+            service_areas: contractor.address ? [contractor.address] : ['서울', '경기'],
+            specialties: parsedSpecialties,
+            certifications: ['실내건축공사업'],
+            rating: contractor.rating || 0,
+            review_count: 0, // 아래에서 실제 리뷰 수로 덮어씀
+            completed_projects: 0, // 상세보기 클릭 시 로드
+            response_time: '문의 후 안내',
+            min_budget: undefined,
+            is_verified: true,
+            is_premium: false,
+            portfolio_count: 0, // 상세보기 클릭 시 로드
+            recent_projects: [],
+            created_at: contractor.created_at
+          }
+        })
 
         // 2) 리뷰 수 일괄 조회 후 매핑
         const contractorIds = formattedContractors.map(c => c.id)
