@@ -152,20 +152,36 @@ export default function ContractorDetailPage() {
       setPortfolioCount(portfolioCount || 0)
       setCompletedProjects(completedQuotes || 0)
 
-      // specialties 파싱 (JSON 문자열인 경우 처리)
+      // specialties 파싱 (JSON 문자열인 경우 처리 - 개선)
       let parsedSpecialties: string[] = []
       if (contractorData.specialties) {
         if (Array.isArray(contractorData.specialties)) {
           parsedSpecialties = contractorData.specialties
         } else if (typeof contractorData.specialties === 'string') {
           try {
-            parsedSpecialties = JSON.parse(contractorData.specialties)
+            // 첫 번째 파싱 시도
+            let parsed = JSON.parse(contractorData.specialties)
+            
+            // 이중 인코딩된 경우를 위한 두 번째 파싱
+            if (typeof parsed === 'string') {
+              parsed = JSON.parse(parsed)
+            }
+            
+            // 배열인지 확인
+            if (Array.isArray(parsed)) {
+              parsedSpecialties = parsed
+            } else {
+              console.warn('Parsed specialties is not an array:', parsed)
+              parsedSpecialties = []
+            }
           } catch (e) {
             console.error('Failed to parse specialties:', e)
+            console.error('Raw data:', contractorData.specialties)
             parsedSpecialties = []
           }
         }
       }
+      console.log('✅ Parsed specialties:', parsedSpecialties) // 디버깅용
 
       const formattedContractor: Contractor = {
         id: contractorData.id,
@@ -459,12 +475,21 @@ export default function ContractorDetailPage() {
           <div className="mb-6">
             <h3 className="font-semibold mb-3">Specialties</h3>
             <div className="flex flex-wrap gap-2">
-              {contractor.specialties.length > 0 ? (
-                contractor.specialties.map((specialty, index) => (
-                  <span key={index} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm">
-                    {specialty}
-                  </span>
-                ))
+              {Array.isArray(contractor.specialties) && contractor.specialties.length > 0 ? (
+                contractor.specialties.map((specialty, index) => {
+                  // 각 specialty가 문자열인지 확인
+                  if (typeof specialty === 'string' && specialty.trim()) {
+                    return (
+                      <span 
+                        key={index} 
+                        className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm"
+                      >
+                        {specialty}
+                      </span>
+                    )
+                  }
+                  return null
+                })
               ) : (
                 <span className="text-gray-500 text-sm">No specialty information</span>
               )}
