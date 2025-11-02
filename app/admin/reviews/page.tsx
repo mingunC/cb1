@@ -16,7 +16,8 @@ import {
   User,
   Building,
   Calendar,
-  CheckCircle
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -61,6 +62,7 @@ export default function AdminReviewsPage() {
     contractor_reply: '',
     is_verified: false
   })
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuthorization()
@@ -78,23 +80,29 @@ export default function AdminReviewsPage() {
 
   const checkAuthorization = async () => {
     try {
+      console.log('🔍 Checking authorization...')
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {
+        console.error('❌ No session found')
         router.push('/login')
         return
       }
 
+      console.log('✅ Session found:', session.user.email)
+
       if (session.user.email !== 'cmgg919@gmail.com') {
+        console.error('❌ Not admin:', session.user.email)
         toast.error('관리자 권한이 필요합니다')
         router.push('/')
         return
       }
 
+      console.log('✅ Admin authorized')
       setIsAuthorized(true)
     } catch (error) {
-      console.error('Authorization error:', error)
+      console.error('❌ Authorization error:', error)
       router.push('/login')
     } finally {
       setIsLoading(false)
@@ -103,18 +111,35 @@ export default function AdminReviewsPage() {
 
   const fetchReviews = async () => {
     try {
+      console.log('📥 Fetching reviews...')
       setIsLoading(true)
+      setError(null)
+      
       const response = await fetch('/api/admin/reviews')
+      
+      console.log('📊 Response status:', response.status)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API Error:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
       const data = await response.json()
+      console.log('📦 Received data:', data)
 
       if (data.reviews) {
+        console.log(`✅ Loaded ${data.reviews.length} reviews`)
         setReviews(data.reviews)
       } else {
-        toast.error('리뷰를 불러오는데 실패했습니다')
+        console.warn('⚠️ No reviews in response')
+        setReviews([])
       }
-    } catch (error) {
-      console.error('Error fetching reviews:', error)
-      toast.error('리뷰를 불러오는데 실패했습니다')
+    } catch (error: any) {
+      console.error('❌ Error fetching reviews:', error)
+      const errorMessage = error.message || '리뷰를 불러오는데 실패했습니다'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -251,12 +276,34 @@ export default function AdminReviewsPage() {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MessageCircle className="h-4 w-4" />
               <span>전체 {reviews.length}개</span>
+              {error && (
+                <button
+                  onClick={fetchReviews}
+                  className="ml-4 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  재시도
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 mb-1">오류 발생</h3>
+              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-xs text-red-600 mt-2">
+                브라우저 콘솔(F12)에서 자세한 오류를 확인하세요.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* 검색 및 필터 */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -310,7 +357,11 @@ export default function AdminReviewsPage() {
           {filteredReviews.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">리뷰가 없습니다</p>
+              <p className="text-gray-500">
+                {searchTerm || filterReply !== 'all' 
+                  ? '검색 결과가 없습니다' 
+                  : '리뷰가 없습니다'}
+              </p>
             </div>
           ) : (
             filteredReviews.map((review) => (
