@@ -53,8 +53,15 @@ export default function ReviewForm({ contractorId, contractorName, onClose, onSu
         const supabase = createBrowserClient()
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        if (sessionError || !session) {
+        if (sessionError) {
           console.error('❌ Session error:', sessionError)
+          toast.error('An error occurred while checking your session.')
+          setTimeout(() => onClose(), 2000)
+          return
+        }
+        
+        if (!session) {
+          // 로그인하지 않은 경우 - 에러가 아닌 정상적인 상태이므로 console.error 제거
           toast.error('Login is required.')
           setTimeout(() => onClose(), 2000)
           return
