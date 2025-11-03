@@ -77,21 +77,21 @@ export const calculateCommission = (budget: number): string => {
   }).format(commission);
 };
 
-// 번역 매핑 함수들
+// ✅ 영어로 포맷팅하는 함수들
 const formatProjectTypes = (projectTypes: string[]): string => {
   const projectTypeMap: { [key: string]: string } = {
-    'kitchen': '주방',
-    'bathroom': '욕실',
-    'basement': '지하실',
-    'painting': '페인팅',
-    'flooring': '바닥',
-    'full-renovation': '전체 리노베이션',
-    'full_renovation': '전체 리노베이션',
-    'restaurant': '레스토랑',
-    'retail': '소매점',
-    'office': '사무실',
-    'education': '교육시설',
-    'other': '기타'
+    'kitchen': 'Kitchen',
+    'bathroom': 'Bathroom',
+    'basement': 'Basement',
+    'painting': 'Painting',
+    'flooring': 'Flooring',
+    'full-renovation': 'Full Renovation',
+    'full_renovation': 'Full Renovation',
+    'restaurant': 'Restaurant',
+    'retail': 'Retail',
+    'office': 'Office',
+    'education': 'Education Facility',
+    'other': 'Other'
   }
   
   return projectTypes.map(type => projectTypeMap[type] || type).join(', ')
@@ -99,15 +99,15 @@ const formatProjectTypes = (projectTypes: string[]): string => {
 
 const formatSpaceType = (spaceType: string): string => {
   const spaceTypeMap: { [key: string]: string } = {
-    'detached-house': '단독주택',
-    'detached_house': '단독주택',
-    'condo': '콘도',
-    'townhouse': '타운하우스',
-    'town_house': '타운하우스',
-    'commercial': '상업',
-    'beecroft': '비크로프트',
-    'apartment': '아파트',
-    'house': '주택'
+    'detached-house': 'Detached House',
+    'detached_house': 'Detached House',
+    'condo': 'Condo',
+    'townhouse': 'Townhouse',
+    'town_house': 'Townhouse',
+    'commercial': 'Commercial',
+    'beecroft': 'Beecroft',
+    'apartment': 'Apartment',
+    'house': 'House'
   }
   
   return spaceTypeMap[spaceType] || spaceType
@@ -161,7 +161,7 @@ export const createSelectionEmailTemplate = (
       <div class="container">
         <div class="header">
           <h1>🎉 Congratulations!</h1>
-          <p style="margin: 0; font-size: 18px;">프로젝트에 선정되셨습니다</p>
+          <p style="margin: 0; font-size: 18px;">You've been selected for the project</p>
         </div>
         
         <div class="content">
@@ -196,7 +196,7 @@ export const createSelectionEmailTemplate = (
             </table>
             ${!hasPhone ? `
             <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px;">
-              ⚠️ <strong>안내:</strong> The customer did not enter a phone number. Please contact them via email first, or confirm their contact details during the on-site visit.
+              ⚠️ <strong>Notice:</strong> The customer did not enter a phone number. Please contact them via email first, or confirm their contact details during the on-site visit.
             </div>
             ` : ''}
           </div>
@@ -245,7 +245,7 @@ export const createSelectionEmailTemplate = (
               </tr>
               <tr>
                 <td>Payment Due Date</td>
-                <td>${completionDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                <td>${completionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
               </tr>
             </table>
             <div style="background: #e7f3ff; padding: 12px; border-radius: 5px; margin-top: 15px; font-size: 14px; color: #333;">
@@ -279,7 +279,7 @@ export const createSelectionEmailTemplate = (
           
           <p>
             Thank you.<br>
-            <strong>Canada Beaver 팀</strong>
+            <strong>Canada Beaver Team</strong>
           </p>
         </div>
         
