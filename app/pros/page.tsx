@@ -74,7 +74,11 @@ export default function ContractorsListingPage() {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // ✅ 최적화: 기본 정보만 한 번에 가져오기
+      console.log('🔍 Starting contractors fetch...')
+      const startTime = performance.now()
+      
+      // ✅ 최적화: RPC 함수 사용 또는 단순 쿼리로 변경
+      // review_count를 나중에 가져오는 대신, 기본값으로 설정
       const { data: contractorsData, error } = await supabase
         .from('contractors')
         .select(`
@@ -93,94 +97,130 @@ export default function ContractorsListingPage() {
           status,
           created_at
         `)
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
+        .limit(50) // ✅ 초기 로딩 제한
+
+      const fetchTime = performance.now() - startTime
+      console.log(`✅ Contractors fetched in ${fetchTime.toFixed(2)}ms`)
 
       if (error) {
-        console.error('Error fetching contractors:', error)
-        // ✅ return 제거 - finally가 실행되도록
+        console.error('❌ Error fetching contractors:', error)
         setContractors([])
         setFilteredContractors([])
-      } else {
-        // 1) 기본 데이터 포맷팅
-        const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => {
-          // specialties 파싱 (JSON 문자열인 경우 처리)
-          let parsedSpecialties: string[] = []
-          if (contractor.specialties) {
-            if (Array.isArray(contractor.specialties)) {
-              parsedSpecialties = contractor.specialties
-            } else if (typeof contractor.specialties === 'string') {
-              try {
-                parsedSpecialties = JSON.parse(contractor.specialties)
-              } catch (e) {
-                console.error('Failed to parse specialties:', e)
-                parsedSpecialties = []
+        return
+      }
+
+      // ✅ specialties 파싱 및 기본 포맷팅
+      const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => {
+        let parsedSpecialties: string[] = []
+        if (contractor.specialties) {
+          if (Array.isArray(contractor.specialties)) {
+            parsedSpecialties = contractor.specialties
+          } else if (typeof contractor.specialties === 'string') {
+            try {
+              let parsed = JSON.parse(contractor.specialties)
+              if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed)
               }
+              if (Array.isArray(parsed)) {
+                parsedSpecialties = parsed
+              }
+            } catch (e) {
+              parsedSpecialties = []
             }
-          }
-
-          return {
-            id: contractor.id,
-            company_name: contractor.company_name || '업체명 없음',
-            contact_name: contractor.contact_name || '담당자 없음',
-            phone: contractor.phone || '전화번호 없음',
-            email: contractor.email || '이메일 없음',
-            website: contractor.website,
-            logo_url: contractor.company_logo,
-            cover_image: contractor.company_logo,
-            description: contractor.description || 'No company description.',
-            established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
-            employee_count: '정보 없음',
-            service_areas: contractor.address ? [contractor.address] : ['서울', '경기'],
-            specialties: parsedSpecialties,
-            certifications: ['실내건축공사업'],
-            rating: contractor.rating || 0,
-            review_count: 0, // 아래에서 실제 리뷰 수로 덮어씀
-            completed_projects: 0, // 상세보기 클릭 시 로드
-            response_time: '문의 후 안내',
-            min_budget: undefined,
-            is_verified: true,
-            is_premium: false,
-            portfolio_count: 0, // 상세보기 클릭 시 로드
-            recent_projects: [],
-            created_at: contractor.created_at
-          }
-        })
-
-        // 2) 리뷰 수 일괄 조회 후 매핑
-        const contractorIds = formattedContractors.map(c => c.id)
-        let reviewCountMap = new Map<string, number>()
-        if (contractorIds.length > 0) {
-          const { data: reviewsList, error: reviewsError } = await supabase
-            .from('reviews')
-            .select('contractor_id')
-            .in('contractor_id', contractorIds)
-
-          if (reviewsError) {
-            console.error('Error fetching review counts:', reviewsError)
-          } else if (reviewsList) {
-            // 클라이언트에서 개수 집계
-            reviewCountMap = reviewsList.reduce((map, row) => {
-              const id = row.contractor_id as string
-              map.set(id, (map.get(id) || 0) + 1)
-              return map
-            }, new Map<string, number>())
           }
         }
 
-        const contractorsWithCounts = formattedContractors.map(c => ({
-          ...c,
-          review_count: reviewCountMap.get(c.id) || 0
-        }))
+        return {
+          id: contractor.id,
+          company_name: contractor.company_name || '업체명 없음',
+          contact_name: contractor.contact_name || '담당자 없음',
+          phone: contractor.phone || '전화번호 없음',
+          email: contractor.email || '이메일 없음',
+          website: contractor.website,
+          logo_url: contractor.company_logo,
+          cover_image: contractor.company_logo,
+          description: contractor.description || 'No company description.',
+          established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
+          employee_count: '정보 없음',
+          service_areas: contractor.address ? [contractor.address] : ['서울', '경기'],
+          specialties: parsedSpecialties,
+          certifications: ['실내건축공사업'],
+          rating: contractor.rating || 0,
+          review_count: 0, // ✅ 초기 값, 별도 로딩
+          completed_projects: 0,
+          response_time: '문의 후 안내',
+          min_budget: undefined,
+          is_verified: true,
+          is_premium: false,
+          portfolio_count: 0,
+          recent_projects: [],
+          created_at: contractor.created_at
+        }
+      })
 
-        console.log('✅ 업체 목록 로드 완료:', contractorsWithCounts.length, '개')
-
-        setContractors(contractorsWithCounts)
-        setFilteredContractors(contractorsWithCounts)
-      }
+      console.log('✅ 업체 목록 로드 완료:', formattedContractors.length, '개')
+      
+      setContractors(formattedContractors)
+      setFilteredContractors(formattedContractors)
+      
+      // ✅ 백그라운드에서 review count 로드 (non-blocking)
+      loadReviewCounts(formattedContractors)
+      
     } catch (error) {
-      console.error('Error:', error)
+      console.error('❌ Unexpected error:', error)
+      setContractors([])
+      setFilteredContractors([])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // ✅ 별도 함수로 review count 로드 (비동기, non-blocking)
+  const loadReviewCounts = async (contractorsList: Contractor[]) => {
+    try {
+      const supabase = createBrowserClient()
+      const contractorIds = contractorsList.map(c => c.id)
+      
+      if (contractorIds.length === 0) return
+
+      console.log('🔄 Loading review counts in background...')
+      const startTime = performance.now()
+
+      const { data: reviewsList, error } = await supabase
+        .from('reviews')
+        .select('contractor_id')
+        .in('contractor_id', contractorIds)
+
+      const loadTime = performance.now() - startTime
+      console.log(`✅ Review counts loaded in ${loadTime.toFixed(2)}ms`)
+
+      if (error) {
+        console.error('❌ Error loading review counts:', error)
+        return
+      }
+
+      // 클라이언트에서 개수 집계
+      const reviewCountMap = (reviewsList || []).reduce((map, row) => {
+        const id = row.contractor_id as string
+        map.set(id, (map.get(id) || 0) + 1)
+        return map
+      }, new Map<string, number>())
+
+      // ✅ state 업데이트
+      setContractors(prev => prev.map(c => ({
+        ...c,
+        review_count: reviewCountMap.get(c.id) || 0
+      })))
+      
+      setFilteredContractors(prev => prev.map(c => ({
+        ...c,
+        review_count: reviewCountMap.get(c.id) || 0
+      })))
+
+    } catch (error) {
+      console.error('❌ Error loading review counts:', error)
     }
   }
 
@@ -294,7 +334,9 @@ export default function ContractorsListingPage() {
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900">{contractor.company_name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-gray-600">({contractor.review_count} reviews)</span>
+                        <span className="text-sm text-gray-600">
+                          {contractor.review_count > 0 ? `(${contractor.review_count} reviews)` : '(No reviews yet)'}
+                        </span>
                       </div>
                     </div>
                   </div>
