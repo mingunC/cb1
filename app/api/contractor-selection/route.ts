@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
 
           await sendEmail({
             to: contractorEmail,
-            subject: `🎉 축하합니다! "${currentProject.space_type}" 프로젝트에 선정되셨습니다`,
+            subject: `🎉 Congratulations! You've been selected for the "${currentProject.space_type}" project`,
             html: contractorEmailHtml
           })
 
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
 
             await sendEmail({
               to: customerInfo.email,
-              subject: `✅ 프로젝트 업체 선정이 완료되었습니다`,
+              subject: `✅ Contractor Selection Complete - Your Project is Ready to Start`,
               html: customerEmailHtml
             })
 
