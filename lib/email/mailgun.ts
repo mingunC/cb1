@@ -126,8 +126,8 @@ export const createSelectionEmailTemplate = (
   
   // 고객 이름
   const customerName = customerInfo 
-    ? `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() || '고객'
-    : '고객';
+    ? `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim() || 'Customer'
+    : 'Customer';
   
   // 고객 전화번호 (있는 경우에만 표시)
   const hasPhone = customerInfo?.phone && customerInfo.phone.trim() !== '';
@@ -165,7 +165,7 @@ export const createSelectionEmailTemplate = (
         </div>
         
         <div class="content">
-          <p>Hello, <strong>${contractorName}</strong>님</p>
+          <p>Hello, <strong>${contractorName}</strong></p>
           
           <p>We are pleased to inform you that the quotation you submitted has been selected. The customer has finally chosen your company's quotation.</p>
           
@@ -327,7 +327,7 @@ export const createCustomerNotificationTemplate = (
         </div>
         
         <div class="content">
-          <p>Hello, <strong>${customerName}</strong>님</p>
+          <p>Hello, <strong>${customerName}</strong></p>
           
           <div class="success-badge">
             🎉 The contractor you selected has been confirmed!
