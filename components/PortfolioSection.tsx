@@ -1,12 +1,40 @@
 'use client'
 
 import { Folder, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 export default function PortfolioSection() {
-  const portfolios = Array(4).fill(null).map((_, i) => ({
-    id: i + 1,
-    image: `/placeholder-portfolio-${i + 1}.jpg`,
-  }))
+  // Fake portfolio projects with realistic data
+  const portfolios = [
+    {
+      id: 1,
+      title: 'Modern Kitchen Renovation',
+      type: 'Kitchen',
+      image: 'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800&auto=format&fit=crop',
+      description: 'Contemporary kitchen with marble countertops'
+    },
+    {
+      id: 2,
+      title: 'Luxury Living Room',
+      type: 'Living Room',
+      image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop',
+      description: 'Elegant living space with modern furnishings'
+    },
+    {
+      id: 3,
+      title: 'Master Bathroom Suite',
+      type: 'Bathroom',
+      image: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop',
+      description: 'Spa-like bathroom with premium fixtures'
+    },
+    {
+      id: 4,
+      title: 'Contemporary Office Space',
+      type: 'Office',
+      image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop',
+      description: 'Professional workspace with natural light'
+    }
+  ]
 
   return (
     <section className="py-24 bg-white">
@@ -38,44 +66,70 @@ export default function PortfolioSection() {
             {portfolios.slice(0, 3).map((portfolio) => (
               <div
                 key={portfolio.id}
-                className="relative aspect-[4/3] rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-shadow duration-300"
+                className="group relative aspect-[4/3] rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 cursor-pointer"
               >
-                {/* Placeholder image with interior design style */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2c5f4e] via-[#1a4d3e] to-[#0f3d2f]">
-                  {/* Simulated interior design elements */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-full bg-gradient-to-b from-transparent via-black/20 to-black/40">
-                      {/* Sofa representation */}
-                      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#f5f1e8] to-[#e8e0d3]"></div>
-                    </div>
+                {/* Portfolio Image */}
+                <img 
+                  src={portfolio.image} 
+                  alt={portfolio.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                
+                {/* Overlay with gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <span className="inline-block px-3 py-1 bg-[#2c5f4e] text-white text-xs rounded-full mb-2">
+                      {portfolio.type}
+                    </span>
+                    <h3 className="text-white font-semibold text-lg mb-1">
+                      {portfolio.title}
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {portfolio.description}
+                    </p>
                   </div>
                 </div>
-                {/* You can replace the above with actual images when available */}
               </div>
             ))}
           </div>
 
           {/* Second Row - 1 image left-aligned */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-              {/* Placeholder image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#2c5f4e] via-[#1a4d3e] to-[#0f3d2f]">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-full bg-gradient-to-b from-transparent via-black/20 to-black/40">
-                    <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#f5f1e8] to-[#e8e0d3]"></div>
-                  </div>
+            <div className="group relative aspect-[4/3] rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 cursor-pointer">
+              {/* Portfolio Image */}
+              <img 
+                src={portfolios[3].image} 
+                alt={portfolios[3].title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+              
+              {/* Overlay with gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <span className="inline-block px-3 py-1 bg-[#2c5f4e] text-white text-xs rounded-full mb-2">
+                    {portfolios[3].type}
+                  </span>
+                  <h3 className="text-white font-semibold text-lg mb-1">
+                    {portfolios[3].title}
+                  </h3>
+                  <p className="text-white/80 text-sm">
+                    {portfolios[3].description}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Call to Action Button */}
+        {/* Call to Action Button - Now links to portfolio page */}
         <div className="text-center">
-          <button className="inline-flex items-center gap-2 border border-[#2c5f4e] bg-white text-[#2c5f4e] hover:bg-[#2c5f4e] hover:text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-300">
+          <Link 
+            href="/portfolio"
+            className="inline-flex items-center gap-2 border border-[#2c5f4e] bg-white text-[#2c5f4e] hover:bg-[#2c5f4e] hover:text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-300"
+          >
             View Complete Gallery
             <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>
