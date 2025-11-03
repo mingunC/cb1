@@ -57,20 +57,41 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 2. 선택된 견적이 해당 프로젝트의 것인지 확인
-      const { data: selectedQuote, error: quoteCheckError } = await supabase
+      // 2. 선택된 견적이 해당 프로젝트의 것인지 확인 - 개선된 로직
+      console.log('🔍 견적서 조회 시작:', { contractorQuoteId, projectId })
+      
+      const { data: quoteResults, error: quoteCheckError } = await supabase
         .from('contractor_quotes')
         .select('*')
         .eq('id', contractorQuoteId)
         .eq('project_id', projectId)
-        .single()
 
-      if (quoteCheckError || !selectedQuote) {
-        throw new Error(`유효하지 않은 견적서입니다: ${quoteCheckError?.message}`)
+      console.log('견적서 조회 결과:', {
+        resultCount: quoteResults?.length || 0,
+        error: quoteCheckError?.message || 'none'
+      })
+
+      if (quoteCheckError) {
+        throw new Error(`견적서 조회 실패: ${quoteCheckError.message}`)
       }
 
+      if (!quoteResults || quoteResults.length === 0) {
+        throw new Error(`해당 견적서를 찾을 수 없습니다 (ID: ${contractorQuoteId}, Project: ${projectId})`)
+      }
+
+      if (quoteResults.length > 1) {
+        console.warn('⚠️ 중복된 견적서 발견:', quoteResults.length)
+      }
+
+      const selectedQuote = quoteResults[0]
+      console.log('✅ 견적서 확인 완료:', {
+        id: selectedQuote.id,
+        contractor_id: selectedQuote.contractor_id,
+        status: selectedQuote.status
+      })
+
       // 3. 선택된 업체의 견적서 상태를 'accepted'로 변경
-      const { data: acceptedQuote, error: updateError } = await supabase
+      const { data: acceptedQuoteResults, error: updateError } = await supabase
         .from('contractor_quotes')
         .update({ 
           status: 'accepted',
@@ -78,12 +99,16 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', contractorQuoteId)
         .select()
-        .single()
 
       if (updateError) {
         throw new Error(`견적서 승인 실패: ${updateError.message}`)
       }
 
+      if (!acceptedQuoteResults || acceptedQuoteResults.length === 0) {
+        throw new Error('견적서 업데이트 후 결과를 찾을 수 없습니다')
+      }
+
+      const acceptedQuote = acceptedQuoteResults[0]
       updateResults.acceptedQuote = acceptedQuote
       console.log('✅ Contractor quote accepted:', acceptedQuote?.id)
 
@@ -108,7 +133,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 5. ✅ 프로젝트 상태를 'contractor-selected'로 변경 (completed 아님!)
-      const { data: updatedProject, error: projectError } = await supabase
+      const { data: updatedProjectResults, error: projectError } = await supabase
         .from('quote_requests')
         .update({ 
           status: 'contractor-selected',  // ✅ 변경: completed → contractor-selected
@@ -118,7 +143,6 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', projectId)
         .select()
-        .single()
 
       if (projectError) {
         // 프로젝트 업데이트 실패 시 견적서 상태 되돌리기 시도
@@ -136,21 +160,29 @@ export async function POST(request: NextRequest) {
         throw new Error(`프로젝트 상태 업데이트 실패: ${projectError.message}`)
       }
 
+      if (!updatedProjectResults || updatedProjectResults.length === 0) {
+        throw new Error('프로젝트 업데이트 후 결과를 찾을 수 없습니다')
+      }
+
+      const updatedProject = updatedProjectResults[0]
       updateResults.updatedProject = updatedProject
       console.log('✅ Project status updated to:', updatedProject?.status)
 
       // 6. ✅ 업체 정보 조회 (이메일 발송용) - 개선된 로직
       console.log('🔍 업체 정보 조회 시작, contractor_id:', acceptedQuote?.contractor_id)
       
-      const { data: contractorInfo, error: contractorError } = await supabase
+      const { data: contractorResults, error: contractorError } = await supabase
         .from('contractors')
         .select('*')
         .eq('id', acceptedQuote?.contractor_id)
-        .single()
 
+      let contractorInfo = null
       if (contractorError) {
         console.error('❌ contractors 테이블 조회 실패:', contractorError)
+      } else if (!contractorResults || contractorResults.length === 0) {
+        console.error('❌ 업체 정보를 찾을 수 없습니다')
       } else {
+        contractorInfo = contractorResults[0]
         console.log('✅ contractors 테이블 조회 성공:', {
           id: contractorInfo?.id,
           company_name: contractorInfo?.company_name,
@@ -166,14 +198,13 @@ export async function POST(request: NextRequest) {
       if (!contractorEmail && contractorInfo?.user_id) {
         console.log('📧 contractors.email이 비어있음. users 테이블에서 조회 시도...')
         
-        const { data: userData, error: userError } = await supabase
+        const { data: userResults, error: userError } = await supabase
           .from('users')
           .select('email')
           .eq('id', contractorInfo.user_id)
-          .single()
 
-        if (!userError && userData?.email) {
-          contractorEmail = userData.email
+        if (!userError && userResults && userResults.length > 0 && userResults[0]?.email) {
+          contractorEmail = userResults[0].email
           emailSource = 'users'
           console.log('✅ users 테이블에서 이메일 찾음:', contractorEmail)
         } else {
@@ -201,11 +232,15 @@ export async function POST(request: NextRequest) {
       console.log('📧 최종 이메일 주소:', contractorEmail || '(없음)', '출처:', emailSource)
 
       // 7. ✅ 고객 정보 조회 (users 테이블 + quote_requests 테이블)
-      const { data: customerInfo, error: customerError } = await supabase
+      const { data: customerResults, error: customerError } = await supabase
         .from('users')
         .select('id, email, first_name, last_name, phone')
         .eq('id', currentProject.customer_id)
-        .single()
+
+      let customerInfo = null
+      if (!customerError && customerResults && customerResults.length > 0) {
+        customerInfo = customerResults[0]
+      }
 
       // quote_requests 테이블의 customer_phone 필드도 확인 (우선순위 높음)
       const customerPhone = currentProject.customer_phone || customerInfo?.phone
@@ -273,14 +308,18 @@ export async function POST(request: NextRequest) {
       }
 
       // 9. ✅ 최종 검증 - 프로젝트 상태가 'contractor-selected'로 변경되었는지 확인
-      const { data: finalCheck, error: finalError } = await supabase
+      const { data: finalCheckResults, error: finalError } = await supabase
         .from('quote_requests')
         .select('status')
         .eq('id', projectId)
-        .single()
 
-      if (finalError || finalCheck?.status !== 'contractor-selected') {
+      if (finalError || !finalCheckResults || finalCheckResults.length === 0) {
         throw new Error('프로젝트 상태 업데이트 검증 실패')
+      }
+
+      const finalCheck = finalCheckResults[0]
+      if (finalCheck?.status !== 'contractor-selected') {
+        throw new Error(`프로젝트 상태가 예상과 다릅니다: ${finalCheck?.status}`)
       }
 
       console.log('✅ Final verification successful:', finalCheck.status)
