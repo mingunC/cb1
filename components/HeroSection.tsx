@@ -72,7 +72,7 @@ export default function HeroSection() {
               {/* Info Box */}
               <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg">
                 <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 lg:mb-6">
-                  Canada Beaver simplifies the complex process of furnishing all-inclusive, boutique & high-end hotels, and luxury residences in Canada.
+                  Tired of Toronto renovation nightmares like scams, delays, and hidden costs? Our platform connects you with vetted pros through a secure bidding process for stress-free, trustworthy home transformations.
                 </p>
                 <Link
                   href="/quote-request"
