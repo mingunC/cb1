@@ -251,7 +251,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     toast.success('Data refreshed')
   }
 
-  // ✅ 현장방문 신청 함수
+  // ✅ 현장방문 신청 함수 - API 호출 버전
   const handleSiteVisitApplication = async (project: Project) => {
     console.log('🚀 Apply Site Visit clicked!', {
       projectId: project.id,
@@ -266,71 +266,38 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     }
 
     try {
-      const supabase = createBrowserClient()
+      console.log('📝 Calling site visit API...')
       
-      console.log('📝 Step 1: Checking existing applications...')
-      // Check if already applied
-      const { data: existing, error: checkError } = await supabase
-        .from('site_visit_applications')
-        .select('*')
-        .eq('project_id', project.id)
-        .eq('contractor_id', contractorData.id)
-        .maybeSingle()
-
-      console.log('Existing application check:', { 
-        existing, 
-        checkError: checkError?.message 
+      // API 호출
+      const response = await fetch('/api/apply-site-visit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: project.id,
+          contractorId: contractorData.id
+        })
       })
 
-      if (checkError) {
-        console.error('❌ Check error:', checkError)
-        toast.error(`Check failed: ${checkError.message}`)
-        return
-      }
+      const data = await response.json()
 
-      if (existing) {
-        console.log('⚠️ Already applied')
-        toast.error('Site visit already applied')
-        return
-      }
-
-      console.log('📝 Step 2: Inserting site visit application...')
-      // Insert site visit application
-      const insertData = {
-        project_id: project.id,
-        contractor_id: contractorData.id,
-        status: 'pending',
-        applied_at: new Date().toISOString()
-      }
-      
-      console.log('Insert data:', insertData)
-
-      const { data: result, error: insertError } = await supabase
-        .from('site_visit_applications')
-        .insert(insertData)
-        .select()
-        .single()
-
-      console.log('Insert result:', { 
-        success: !!result,
-        result,
-        error: insertError?.message,
-        errorCode: insertError?.code,
-        errorDetails: insertError?.details
+      console.log('📊 API Response:', {
+        status: response.status,
+        success: data.success,
+        message: data.message
       })
 
-      if (insertError) {
-        console.error('❌ Site visit application error:', insertError)
-        toast.error(`Site visit application failed: ${insertError.message}`)
-        return
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to apply for site visit')
       }
 
       console.log('✅ Site visit applied successfully!')
-      toast.success('Site visit application submitted successfully')
+      toast.success('Site visit application submitted successfully! Customer will be notified.')
       await loadProjects() // Refresh data
     } catch (error: any) {
       console.error('💥 Error applying for site visit:', error)
-      toast.error(`Error: ${error.message}`)
+      toast.error(error.message || 'Failed to apply for site visit')
     }
   }
   
@@ -797,11 +764,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </button>
           )}
         </div>
-        
-        {/* 디버그 정보 - 숨김 */}
-        {/* <div className="mt-2 pt-2 border-t text-xs text-gray-400">
-          <p>ID: {project.id.slice(0, 8)} | DB Status: {project.status} | Project Status: {project.projectStatus} | Has Quote: {project.quote ? 'Yes' : 'No'} | Has Site Visit: {project.siteVisit ? 'Yes' : 'No'}</p>
-        </div> */}
       </div>
     )
   }
@@ -835,8 +797,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 상단 메뉴 버튼들 */}
-        
         {/* 탭 네비게이션 */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#daa520]/20 mb-8">
           <div className="border-b border-gray-200">
