@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server-clients'
+import { createClient } from '@/lib/supabase/server'
 import { 
   sendEmail, 
   createSelectionEmailTemplate, 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase 서버 클라이언트 생성
-    const supabase = createServerClient()
+    const supabase = await createClient()
 
     // 트랜잭션처럼 작동하도록 모든 작업을 순차적으로 실행하고
     // 하나라도 실패하면 롤백 시뮬레이션
@@ -341,7 +341,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = await createClient()
 
     // 프로젝트 정보와 선택된 업체 정보 조회
     const { data: project, error } = await supabase
