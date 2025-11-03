@@ -1,8 +1,8 @@
-# Email Notifications Update - English Version
+# Email Notifications Update - English Version (with Mailgun)
 
 ## 🎉 What's New
 
-This update adds comprehensive email notification features in English for both customers and contractors.
+This update adds comprehensive email notification features in English for both customers and contractors, now with **Mailgun integration**.
 
 ## ✨ New Features
 
@@ -36,6 +36,23 @@ This update adds comprehensive email notification features in English for both c
 
 **File:** `send-contractor-selection-email-english.sql`
 
+## 📧 Email Service: Mailgun
+
+This project uses **Mailgun** for email delivery:
+
+### Why Mailgun?
+- ✅ **5,000 free emails/month**
+- ✅ Advanced tracking and analytics
+- ✅ Reliable delivery rates
+- ✅ Support for multiple regions (US/EU)
+- ✅ Easy domain verification
+- ✅ Excellent API documentation
+
+### Alternative: Resend
+If you prefer to use Resend instead of Mailgun:
+- Use `supabase-email-function-english.js` (Resend version)
+- Follow instructions in `EMAIL-NOTIFICATIONS-SETUP-GUIDE.md`
+
 ## 🔄 Changes from Previous Version
 
 ### Language Migration
@@ -44,13 +61,15 @@ This update adds comprehensive email notification features in English for both c
 - Professional and clear email copy
 - Improved email structure and formatting
 
-### Email Function Updates
-- Updated from Korean to English labels
-- Changed sender name to "Renovation Platform"
-- Improved email tags for better tracking
-- Enhanced error logging in English
+### Email Service Integration
+- ✅ **Mailgun integration added** (recommended)
+- ✅ Alternative Resend integration available
+- Updated Edge Function for Mailgun API
+- Improved error logging in English
 
-**File:** `supabase-email-function-english.js`
+**Files:** 
+- `supabase-email-function-mailgun.js` (Mailgun - recommended)
+- `supabase-email-function-english.js` (Resend - alternative)
 
 ## 📊 Feature Comparison
 
@@ -59,6 +78,7 @@ This update adds comprehensive email notification features in English for both c
 | **Language** | Korean (한국어) | English |
 | **Site Visit Notifications** | ❌ None | ✅ Added |
 | **Contractor Selection Email** | ✅ Korean | ✅ English |
+| **Email Service** | Not specified | Mailgun (recommended) |
 | **Email Templates** | Basic HTML | Responsive, professional design |
 | **Customer Notifications** | Limited | Comprehensive |
 | **Documentation** | Korean/Mixed | Full English documentation |
@@ -73,43 +93,92 @@ This update adds comprehensive email notification features in English for both c
    - Updated English version of contractor selection email
    - Trigger on UPDATE to contractor_quotes table
 
-3. **supabase-email-function-english.js**
-   - Updated Edge Function in English
+3. **supabase-email-function-mailgun.js** ⭐ RECOMMENDED
+   - Edge Function for Mailgun API
    - Improved error handling and logging
+   - Supports US and EU regions
 
-4. **EMAIL-NOTIFICATIONS-SETUP-GUIDE.md**
-   - Complete setup instructions
-   - Troubleshooting guide
+4. **supabase-email-function-english.js**
+   - Alternative Edge Function for Resend API
+   - Use if you prefer Resend over Mailgun
+
+5. **MAILGUN-SETUP-GUIDE.md** 📚
+   - Complete Mailgun setup instructions
+   - Domain verification guide
+   - Troubleshooting section
+
+6. **EMAIL-NOTIFICATIONS-SETUP-GUIDE.md**
+   - General setup instructions
+   - Works with both Mailgun and Resend
    - Testing procedures
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Mailgun)
 
-1. **Deploy the email function:**
+### Step 1: Get Mailgun Credentials
+
+1. Sign up at [Mailgun](https://www.mailgun.com)
+2. Go to **Sending** → **Domain Settings**
+3. Copy your **API Key** and **Domain Name**
+
+### Step 2: Deploy the Email Function
+
 ```bash
+# Create function directory
+mkdir -p supabase/functions/send-email
+mkdir -p supabase/functions/_shared
+
+# Copy the Mailgun function
+cp supabase-email-function-mailgun.js supabase/functions/send-email/index.ts
+
+# Create CORS file
+echo 'export const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}' > supabase/functions/_shared/cors.ts
+
+# Deploy
 supabase functions deploy send-email
 ```
 
-2. **Set your environment variables:**
+### Step 3: Set Environment Variables
+
 ```bash
-supabase secrets set RESEND_API_KEY=your_key
-supabase secrets set FROM_EMAIL=noreply@yourdomain.com
+supabase secrets set MAILGUN_API_KEY=your_mailgun_api_key
+supabase secrets set MAILGUN_DOMAIN=mg.yourdomain.com
+supabase secrets set FROM_EMAIL="Renovation Platform <noreply@yourdomain.com>"
 ```
 
-3. **Run the database migrations:**
+### Step 4: Run Database Migrations
+
+In Supabase SQL Editor, run:
+1. `send-site-visit-application-email.sql`
+2. `send-contractor-selection-email-english.sql`
+
+**Important:** Update the function URL in both SQL files:
 ```sql
--- In Supabase SQL Editor, run:
--- 1. send-site-visit-application-email.sql
--- 2. send-contractor-selection-email-english.sql
+-- Replace this:
+url := 'https://your-project-id.supabase.co/functions/v1/send-email',
+
+-- With your actual project URL:
+url := 'https://abcdefghijk.supabase.co/functions/v1/send-email',
 ```
 
-4. **Update the function URL in SQL files:**
-   - Replace `your-project-id` with your Supabase project ID
+### Step 5: Test
 
-5. **Test the notifications:**
-   - Apply for a site visit as a contractor
-   - Select a contractor as a customer
+```bash
+# Test the function
+curl -X POST https://your-project-id.supabase.co/functions/v1/send-email \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "test@example.com",
+    "subject": "Test Email",
+    "html": "<h1>Hello!</h1>",
+    "company_name": "Test Company"
+  }'
+```
 
-For detailed instructions, see [EMAIL-NOTIFICATIONS-SETUP-GUIDE.md](EMAIL-NOTIFICATIONS-SETUP-GUIDE.md)
+For detailed instructions, see [MAILGUN-SETUP-GUIDE.md](MAILGUN-SETUP-GUIDE.md)
 
 ## 📝 Sample Emails
 
@@ -141,6 +210,25 @@ The customer has chosen your company to work with.
 [Action Button: Go to Dashboard]
 ```
 
+## 📊 Mailgun vs Resend Comparison
+
+| Feature | Mailgun | Resend |
+|---------|---------|--------|
+| **Free Tier** | 5,000 emails/month | 100 emails/day (3,000/month) |
+| **Pricing** | From $35/month | From $20/month |
+| **Deliverability** | Excellent | Excellent |
+| **Analytics** | Advanced | Basic |
+| **Regions** | US, EU | US only |
+| **API Complexity** | Moderate | Simple |
+| **Documentation** | Extensive | Good |
+| **Setup Time** | 15-30 minutes | 10-15 minutes |
+
+**Recommendation:** Use **Mailgun** for production, especially if you need:
+- Higher free tier limit
+- Advanced analytics
+- EU data residency
+- Enterprise features
+
 ## 🔒 Security Features
 
 - Secure function execution with SECURITY DEFINER
@@ -148,46 +236,76 @@ The customer has chosen your company to work with.
 - Email validation before sending
 - Rate limiting support
 - Audit logging for all email sends
+- SPF/DKIM domain verification
 
 ## 📊 Analytics & Tracking
 
-Emails are tagged for tracking:
-- `category`: Type of notification
-- `contractor`: Company name
+### Mailgun Dashboard
+- Email delivery status
+- Open and click tracking
+- Bounce and complaint rates
+- Detailed logs and filters
 
-View analytics in your Resend dashboard.
+### Tagging
+Emails are tagged for easy tracking:
+- `contractor-notification` - Type of email
+- `company:[name]` - Company name
+
+View analytics at: https://app.mailgun.com/app/logs
 
 ## 🤝 Compatibility
 
 - **Supabase:** All versions
 - **PostgreSQL:** 12+
-- **Resend API:** Latest version
+- **Mailgun API:** v3
 - **Email Clients:** All major clients (Gmail, Outlook, Apple Mail, etc.)
+- **Regions:** US and EU supported
 
 ## 🐛 Known Issues
 
-1. **First-time deployment:** May require extra CORS configuration
-2. **Email delays:** Typical delay is 1-5 seconds
-3. **Spam filters:** Configure SPF/DKIM for production
+1. **Mailgun Free Account Limits:** 
+   - Can only send to authorized recipients
+   - Upgrade to paid plan for production use
 
-See [Troubleshooting Guide](EMAIL-NOTIFICATIONS-SETUP-GUIDE.md#-troubleshooting) for solutions.
+2. **DNS Propagation:** 
+   - Domain verification can take 24-48 hours
+   - Use sandbox domain for immediate testing
+
+3. **Email Delays:** 
+   - Typical delay is 1-5 seconds
+   - Check Mailgun logs if delays exceed 30 seconds
+
+4. **Spam Filters:** 
+   - Configure SPF/DKIM for better deliverability
+   - Warm up new sending domains gradually
+
+See [MAILGUN-SETUP-GUIDE.md](MAILGUN-SETUP-GUIDE.md#-troubleshooting) for solutions.
 
 ## 🔮 Future Enhancements
 
-- [ ] SMS notifications option
+- [ ] SMS notifications via Mailgun
 - [ ] Email preferences dashboard
 - [ ] Multiple language support
 - [ ] Email templates customization UI
 - [ ] Batch email sending
 - [ ] Email scheduling
+- [ ] A/B testing for email templates
+- [ ] Webhook integration for delivery status
 
 ## 📚 Documentation
 
-- [Setup Guide](EMAIL-NOTIFICATIONS-SETUP-GUIDE.md)
+- **[MAILGUN-SETUP-GUIDE.md](MAILGUN-SETUP-GUIDE.md)** - Complete Mailgun setup
+- **[EMAIL-NOTIFICATIONS-SETUP-GUIDE.md](EMAIL-NOTIFICATIONS-SETUP-GUIDE.md)** - General setup (Resend alternative)
+- [Mailgun Documentation](https://documentation.mailgun.com/)
 - [Supabase Functions Docs](https://supabase.com/docs/guides/functions)
-- [Resend API Docs](https://resend.com/docs)
 
 ## ❓ FAQ
+
+**Q: Why use Mailgun over Resend?**  
+A: Mailgun offers 5,000 free emails/month (vs 3,000 for Resend) and has more advanced analytics.
+
+**Q: Can I use my existing Mailgun account?**  
+A: Yes! Just use your existing API key and domain.
 
 **Q: Will this affect existing projects?**  
 A: No, only new site visits and selections will trigger emails.
@@ -195,14 +313,17 @@ A: No, only new site visits and selections will trigger emails.
 **Q: Can I customize the email templates?**  
 A: Yes, edit the SQL functions to modify email content.
 
-**Q: How much does email sending cost?**  
-A: Resend offers 100 free emails/day, then $0.001 per email.
+**Q: Do I need a paid Mailgun account?**  
+A: Free tier works for development. Paid plan recommended for production.
 
-**Q: Can I use a different email service?**  
-A: Yes, modify the Edge Function to use SendGrid, Mailgun, etc.
+**Q: Can I still use Resend instead?**  
+A: Yes! Use `supabase-email-function-english.js` instead of the Mailgun version.
 
-**Q: Are the old Korean emails deleted?**  
-A: No, they're replaced. You can find them in the old SQL file.
+**Q: How do I switch from Resend to Mailgun?**  
+A: Just redeploy the Edge Function with the Mailgun version and update environment variables.
+
+**Q: What about EU data residency?**  
+A: Mailgun supports EU region. Update the API endpoint in the function.
 
 ## 👏 Contributing
 
@@ -216,7 +337,13 @@ To improve these email notifications:
 
 ## 📦 Version History
 
-**v2.0** (Current)
+**v2.1** (Current)
+- Added Mailgun integration (recommended)
+- Improved documentation
+- Added regional support (US/EU)
+- Enhanced error handling
+
+**v2.0**
 - Added site visit application notifications
 - Migrated all emails to English
 - Improved email design
@@ -229,12 +356,15 @@ To improve these email notifications:
 ## 💬 Support
 
 If you need help:
-- Check the [Setup Guide](EMAIL-NOTIFICATIONS-SETUP-GUIDE.md)
-- Review [Troubleshooting](EMAIL-NOTIFICATIONS-SETUP-GUIDE.md#-troubleshooting)
-- Contact: support@renovation.com
+- Check the [MAILGUN-SETUP-GUIDE.md](MAILGUN-SETUP-GUIDE.md)
+- Review [Troubleshooting](MAILGUN-SETUP-GUIDE.md#-troubleshooting)
+- Check [Mailgun logs](https://app.mailgun.com/app/logs)
+- Contact Mailgun support: https://help.mailgun.com
+- Email: support@renovation.com
 
 ---
 
 **Created:** November 2025  
 **Author:** Development Team  
+**Email Service:** Mailgun (v3 API)  
 **License:** MIT  
