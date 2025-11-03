@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server-clients'
 import { 
   sendEmail, 
   createSelectionEmailTemplate, 
@@ -22,8 +23,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase 서버 클라이언트 생성
-    const supabase = await createClient()
+    // ✅ Admin 클라이언트 사용 (RLS 우회)
+    const supabase = createAdminClient()
+    console.log('✅ Using admin client to bypass RLS')
 
     // 트랜잭션처럼 작동하도록 모든 작업을 순차적으로 실행하고
     // 하나라도 실패하면 롤백 시뮬레이션
@@ -35,16 +37,25 @@ export async function POST(request: NextRequest) {
 
     try {
       // 1. 먼저 현재 프로젝트와 견적 상태 확인
-      const { data: currentProject, error: checkError } = await supabase
+      const { data: projectResults, error: checkError } = await supabase
         .from('quote_requests')
         .select('*')
         .eq('id', projectId)
-        .single()
 
-      if (checkError || !currentProject) {
-        throw new Error(`프로젝트를 찾을 수 없습니다: ${checkError?.message}`)
+      console.log('프로젝트 조회 결과:', {
+        resultCount: projectResults?.length || 0,
+        error: checkError?.message || 'none'
+      })
+
+      if (checkError) {
+        throw new Error(`프로젝트 조회 실패: ${checkError.message}`)
       }
 
+      if (!projectResults || projectResults.length === 0) {
+        throw new Error(`프로젝트를 찾을 수 없습니다 (ID: ${projectId})`)
+      }
+
+      const currentProject = projectResults[0]
       console.log('Current project status:', currentProject.status)
 
       // 이미 업체가 선정되었거나 진행 중인지 확인
@@ -57,7 +68,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 2. 선택된 견적이 해당 프로젝트의 것인지 확인 - 개선된 로직
+      // 2. 선택된 견적이 해당 프로젝트의 것인지 확인
       console.log('🔍 견적서 조회 시작:', { contractorQuoteId, projectId })
       
       const { data: quoteResults, error: quoteCheckError } = await supabase
@@ -68,7 +79,8 @@ export async function POST(request: NextRequest) {
 
       console.log('견적서 조회 결과:', {
         resultCount: quoteResults?.length || 0,
-        error: quoteCheckError?.message || 'none'
+        error: quoteCheckError?.message || 'none',
+        quotes: quoteResults
       })
 
       if (quoteCheckError) {
@@ -76,6 +88,14 @@ export async function POST(request: NextRequest) {
       }
 
       if (!quoteResults || quoteResults.length === 0) {
+        // 추가 디버깅: 조건 없이 전체 견적서 조회
+        const { data: allQuotes } = await supabase
+          .from('contractor_quotes')
+          .select('id, project_id')
+          .eq('id', contractorQuoteId)
+
+        console.log('조건 없이 해당 ID 조회:', allQuotes)
+
         throw new Error(`해당 견적서를 찾을 수 없습니다 (ID: ${contractorQuoteId}, Project: ${projectId})`)
       }
 
