@@ -160,128 +160,132 @@ export const createSelectionEmailTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎉 축하합니다!</h1>
+          <h1>🎉 Congratulations!</h1>
           <p style="margin: 0; font-size: 18px;">프로젝트에 선정되셨습니다</p>
         </div>
         
         <div class="content">
-          <p>안녕하세요, <strong>${contractorName}</strong>님</p>
+          <p>Hello, <strong>${contractorName}</strong>님</p>
           
-          <p>제출하신 견적서가 선택되었음을 기쁘게 알려드립니다. 고객님께서 귀사의 견적을 최종 선정하셨습니다.</p>
+          <p>We are pleased to inform you that the quotation you submitted has been selected. The customer has finally chosen your company's quotation.</p>
           
           <div class="customer-info">
-            <h3 style="margin-top: 0; color: #333;">📞 고객 연락처 정보</h3>
+            <h3 style="margin-top: 0; color: #333;">📞 Customer Contact Information</h3>
             <table class="info-table" style="background: white; border-radius: 5px;">
               <tr>
-                <td>고객명</td>
+                <td>Customer Name</td>
                 <td class="contact-info">${customerName}</td>
               </tr>
               ${hasEmail ? `
               <tr>
-                <td>이메일</td>
+                <td>Email</td>
                 <td class="contact-info">${customerInfo.email}</td>
               </tr>
               ` : ''}
               ${hasPhone ? `
               <tr>
-                <td>전화번호</td>
+                <td>Phone Number</td>
                 <td class="contact-info">${customerInfo.phone}</td>
               </tr>
               ` : `
               <tr>
-                <td>전화번호</td>
-                <td style="color: #999; font-style: italic;">고객이 전화번호를 제공하지 않았습니다</td>
+                <td>Phone Number</td>
+                <td style="color: #999; font-style: italic;">The customer did not provide a phone number.</td>
               </tr>
               `}
             </table>
             ${!hasPhone ? `
             <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px;">
-              ⚠️ <strong>안내:</strong> 고객이 전화번호를 미입력했습니다. 이메일로 먼저 연락하시거나, 현장 방문 시 연락처를 확인하시기 바랍니다.
+              ⚠️ <strong>안내:</strong> The customer did not enter a phone number. Please contact them via email first, or confirm their contact details during the on-site visit.
             </div>
             ` : ''}
           </div>
           
           <div class="warning-box">
-            <strong>⚠️ 중요 안내</strong>
-            <p style="margin: 10px 0 0 0;">고객님께 <strong>가능한 빨리 연락</strong>하여 프로젝트 일정을 조율해주세요. 신속한 응대가 고객 만족도를 높입니다.</p>
+            <strong>⚠️ Important Notice</strong>
+            <p style="margin: 10px 0 0 0;">Please contact the customer <strong>as soon as possible</strong> to coordinate the project schedule. Prompt response enhances customer satisfaction.</p>
           </div>
           
           <div class="highlight">
-            <h3 style="margin-top: 0;">📋 프로젝트 정보</h3>
+            <h3 style="margin-top: 0;">📋 Project Information</h3>
             <table class="info-table">
               <tr>
-                <td>프로젝트 유형</td>
+                <td>Project Type</td>
                 <td>${formatProjectTypes(projectInfo.project_types || [])}</td>
               </tr>
               <tr>
-                <td>공간 유형</td>
+                <td>Property Type</td>
                 <td>${formatSpaceType(projectInfo.space_type || '')}</td>
               </tr>
               <tr>
-                <td>주소</td>
-                <td>${projectInfo.full_address || '상세 주소는 고객에게 문의'}</td>
+                <td>Address</td>
+                <td>${projectInfo.full_address || 'Detailed address: Please inquire with the customer.'}</td>
               </tr>
               <tr>
-                <td>견적 금액</td>
+                <td>Quotation Amount</td>
                 <td><strong style="font-size: 18px; color: #4A90E2;">$${quoteInfo.price?.toLocaleString() || '0'} CAD</strong></td>
               </tr>
             </table>
           </div>
           
           <div class="commission-box">
-            <h3 style="margin-top: 0; color: #333;">💰 플랫폼 수수료 안내</h3>
+            <h3 style="margin-top: 0; color: #333;">💰 Platform Commission Information</h3>
             <table class="info-table" style="background: white; border-radius: 5px;">
               <tr>
-                <td>플랫폼 수수료</td>
+                <td>Platform Commission</td>
                 <td><strong style="font-size: 18px; color: #28a745;">${commission}</strong></td>
               </tr>
               <tr>
-                <td>수수료율</td>
-                <td>견적 금액의 10%<br/><span style="font-size: 13px; color: #666;">(선금5% + 프로젝트 시작후 5%)</span></td>
+                <td>Commission Rate</td>
+                <td>
+                    <strong>1% of the quotation amount</strong> : $100,000+<br>
+                    <strong>2% of the quotation amount</strong> : $50,000 - $100,000<br>
+                    <strong>3% of the quotation amount</strong> : Under $50,000
+                </td>
               </tr>
               <tr>
-                <td>지급 기한</td>
+                <td>Payment Due Date</td>
                 <td>${completionDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
               </tr>
             </table>
             <div style="background: #e7f3ff; padding: 12px; border-radius: 5px; margin-top: 15px; font-size: 14px; color: #333;">
-              <strong>📌 수수료 정책:</strong>
+              <strong>📌 Commission Policy:</strong>
               <ul style="margin: 8px 0; padding-left: 20px;">
-                <li>수수료는 프로젝트 계약 체결 후 7일 이내에 지급해주세요</li>
-                <li>최종 프로젝트 금액이 변경될 경우, 변경된 금액 기준으로 수수료가 재계산됩니다</li>
-                <li>입금 계좌 정보는 별도로 안내드립니다</li>
+                <li>Please pay the commission within 3 days after the project contract is signed.</li>
+                <li>If the final project amount changes, the commission will be recalculated based on the changed amount.</li>
+                <li>Deposit account information will be provided separately.</li>
               </ul>
             </div>
           </div>
           
-          <h3>📌 다음 단계</h3>
+          <h3>📌 Next Steps</h3>
           <ol class="steps">
-            <li><strong>고객 연락</strong>: ${hasPhone ? '이메일 or 전화로' : '이메일로'} 연락하여 일정 조율</li>
-            <li><strong>현장 방문</strong>: 방문 일정을 잡고 상세 견적 확정</li>
-            <li><strong>계약 체결</strong>: 계약서 작성 및 서명 진행</li>
-            <li><strong>진행 업데이트</strong>: 이메일로 프로젝트 시작일을 캐나다비버에게 알려주세요</li>
-            <li><strong>수수료 지급</strong>: 계약 체결 후 7일 이내 플랫폼 수수료 지급</li>
+            <li><strong>Contact the Customer</strong>: ${hasPhone ? 'Email or phone' : 'Email'} to coordinate the schedule</li>
+            <li><strong>Site Visit</strong>: Schedule a visit and confirm the detailed quotation</li>
+            <li><strong>Contract Signing</strong>: Write and sign the contract</li>
+            <li><strong>Progress Update</strong>: Email the start date of the project to Canada Beaver</li>
+            <li><strong>Commission Payment</strong>: Pay the platform commission within 3 days after the contract is signed</li>
           </ol>
           
           <center>
             <a href="https://canadabeaver.pro/contractor" class="button">
-              대시보드에서 확인하기
+              Check in Dashboard
             </a>
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-            프로젝트 진행 중 궁금한 사항이 있으시면 언제든지 문의해주세요.
+            If you have any questions during the project, please contact us anytime.
           </p>
           
           <p>
-            감사합니다.<br>
+            Thank you.<br>
             <strong>Canada Beaver 팀</strong>
           </p>
         </div>
         
         <div class="footer">
-          <p>이 이메일은 Canada Beaver Platform에서 자동으로 발송되었습니다.</p>
-          <p>문의: support@canadabeaver.pro | 웹사이트: www.canadabeaver.pro</p>
+          <p>This email was automatically sent by the Canada Beaver Platform.</p>
+          <p>Contact: support@canadabeaver.pro | Website: www.canadabeaver.pro</p>
           <p>© 2024 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
@@ -318,69 +322,69 @@ export const createCustomerNotificationTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>✅ 업체 선정 완료</h1>
-          <p style="margin: 0; font-size: 18px;">프로젝트를 시작할 준비가 되었습니다</p>
+          <h1>✅ Contractor Selected</h1>
+          <p style="margin: 0; font-size: 18px;">The project is ready to start</p>
         </div>
         
         <div class="content">
-          <p>안녕하세요, <strong>${customerName}</strong>님</p>
+          <p>Hello, <strong>${customerName}</strong>님</p>
           
           <div class="success-badge">
-            🎉 선택하신 업체가 확정되었습니다!
+            🎉 The contractor you selected has been confirmed!
           </div>
           
-          <p>귀하의 프로젝트를 담당할 업체 정보를 안내드립니다.</p>
+          <p>We are pleased to inform you that the contractor you selected has been confirmed.</p>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #28a745;">🏢 선정된 업체 정보</h3>
+            <h3 style="margin-top: 0; color: #28a745;">🏢 Selected Contractor Information</h3>
             <table class="info-table">
               <tr>
-                <td>업체명</td>
+                <td>Contractor Name</td>
                 <td><strong>${contractorInfo.company_name}</strong></td>
               </tr>
               <tr>
-                <td>담당자</td>
+                <td>Contact Name</td>
                 <td>${contractorInfo.contact_name || contractorInfo.company_name}</td>
               </tr>
               ${contractorInfo.phone ? `
               <tr>
-                <td>연락처</td>
+                <td>Phone Number</td>
                 <td><strong>${contractorInfo.phone}</strong></td>
               </tr>
               ` : ''}
               ${contractorInfo.email ? `
               <tr>
-                <td>이메일</td>
+                <td>Email</td>
                 <td>${contractorInfo.email}</td>
               </tr>
               ` : ''}
               <tr>
-                <td>견적금액</td>
+                <td>Quotation Amount</td>
                 <td><strong style="color: #28a745; font-size: 18px;">$${quoteInfo.price?.toLocaleString() || '0'} CAD</strong></td>
               </tr>
             </table>
           </div>
           
           <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <strong>📞 다음 단계:</strong>
-            <p style="margin: 10px 0 0 0;">선정된 업체에서 곧 연락드릴 예정입니다. 프로젝트 일정 및 세부 사항을 조율해주세요.</p>
+            <strong>📞 Next Steps:</strong>
+            <p style="margin: 10px 0 0 0;">The selected contractor will contact you soon to coordinate the project schedule and details.</p>
           </div>
           
-          <p>프로젝트가 성공적으로 완료되기를 바랍니다!</p>
+          <p>We hope the project is successful!</p>
           
           <center>
             <a href="https://canadabeaver.pro/my-quotes" class="button">
-              내 견적 확인하기
+              Check My Quotes
             </a>
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-            프로젝트 진행 중 문의사항이 있으시면 언제든지 support@canadabeaver.pro로 연락주세요.
+            If you have any questions during the project, please contact us anytime at support@canadabeaver.pro.
           </p>
         </div>
         
         <div class="footer">
-          <p>이 이메일은 Canada Beaver Platform에서 자동으로 발송되었습니다.</p>
+          <p>This email was automatically sent by the Canada Beaver Platform.</p>
           <p>© 2024 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
