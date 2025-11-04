@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
 import QuoteModal from '@/components/contractor/QuoteModal'
+import ProjectCard from '@/components/contractor/ProjectCard'
 
 interface Props {
   initialContractorData?: any
@@ -193,14 +194,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     toast.success('Data refreshed')
   }
 
-  const handleSiteVisitApplication = async (project: Project) => {
+  const handleSiteVisitApplication = async (projectId: string) => {
     if (!contractorData?.id) {
       toast.error('Contractor information not found')
       return
     }
 
     const updatedProjects = projects.map(p => 
-      p.id === project.id 
+      p.id === projectId 
         ? { 
             ...p, 
             projectStatus: 'site-visit-applied' as ProjectStatus,
@@ -216,7 +217,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId: project.id,
+          projectId: projectId,
           contractorId: contractorData.id
         })
       })
@@ -238,6 +239,38 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       toast.error(error.message)
       loadProjectsRef.current = false
       await loadProjects()
+    }
+  }
+  
+  const handleSiteVisitCancellation = async (applicationId: string, projectId: string) => {
+    const confirmed = window.confirm('Cancel site visit application?')
+    if (!confirmed) return
+    
+    try {
+      const supabase = createBrowserClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        toast.error('Login required')
+        return
+      }
+
+      const { error: svaError } = await supabase
+        .from('site_visit_applications')
+        .update({
+          is_cancelled: true,
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: user.id
+        })
+        .eq('id', applicationId)
+
+      if (svaError) throw svaError
+
+      toast.success('Site visit cancelled')
+      loadProjectsRef.current = false
+      await loadProjects()
+    } catch (error) {
+      toast.error('Failed to cancel')
     }
   }
   
@@ -283,6 +316,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     setSelectedProject(null)
     loadProjectsRef.current = false
     await loadProjects()
+  }
+
+  const openQuoteViewModal = (project: Project) => {
+    setSelectedProject(project)
+    setShowQuoteModal(true)
   }
   
   const filteredProjects = useMemo(() => {
@@ -498,10 +536,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProjects.map((project) => (
-                      <div key={project.id} className="bg-white border rounded-lg p-4">
-                        <p className="text-sm font-medium">Project {project.id.slice(0, 8)}</p>
-                        <p className="text-xs text-gray-500">Status: {project.projectStatus}</p>
-                      </div>
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        contractorId={contractorData?.id || ''}
+                        onSiteVisitApply={handleSiteVisitApplication}
+                        onSiteVisitCancel={handleSiteVisitCancellation}
+                        onQuoteCreate={handleJoinBidding}
+                        onQuoteView={openQuoteViewModal}
+                      />
                     ))}
                   </div>
                 </div>
