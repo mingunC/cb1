@@ -78,7 +78,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         registeredAt: contractorData.created_at  // ✅ 가입일 로깅
       })
       
-      // ✅ 1. 업체 정보에서 가입일 확인
+      // ✅ 가입일 체크
       const contractorCreatedAt = contractorData.created_at
       
       if (!contractorCreatedAt) {
@@ -88,7 +88,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       console.log('📅 Only showing projects created after:', contractorCreatedAt)
       
-      // ✅ 2. 가입일 이후의 프로젝트만 조회
+      // ✅ 가입일 이후의 프로젝트만 가져오기
       console.log('📝 Step 1: Fetching quote requests after registration date...')
       const { data: allProjectsData, error: projectsError } = await supabase
         .from('quote_requests')
@@ -246,7 +246,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       isLoadingRef.current = false
       console.log('🏁 loadProjects finished')
     }
-  }, [contractorData?.id, contractorData?.created_at, loadSelectedContractorNames])
+}, [contractorData?.id, contractorData?.created_at])  // ✅ created_at도 의존성에 추가
   
   // 초기 데이터 로드
   useEffect(() => {
