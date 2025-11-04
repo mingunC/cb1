@@ -91,8 +91,9 @@ export default function ContractorPage() {
       
       if (event === 'SIGNED_OUT') {
         router.push('/contractor-login')
-      } else if (event === 'SIGNED_IN' && !contractorData) {
-        // 로그인 후 contractor 데이터 없으면 체크
+      } else if (event === 'SIGNED_IN') {
+        // 로그인 이벤트 발생 시 - ref를 리셋하고 체크
+        console.log('🔄 SIGNED_IN event - resetting auth check')
         authCheckRef.current = false
         checkAuth()
       }
@@ -101,9 +102,10 @@ export default function ContractorPage() {
     checkAuth()
     
     return () => {
+      console.log('🧹 Cleaning up auth subscription')
       subscription.unsubscribe()
     }
-  }, [router, supabase, contractorData])
+  }, []) // ✅ 빈 배열 - 한 번만 실행!
 
   // 에러 상태
   if (error) {
@@ -146,5 +148,6 @@ export default function ContractorPage() {
   }
   
   // 정상 렌더링
+  console.log('✅ Rendering dashboard with contractor data:', contractorData?.id)
   return <IntegratedContractorDashboard initialContractorData={contractorData} />
 }
