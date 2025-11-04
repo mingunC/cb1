@@ -27,7 +27,7 @@ export const sendEmail = async (options: EmailOptions) => {
 
   try {
     const messageData = {
-      from: options.from || `CB1 Platform <noreply@${process.env.MAILGUN_DOMAIN}>`,
+      from: options.from || `Canada Beaver <noreply@${process.env.MAILGUN_DOMAIN}>`,
       to: Array.isArray(options.to) ? options.to : [options.to],
       subject: options.subject,
       html: options.html,
