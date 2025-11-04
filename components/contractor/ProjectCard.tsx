@@ -8,8 +8,7 @@ import {
   getVisitDate,
   formatDate,
   isSiteVisitMissed,
-  canApplySiteVisit,
-  debugLog
+  canApplySiteVisit
 } from '@/lib/contractor/projectHelpers'
 import StatusBadge from './StatusBadge'
 
@@ -54,14 +53,6 @@ const ProjectCard = React.memo(({
   // 미선정 상태일 때 선택된 업체명 표시 여부 확인
   const isNotSelected = project.projectStatus === 'not-selected'
   const selectedContractorName = project.selected_contractor?.company_name
-
-  // 디버깅 로그
-  debugLog('🔴 Site visit button condition:', {
-    projectId: project.id,
-    projectStatus: project.status,
-    canApply,
-    customer: customerName
-  })
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
