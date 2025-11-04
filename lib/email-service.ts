@@ -86,85 +86,89 @@ export const createSelectionEmailTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎉 축하합니다!</h1>
-          <p style="margin: 0; font-size: 18px;">프로젝트에 선정되셨습니다</p>
+          <h1>🎉 Congratulations!</h1>
+          <p style="margin: 0; font-size: 18px;">You have been selected for the project</p>
         </div>
         
         <div class="content">
-          <p>안녕하세요, <strong>${contractorName}</strong>님</p>
+          <p>Hello, <strong>${contractorName}</strong></p>
           
-          <p>고객님께서 제출하신 견적서가 선택되었음을 기쁘게 알려드립니다.</p>
+          <p>We are pleased to inform you that your quote has been selected.</p>
           
           <div class="highlight">
-            <h3 style="margin-top: 0;">📋 프로젝트 정보</h3>
+            <h3 style="margin-top: 0;">📋 Project information</h3>
             <table class="info-table">
               <tr>
-                <td>프로젝트 유형:</td>
-                <td>${projectInfo.project_type || '리모델링'}</td>
+                <td>Project type:</td>
+                <td>${projectInfo.project_type || 'Remodeling'}</td>
               </tr>
               <tr>
-                <td>공간 유형:</td>
-                <td>${projectInfo.space_type || '주거공간'}</td>
+                <td>Property type:</td>
+                <td>${projectInfo.space_type || 'Residential space'}</td>
               </tr>
               <tr>
-                <td>위치:</td>
-                <td>${projectInfo.address || '서울시'}</td>
+                <td>Location:</td>
+                <td>${projectInfo.address || 'Toronto, Canada'}</td>
               </tr>
               <tr>
-                <td>견적 금액:</td>
+                <td>Quote amount:</td>
                 <td><strong>${new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(quoteInfo.price)}</strong></td>
               </tr>
             </table>
           </div>
           
           <div class="highlight" style="background-color: #fff3cd; border-left-color: #ffc107;">
-            <h3 style="margin-top: 0;">💰 수수료 안내</h3>
+            <h3 style="margin-top: 0;">💰 Commission information</h3>
             <table class="info-table">
               <tr>
-                <td>예상 수수료:</td>
+                <td>Estimated commission:</td>
                 <td><strong>${commission}</strong></td>
               </tr>
               <tr>
-                <td>수수료율:</td>
-                <td>견적 금액의 10%</td>
+                <td>Commission rate:</td>
+                <td>
+                    <strong>1% of the quotation amount</strong> : $100,000+<br>
+                    <strong>2% of the quotation amount</strong> : $50,000 - $100,000<br>
+                    <strong>3% of the quotation amount</strong> : Under $50,000                
+                </td>
               </tr>
               <tr>
-                <td>지급 예정일:</td>
+                <td>Payment due date:</td>
                 <td>${completionDate.toLocaleDateString('ko-KR')}</td>
               </tr>
             </table>
             <p style="margin-bottom: 0; font-size: 14px; color: #666;">
-              * 수수료는 프로젝트 완료 후 7일 이내에 지급됩니다.<br>
-              * 실제 수수료는 최종 프로젝트 금액에 따라 조정될 수 있습니다.
+              * The commission will be paid within 3 days after the project is completed.<br>
+              * The actual commission may be adjusted based on the final project amount.
             </p>
           </div>
           
-          <h3>📌 다음 단계</h3>
+          <h3>📌 Next steps</h3>
           <ol>
-            <li>고객님과 직접 연락하여 상세 일정을 조율해주세요</li>
-            <li>계약서 작성 및 서명을 진행해주세요</li>
-            <li>프로젝트 진행 상황을 대시보드에서 업데이트해주세요</li>
+            <li>Contact the customer directly to coordinate the detailed schedule.</li>
+            <li>Write and sign the contract.</li>
+            <li>Update the project status in the dashboard.</li>
           </ol>
           
           <center>
             <a href="https://canadabeaver.pro/contractor" class="button">
-              대시보드에서 확인하기
+              Check in the dashboard
             </a>
           </center>
           
           <p style="margin-top: 30px;">
-            프로젝트 진행 중 궁금한 사항이 있으시면 언제든지 문의해주세요.
+            If you have any questions during the project, please contact us anytime.
           </p>
           
           <p>
-            감사합니다.<br>
-            <strong>Canada Beaver 팀</strong>
+            Thank you.<br>
+            <strong>Canada Beaver Team</strong>
           </p>
         </div>
         
         <div class="footer">
-          <p>이 이메일은 Canada Beaver Platform에서 자동으로 발송되었습니다.</p>
-          <p>문의사항: support@canadabeaver.pro</p>
+          <p>This email was automatically sent by the Canada Beaver Platform.</p>
+          <p>Contact: support@canadabeaver.pro</p>
           <p>© 2024 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
@@ -197,28 +201,28 @@ export const createCustomerNotificationTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>✅ 업체 선정 완료</h1>
-          <p style="margin: 0; font-size: 18px;">프로젝트를 시작할 준비가 되었습니다</p>
+          <h1>✅ Contractor selected</h1>
+          <p style="margin: 0; font-size: 18px;">The project is ready to start</p>
         </div>
         
         <div class="content">
-          <p>안녕하세요, <strong>${customerName}</strong>님</p>
+          <p>Hello, <strong>${customerName}</strong></p>
           
-          <p>선택하신 업체 정보를 안내드립니다.</p>
+          <p>We are pleased to inform you about the contractor you selected.</p>
           
           <div class="info-box">
-            <h3>선정된 업체 정보</h3>
-            <p><strong>업체명:</strong> ${contractorInfo.company_name}</p>
-            <p><strong>담당자:</strong> ${contractorInfo.contact_name}</p>
-            <p><strong>연락처:</strong> ${contractorInfo.phone || '업체에 문의'}</p>
-            <p><strong>견적금액:</strong> ${new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(quoteInfo.price)}</p>
+            <h3>Selected contractor information</h3>
+            <p><strong>Contractor name:</strong> ${contractorInfo.company_name}</p>
+            <p><strong>Contact name:</strong> ${contractorInfo.contact_name}</p>
+            <p><strong>Phone number:</strong> ${contractorInfo.phone || 'Contact the contractor for more information'}</p>
+            <p><strong>Quote amount:</strong> ${new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(quoteInfo.price)}</p>
           </div>
           
-          <p>업체에서 곧 연락드릴 예정입니다. 프로젝트가 성공적으로 완료되길 바랍니다!</p>
+          <p>The contractor will contact you soon. We hope the project is successful!</p>
           
           <center>
             <a href="https://canadabeaver.pro/mypage" class="button">
-              마이페이지에서 확인
+              Check in the dashboard
             </a>
           </center>
         </div>

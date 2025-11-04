@@ -393,6 +393,120 @@ export const createCustomerNotificationTemplate = (
   `;
 };
 
+// ✅ 고객에게 보낼 사이트 방문 신청 알림 이메일 템플릿
+export const createSiteVisitApplicationTemplate = (
+  customerName: string,
+  contractorInfo: {
+    company_name: string;
+    email?: string;
+    phone?: string;
+  },
+  projectInfo: {
+    full_address?: string;
+    space_type?: string;
+    budget?: string;
+  }
+): string => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4A90E2; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; }
+        .info-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .info-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .info-table td { padding: 10px 8px; border-bottom: 1px solid #eee; }
+        .info-table td:first-child { font-weight: bold; width: 35%; color: #555; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #4A90E2; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        .highlight-box { background-color: #e7f3ff; padding: 15px; border-left: 4px solid #4A90E2; margin: 20px 0; border-radius: 5px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🏠 New Site Visit Application</h1>
+          <p style="margin: 0; font-size: 18px;">A contractor wants to visit your property</p>
+        </div>
+        
+        <div class="content">
+          <p>Hello, <strong>${customerName}</strong></p>
+          
+          <p>Good news! A contractor has applied for a site visit to your renovation project.</p>
+          
+          <div class="info-box">
+            <h3 style="margin-top: 0; color: #4A90E2;">🏢 Contractor Information</h3>
+            <table class="info-table">
+              <tr>
+                <td>Company Name</td>
+                <td><strong>${contractorInfo.company_name}</strong></td>
+              </tr>
+              ${contractorInfo.email ? `
+              <tr>
+                <td>Email</td>
+                <td>${contractorInfo.email}</td>
+              </tr>
+              ` : ''}
+              ${contractorInfo.phone ? `
+              <tr>
+                <td>Phone</td>
+                <td>${contractorInfo.phone}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          
+          <div class="info-box">
+            <h3 style="margin-top: 0; color: #4A90E2;">📋 Project Details</h3>
+            <table class="info-table">
+              <tr>
+                <td>Address</td>
+                <td>${projectInfo.full_address || 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td>Space Type</td>
+                <td>${projectInfo.space_type || 'Not specified'}</td>
+              </tr>
+              ${projectInfo.budget ? `
+              <tr>
+                <td>Budget</td>
+                <td>${projectInfo.budget}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          
+          <div class="highlight-box">
+            <strong>📅 Next Steps:</strong>
+            <p style="margin: 10px 0 0 0;">The contractor will visit your property to better understand the project scope. You can view and manage site visit applications in your dashboard.</p>
+          </div>
+          
+          <p>Thank you for choosing our service!</p>
+          
+          <center>
+            <a href="https://canadabeaver.pro/my-quotes" class="button">
+              View My Projects
+            </a>
+          </center>
+          
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
+            If you have any questions, please contact us anytime at support@canadabeaver.pro.
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p>This email was automatically sent by the Canada Beaver Platform.</p>
+          <p>© 2024 Canada Beaver. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 // API 키 검증 함수 (테스트용)
 export const verifyMailgunConfig = async () => {
   try {

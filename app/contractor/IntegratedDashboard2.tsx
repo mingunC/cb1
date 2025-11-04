@@ -265,6 +265,24 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return
     }
 
+    // 🚀 낙관적 UI 업데이트 - 즉시 상태 변경
+    const updatedProjects = projects.map(p => 
+      p.id === project.id 
+        ? { 
+            ...p, 
+            projectStatus: 'site-visit-applied' as ProjectStatus,
+            siteVisit: { 
+              status: 'pending', 
+              applied_at: new Date().toISOString() 
+            } 
+          }
+        : p
+    )
+    setProjects(updatedProjects)
+    
+    // 즉시 성공 메시지 표시
+    toast.success('Applying for site visit...')
+
     try {
       console.log('📝 Calling site visit API...')
       
@@ -289,15 +307,25 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       })
 
       if (!response.ok) {
+        // 실패 시 원래 상태로 되돌림
+        await loadProjects()
         throw new Error(data.error || 'Failed to apply for site visit')
       }
 
       console.log('✅ Site visit applied successfully!')
-      toast.success('Site visit application submitted successfully! Customer will be notified.')
-      await loadProjects() // Refresh data
+      toast.success('Site visit application submitted! Customer will be notified.', {
+        duration: 3000
+      })
+      
+      // 백그라운드에서 데이터 새로고침
+      setTimeout(() => loadProjects(), 1000)
+      
     } catch (error: any) {
       console.error('💥 Error applying for site visit:', error)
       toast.error(error.message || 'Failed to apply for site visit')
+      
+      // 에러 발생 시 데이터 다시 로드
+      await loadProjects()
     }
   }
   

@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { sendEmail } from '@/lib/email-service'
+import { createSiteVisitApplicationTemplate } from '@/lib/email/mailgun'
 
 export async function POST(request: Request) {
   try {
@@ -84,64 +86,52 @@ export async function POST(request: Request) {
     // 5. Get contractor information
     const { data: contractor, error: contractorError } = await supabase
       .from('contractors')
-      .select('company_name, email, user_id')
+      .select('company_name, email, phone, user_id')
       .eq('id', contractorId)
       .single()
     
-    // 6. Prepare email for customer
-    if (customer && contractor && project) {
-      const customerName = customer.first_name && customer.last_name
-        ? `${customer.first_name} ${customer.last_name}`
-        : customer.email?.split('@')[0] || 'Customer'
-      
-      const emailSubject = `🏠 New Site Visit Application for Your Project`
-      
-      const emailBody = `
-Hello ${customerName}!
-
-Good news! A contractor has applied for a site visit to your renovation project.
-
-🏢 Contractor Information:
-- Company: ${contractor.company_name}
-
-📋 Project Details:
-- Address: ${project.full_address || 'Not specified'}
-- Space Type: ${project.space_type || 'Not specified'}
-- Budget: ${project.budget || 'Not specified'}
-
-📅 Next Steps:
-The contractor will visit your property to better understand the project scope. 
-You can view and manage site visit applications in your dashboard.
-
-Thank you for choosing our service!
-      `.trim()
-      
-      console.log('📧 Email prepared for customer:', {
-        to: customer.email,
-        subject: emailSubject,
-        customerName,
-        companyName: contractor.company_name
-      })
-      
-      // TODO: Implement actual email sending service
-      // Option 1: Resend
-      // const resend = new Resend(process.env.RESEND_API_KEY)
-      // await resend.emails.send({
-      //   from: 'noreply@yourcompany.com',
-      //   to: customer.email,
-      //   subject: emailSubject,
-      //   html: emailBody.replace(/\n/g, '<br>')
-      // })
-      
-      // Option 2: Supabase Edge Function
-      // await supabase.functions.invoke('send-email', {
-      //   body: { to: customer.email, subject: emailSubject, body: emailBody }
-      // })
-      
-      // For now, just log (development stage)
-      console.log('📧 Email would be sent to:', customer.email)
-      console.log('Subject:', emailSubject)
-      console.log('Body:', emailBody)
+    // 6. Send email notification to customer
+    let emailSent = false
+    if (customer && contractor && project && customer.email) {
+      try {
+        const customerName = customer.first_name && customer.last_name
+          ? `${customer.first_name} ${customer.last_name}`
+          : customer.email?.split('@')[0] || 'Customer'
+        
+        const emailHTML = createSiteVisitApplicationTemplate(
+          customerName,
+          {
+            company_name: contractor.company_name,
+            email: contractor.email,
+            phone: contractor.phone
+          },
+          {
+            full_address: project.full_address,
+            space_type: project.space_type,
+            budget: project.budget
+          }
+        )
+        
+        const emailResult = await sendEmail({
+          to: customer.email,
+          subject: '🏠 New Site Visit Application for Your Project',
+          html: emailHTML,
+          replyTo: 'support@canadabeaver.pro'
+        })
+        
+        if (emailResult.success) {
+          emailSent = true
+          console.log('✅ Site visit application email sent successfully:', {
+            to: customer.email,
+            messageId: (emailResult as any).messageId
+          })
+        } else {
+          console.error('❌ Failed to send email:', emailResult.error)
+        }
+      } catch (emailError: any) {
+        console.error('❌ Error sending site visit application email:', emailError)
+        // Don't fail the request if email fails
+      }
     }
     
     return NextResponse.json({
@@ -149,7 +139,7 @@ Thank you for choosing our service!
       message: 'Site visit application submitted successfully',
       data: {
         applicationId: application.id,
-        emailSent: customer ? true : false
+        emailSent: emailSent
       }
     })
     

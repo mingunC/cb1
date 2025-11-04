@@ -42,7 +42,7 @@ export const sendContractorSelectionEmails = async (data: ContractorSelectionDat
 
     const contractorEmailResult = await sendEmail({
       to: data.contractor.email,
-      subject: '🎉 축하합니다! 프로젝트에 선정되셨습니다',
+      subject: '🎉 Congratulations! You have been selected for the project',
       html: contractorEmailHTML,
       replyTo: 'support@canadabeaver.pro'
     });
@@ -59,7 +59,7 @@ export const sendContractorSelectionEmails = async (data: ContractorSelectionDat
 
     const customerEmailResult = await sendEmail({
       to: data.customer.email,
-      subject: '✅ 업체 선정이 완료되었습니다',
+      subject: '✅ contractor selected',
       html: customerEmailHTML,
       replyTo: 'support@canadabeaver.pro'
     });
@@ -99,7 +99,7 @@ export const sendContractorSelectionEmail = async (
   
   return await sendEmail({
     to: contractorEmail,
-    subject: '🎉 축하합니다! 프로젝트에 선정되셨습니다',
+    subject: '🎉 Congratulations! You have been selected for the project',
     html: emailHTML
   });
 };
@@ -115,7 +115,7 @@ export const sendCustomerNotificationEmail = async (
   
   return await sendEmail({
     to: customerEmail,
-    subject: '✅ 업체 선정이 완료되었습니다',
+    subject: '✅ contractor selected',
     html: emailHTML
   });
 };
