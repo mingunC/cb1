@@ -279,7 +279,7 @@ function PortfolioContent() {
                     </div>
                   </div>
                   <Link href="/pros" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
-                    업체 보기
+                    View Contractor
                   </Link>
                 </div>
               )}
@@ -287,13 +287,13 @@ function PortfolioContent() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {selectedPortfolio.category && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">카테고리</p>
+                    <p className="text-sm text-gray-500 mb-1">Category</p>
                     <p className="font-medium">{selectedPortfolio.category}</p>
                   </div>
                 )}
                 {selectedPortfolio.year && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">완료 연도</p>
+                    <p className="text-sm text-gray-500 mb-1">Completion Year</p>
                     <p className="font-medium">{selectedPortfolio.year}</p>
                   </div>
                 )}
@@ -301,7 +301,7 @@ function PortfolioContent() {
 
               {selectedPortfolio.project_address && (
                 <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-1">프로젝트 주소</p>
+                  <p className="text-sm text-gray-500 mb-1">Project Address</p>
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-400" />
                     <p className="font-medium">{selectedPortfolio.project_address}</p>
@@ -311,14 +311,14 @@ function PortfolioContent() {
 
               {selectedPortfolio.description && (
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-2">프로젝트 설명</h4>
+                  <h4 className="font-semibold mb-2">Project Description</h4>
                   <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedPortfolio.description}</p>
                 </div>
               )}
 
               {selectedPortfolio.project_address && (
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-2">프로젝트 위치</h4>
+                  <h4 className="font-semibold mb-2">Project Location</h4>
                   <p className="text-gray-600 flex items-center">
                     📍 {selectedPortfolio.project_address}
                   </p>
@@ -326,7 +326,7 @@ function PortfolioContent() {
               )}
 
               <Link href="/quote-request" className="block w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-center">
-                견적 문의하기
+                Request Quote
               </Link>
             </div>
           </div>
