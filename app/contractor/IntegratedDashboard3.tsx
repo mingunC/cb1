@@ -35,13 +35,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   // ✅ 프로젝트 데이터 로드 함수 - useCallback으로 안정화
   const loadProjects = useCallback(async () => {
     if (!contractorData || !contractorData.id) {
-      console.error('No contractor data available')
       return
     }
     
     // ✅ 중복 실행 방지
     if (loadProjectsRef.current) {
-      console.log('⏭️ loadProjects already running, skipping...')
       return
     }
     loadProjectsRef.current = true
@@ -49,8 +47,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     try {
       setIsLoading(true)
       const supabase = createBrowserClient()
-      
-      console.log('🚀 Loading projects for contractor:', contractorData.id)
       
       // Step 1: 모든 프로젝트 가져오기
       const { data: allProjectsData, error: projectsError } = await supabase
@@ -167,7 +163,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       setProjects(processedProjects)
       setSelectedContractorNames(contractorNames)
-      console.log('🎉 Projects loaded:', processedProjects.length)
       
     } catch (error) {
       console.error('❌ Error loading projects:', error)
@@ -180,7 +175,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // ✅ 초기 데이터 로드 - 한 번만 실행
   useEffect(() => {
-    console.log('🔄 Dashboard mounted')
     if (contractorData?.id) {
       loadProjects()
     }
