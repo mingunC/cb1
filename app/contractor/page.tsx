@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import IntegratedContractorDashboard from './IntegratedDashboard2'
+import IntegratedContractorDashboard from './IntegratedDashboard3'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
