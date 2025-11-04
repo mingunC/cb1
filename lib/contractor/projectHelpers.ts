@@ -29,15 +29,6 @@ export const formatPrice = (value: string): string => {
  * 현장방문 누락 여부 확인
  */
 export const isSiteVisitMissed = (project: Project, contractorId: string): boolean => {
-  // 디버깅 로그 (개발 환경에서만)
-  if (DEBUG_PROJECT_IDS.includes(project.id)) {
-    console.log(`🔍 ${project.id} 누락 체크:`, {
-      projectStatus: project.status,
-      hasSiteVisitApplication: !!project.site_visit_application,
-      siteVisitApplicationCancelled: project.site_visit_application?.is_cancelled
-    })
-  }
-  
   // 현장방문이 완료되었는데 본인이 신청하지 않은 경우만 누락
   if (project.status === 'site-visit-completed' || project.status === 'bidding') {
     return !project.site_visit_application || project.site_visit_application.is_cancelled
@@ -75,15 +66,18 @@ export const calculateProjectStatus = (project: Project, contractorId: string): 
   if (project.status === 'completed') return 'completed'
   if (project.status === 'quote-submitted') return 'quoted'
   if (project.status === 'approved' || project.status === 'site-visit-pending') return 'approved'
+  if (project.status === 'bidding') return 'bidding'
   
   return 'pending'
 }
 
 /**
  * 현장방문 신청 가능 여부 확인
+ * approved, site-visit-pending, bidding 상태에서 신청 가능
  */
 export const canApplySiteVisit = (project: Project): boolean => {
-  return (project.status === 'approved' || project.status === 'site-visit-pending') &&
+  const validStatuses = ['approved', 'site-visit-pending', 'bidding']
+  return validStatuses.includes(project.status) &&
          !project.contractor_quote &&
          (!project.site_visit_application || project.site_visit_application.is_cancelled)
 }
