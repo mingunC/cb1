@@ -19,17 +19,9 @@ export default function ContractorPage() {
     authCheckRef.current = true
 
     const checkAuth = async () => {
-      console.log('🚀 Starting auth check')
-      
       try {
         // 1. 세션 확인 (한 번만)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        console.log('📋 Session status:', {
-          hasSession: !!session,
-          userId: session?.user?.id,
-          email: session?.user?.email
-        })
         
         if (sessionError) {
           console.error('❌ Session error:', sessionError)
@@ -37,7 +29,6 @@ export default function ContractorPage() {
         }
         
         if (!session) {
-          console.log('❌ No session - redirecting to login')
           router.push('/contractor-login')
           return
         }
@@ -49,16 +40,8 @@ export default function ContractorPage() {
           .eq('user_id', session.user.id)
           .single()
         
-        console.log('🏢 Contractor lookup:', {
-          found: !!contractor,
-          contractorId: contractor?.id,
-          error: contractorError?.code
-        })
-        
         if (contractorError) {
           if (contractorError.code === 'PGRST116') {
-            // Contractor 데이터 없음
-            console.log('❌ No contractor profile - redirecting to signup')
             router.push('/contractor-signup')
             return
           }
@@ -68,13 +51,11 @@ export default function ContractorPage() {
         }
         
         if (!contractor) {
-          console.log('❌ No contractor data - redirecting to signup')
           router.push('/contractor-signup')
           return
         }
         
         // 3. 성공 - 데이터 설정
-        console.log('✅ Auth successful! Loading dashboard...')
         setContractorData(contractor)
         setIsLoading(false)
         
@@ -87,13 +68,9 @@ export default function ContractorPage() {
     
     // Auth state change 리스너 설정
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, !!session)
-      
       if (event === 'SIGNED_OUT') {
         router.push('/contractor-login')
       } else if (event === 'SIGNED_IN') {
-        // 로그인 이벤트 발생 시 - ref를 리셋하고 체크
-        console.log('🔄 SIGNED_IN event - resetting auth check')
         authCheckRef.current = false
         checkAuth()
       }
@@ -102,7 +79,6 @@ export default function ContractorPage() {
     checkAuth()
     
     return () => {
-      console.log('🧹 Cleaning up auth subscription')
       subscription.unsubscribe()
     }
   }, []) // ✅ 빈 배열 - 한 번만 실행!
@@ -148,6 +124,5 @@ export default function ContractorPage() {
   }
   
   // 정상 렌더링
-  console.log('✅ Rendering dashboard with contractor data:', contractorData?.id)
   return <IntegratedContractorDashboard initialContractorData={contractorData} />
 }
