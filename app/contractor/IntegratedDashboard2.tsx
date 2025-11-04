@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban, AlertCircle } from 'lucide-react'
@@ -32,6 +32,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [showQuoteModal, setShowQuoteModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   
+  // ✅ 중복 호출 방지를 위한 ref
+  const isLoadingRef = useRef(false)
+  
   // 선택된 업체 이름들을 미리 로드
   const loadSelectedContractorNames = async (contractorIds: string[]) => {
     if (!contractorIds.length) return {}
@@ -57,20 +60,40 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return
     }
     
+    // ✅ 중복 호출 방지
+    if (isLoadingRef.current) {
+      console.log('⏭️ Already loading, skipping...')
+      return
+    }
+    
+    isLoadingRef.current = true
+    
     try {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
       console.log('🚀 Loading projects for contractor:', {
         contractorId: contractorData.id,
-        companyName: contractorData.company_name
+        companyName: contractorData.company_name,
+        registeredAt: contractorData.created_at  // ✅ 가입일 로깅
       })
       
-      // ✅ 모든 견적요청서를 가져오기 (업체가 참여하지 않은 것도 포함)
-      console.log('📝 Step 1: Fetching all quote requests...')
+      // ✅ 1. 업체 정보에서 가입일 확인
+      const contractorCreatedAt = contractorData.created_at
+      
+      if (!contractorCreatedAt) {
+        console.error('❌ Contractor created_at not found')
+        throw new Error('Contractor registration date not found')
+      }
+      
+      console.log('📅 Only showing projects created after:', contractorCreatedAt)
+      
+      // ✅ 2. 가입일 이후의 프로젝트만 조회
+      console.log('📝 Step 1: Fetching quote requests after registration date...')
       const { data: allProjectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*')
+        .gte('created_at', contractorCreatedAt)  // ⭐ 핵심: 가입일 이후만!
         .order('created_at', { ascending: false })
         .limit(100)
       
@@ -79,7 +102,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         throw projectsError
       }
       
-      console.log('📊 Total projects loaded:', allProjectsData?.length || 0)
+      console.log('📊 Total projects loaded (after registration):', allProjectsData?.length || 0)
+      console.log('🔒 Security filter applied - Registration date:', contractorCreatedAt)
       
       // ✅ 2. 업체가 참여한 프로젝트 정보 가져오기
       console.log('📝 Step 2: Fetching contractor participation data...')
@@ -219,9 +243,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setError('Error loading projects.')
     } finally {
       setIsLoading(false)
+      isLoadingRef.current = false
       console.log('🏁 loadProjects finished')
     }
-  }, [contractorData, loadSelectedContractorNames])
+  }, [contractorData?.id, contractorData?.created_at, loadSelectedContractorNames])
   
   // 초기 데이터 로드
   useEffect(() => {
