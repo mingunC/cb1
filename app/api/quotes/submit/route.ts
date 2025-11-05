@@ -37,12 +37,13 @@ export async function POST(request: NextRequest) {
       projectId: projectId?.slice(0, 8),
       contractorId: contractorId?.slice(0, 8),
       price,
-      hasPdf: !!pdfUrl
+      hasPdf: !!pdfUrl,
+      hasDescription: !!description
     })
 
-    // 필수 필드 검증
-    if (!projectId || !contractorId || !price || !description) {
-      console.error('❌ Missing required fields:', { projectId, contractorId, price, description })
+    // ✅ 필수 필드 검증 (description은 선택 사항)
+    if (!projectId || !contractorId || !price) {
+      console.error('❌ Missing required fields:', { projectId, contractorId, price })
       return NextResponse.json(
         { error: '필수 필드가 누락되었습니다.' },
         { status: 400 }
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
         project_id: projectId,
         contractor_id: contractorId,
         price: parseFloat(price),
-        description,
+        description: description || null, // ✅ description이 없으면 null
         pdf_url: pdfUrl,
         pdf_filename: pdfFilename,
         status: 'submitted'
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
         },
         {
           price: parseFloat(price),
-          description: description
+          description: description || 'No additional details provided' // ✅ description이 없으면 기본 메시지
         }
       )
 
