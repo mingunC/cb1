@@ -188,16 +188,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         
         let projectStatus: ProjectStatus | 'failed-bid'
         
-        // ✅ 개선된 상태 계산 로직
+        // ✅ 개선된 상태 계산 로직 - bidding 관련 상태 최우선 체크
         if (isSelected) {
           projectStatus = 'selected'
         } else if (hasOtherSelected) {
           projectStatus = 'not-selected'
-        } else if (hasQuote && (project.status === 'bidding' || project.status === 'quote-submitted' || project.status === 'site-visit-approved')) {
-          // ✅ CRITICAL: 견적을 제출했고 프로젝트가 아직 진행 중이면 bidding 상태
-          projectStatus = 'bidding'
-        } else if (project.status === 'bidding' && !hasQuote) {
-          // ✅ bidding 상태이지만 아직 견적을 제출하지 않은 경우
+        } else if (
+          // ✅ CRITICAL: bidding 관련 DB 상태이면 무조건 bidding으로 표시
+          project.status === 'bidding' || 
+          project.status === 'quote-submitted' || 
+          project.status === 'site-visit-approved'
+        ) {
           projectStatus = 'bidding'
         } else if (project.status === 'bidding-closed') {
           if (hasSiteVisit && !hasQuote) {
