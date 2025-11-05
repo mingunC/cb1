@@ -67,14 +67,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   }
   
   // 프로젝트 데이터 로드 함수
-  const loadProjects = useCallback(async () => {
+  const loadProjects = useCallback(async (showLoadingScreen = true) => {
     if (!contractorData || !contractorData.id) {
       console.error('No contractor data available')
       return
     }
     
     try {
-      setIsLoading(true)
+      // 초기 로드일 때만 로딩 화면 표시
+      if (showLoadingScreen) {
+        setIsLoading(true)
+      }
+      
       const supabase = createBrowserClient()
       
       console.log('🚀 Loading projects for contractor:', {
@@ -256,7 +260,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   useEffect(() => {
     console.log('🔄 useEffect triggered, contractorData:', contractorData?.id)
     if (contractorData && contractorData.id) {
-      loadProjects()
+      loadProjects(true) // 초기 로드는 로딩 화면 표시
     }
   }, [contractorData?.id, contractorData?.created_at])
   
@@ -275,7 +279,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   const refreshData = async () => {
     setIsRefreshing(true)
-    await loadProjects()
+    await loadProjects(false) // 새로고침 시에는 로딩 화면 표시 안 함
     setIsRefreshing(false)
     toast.success('Data refreshed')
   }
@@ -348,13 +352,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
         toast.dismiss('site-visit-action')
         toast.success('Site visit application cancelled')
-        await loadProjects()
+        
+        // ✅ 즉시 데이터 새로고침 (로딩 화면 없이)
+        await loadProjects(false)
 
       } catch (error: any) {
         console.error('Error cancelling site visit:', error)
         toast.dismiss('site-visit-action')
         toast.error(error.message || 'Failed to cancel site visit')
-        await loadProjects()
+        await loadProjects(false)
       } finally {
         setApplyingProjectId(null)
       }
@@ -382,7 +388,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       if (response.status === 409) {
         toast.dismiss('site-visit-action')
         toast.error('You have already applied for this site visit')
-        await loadProjects()
+        await loadProjects(false)
         return
       }
 
@@ -392,13 +398,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
       toast.dismiss('site-visit-action')
       toast.success('Site visit application submitted!')
-      setTimeout(() => loadProjects(), 1000)
+      
+      // ✅ 즉시 데이터 새로고침 (로딩 화면 없이)
+      await loadProjects(false)
       
     } catch (error: any) {
       console.error('Error applying for site visit:', error)
       toast.dismiss('site-visit-action')
       toast.error(error.message || 'Failed to apply for site visit')
-      await loadProjects()
+      await loadProjects(false)
     } finally {
       setApplyingProjectId(null)
     }
@@ -423,7 +431,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     console.log('✅ Quote submitted successfully')
     setShowQuoteModal(false)
     setSelectedProject(null)
-    await loadProjects()
+    await loadProjects(false) // 로딩 화면 없이 새로고침
   }
   
   // 필터링된 프로젝트
