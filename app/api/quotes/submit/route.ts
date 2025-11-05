@@ -33,8 +33,16 @@ export async function POST(request: NextRequest) {
 
     const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await request.json()
 
+    console.log('🎯 Quote submission received:', {
+      projectId: projectId?.slice(0, 8),
+      contractorId: contractorId?.slice(0, 8),
+      price,
+      hasPdf: !!pdfUrl
+    })
+
     // 필수 필드 검증
     if (!projectId || !contractorId || !price || !description) {
+      console.error('❌ Missing required fields:', { projectId, contractorId, price, description })
       return NextResponse.json(
         { error: '필수 필드가 누락되었습니다.' },
         { status: 400 }
@@ -49,6 +57,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (projectError || !project) {
+      console.error('❌ Project not found:', projectError)
       return NextResponse.json(
         { error: '프로젝트를 찾을 수 없습니다.' },
         { status: 404 }
@@ -56,6 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (project.status !== 'bidding') {
+      console.warn('⚠️ Project not in bidding status:', project.status)
       return NextResponse.json(
         { error: '현재 프로젝트는 견적서 제출 단계가 아닙니다.' },
         { status: 400 }
@@ -63,6 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 견적서 저장
+    console.log('💾 Saving quote to database...')
     const { data: quote, error: quoteError } = await supabase
       .from('contractor_quotes')
       .insert({
@@ -78,25 +89,33 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (quoteError) {
-      console.error('견적서 저장 오류:', quoteError)
+      console.error('❌ Quote save error:', quoteError)
       return NextResponse.json(
         { error: '견적서 저장에 실패했습니다.' },
         { status: 500 }
       )
     }
 
+    console.log('✅ Quote saved successfully:', quote.id)
+
     // ⚠️ 프로젝트 상태는 'bidding'으로 유지 (여러 업체가 견적서 제출 가능)
-    // ⚠️ 고객이 업체를 선택하거나 관리자가 입찰을 종료할 때 'bidding-closed'로 변경됨
     console.log('✅ 견적서 저장 완료 - 프로젝트는 bidding 상태 유지')
 
     // ✅ 개선된 이메일 전송 로직
-    console.log('📧 이메일 전송 프로세스 시작')
+    console.log('📧 ========== EMAIL SENDING PROCESS START ==========')
+    console.log('🔧 Environment check:', {
+      hasApiKey: !!process.env.MAILGUN_API_KEY,
+      apiKeyPrefix: process.env.MAILGUN_API_KEY?.slice(0, 10),
+      domain: process.env.MAILGUN_DOMAIN,
+      url: process.env.MAILGUN_DOMAIN_URL
+    })
+    
     let emailSent = false
     let emailError: string | null = null
 
     try {
       // 1단계: 프로젝트 정보 가져오기
-      console.log('📝 Step 1: 프로젝트 정보 조회 중...', { projectId })
+      console.log('📝 Step 1: Fetching project info...', { projectId })
       const { data: projectWithCustomer, error: projectFetchError } = await supabase
         .from('quote_requests')
         .select('*, customer_id')
@@ -111,13 +130,15 @@ export async function POST(request: NextRequest) {
         throw new Error('프로젝트 정보를 찾을 수 없습니다.')
       }
 
-      console.log('✅ 프로젝트 정보 조회 성공:', {
-        projectId: projectWithCustomer.id,
-        customerId: projectWithCustomer.customer_id
+      console.log('✅ Step 1 Success:', {
+        projectId: projectWithCustomer.id?.slice(0, 8),
+        customerId: projectWithCustomer.customer_id?.slice(0, 8)
       })
 
       // 2단계: 고객 정보 가져오기
-      console.log('📝 Step 2: 고객 정보 조회 중...', { customerId: projectWithCustomer.customer_id })
+      console.log('📝 Step 2: Fetching customer info...', { 
+        customerId: projectWithCustomer.customer_id?.slice(0, 8)
+      })
       const { data: customer, error: customerError } = await supabase
         .from('users')
         .select('first_name, last_name, email, phone')
@@ -136,13 +157,15 @@ export async function POST(request: NextRequest) {
         throw new Error('고객 이메일 주소가 없습니다.')
       }
 
-      console.log('✅ 고객 정보 조회 성공:', {
+      console.log('✅ Step 2 Success:', {
         email: customer.email,
-        name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+        name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'No name'
       })
 
       // 3단계: 업체 정보 가져오기
-      console.log('📝 Step 3: 업체 정보 조회 중...', { contractorId })
+      console.log('📝 Step 3: Fetching contractor info...', { 
+        contractorId: contractorId?.slice(0, 8)
+      })
       const { data: contractor, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, email, phone')
@@ -157,13 +180,13 @@ export async function POST(request: NextRequest) {
         throw new Error('업체 정보를 찾을 수 없습니다.')
       }
 
-      console.log('✅ 업체 정보 조회 성공:', {
+      console.log('✅ Step 3 Success:', {
         companyName: contractor.company_name,
         email: contractor.email
       })
 
       // 4단계: 이메일 템플릿 생성
-      console.log('📝 Step 4: 이메일 템플릿 생성 중...')
+      console.log('📝 Step 4: Creating email template...')
       const customerName = customer.first_name && customer.last_name
         ? `${customer.first_name} ${customer.last_name}`
         : customer.email?.split('@')[0] || 'Customer'
@@ -186,10 +209,10 @@ export async function POST(request: NextRequest) {
         }
       )
 
-      console.log('✅ 이메일 템플릿 생성 완료')
+      console.log('✅ Step 4 Success: Email template created')
 
       // 5단계: 이메일 전송
-      console.log('📧 Step 5: 이메일 전송 중...', {
+      console.log('📧 Step 5: Sending email...', {
         to: customer.email,
         subject: '📋 New Quote Received for Your Project'
       })
@@ -201,9 +224,11 @@ export async function POST(request: NextRequest) {
         replyTo: 'support@canadabeaver.pro'
       })
 
+      console.log('📧 Email result:', emailResult)
+
       if (emailResult.success) {
         emailSent = true
-        console.log('✅✅✅ 이메일 전송 성공!', {
+        console.log('✅✅✅ EMAIL SENT SUCCESSFULLY!', {
           to: customer.email,
           messageId: (emailResult as any).messageId,
           contractor: contractor.company_name,
@@ -211,7 +236,7 @@ export async function POST(request: NextRequest) {
         })
       } else {
         emailError = emailResult.error || '이메일 전송 실패 (원인 불명)'
-        console.error('❌❌❌ 이메일 전송 실패:', {
+        console.error('❌❌❌ EMAIL SEND FAILED:', {
           error: emailResult.error,
           to: customer.email,
           contractor: contractor.company_name
@@ -220,13 +245,15 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
       emailError = error.message || '이메일 전송 중 오류 발생'
-      console.error('❌❌❌ 이메일 전송 프로세스 에러:', {
+      console.error('❌❌❌ EMAIL PROCESS ERROR:', {
         error: error.message,
         stack: error.stack,
-        projectId,
-        contractorId
+        projectId: projectId?.slice(0, 8),
+        contractorId: contractorId?.slice(0, 8)
       })
     }
+
+    console.log('📧 ========== EMAIL SENDING PROCESS END ==========')
 
     // ✅ 응답 구성
     const response = {
@@ -243,12 +270,17 @@ export async function POST(request: NextRequest) {
       response.message += ' (참고: 고객 이메일 알림 전송 실패)'
     }
 
-    console.log('✅ 견적서 제출 완료:', response)
+    console.log('🎉 Final response:', {
+      success: response.success,
+      quoteId: quote.id,
+      emailSent: response.emailSent,
+      emailError: response.emailError
+    })
 
     return NextResponse.json(response)
 
   } catch (error: any) {
-    console.error('❌ API 오류:', {
+    console.error('❌ API ERROR:', {
       error: error.message,
       stack: error.stack
     })
