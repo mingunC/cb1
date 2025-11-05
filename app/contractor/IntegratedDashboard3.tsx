@@ -444,7 +444,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return projects.filter(p => p.projectStatus === 'bidding')
     }
     if (projectFilter === 'failed-bid') {
-      return projects.filter(p => p.projectStatus === 'failed-bid'
+      return projects.filter(p => p.projectStatus === 'failed-bid')
     }
     return projects.filter(p => p.projectStatus === projectFilter)
   }, [projects, projectFilter])
