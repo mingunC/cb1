@@ -279,6 +279,7 @@ export default function CustomerDashboard() {
       'site-visit-pending': { label: '현장방문 예정', color: 'bg-blue-100 text-blue-800' },
       'bidding': { label: '입찰 진행중', color: 'bg-orange-100 text-orange-800' },
       'bidding-closed': { label: '입찰 종료', color: 'bg-indigo-100 text-indigo-800' },
+      'quote-submitted': { label: '견적서 제출됨', color: 'bg-purple-100 text-purple-800' },
       'contractor-selected': { label: '업체선정완료', color: 'bg-purple-100 text-purple-800' },
       'in-progress': { label: '진행중', color: 'bg-blue-100 text-blue-800' },
       'completed': { label: '완료', color: 'bg-gray-500 text-white' },
@@ -497,7 +498,7 @@ export default function CustomerDashboard() {
             {projects.map((project) => {
               const quotes = selectedProjectQuotes[project.id] || []
               const isExpanded = expandedProject === project.id
-              const canSelectContractor = (project.status === 'bidding' || project.status === 'bidding-closed') && !project.selected_contractor_id
+              const canSelectContractor = (project.status === 'bidding' || project.status === 'bidding-closed' || project.status === 'quote-submitted') && !project.selected_contractor_id
               const canStartProject = (project.status === 'bidding-closed' || project.status === 'contractor-selected') && project.selected_contractor_id
 
               console.log('🔍 프로젝트 렌더링:', {
