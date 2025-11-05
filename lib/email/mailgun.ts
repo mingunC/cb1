@@ -507,7 +507,7 @@ export const createSiteVisitApplicationTemplate = (
   `;
 };
 
-// ✅ 고객에게 보낼 견적서 제출 알림 이메일 템플릿
+// ✅ 고객에게 보낼 견적서 제출 알림 이메일 템플릿 (PDF 다운로드 안내 추가)
 export const createQuoteSubmissionTemplate = (
   customerName: string,
   contractorInfo: {
@@ -541,6 +541,7 @@ export const createQuoteSubmissionTemplate = (
         .button { display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
         .highlight-box { background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 5px; }
+        .pdf-notice { background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; border-radius: 5px; }
         .price-highlight { font-size: 24px; font-weight: bold; color: #28a745; }
       </style>
     </head>
@@ -592,6 +593,11 @@ export const createQuoteSubmissionTemplate = (
               </tr>
               ` : ''}
             </table>
+          </div>
+          
+          <div class="pdf-notice">
+            <strong>📄 Detailed Quote (PDF)</strong>
+            <p style="margin: 10px 0 0 0;">The detailed quote in PDF format is available for download directly from the website. Please visit your dashboard to view and download the complete quote document.</p>
           </div>
           
           <div class="info-box">
