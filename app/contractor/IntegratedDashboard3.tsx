@@ -720,7 +720,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                 <span className="break-words">
                   {project.contractor_quote 
-                    ? '🔥 Bidding in progress. Quote submitted (Cannot be modified)' 
+                    ? '🔥 Bidding in progress. Quote submitted' 
                     : '🔥 Bidding started! Submit your quote.'}
                 </span>
               </p>
