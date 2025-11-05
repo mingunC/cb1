@@ -121,7 +121,7 @@ export default function QuoteModal({
     window.open(data.signedUrl, '_blank')
   }
 
-  // 폼 제출 핸들러
+  // ✅ 개선된 폼 제출 핸들러 - API 호출로 변경
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!project || !contractorId) return
@@ -139,34 +139,55 @@ export default function QuoteModal({
     setIsSubmitting(true)
     
     try {
-      const supabase = createBrowserClient()
+      // 1단계: PDF 파일 업로드
+      console.log('📤 Uploading PDF file...')
       const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
+      console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
       
-      const { error } = await supabase
-        .from('contractor_quotes')
-        .insert({
-          project_id: project.id,
-          contractor_id: contractorId,
-          price: parseFloat(price),
+      // 2단계: API를 통해 견적서 제출 (이메일 자동 전송)
+      console.log('📧 Submitting quote via API (with email)...')
+      const response = await fetch('/api/quotes/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: project.id,
+          contractorId: contractorId,
+          price: price,
           description: detailedDescription,
-          pdf_url: uploadResult.pdfUrl,
-          pdf_filename: uploadResult.pdfFilename,
-          status: 'submitted', // 데이터베이스 제약 조건에 맞게 'submitted' 사용
-          created_at: new Date().toISOString()
+          pdfUrl: uploadResult.pdfUrl,
+          pdfFilename: uploadResult.pdfFilename
         })
+      })
 
-      if (error) throw error
+      const data = await response.json()
 
-      toast.success('Quote submitted successfully!')
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit quote')
+      }
+
+      console.log('✅ Quote submitted successfully:', data)
+      
+      // 이메일 전송 결과 표시
+      if (data.emailSent) {
+        toast.success('Quote submitted and customer notified!')
+      } else {
+        toast.success('Quote submitted successfully!')
+        if (data.emailError) {
+          console.warn('Email notification failed:', data.emailError)
+        }
+      }
+      
       setIsSubmitting(false)
       
       setTimeout(() => {
         onSuccess()
       }, 100)
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Quote submission error:', error)
-      toast.error('An error occurred while submitting the quote')
+      toast.error(error.message || 'An error occurred while submitting the quote')
       setIsSubmitting(false)
     }
   }
