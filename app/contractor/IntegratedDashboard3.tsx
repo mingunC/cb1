@@ -188,12 +188,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         
         let projectStatus: ProjectStatus | 'failed-bid'
         
-        // ✅ 개선된 상태 계산 로직 - Unknown 방지
+        // ✅ 개선된 상태 계산 로직 - bidding 상태 우선 유지
         if (isSelected) {
           projectStatus = 'selected'
         } else if (hasOtherSelected) {
           projectStatus = 'not-selected'
         } else if (project.status === 'bidding') {
+          // ✅ CRITICAL: bidding 상태일 때는 견적 유무와 관계없이 bidding 유지
           projectStatus = 'bidding'
         } else if (project.status === 'bidding-closed') {
           if (hasSiteVisit && !hasQuote) {
@@ -203,8 +204,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           } else {
             projectStatus = 'approved'
           }
-        } else if (hasQuote) {
-          projectStatus = 'quoted'
         } else if (hasSiteVisitCompleted) {
           projectStatus = 'site-visit-completed'
         } else if (hasSiteVisit) {
@@ -987,7 +986,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                           : 'bg-white text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      Site Visit Completed ({statusCounts['site-visit-completed']})</ button>
+                      Site Visit Completed ({statusCounts['site-visit-completed']})
+                    </button>
                   )}
                   {statusCounts['quoted'] > 0 && (
                     <button
