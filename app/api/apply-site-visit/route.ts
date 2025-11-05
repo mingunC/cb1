@@ -5,18 +5,32 @@ import { createSiteVisitApplicationTemplate } from '@/lib/email/mailgun'
 
 export async function POST(request: Request) {
   try {
-    const { projectId, contractorId } = await request.json()
+    const body = await request.json()
+    const { projectId, contractorId } = body
+    
+    console.log('📝 Site visit application request:', { 
+      projectId: projectId ? projectId.slice(0, 8) : 'missing', 
+      contractorId: contractorId ? contractorId.slice(0, 8) : 'missing',
+      bodyKeys: Object.keys(body)
+    })
     
     if (!projectId || !contractorId) {
+      console.error('❌ Missing parameters:', { projectId: !!projectId, contractorId: !!contractorId })
       return NextResponse.json(
-        { error: 'Missing projectId or contractorId' },
+        { 
+          error: 'Missing required parameters',
+          details: {
+            projectId: !projectId ? 'missing' : 'present',
+            contractorId: !contractorId ? 'missing' : 'present'
+          }
+        },
         { status: 400 }
       )
     }
     
     const supabase = await createClient()
     
-    console.log('🚀 Site visit application started:', { projectId, contractorId })
+    console.log('🚀 Site visit application started:', { projectId: projectId.slice(0, 8), contractorId: contractorId.slice(0, 8) })
     
     // 1. Check if already applied
     const { data: existing, error: checkError } = await supabase
@@ -32,9 +46,18 @@ export async function POST(request: Request) {
     }
     
     if (existing) {
+      console.log('⚠️ Site visit already applied:', existing.id)
       return NextResponse.json(
-        { error: 'Site visit already applied' },
-        { status: 400 }
+        { 
+          error: 'Site visit already applied',
+          message: 'You have already applied for a site visit for this project',
+          existingApplication: {
+            id: existing.id,
+            status: existing.status,
+            appliedAt: existing.applied_at
+          }
+        },
+        { status: 409 } // Changed from 400 to 409 (Conflict)
       )
     }
     
@@ -45,6 +68,8 @@ export async function POST(request: Request) {
       status: 'pending',
       applied_at: new Date().toISOString()
     }
+    
+    console.log('📝 Inserting site visit application:', insertData)
     
     const { data: application, error: insertError } = await supabase
       .from('site_visit_applications')
