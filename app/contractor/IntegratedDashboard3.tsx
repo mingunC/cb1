@@ -211,16 +211,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         
         let projectStatus: ProjectStatus | 'failed-bid'
         
+        // ✅ 개선된 상태 계산 로직
         if (isSelected) {
           projectStatus = 'selected'
         } else if (hasOtherSelected) {
           projectStatus = 'not-selected'
         } else if (project.status === 'bidding') {
+          // ✅ bidding 상태일 때 quote 제출 여부 확인
           projectStatus = 'bidding'
         } else if (project.status === 'bidding-closed' && hasSiteVisit && !hasQuote) {
-          // 입찰이 종료되었는데 현장방문은 했지만 견적서를 제출하지 않은 경우
           projectStatus = 'failed-bid'
-        } else if (hasQuote) {
+        } else if (hasQuote && project.status !== 'bidding') {
+          // ✅ 견적서를 제출했지만 bidding 상태가 아닌 경우
           projectStatus = 'quote-submitted'
         } else if (hasSiteVisitCompleted) {
           projectStatus = 'site-visit-completed'
@@ -228,8 +230,15 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           projectStatus = 'site-visit-applied'
         } else if (project.status === 'approved' || project.status === 'site-visit-pending') {
           projectStatus = 'approved'
+        } else if (project.status === 'pending') {
+          projectStatus = 'approved'
+        } else if (project.status === 'completed') {
+          projectStatus = 'completed'
+        } else if (project.status === 'cancelled') {
+          projectStatus = 'cancelled'
         } else {
-          projectStatus = project.status as ProjectStatus
+          console.warn(`⚠️ Unknown project status: ${project.status}, defaulting to 'approved'`)
+          projectStatus = 'approved'
         }
         
         console.log(`✅ Successfully processed project ${project.id.slice(0, 8)} with status: ${projectStatus}`)
@@ -778,6 +787,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         </div>
         
         <div className="mt-4 flex gap-2 flex-wrap">
+          {/* Approved 상태 - 현장방문 신청 버튼 */}
           {project.projectStatus === 'approved' && !project.siteVisit && (
             <button 
               onClick={() => handleSiteVisitApplication(project)}
@@ -787,7 +797,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </button>
           )}
           
-          {/* 입찰 중 - 견적서 미제출 시 입찰 참여 버튼 (현장방문 필수) */}
+          {/* ✅ 입찰 중 - 견적서 미제출 시 입찰 참여 버튼 (현장방문 필수) */}
           {project.projectStatus === 'bidding' && !project.quote && project.siteVisit && (
             <button 
               onClick={() => handleJoinBidding(project)}
@@ -798,7 +808,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </button>
           )}
           
-          {/* 입찰 중 - 현장방문을 하지 않은 경우 */}
+          {/* ✅ 입찰 중 - 현장방문을 하지 않은 경우 */}
           {project.projectStatus === 'bidding' && !project.siteVisit && (
             <div className="px-4 py-2 bg-gray-300 text-gray-600 rounded text-sm font-semibold flex items-center gap-2 cursor-not-allowed">
               <FileText className="w-4 h-4" />
@@ -806,7 +816,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </div>
           )}
           
-          {/* 입찰 중 - 견적서 제출 완료 시 입찰 취소 버튼 */}
+          {/* ✅ 입찰 중 - 견적서 제출 완료 시 입찰 취소 버튼 */}
           {project.projectStatus === 'bidding' && project.quote && (
             <button 
               onClick={() => handleCancelBidding(project)}
@@ -817,15 +827,24 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </button>
           )}
           
+          {/* ✅ 현장방문 완료 - 견적서 작성 버튼 */}
           {project.projectStatus === 'site-visit-completed' && !project.quote && (
             <button 
               onClick={() => handleJoinBidding(project)}
-              className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
+              className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 font-semibold"
             >
               Write Quote
             </button>
           )}
           
+          {/* ✅ quote-submitted 상태 처리 추가 */}
+          {project.projectStatus === 'quote-submitted' && (
+            <div className="px-4 py-2 bg-purple-100 text-purple-700 rounded text-sm font-semibold">
+              Quote Submitted - Waiting for Decision
+            </div>
+          )}
+          
+          {/* Selected 상태 */}
           {project.projectStatus === 'selected' && (
             <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default">
               Customer contact info will be sent to your email.
