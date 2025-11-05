@@ -126,11 +126,14 @@ export default function TermsPage() {
                 <li>Exploit, reproduce, or distribute any Platform content without authorization</li>
                 <li>Scrape, data mine, or use automated tools to access the Platform</li>
                 <li>Reverse engineer, decompile, or disassemble any Platform software or code</li>
+                <li>Frame content from the Platform on another website</li>
                 <li>Impersonate another person or entity or falsely imply endorsement by Canada Beaver</li>
                 <li>Interfere with the proper functioning of the Platform or bypass security measures</li>
                 <li>Collect personal information of other users inconsistent with our Privacy Policy</li>
                 <li>Discriminate against or harass anyone based on protected characteristics</li>
                 <li>Damage or adversely affect the performance of the Platform</li>
+                <li>Burden network capacity through excessive requests or resource consumption</li>
+                <li>Dilute, tarnish, or harm the Canada Beaver brand or trademark</li>
               </ul>
             </section>
 
@@ -217,59 +220,111 @@ export default function TermsPage() {
                 These Terms shall be governed by and construed in accordance with the laws of the Province of Ontario and the federal laws of Canada applicable therein, without giving effect to any principles of conflicts of law.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                You hereby unconditionally and irrevocably consent to the exclusive jurisdiction of the courts of the Province of Ontario for any action or proceeding arising from or relating to these Terms or the Platform.
+                You hereby unconditionally and irrevocably consent to the <strong>exclusive jurisdiction of the courts located in Toronto, Ontario</strong> for any action or proceeding arising from or relating to these Terms or the Platform. You waive any objection to venue or forum non conveniens.
               </p>
             </section>
 
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">14. DISPUTE RESOLUTION</h2>
               
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.1 JURY TRIAL WAIVER</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.1 Negotiation and Mediation</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Before initiating any formal dispute resolution proceedings, the parties agree to attempt to resolve any dispute through good faith negotiations for a period of thirty (30) days. If negotiations fail, the parties may agree to participate in non-binding mediation before a mutually acceptable mediator.
+              </p>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.2 Arbitration</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                If both parties agree in writing, any dispute, controversy, or claim arising out of or relating to these Terms or the Platform may be resolved through binding arbitration in accordance with the Arbitration Rules of the ADR Institute of Canada, Inc.
+              </p>
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-6 my-4">
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  <strong>Arbitration Procedures:</strong>
+                </p>
+                <ul className="list-disc pl-6 text-gray-700 space-y-2 text-sm">
+                  <li>The arbitration shall be conducted in Toronto, Ontario</li>
+                  <li>The arbitration shall be conducted in English</li>
+                  <li>The arbitrator shall be agreed upon by both parties, or if no agreement is reached within 30 days, appointed by the ADR Institute of Canada</li>
+                  <li>The arbitrator's decision shall be final and binding</li>
+                  <li>Judgment upon the award may be entered in any court having jurisdiction</li>
+                  <li>Each party shall bear its own costs of arbitration unless otherwise awarded by the arbitrator</li>
+                  <li>The arbitration proceedings and award shall be kept confidential</li>
+                </ul>
+              </div>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                <strong>Important:</strong> Arbitration is voluntary and requires mutual written consent. If the parties do not agree to arbitration, disputes shall be resolved exclusively in the courts located in Toronto, Ontario as specified in Section 13.
+              </p>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.3 JURY TRIAL WAIVER</h3>
               <div className="bg-amber-50 border-l-4 border-amber-500 p-6 my-4">
                 <p className="text-gray-700 leading-relaxed">
-                  <strong>TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU UNCONDITIONALLY AND IRREVOCABLY WAIVE THE RIGHT TO A TRIAL BY JURY IN ANY DISPUTE ARISING FROM OR RELATING TO THESE TERMS OR THE PLATFORM.</strong>
+                  <strong>TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU UNCONDITIONALLY AND IRREVOCABLY WAIVE THE RIGHT TO A TRIAL BY JURY IN ANY DISPUTE ARISING FROM OR RELATING TO THESE TERMS OR THE PLATFORM, WHETHER RESOLVED IN COURT OR THROUGH ARBITRATION.</strong>
                 </p>
               </div>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.2 NO CLASS ACTIONS</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.4 NO CLASS ACTIONS</h3>
               <div className="bg-amber-50 border-l-4 border-amber-500 p-6 my-4">
-                <p className="text-gray-700 leading-relaxed">
-                  <strong>YOU WAIVE THE RIGHT TO PARTICIPATE IN ANY CLASS ACTION LAWSUIT, CLASS-WIDE ARBITRATION, OR ANY OTHER REPRESENTATIVE PROCEEDING. UNLESS EXPRESSLY AGREED IN WRITING, DISPUTES MAY ONLY BE RESOLVED ON AN INDIVIDUAL BASIS.</strong>
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  <strong>YOU WAIVE THE RIGHT TO PARTICIPATE IN ANY CLASS ACTION LAWSUIT, CLASS-WIDE ARBITRATION, PRIVATE ATTORNEY GENERAL ACTION, OR ANY OTHER REPRESENTATIVE PROCEEDING. UNLESS EXPRESSLY AGREED IN WRITING, DISPUTES MAY ONLY BE RESOLVED ON AN INDIVIDUAL BASIS.</strong>
+                </p>
+                <p className="text-gray-700 leading-relaxed text-sm">
+                  The arbitrator or court may not consolidate more than one party's claims and may not otherwise preside over any form of class or representative proceeding.
                 </p>
               </div>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">14.5 Small Claims Court</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Notwithstanding the above, either party may bring an action in small claims court if the claim qualifies for small claims court jurisdiction.
+              </p>
             </section>
 
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">15. General Provisions</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Injunctive Relief</h2>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                You acknowledge and agree that your breach of these Terms may cause irreparable harm to Canada Beaver that cannot be adequately compensated by monetary damages alone. Therefore, Canada Beaver may seek equitable relief, including injunctive relief and specific performance, without the requirement of posting a bond or proving actual damages.
+              </p>
+            </section>
+
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">16. General Provisions</h2>
               
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">15.1 Entire Agreement</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.1 Entire Agreement</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
                 These Terms, together with our Privacy Policy, constitute the entire agreement between you and Canada Beaver regarding the Platform and supersede all prior agreements and understandings.
               </p>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">15.2 Assignment</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.2 Assignment</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
                 You may not assign or transfer these Terms without our prior written consent. Canada Beaver may assign or transfer these Terms at any time without notice or consent.
               </p>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">15.3 Severability</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.3 Severability</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
                 If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions will remain in full force and effect.
               </p>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">15.4 Waiver</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.4 Waiver</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
                 No waiver of any provision of these Terms shall be effective unless in writing. The failure to exercise or delay in exercising any right shall not constitute a waiver.
               </p>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-3">15.5 Third Party Rights</h3>
-              <p className="text-gray-700 leading-relaxed">
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.5 Third Party Rights</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
                 These Terms do not confer any rights or remedies upon any person other than you and Canada Beaver.
+              </p>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.6 Force Majeure</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Canada Beaver shall not be liable for any failure or delay in performance due to circumstances beyond its reasonable control, including acts of God, natural disasters, war, terrorism, riots, embargoes, acts of civil or military authorities, fire, floods, accidents, pandemics, strikes, or shortages of transportation, facilities, fuel, energy, labor, or materials.
+              </p>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">16.7 Notices</h3>
+              <p className="text-gray-700 leading-relaxed">
+                All notices to Canada Beaver must be sent to admin@canadabeaver.pro. We may provide notices to you via email to the address associated with your account or through the Platform.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">16. Contact Information</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">17. Contact Information</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
                 If you have any questions about these Terms of Service, please contact us:
               </p>
