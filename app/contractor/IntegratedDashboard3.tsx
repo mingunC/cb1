@@ -801,7 +801,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 ) : (
                   <>
                     <FileText className="w-3.5 h-3.5" />
-                    📝 Submit Quote
+                    Submit Quote
                   </>
                 )}
               </button>
