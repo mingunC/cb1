@@ -5,7 +5,8 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { 
   Search, Filter, MapPin, Star, Award, Calendar, Users, 
   CheckCircle, Phone, Mail, Globe, Clock, Building,
-  Briefcase, Shield, ChevronRight, MessageCircle, Image as ImageIcon
+  Briefcase, Shield, ChevronRight, MessageCircle, Image as ImageIcon,
+  ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -77,8 +78,6 @@ export default function ContractorsListingPage() {
       console.log('🔍 Starting contractors fetch...')
       const startTime = performance.now()
       
-      // ✅ 최적화: RPC 함수 사용 또는 단순 쿼리로 변경
-      // review_count를 나중에 가져오는 대신, 기본값으로 설정
       const { data: contractorsData, error } = await supabase
         .from('contractors')
         .select(`
@@ -99,7 +98,7 @@ export default function ContractorsListingPage() {
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(50) // ✅ 초기 로딩 제한
+        .limit(50)
 
       const fetchTime = performance.now() - startTime
       console.log(`✅ Contractors fetched in ${fetchTime.toFixed(2)}ms`)
@@ -111,7 +110,6 @@ export default function ContractorsListingPage() {
         return
       }
 
-      // ✅ specialties 파싱 및 기본 포맷팅
       const formattedContractors: Contractor[] = (contractorsData || []).map(contractor => {
         let parsedSpecialties: string[] = []
         if (contractor.specialties) {
@@ -148,7 +146,7 @@ export default function ContractorsListingPage() {
           specialties: parsedSpecialties,
           certifications: ['실내건축공사업'],
           rating: contractor.rating || 0,
-          review_count: 0, // ✅ 초기 값, 별도 로딩
+          review_count: 0,
           completed_projects: 0,
           response_time: '문의 후 안내',
           min_budget: undefined,
@@ -165,7 +163,6 @@ export default function ContractorsListingPage() {
       setContractors(formattedContractors)
       setFilteredContractors(formattedContractors)
       
-      // ✅ 백그라운드에서 review count 로드 (non-blocking)
       loadReviewCounts(formattedContractors)
       
     } catch (error) {
@@ -177,7 +174,6 @@ export default function ContractorsListingPage() {
     }
   }
 
-  // ✅ 별도 함수로 review count 로드 (비동기, non-blocking)
   const loadReviewCounts = async (contractorsList: Contractor[]) => {
     try {
       const supabase = createBrowserClient()
@@ -201,14 +197,12 @@ export default function ContractorsListingPage() {
         return
       }
 
-      // 클라이언트에서 개수 집계
       const reviewCountMap = (reviewsList || []).reduce((map, row) => {
         const id = row.contractor_id as string
         map.set(id, (map.get(id) || 0) + 1)
         return map
       }, new Map<string, number>())
 
-      // ✅ state 업데이트
       setContractors(prev => prev.map(c => ({
         ...c,
         review_count: reviewCountMap.get(c.id) || 0
@@ -263,11 +257,23 @@ export default function ContractorsListingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">Professional Partners</h1>
-          <div className="w-20 h-1 bg-amber-600 mb-4"></div>
-          <p className="text-base sm:text-xl opacity-90">Meet trusted experts ready to transform your space</p>
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-emerald-700 to-amber-600 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
+          <div className="flex items-center mb-6">
+            <Users className="h-12 w-12 mr-4" />
+            <h1 className="text-5xl font-bold">Professional Partners</h1>
+          </div>
+          <p className="text-xl text-white/90 max-w-3xl">
+            Meet trusted experts ready to transform your space
+          </p>
         </div>
       </div>
 

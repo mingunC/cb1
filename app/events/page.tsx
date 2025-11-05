@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Gift, Percent, Tag, AlertCircle } from 'lucide-react'
+import { Calendar, Gift, Percent, Tag, AlertCircle, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 interface Event {
   id: string
@@ -51,7 +52,6 @@ export default function EventsPromotionPage() {
     try {
       setIsLoading(true)
       
-      // 실제 API 호출
       const response = await fetch('/api/events')
       if (!response.ok) throw new Error('Failed to fetch events')
       
@@ -59,24 +59,20 @@ export default function EventsPromotionPage() {
       setEvents(data.events || [])
     } catch (error) {
       console.error('Error fetching events:', error)
-      // 에러 발생 시 빈 배열로 설정
       setEvents([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  // 필터링 로직
   useEffect(() => {
     let filtered = [...events]
     const now = new Date()
 
-    // 타입 필터
     if (filterType !== 'all') {
       filtered = filtered.filter(event => event.type === filterType)
     }
 
-    // 상태 필터
     filtered = filtered.filter(event => {
       const startDate = new Date(event.start_date)
       const endDate = new Date(event.end_date)
@@ -93,7 +89,6 @@ export default function EventsPromotionPage() {
       }
     })
 
-    // 특별 이벤트를 상단에 배치
     filtered.sort((a, b) => {
       if (a.is_featured && !b.is_featured) return -1
       if (!a.is_featured && b.is_featured) return 1
@@ -103,7 +98,6 @@ export default function EventsPromotionPage() {
     setFilteredEvents(filtered)
   }, [filterType, statusFilter, events])
 
-  // 이벤트 타입 한글 변환
   const getEventTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       'discount': '할인',
@@ -115,7 +109,6 @@ export default function EventsPromotionPage() {
     return labels[type] || type
   }
 
-  // 이벤트 타입 아이콘
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'discount':
@@ -129,7 +122,6 @@ export default function EventsPromotionPage() {
     }
   }
 
-  // D-Day 계산
   const calculateDday = (endDate: string) => {
     const now = new Date()
     const end = new Date(endDate)
@@ -140,7 +132,6 @@ export default function EventsPromotionPage() {
     return `D-${diff}`
   }
 
-  // 진행률 계산
   const calculateProgress = (current?: number, max?: number) => {
     if (!current || !max) return 0
     return Math.min((current / max) * 100, 100)
@@ -148,12 +139,21 @@ export default function EventsPromotionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 배너 */}
-      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">Exclusive Events</h1>
-          <div className="w-20 h-1 bg-amber-600 mb-4"></div>
-          <p className="text-base sm:text-xl opacity-90">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-emerald-700 to-amber-600 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
+          <div className="flex items-center mb-6">
+            <Gift className="h-12 w-12 mr-4" />
+            <h1 className="text-5xl font-bold">Exclusive Events</h1>
+          </div>
+          <p className="text-xl text-white/90 max-w-3xl">
             Discover special offers from trusted professionals
           </p>
         </div>

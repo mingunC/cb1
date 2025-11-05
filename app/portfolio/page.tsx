@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Search, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home, MapPin } from 'lucide-react'
+import { Search, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home, MapPin, ArrowLeft, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
@@ -64,7 +64,6 @@ function PortfolioContent() {
       
       if (error) {
         console.error('❌ 에러:', error)
-        // ✅ return 제거 - finally가 실행되도록
         setPortfolios([])
       } else {
         console.log('✅ 로드된 포트폴리오:', data?.length, '개')
@@ -119,11 +118,28 @@ function PortfolioContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">Inspiring Portfolio</h1>
-          <div className="w-20 h-1 bg-amber-600 mb-6"></div>
-          
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-emerald-700 to-amber-600 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
+          <div className="flex items-center mb-6">
+            <Briefcase className="h-12 w-12 mr-4" />
+            <h1 className="text-5xl font-bold">Inspiring Portfolio</h1>
+          </div>
+          <p className="text-xl text-white/90 max-w-3xl">
+            Explore stunning renovation projects from our trusted professionals
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white border-b sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="relative max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
