@@ -651,22 +651,24 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       <div className={`bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 truncate">
+            {/* ✅ 제목 - truncate 제거, 줄바꿈 허용 */}
+            <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 break-words line-clamp-2">
               {getSpaceTypeLabel()}
             </h3>
             <div className="flex items-center text-sm text-gray-600 mt-1 mb-3">
               <User className="w-4 h-4 mr-2 text-[#daa520] flex-shrink-0" />
-              <span className="font-light truncate">{getCustomerName()}</span>
+              <span className="font-light break-words">{getCustomerName()}</span>
             </div>
+            {/* ✅ 프로젝트 정보 - whitespace-nowrap 제거, 줄바꿈 허용 */}
             <div className="space-y-1.5">
-              <p className="text-sm text-gray-600 font-light overflow-hidden">
-                <span className="whitespace-nowrap">Project: {getProjectTypeLabel()}</span>
+              <p className="text-sm text-gray-600 font-light break-words">
+                <span className="font-medium">Project:</span> {getProjectTypeLabel()}
               </p>
-              <p className="text-sm text-gray-600 font-light overflow-hidden">
-                <span className="whitespace-nowrap">Budget: {getBudgetLabel()}</span>
+              <p className="text-sm text-gray-600 font-light break-words">
+                <span className="font-medium">Budget:</span> {getBudgetLabel()}
               </p>
-              <p className="text-sm text-gray-600 font-light overflow-hidden">
-                <span className="whitespace-nowrap">Timeline: {getTimelineLabel()}</span>
+              <p className="text-sm text-gray-600 font-light break-words">
+                <span className="font-medium">Timeline:</span> {getTimelineLabel()}
               </p>
             </div>
           </div>
