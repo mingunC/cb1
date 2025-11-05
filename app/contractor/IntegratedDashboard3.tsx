@@ -493,7 +493,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'site-visit-pending': { label: 'Site Visit Pending', color: 'bg-yellow-100 text-yellow-700' },
         'site-visit-completed': { label: 'Site Visit Completed', color: 'bg-indigo-100 text-indigo-700' },
         'bidding': { 
-          label: project.quote ? '🔥 Bidding (Submitted)' : '🔥 Bidding', 
+          label: project.contractor_quote ? '🔥 Bidding (Submitted)' : '🔥 Bidding', 
           color: 'bg-orange-500 text-white font-bold',
           icon: TrendingUp
         },
@@ -696,10 +696,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           
           {/* 견적 정보 */}
-          {project.quote && (
+          {project.contractor_quote && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-sm font-medium">
-                Submitted Quote: ${project.quote.price?.toLocaleString()}
+                Submitted Quote: ${project.contractor_quote.price?.toLocaleString()}
               </p>
             </div>
           )}
@@ -719,7 +719,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <p className="text-sm font-semibold text-orange-700 flex items-start">
                 <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                 <span className="break-words">
-                  {project.quote 
+                  {project.contractor_quote 
                     ? '🔥 Bidding in progress. Quote submitted (Cannot be modified)' 
                     : '🔥 Bidding started! Submit your quote.'}
                 </span>
@@ -812,14 +812,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {project.projectStatus === 'bidding' && project.siteVisit && (
             <button 
               onClick={() => handleSubmitQuote(project)}
-              disabled={!!project.quote}
+              disabled={!!project.contractor_quote}
               className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold flex items-center justify-center gap-2 ${
-                project.quote 
+                project.contractor_quote 
                   ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
                   : 'bg-orange-500 text-white hover:bg-orange-600'
               }`}
             >
-              {project.quote ? (
+              {project.contractor_quote ? (
                 <>
                   <Ban className="w-4 h-4 flex-shrink-0" />
                   <span>Cannot Modify</span>
@@ -842,7 +842,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           
           {/* ✅ 현장방문 완료 - 견적서 작성 버튼 */}
-          {project.projectStatus === 'site-visit-completed' && !project.quote && (
+          {project.projectStatus === 'site-visit-completed' && !project.contractor_quote && (
             <button 
               onClick={() => handleSubmitQuote(project)}
               className="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 font-semibold"
