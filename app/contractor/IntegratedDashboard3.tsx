@@ -507,7 +507,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'site-visit-applied': { label: 'Site Visit Applied', color: 'bg-blue-100 text-blue-700' },
         'site-visit-completed': { label: 'Site Visit Completed', color: 'bg-indigo-100 text-indigo-700' },
         'bidding': { 
-          label: project.contractor_quote ? '🔥 입찰 진행중 (Quote Submitted)' : '🔥 입찰 진행중 (Bidding)', 
+          label: project.contractor_quote ? '🔥 Quote Submitted' : '🔥 Bidding', 
           color: 'bg-orange-500 text-white font-bold',
           icon: TrendingUp
         },
@@ -783,12 +783,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 {project.contractor_quote ? (
                   <>
                     <Ban className="w-3.5 h-3.5" />
-                    수정 불가 (Cannot Modify)
+                    Cannot Modify
                   </>
                 ) : (
                   <>
                     <FileText className="w-3.5 h-3.5" />
-                    📝 견적서 작성하기
+                    📝 Submit Quote
                   </>
                 )}
               </button>
@@ -797,7 +797,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             {/* Selected 상태 */}
             {project.projectStatus === 'selected' && (
               <div className="w-full px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-semibold text-center">
-                🎉 Check your email for customer contact info
+                🎉 Check your email for customer contact information
               </div>
             )}
             
@@ -814,7 +814,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             onClick={() => toggleCard(project.id)}
             className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
           >
-            <span>상세 {isExpanded ? '∧' : '∨'}</span>
+            <span>Details {isExpanded ? '∧' : '∨'}</span>
           </button>
         </div>
       </div>
