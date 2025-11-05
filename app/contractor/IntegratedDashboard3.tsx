@@ -507,7 +507,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'site-visit-applied': { label: 'Site Visit Applied', color: 'bg-blue-100 text-blue-700' },
         'site-visit-completed': { label: 'Site Visit Completed', color: 'bg-indigo-100 text-indigo-700' },
         'bidding': { 
-          label: project.contractor_quote ? '🔥 Bidding (Submitted)' : '🔥 Bidding', 
+          label: project.contractor_quote ? '🔥 입찰 진행중 (Quote Submitted)' : '🔥 입찰 진행중 (Bidding)', 
           color: 'bg-orange-500 text-white font-bold',
           icon: TrendingUp
         },
@@ -669,11 +669,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {getStatusBadge()}
         </div>
         
-        {/* 메인 정보 - 예산 + 주소 */}
+        {/* 메인 정보 - 예산 + 주소 (기본 표시) */}
         <div className="px-4 pb-4 space-y-3">
-          {/* 💰 예산 - 크고 진하게 */}
+          {/* 💰 예산 - 크고 진하게! */}
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold text-amber-600">
+            <span className="text-4xl font-extrabold text-amber-600">
               💰 {getBudgetLabel()}
             </span>
           </div>
@@ -783,12 +783,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 {project.contractor_quote ? (
                   <>
                     <Ban className="w-4 h-4" />
-                    Cannot Modify
+                    수정 불가 (Cannot Modify)
                   </>
                 ) : (
                   <>
                     <FileText className="w-4 h-4" />
-                    Submit Quote
+                    📝 견적서 작성하기 (Submit Quote)
                   </>
                 )}
               </button>
@@ -814,12 +814,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             onClick={() => toggleCard(project.id)}
             className="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
           >
-            <span>Details</span>
-            {isExpanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
+            <span>상세 {isExpanded ? '∧' : '∨'}</span>
           </button>
         </div>
       </div>
