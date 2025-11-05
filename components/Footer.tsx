@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, Phone, MapPin, Facebook, Instagram, Youtube, Twitter } from 'lucide-react'
+import { Mail, Phone, MapPin, Instagram } from 'lucide-react'
 
 // Threads Icon Component using the provided SVG
 const ThreadsIcon = ({ className }: { className?: string }) => (
@@ -39,11 +39,8 @@ export default function Footer() {
   }
 
   const socialLinks = [
-    { name: 'Facebook', icon: Facebook, href: '#' },
     { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/canadabeaverservice/' },
-    { name: 'Threads', icon: ThreadsIcon, href: 'https://www.threads.com/@canadabeaverservice' },
-    { name: 'YouTube', icon: Youtube, href: '#' },
-    { name: 'Twitter', icon: Twitter, href: '#' }
+    { name: 'Threads', icon: ThreadsIcon, href: 'https://www.threads.com/@canadabeaverservice' }
   ]
 
   return (
