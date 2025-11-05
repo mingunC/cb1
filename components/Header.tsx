@@ -249,54 +249,51 @@ export default function Header() {
     }
   }, [isUserDropdownOpen])
 
+  // ✅ 개선된 로그아웃 함수
   const handleSignOut = async () => {
-    if (isLoggingOut) return // 이미 로그아웃 중이면 무시
+    if (isLoggingOut) {
+      console.log('⚠️ 이미 로그아웃 진행 중입니다.')
+      return // 이중 클릭 방지
+    }
     
     try {
       setIsLoggingOut(true)
       console.log('🚪 로그아웃 시작...')
       
-      // 즉시 UI 상태 초기화 (사용자 경험 개선)
+      const supabase = createBrowserClient()
+      
+      // ✅ 1단계: 즉시 UI 상태 초기화 (사용자 경험 개선)
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
       setDisplayName('')
-      currentUserId.current = null // 사용자 ID 리셋
+      currentUserId.current = null
       setIsUserDropdownOpen(false)
-      console.log('✅ UI 상태 즉시 초기화 완료')
+      console.log('✅ UI 상태 초기화 완료')
       
-      const supabase = createBrowserClient()
-      console.log('✅ Supabase 클라이언트 생성됨')
-      
-      // 로그아웃 실행 (타임아웃 추가)
-      const logoutPromise = supabase.auth.signOut()
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('로그아웃 타임아웃')), 5000)
-      )
-      
-      const { error } = await Promise.race([logoutPromise, timeoutPromise]) as any
-      
-      if (error) {
-        console.error('❌ Supabase 로그아웃 에러:', error)
-        // 에러가 있어도 계속 진행 (UI는 이미 초기화됨)
-      } else {
-        console.log('✅ Supabase 로그아웃 완료')
-      }
-      
-      // localStorage 캐시 클리어
+      // ✅ 2단계: localStorage 캐시 클리어
       localStorage.removeItem('cached_user_name')
       localStorage.removeItem('cached_user_type')
-      localStorage.removeItem('sb-josdopshblohlcfyrylt-auth-token') // Supabase 토큰도 제거
       console.log('✅ localStorage 캐시 클리어 완료')
       
-      // 강제 페이지 리로드 (확실한 로그아웃)
-      console.log('✅ 강제 페이지 리로드 실행')
-      window.location.href = '/'
+      // ✅ 3단계: Supabase 로그아웃 (백그라운드 처리)
+      // 실패해도 상관없도록 독립적으로 처리
+      supabase.auth.signOut().catch((error) => {
+        console.error('⚠️ Supabase 로그아웃 에러 (무시됨):', error)
+      })
+      
+      // ✅ 4단계: 즉시 페이지 리디렉션 (타임아웃 없이)
+      console.log('✅ 홈페이지로 리디렉션')
+      
+      // 200ms 딜레이 후 리디렉션 (UI 업데이트 반영)
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 200)
       
     } catch (error) {
       console.error('❌ 로그아웃 에러:', error)
       
-      // 에러가 발생해도 상태는 초기화
+      // 에러가 발생해도 상태 초기화 및 리디렉션
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
@@ -304,15 +301,14 @@ export default function Header() {
       currentUserId.current = null
       setIsUserDropdownOpen(false)
       
-      // localStorage 캐시 클리어
+      // localStorage 클리어
       localStorage.removeItem('cached_user_name')
       localStorage.removeItem('cached_user_type')
-      localStorage.removeItem('sb-josdopshblohlcfyrylt-auth-token')
       
-      // 강제 페이지 리로드
+      // 강제 리디렉션
       window.location.href = '/'
     } finally {
-      setIsLoggingOut(false)
+      // 로그아웃 플래그는 리셋하지 않음 (리디렉션이 일어나므로)
     }
   }
 
@@ -441,9 +437,9 @@ export default function Header() {
                         )}
                         <button
                           onClick={() => {
-                            console.log('로그아웃 버튼 클릭됨 (드롭다운)')
-                            handleSignOut()
+                            console.log('✅ 로그아웃 버튼 클릭됨 (드롭다운)')
                             setIsUserDropdownOpen(false)
+                            handleSignOut()
                           }}
                           disabled={isLoggingOut}
                           className={`w-full text-left px-4 py-2 text-sm flex items-center ${
@@ -593,9 +589,9 @@ export default function Header() {
                         </div>
                         <button
                           onClick={() => {
-                            console.log('로그아웃 버튼 클릭됨 (모바일)')
-                            handleSignOut()
+                            console.log('✅ 로그아웃 버튼 클릭됨 (모바일)')
                             setIsMenuOpen(false)
+                            handleSignOut()
                           }}
                           disabled={isLoggingOut}
                           className={`flex items-center justify-center px-3 py-2 text-base font-medium w-full rounded-lg ${
