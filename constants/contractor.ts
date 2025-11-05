@@ -8,12 +8,12 @@ export const PROJECT_TYPE_MAP = {
   'basement': { label: 'Basement', color: 'bg-gray-100 text-gray-700' },
   'flooring': { label: 'Flooring', color: 'bg-amber-100 text-amber-700' },
   'painting': { label: 'Painting', color: 'bg-purple-100 text-purple-700' },
-  'full_renovation': { label: 'Full Renovation', color: 'bg-red-100 text-red-700' },
+  'full_renovation': { label: 'Full Reno', color: 'bg-red-100 text-red-700' },
   'office': { label: 'Office', color: 'bg-indigo-100 text-indigo-700' },
-  'retail': { label: 'Retail/Store', color: 'bg-green-100 text-green-700' },
-  'restaurant': { label: 'Cafe/Restaurant', color: 'bg-yellow-100 text-yellow-700' },
+  'retail': { label: 'Retail', color: 'bg-green-100 text-green-700' },
+  'restaurant': { label: 'Restaurant', color: 'bg-yellow-100 text-yellow-700' },
   'education': { label: 'Education', color: 'bg-pink-100 text-pink-700' },
-  'hospitality': { label: 'Hospitality/Hospital', color: 'bg-teal-100 text-teal-700' },
+  'hospitality': { label: 'Hospitality', color: 'bg-teal-100 text-teal-700' },
   'other': { label: 'Other', color: 'bg-gray-100 text-gray-700' }
 } as const
 
@@ -21,13 +21,13 @@ export const PROJECT_TYPE_MAP = {
 export const SPACE_TYPE_MAP = {
   'detached_house': { label: 'Detached House', color: 'bg-green-100 text-green-700' },
   'town_house': { label: 'Town House', color: 'bg-blue-100 text-blue-700' },
-  'condo': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' },
+  'condo': { label: 'Condo', color: 'bg-purple-100 text-purple-700' },
   'commercial': { label: 'Commercial', color: 'bg-orange-100 text-orange-700' },
   // 추가 매핑 (다른 형식)
   'detached-house': { label: 'Detached House', color: 'bg-green-100 text-green-700' },
   'townhouse': { label: 'Town House', color: 'bg-blue-100 text-blue-700' },
-  'apartment': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' },
-  'condo-apartment': { label: 'Condo & Apartment', color: 'bg-purple-100 text-purple-700' }
+  'apartment': { label: 'Condo', color: 'bg-purple-100 text-purple-700' },
+  'condo-apartment': { label: 'Condo', color: 'bg-purple-100 text-purple-700' }
 } as const
 
 // Status configurations
@@ -61,15 +61,15 @@ export const FILTER_OPTIONS = [
 // Budget option labels
 export const BUDGET_LABELS: Record<string, string> = {
   'under_50k': 'Under $50K',
-  '50k_100k': '$50K - 100K',
-  'over_100k': '100K+'
+  '50k_100k': '$50K - $100K',
+  'over_100k': '$100K+'
 }
 
 // Timeline labels
 export const TIMELINE_LABELS: Record<string, string> = {
-  'immediate': 'Start Immediately',
-  '1_month': 'Within 1 Month',
-  '3_months': 'Within 3 Months',
+  'immediate': 'Immediate',
+  '1_month': '1 Month',
+  '3_months': '3 Months',
   'planning': 'Planning'
 }
 
