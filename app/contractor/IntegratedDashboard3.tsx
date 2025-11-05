@@ -31,6 +31,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [selectedContractorNames, setSelectedContractorNames] = useState<Record<string, string>>({})
   const [showQuoteModal, setShowQuoteModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [applyingProjectId, setApplyingProjectId] = useState<string | null>(null)
   
   // 선택된 업체 이름들을 미리 로드
   const loadSelectedContractorNames = async (contractorIds: string[]) => {
@@ -285,12 +286,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     toast.success('Data refreshed')
   }
 
-  // ✅ 현장방문 신청 함수
+  // ✅ 현장방문 신청 함수 - 중복 클릭 방지 개선
   const handleSiteVisitApplication = async (project: Project) => {
     console.log('🚀 Apply Site Visit clicked!', {
       projectId: project.id,
       contractorId: contractorData?.id,
-      hasContractorData: !!contractorData
+      hasContractorData: !!contractorData,
+      hasSiteVisit: !!project.siteVisit,
+      isApplying: applyingProjectId === project.id
     })
 
     if (!contractorData?.id) {
@@ -298,6 +301,22 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       toast.error('Contractor information not found')
       return
     }
+
+    // ✅ 이미 신청 중인 경우 중복 클릭 방지
+    if (applyingProjectId === project.id) {
+      console.log('⚠️ Already applying for this project')
+      return
+    }
+
+    // ✅ 이미 신청한 경우 체크
+    if (project.siteVisit) {
+      console.log('⚠️ Site visit already applied')
+      toast.error('You have already applied for site visit')
+      return
+    }
+
+    // ✅ 신청 중 상태 설정
+    setApplyingProjectId(project.id)
 
     // 🚀 낙관적 UI 업데이트
     const updatedProjects = projects.map(p => 
@@ -314,7 +333,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     )
     setProjects(updatedProjects)
     
-    toast.success('Applying for site visit...')
+    // ✅ 즉시 로딩 토스트 표시
+    toast.loading('Applying for site visit...', { id: 'site-visit-apply' })
 
     try {
       console.log('📝 Calling site visit API...')
@@ -335,15 +355,29 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       console.log('📊 API Response:', {
         status: response.status,
         success: data.success,
-        message: data.message
+        message: data.message,
+        error: data.error
       })
 
+      // ✅ 409 Conflict 처리 (이미 신청한 경우)
+      if (response.status === 409) {
+        console.log('⚠️ Duplicate application detected')
+        toast.dismiss('site-visit-apply')
+        toast.error('You have already applied for this site visit', {
+          duration: 3000
+        })
+        await loadProjects()
+        return
+      }
+
       if (!response.ok) {
+        toast.dismiss('site-visit-apply')
         await loadProjects()
         throw new Error(data.error || 'Failed to apply for site visit')
       }
 
       console.log('✅ Site visit applied successfully!')
+      toast.dismiss('site-visit-apply')
       toast.success('Site visit application submitted!', {
         duration: 3000
       })
@@ -352,8 +386,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
     } catch (error: any) {
       console.error('💥 Error applying for site visit:', error)
+      toast.dismiss('site-visit-apply')
       toast.error(error.message || 'Failed to apply for site visit')
       await loadProjects()
+    } finally {
+      // ✅ 신청 중 상태 해제
+      setApplyingProjectId(null)
     }
   }
   
@@ -398,7 +436,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       console.log('🎯 Opening quote modal for bidding:', { projectId: project.id })
       setSelectedProject(project)
       setShowQuoteModal(true)
-      toast.success('Opening quote modal...')
     }
   }
   
@@ -474,6 +511,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 프로젝트 카드 컴포넌트
   const SimpleProjectCard = ({ project }: { project: Project }) => {
+    const isApplyingThis = applyingProjectId === project.id
+    
     const getStatusBadge = () => {
       const statusConfig: Record<string, { label: string; color: string; icon?: any }> = {
         'pending': { label: 'Pending', color: 'bg-gray-100 text-gray-700' },
@@ -772,9 +811,21 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {project.projectStatus === 'approved' && !project.siteVisit && (
             <button 
               onClick={() => handleSiteVisitApplication(project)}
-              className="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 font-semibold"
+              disabled={isApplyingThis}
+              className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold transition-all ${
+                isApplyingThis
+                  ? 'bg-gray-400 text-white cursor-wait'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
             >
-              Apply Site Visit
+              {isApplyingThis ? (
+                <span className="flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Applying...
+                </span>
+              ) : (
+                'Apply Site Visit'
+              )}
             </button>
           )}
           
@@ -1061,27 +1112,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 <div className="p-4 md:p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredProjects.map((project) => (
-                      <ProjectCard 
-                        key={project.id} 
-                        project={project}
-                        contractorId={contractorData?.id || ''}
-                        onSiteVisitApply={(projectId) => {
-                          const proj = projects.find(p => p.id === projectId)
-                          if (proj) handleSiteVisitApplication(proj)
-                        }}
-                        onSiteVisitCancel={(appId, projectId) => {
-                          console.log('Cancel site visit:', appId)
-                        }}
-                        onQuoteCreate={(project) => {
-                          setSelectedProject(project)
-                          setShowQuoteModal(true)
-                        }}
-                        onQuoteView={(project) => {
-                          setSelectedProject(project)
-                          setShowQuoteModal(true)
-                        }}
-                        onBiddingToggle={handleToggleBidding}
-                      />
+                      <SimpleProjectCard key={project.id} project={project} />
                     ))}
                   </div>
                 </div>
