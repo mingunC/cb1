@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban, AlertCircle, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -33,6 +33,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [applyingProjectId, setApplyingProjectId] = useState<string | null>(null)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
+  
+  // 주소 복사 함수
+  const handleCopyAddress = async (address: string, projectId: string) => {
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopiedAddress(projectId)
+      toast.success('Address copied!')
+      setTimeout(() => setCopiedAddress(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy address:', err)
+      toast.error('Failed to copy address')
+    }
+  }
   
   // 선택된 업체 이름들을 미리 로드
   const loadSelectedContractorNames = async (contractorIds: string[]) => {
@@ -129,27 +143,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       console.log('📊 Site visits:', siteVisitMap.size)
       console.log('📊 Quotes submitted:', quotesMap.size)
       
-      // ✅ 3. 고객 정보 일괄 조회
-      console.log('📝 Step 3: Fetching customer information...')
-      const customerIds = [...new Set(allProjectsData?.map(p => p.customer_id).filter(Boolean) || [])]
-      console.log('👥 Customer IDs:', customerIds.length)
-      
-      let customersMap: Record<string, any> = {}
-      if (customerIds.length > 0) {
-        const { data: customersData } = await supabase
-          .from('users')
-          .select('id, first_name, last_name, email, phone')
-          .in('id', customerIds)
-        
-        if (customersData) {
-          customersMap = customersData.reduce((acc, customer) => {
-            acc[customer.id] = customer
-            return acc
-          }, {})
-        }
-      }
-      
-      console.log('✅ Fetched customers:', Object.keys(customersMap).length)
+      // ✅ 3. 고객 정보는 로드하지 않음 (보안상 이유)
+      console.log('📝 Step 3: Skipping customer information for security...')
       
       // ✅ 4. 선택된 업체 이름들 로드
       console.log('📝 Step 4: Fetching selected contractor names...')
@@ -168,7 +163,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       const processedProjects = allProjectsData?.map((project, index) => {
         console.log(`🔄 Processing project ${index + 1}/${allProjectsData.length}: ${project.id.slice(0, 8)}`)
         
-        const customer = customersMap[project.customer_id]
         const siteVisit = siteVisitMap.get(project.id)
         const quote = quotesMap.get(project.id)
         
@@ -233,7 +227,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         return {
           ...project,
           projectStatus,
-          customer,
           siteVisit,
           contractor_quote: quote,
           contractorNames
@@ -499,6 +492,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const CompactProjectCard = ({ project }: { project: Project }) => {
     const isApplyingThis = applyingProjectId === project.id
     const isExpanded = expandedCards.has(project.id)
+    const isAddressCopied = copiedAddress === project.id
     
     const getStatusBadge = () => {
       const statusConfig: Record<string, { label: string; color: string; icon?: any }> = {
@@ -586,16 +580,6 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return 'border-l-4 border-l-gray-300 bg-white'
     }
     
-    // 고객 이름
-    const getCustomerName = () => {
-      if (!project.customer) return 'No Customer Info'
-      const { first_name, last_name, email } = project.customer
-      if (first_name || last_name) {
-        return `${first_name || ''} ${last_name || ''}`.trim()
-      }
-      return email?.split('@')[0] || 'No Name'
-    }
-    
     // 프로젝트 타입
     const getProjectTypeLabel = () => {
       if (project.project_types && project.project_types.length > 0) {
@@ -678,24 +662,31 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </span>
           </div>
           
-          {/* 📍 주소 */}
+          {/* 📍 주소 - 복사 버튼 추가 */}
           <div className="flex items-start gap-2 text-gray-700">
             <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-            <span className="text-sm break-words">
-              {project.full_address || project.postal_code || 'No Address'}
-            </span>
+            <div className="flex-1 flex items-start gap-2">
+              <span className="text-sm break-words flex-1">
+                {project.full_address || project.postal_code || 'No Address'}
+              </span>
+              <button
+                onClick={() => handleCopyAddress(project.full_address || project.postal_code || '', project.id)}
+                className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Copy address"
+              >
+                {isAddressCopied ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
         
         {/* 토글 가능한 상세 정보 */}
         {isExpanded && (
           <div className="px-3 pb-3 space-y-2 border-t border-gray-200 pt-3">
-            {/* 고객 정보 */}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span>{getCustomerName()}</span>
-            </div>
-            
             {/* 프로젝트 타입 */}
             <div className="text-sm text-gray-600">
               <span className="font-semibold">Project:</span> {getProjectTypeLabel()}
