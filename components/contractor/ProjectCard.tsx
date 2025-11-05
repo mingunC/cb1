@@ -1,5 +1,5 @@
-import React from 'react'
-import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, DollarSign, Clock, Ban } from 'lucide-react'
+import React, { useState } from 'react'
+import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, DollarSign, Clock, Ban, Copy, Check } from 'lucide-react'
 import { Project } from '@/types/contractor'
 import { BUDGET_LABELS, TIMELINE_LABELS } from '@/constants/contractor'
 import { 
@@ -35,6 +35,8 @@ const ProjectCard = React.memo(({
   onBiddingToggle
 }: ProjectCardProps) => {
   
+  const [copied, setCopied] = useState(false)
+  
   const spaceInfo = getSpaceTypeInfo(project.space_type)
   const visitDate = getVisitDate(project)
   const siteVisitMissed = isSiteVisitMissed(project, contractorId)
@@ -43,6 +45,17 @@ const ProjectCard = React.memo(({
   // 미선정 상태일 때 선택된 업체명 표시 여부 확인
   const isNotSelected = project.projectStatus === 'not-selected'
   const selectedContractorName = project.selected_contractor?.company_name
+
+  // 주소 복사 기능
+  const handleCopyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(project.full_address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy address:', err)
+    }
+  }
 
   // 상태별 카드 스타일 (강화된 테두리 + 배경 + 그림자)
   const getCardStyle = () => {
@@ -121,10 +134,23 @@ const ProjectCard = React.memo(({
           <span className="font-medium">Visit: {visitDate}</span>
         </div>
 
-        {/* 주소 */}
+        {/* 주소 - 복사 버튼 추가 */}
         <div className="flex items-start gap-2 text-sm text-gray-600">
           <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <span className="line-clamp-2">{project.full_address}</span>
+          <div className="flex-1 flex items-start gap-2">
+            <span className="line-clamp-2 flex-1">{project.full_address}</span>
+            <button
+              onClick={handleCopyAddress}
+              className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded transition-colors"
+              title="Copy address"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* 프로젝트 요구사항 */}
