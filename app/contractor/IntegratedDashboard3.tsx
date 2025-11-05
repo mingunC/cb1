@@ -188,7 +188,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         
         let projectStatus: ProjectStatus | 'failed-bid'
         
-        // ✅ 개선된 상태 계산 로직
+        // ✅ 개선된 상태 계산 로직 - bidding 관련 상태 최우선 체크
         if (isSelected) {
           projectStatus = 'selected'
         } else if (hasOtherSelected) {
