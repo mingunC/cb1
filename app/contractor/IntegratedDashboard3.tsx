@@ -482,7 +482,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'site-visit-pending': { label: 'Site Visit Pending', color: 'bg-yellow-100 text-yellow-700' },
         'site-visit-completed': { label: 'Site Visit Completed', color: 'bg-indigo-100 text-indigo-700' },
         'bidding': { 
-          label: project.quote ? '🔥 Bidding (Quote Submitted)' : '🔥 Bidding', 
+          label: project.quote ? '🔥 Bidding (Submitted)' : '🔥 Bidding', 
           color: 'bg-orange-500 text-white font-bold',
           icon: TrendingUp
         },
@@ -511,9 +511,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       const Icon = config?.icon
       
       return (
-        <span className={`px-3 py-1 rounded-full text-xs inline-flex items-center gap-1 ${config.color}`}>
-          {Icon && <Icon className="w-3 h-3" />}
-          {config.label}
+        <span className={`px-2 md:px-3 py-1 rounded-full text-xs inline-flex items-center gap-1 whitespace-nowrap ${config.color}`}>
+          {Icon && <Icon className="w-3 h-3 flex-shrink-0" />}
+          <span className="truncate max-w-[150px] md:max-w-none">{config.label}</span>
         </span>
       )
     }
@@ -636,48 +636,48 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     }
     
     return (
-      <div className={`bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-[#daa520]/20 hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <h3 className="text-xl font-serif font-light text-[#2c5f4e] mb-2">
+      <div className={`bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border border-[#daa520]/20 hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 break-words">
               {getSpaceTypeLabel()}
             </h3>
             <div className="flex items-center text-sm text-gray-600 mt-1 mb-3">
-              <User className="w-4 h-4 mr-2 text-[#daa520]" />
-              <span className="font-light">{getCustomerName()}</span>
+              <User className="w-4 h-4 mr-2 text-[#daa520] flex-shrink-0" />
+              <span className="font-light truncate">{getCustomerName()}</span>
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-gray-600 font-light">
+              <p className="text-sm text-gray-600 font-light break-words">
                 Project: {getProjectTypeLabel()}
               </p>
-              <p className="text-sm text-gray-600 font-light whitespace-nowrap">
+              <p className="text-sm text-gray-600 font-light break-words">
                 Budget: {getBudgetLabel()}
               </p>
-              <p className="text-sm text-gray-600 font-light">
+              <p className="text-sm text-gray-600 font-light break-words">
                 Timeline: {getTimelineLabel()}
               </p>
             </div>
           </div>
-          <div className="ml-4">
+          <div className="flex-shrink-0 sm:ml-4">
             {getStatusBadge()}
           </div>
         </div>
         
         <div className="space-y-3 text-sm mt-4 pt-4 border-t border-gray-100">
-          <div className="flex items-center text-gray-600 font-light">
-            <Calendar className="w-4 h-4 mr-3 text-[#daa520]" />
-            Visit Date: {getVisitDate()}
+          <div className="flex items-start text-gray-600 font-light">
+            <Calendar className="w-4 h-4 mr-3 text-[#daa520] flex-shrink-0 mt-0.5" />
+            <span className="break-words">Visit Date: {getVisitDate()}</span>
           </div>
-          <div className="flex items-center text-gray-600 font-light">
-            <MapPin className="w-4 h-4 mr-3 text-[#daa520]" />
-            {project.full_address || project.postal_code || 'No Address'}
+          <div className="flex items-start text-gray-600 font-light">
+            <MapPin className="w-4 h-4 mr-3 text-[#daa520] flex-shrink-0 mt-0.5" />
+            <span className="break-words">{project.full_address || project.postal_code || 'No Address'}</span>
           </div>
           
           {/* 요구사항 표시 */}
           {project.description && (
             <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-gray-500">Requirements:</p>
-              <p className="text-sm text-gray-700 line-clamp-2">
+              <p className="text-xs text-gray-500 mb-1">Requirements:</p>
+              <p className="text-sm text-gray-700 break-words line-clamp-3">
                 {project.description}
               </p>
             </div>
@@ -694,8 +694,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* Approved 상태 안내 */}
           {project.projectStatus === 'approved' && (
-            <div className="mt-3 pt-3 border-t bg-green-50 -m-2 p-3 rounded">
-              <p className="text-sm font-semibold text-green-700">
+            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-green-700 break-words">
                 ✅ Project approved by admin. Apply for site visit!
               </p>
             </div>
@@ -703,22 +703,24 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 입찰 중 상태 강조 표시 */}
           {project.projectStatus === 'bidding' && (
-            <div className="mt-3 pt-3 border-t bg-orange-50 -m-2 p-3 rounded">
-              <p className="text-sm font-semibold text-orange-700 flex items-center">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                {project.quote 
-                  ? '🔥 Bidding in progress. Quote submitted.' 
-                  : '🔥 Bidding started! Submit your quote.'}
+            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-orange-700 flex items-start">
+                <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                <span className="break-words">
+                  {project.quote 
+                    ? '🔥 Bidding in progress. Submitted.' 
+                    : '🔥 Bidding started! Submit your quote.'}
+                </span>
               </p>
             </div>
           )}
           
           {/* Failed Bid 상태 안내 */}
           {project.projectStatus === 'failed-bid' && (
-            <div className="mt-3 pt-3 border-t bg-red-50 -m-2 p-3 rounded">
-              <p className="text-sm font-semibold text-red-700 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Failed to submit quote before deadline.
+            <div className="mt-3 pt-3 border-t bg-red-50 -mx-2 md:-m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-red-700 flex items-start">
+                <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                <span className="break-words">Failed to submit quote before deadline.</span>
               </p>
             </div>
           )}
@@ -738,17 +740,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 선정 상태 표시 */}
           {project.projectStatus === 'selected' && (
-            <div className="mt-3 pt-3 border-t bg-green-50 -m-2 p-3 rounded">
-              <p className="text-sm font-semibold text-green-700 flex items-center">
-                <Trophy className="w-4 h-4 mr-2" />
-                🎉 Congratulations! Customer has selected you.
+            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-m-2 p-3 rounded">
+              <p className="text-sm font-semibold text-green-700 flex items-start">
+                <Trophy className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                <span className="break-words">🎉 Congratulations! Customer has selected you.</span>
               </p>
             </div>
           )}
           
           {project.projectStatus === 'not-selected' && (
-            <div className="mt-3 pt-3 border-t bg-orange-50 -m-2 p-3 rounded">
-              <p className="text-sm text-orange-800">
+            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-m-2 p-3 rounded">
+              <p className="text-sm text-orange-800 break-words">
                 Customer selected another contractor.
               </p>
             </div>
@@ -756,20 +758,20 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 프로젝트 종료 안내 */}
           {project.projectStatus === 'completed' && !project.selected_contractor_id && (
-            <div className="mt-3 pt-3 border-t bg-gray-50 -m-2 p-3 rounded">
-              <p className="text-sm text-gray-700">
+            <div className="mt-3 pt-3 border-t bg-gray-50 -mx-2 md:-m-2 p-3 rounded">
+              <p className="text-sm text-gray-700 break-words">
                 Project completed.
               </p>
             </div>
           )}
         </div>
         
-        <div className="mt-4 flex gap-2 flex-wrap">
+        <div className="mt-4 flex flex-col sm:flex-row gap-2">
           {/* Approved 상태 - 현장방문 신청 버튼 */}
           {project.projectStatus === 'approved' && !project.siteVisit && (
             <button 
               onClick={() => handleSiteVisitApplication(project)}
-              className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 font-semibold"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 font-semibold"
             >
               Apply Site Visit
             </button>
@@ -779,7 +781,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {project.projectStatus === 'bidding' && project.siteVisit && (
             <button 
               onClick={() => handleToggleBidding(project)}
-              className={`px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 ${
+              className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold flex items-center justify-center gap-2 ${
                 project.quote 
                   ? 'bg-red-500 text-white hover:bg-red-600' 
                   : 'bg-orange-500 text-white hover:bg-orange-600'
@@ -787,13 +789,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             >
               {project.quote ? (
                 <>
-                  <Ban className="w-4 h-4" />
-                  Cancel Bidding
+                  <Ban className="w-4 h-4 flex-shrink-0" />
+                  <span>Cancel Bidding</span>
                 </>
               ) : (
                 <>
-                  <FileText className="w-4 h-4" />
-                  Join Bidding
+                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <span>Join Bidding</span>
                 </>
               )}
             </button>
@@ -801,9 +803,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* ✅ 입찰 중 - 현장방문을 하지 않은 경우 */}
           {project.projectStatus === 'bidding' && !project.siteVisit && (
-            <div className="px-4 py-2 bg-gray-300 text-gray-600 rounded text-sm font-semibold flex items-center gap-2 cursor-not-allowed">
-              <FileText className="w-4 h-4" />
-              Site Visit Required
+            <div className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-600 rounded text-sm font-semibold flex items-center justify-center gap-2 cursor-not-allowed">
+              <FileText className="w-4 h-4 flex-shrink-0" />
+              <span>Site Visit Required</span>
             </div>
           )}
           
@@ -811,7 +813,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {project.projectStatus === 'site-visit-completed' && !project.quote && (
             <button 
               onClick={() => handleToggleBidding(project)}
-              className="px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 font-semibold"
+              className="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 font-semibold"
             >
               Write Quote
             </button>
@@ -819,14 +821,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* ✅ quote-submitted 상태 처리 */}
           {project.projectStatus === 'quoted' && (
-            <div className="px-4 py-2 bg-purple-100 text-purple-700 rounded text-sm font-semibold">
+            <div className="w-full sm:w-auto px-4 py-2 bg-purple-100 text-purple-700 rounded text-sm font-semibold text-center break-words">
               Quote Submitted - Waiting for Decision
             </div>
           )}
           
           {/* Selected 상태 */}
           {project.projectStatus === 'selected' && (
-            <button className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default">
+            <button className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default break-words text-center">
               Customer contact info will be sent to your email.
             </button>
           )}
@@ -1055,8 +1057,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                   {projects.length === 0 ? 'No projects you are participating in.' : 'No matching projects.'}
                 </div>
               ) : (
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-4 md:p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredProjects.map((project) => (
                       <SimpleProjectCard key={project.id} project={project} />
                     ))}
