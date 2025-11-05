@@ -233,7 +233,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           projectStatus,
           customer,
           siteVisit,
-          quote,
+          contractor_quote: quote,
           contractorNames
         }
       }) || []
@@ -360,12 +360,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   // ✅ 개선된 입찰 토글 함수 - 제출/취소를 하나의 버튼으로
   const handleToggleBidding = async (project: Project) => {
     // 이미 견적이 제출된 경우 - 취소
-    if (project.quote) {
-      console.log('🚫 Cancel bidding attempt:', { projectId: project.id, quote: project.quote })
+    if (project.contractor_quote) {
+      console.log('🚫 Cancel bidding attempt:', { projectId: project.id, quote: project.contractor_quote })
       
-      const quoteId = project.quote.id || project.quote.quote_id
+      const quoteId = project.contractor_quote.id
       if (!quoteId) {
-        console.error('❌ Quote ID not found:', project.quote)
+        console.error('❌ Quote ID not found:', project.contractor_quote)
         toast.error('Quote ID not found')
         return
       }

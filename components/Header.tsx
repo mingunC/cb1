@@ -454,7 +454,7 @@ export default function Header() {
                           }`}
                         >
                           <LogOut className="h-4 w-4 mr-2" />
-                          {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+                          {isLoggingOut ? 'Signing out...' : 'Sign Out'}
                         </button>
                       </div>
                     </div>
@@ -606,7 +606,7 @@ export default function Header() {
                           }`}
                         >
                           <LogOut className="h-4 w-4 mr-1" />
-                          {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+                          {isLoggingOut ? 'Signing out...' : 'Sign Out'}
                         </button>
                       </div>
                     ) : (
