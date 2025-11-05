@@ -286,14 +286,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     toast.success('Data refreshed')
   }
 
-  // ✅ 현장방문 신청 함수 - 중복 클릭 방지 개선
-  const handleSiteVisitApplication = async (project: Project) => {
-    console.log('🚀 Apply Site Visit clicked!', {
+  // ✅ 현장방문 신청/취소 토글 함수
+  const handleToggleSiteVisit = async (project: Project) => {
+    console.log('🔄 Toggle Site Visit clicked!', {
       projectId: project.id,
       contractorId: contractorData?.id,
-      hasContractorData: !!contractorData,
       hasSiteVisit: !!project.siteVisit,
-      isApplying: applyingProjectId === project.id
+      siteVisitStatus: project.siteVisit?.status
     })
 
     if (!contractorData?.id) {
@@ -302,43 +301,64 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return
     }
 
-    // ✅ 이미 신청 중인 경우 중복 클릭 방지
+    // 이미 처리 중인 경우 중복 클릭 방지
     if (applyingProjectId === project.id) {
-      console.log('⚠️ Already applying for this project')
+      console.log('⚠️ Already processing this project')
       return
     }
 
-    // ✅ 이미 신청한 경우 체크
+    // ✅ 현장방문 신청이 있는 경우 → 취소
     if (project.siteVisit) {
-      console.log('⚠️ Site visit already applied')
-      toast.error('You have already applied for site visit')
+      // 이미 완료된 현장방문은 취소 불가
+      if (project.siteVisit.status === 'completed') {
+        toast.error('Cannot cancel completed site visit')
+        return
+      }
+
+      const confirmed = window.confirm('Are you sure you want to cancel the site visit application?')
+      if (!confirmed) return
+
+      setApplyingProjectId(project.id)
+      toast.loading('Cancelling site visit...', { id: 'site-visit-action' })
+
+      try {
+        const response = await fetch('/api/cancel-site-visit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            projectId: project.id,
+            contractorId: contractorData.id
+          })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to cancel site visit')
+        }
+
+        toast.dismiss('site-visit-action')
+        toast.success('Site visit application cancelled')
+        await loadProjects()
+
+      } catch (error: any) {
+        console.error('Error cancelling site visit:', error)
+        toast.dismiss('site-visit-action')
+        toast.error(error.message || 'Failed to cancel site visit')
+        await loadProjects()
+      } finally {
+        setApplyingProjectId(null)
+      }
       return
     }
 
-    // ✅ 신청 중 상태 설정
+    // ✅ 현장방문 신청이 없는 경우 → 신청
     setApplyingProjectId(project.id)
-
-    // 🚀 낙관적 UI 업데이트
-    const updatedProjects = projects.map(p => 
-      p.id === project.id 
-        ? { 
-            ...p, 
-            projectStatus: 'site-visit-applied' as ProjectStatus,
-            siteVisit: { 
-              status: 'pending', 
-              applied_at: new Date().toISOString() 
-            } 
-          }
-        : p
-    )
-    setProjects(updatedProjects)
-    
-    // ✅ 즉시 로딩 토스트 표시
-    toast.loading('Applying for site visit...', { id: 'site-visit-apply' })
+    toast.loading('Applying for site visit...', { id: 'site-visit-action' })
 
     try {
-      console.log('📝 Calling site visit API...')
-      
       const response = await fetch('/api/apply-site-visit', {
         method: 'POST',
         headers: {
@@ -352,91 +372,43 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
       const data = await response.json()
 
-      console.log('📊 API Response:', {
-        status: response.status,
-        success: data.success,
-        message: data.message,
-        error: data.error
-      })
-
-      // ✅ 409 Conflict 처리 (이미 신청한 경우)
       if (response.status === 409) {
-        console.log('⚠️ Duplicate application detected')
-        toast.dismiss('site-visit-apply')
-        toast.error('You have already applied for this site visit', {
-          duration: 3000
-        })
+        toast.dismiss('site-visit-action')
+        toast.error('You have already applied for this site visit')
         await loadProjects()
         return
       }
 
       if (!response.ok) {
-        toast.dismiss('site-visit-apply')
-        await loadProjects()
         throw new Error(data.error || 'Failed to apply for site visit')
       }
 
-      console.log('✅ Site visit applied successfully!')
-      toast.dismiss('site-visit-apply')
-      toast.success('Site visit application submitted!', {
-        duration: 3000
-      })
-      
+      toast.dismiss('site-visit-action')
+      toast.success('Site visit application submitted!')
       setTimeout(() => loadProjects(), 1000)
       
     } catch (error: any) {
-      console.error('💥 Error applying for site visit:', error)
-      toast.dismiss('site-visit-apply')
+      console.error('Error applying for site visit:', error)
+      toast.dismiss('site-visit-action')
       toast.error(error.message || 'Failed to apply for site visit')
       await loadProjects()
     } finally {
-      // ✅ 신청 중 상태 해제
       setApplyingProjectId(null)
     }
   }
   
-  // ✅ 개선된 입찰 토글 함수 - 제출/취소를 하나의 버튼으로
-  const handleToggleBidding = async (project: Project) => {
-    // 이미 견적이 제출된 경우 - 취소
+  // ✅ 견적서 제출 함수 - 취소 불가능
+  const handleSubmitQuote = async (project: Project) => {
+    // 이미 견적이 제출된 경우 - 수정/취소 불가능
     if (project.contractor_quote) {
-      console.log('🚫 Cancel bidding attempt:', { projectId: project.id, quote: project.contractor_quote })
-      
-      const quoteId = project.contractor_quote.id
-      if (!quoteId) {
-        console.error('❌ Quote ID not found:', project.contractor_quote)
-        toast.error('Quote ID not found')
-        return
-      }
-      
-      const confirmed = window.confirm('Are you sure you want to cancel the bidding? The submitted quote will be deleted.')
-      if (!confirmed) return
-      
-      try {
-        console.log('🗑️ Deleting quote:', quoteId)
-        const supabase = createBrowserClient()
-        const { error } = await supabase
-          .from('contractor_quotes')
-          .delete()
-          .eq('id', quoteId)
-        
-        if (error) {
-          console.error('❌ Deletion error:', error)
-          throw error
-        }
-        
-        console.log('✅ Quote deleted successfully')
-        toast.success('Bidding has been cancelled.')
-        await loadProjects()
-      } catch (error) {
-        console.error('Failed to cancel bidding:', error)
-        toast.error('Failed to cancel bidding')
-      }
-    } else {
-      // 견적이 없는 경우 - 제출 모달 열기
-      console.log('🎯 Opening quote modal for bidding:', { projectId: project.id })
-      setSelectedProject(project)
-      setShowQuoteModal(true)
+      toast.error('Quote cannot be modified or cancelled once submitted')
+      return
     }
+
+    // 견적이 없는 경우 - 제출 모달 열기
+    console.log('🎯 Opening quote modal for bidding:', { projectId: project.id })
+    setSelectedProject(project)
+    setShowQuoteModal(true)
   }
   
   // 견적서 제출 완료 핸들러
@@ -664,19 +636,19 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     
     // 카드 테두리 색상
     const getBorderColor = () => {
-      if (project.projectStatus === 'selected') return 'border-green-500 border-2 shadow-lg'
-      if (project.projectStatus === 'not-selected') return 'border-red-300 border-2'
-      if (project.projectStatus === 'failed-bid') return 'border-red-500 border-2 shadow-lg'
-      if (project.projectStatus === 'bidding') return 'border-orange-500 border-2 shadow-lg'
-      if (project.projectStatus === 'site-visit-applied') return 'border-blue-500 border-2 shadow-md'
-      if (project.projectStatus === 'site-visit-completed') return 'border-indigo-500 border-2 shadow-md'
-      if (project.projectStatus === 'quoted') return 'border-purple-500 border-2 shadow-md'
-      if (project.projectStatus === 'approved') return 'border-blue-300 border-2'
-      return 'border-gray-200'
+      if (project.projectStatus === 'selected') return 'border-green-500 border-6 shadow-lg bg-green-50/30'
+      if (project.projectStatus === 'not-selected') return 'border-red-300 border-6 bg-red-50/20'
+      if (project.projectStatus === 'failed-bid') return 'border-red-500 border-6 shadow-lg bg-red-50/30'
+      if (project.projectStatus === 'bidding') return 'border-orange-500 border-6 shadow-lg bg-orange-50/30'
+      if (project.projectStatus === 'site-visit-applied') return 'border-blue-500 border-6 shadow-md bg-blue-50/20'
+      if (project.projectStatus === 'site-visit-completed') return 'border-indigo-500 border-6 shadow-md bg-indigo-50/20'
+      if (project.projectStatus === 'quoted') return 'border-purple-500 border-6 shadow-md bg-purple-50/20'
+      if (project.projectStatus === 'approved') return 'border-green-300 border-4 bg-green-50/10'
+      return 'border-gray-200 border-2'
     }
     
     return (
-      <div className={`bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border border-[#daa520]/20 hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
+      <div className={`bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 truncate">
@@ -723,7 +695,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </div>
           )}
           
-          {/* 견적 정보 - Requirements 다음에 항상 같은 위치에 표시하여 레이아웃 일관성 유지 */}
+          {/* 견적 정보 */}
           {project.quote && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-sm font-medium">
@@ -734,7 +706,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* Approved 상태 안내 */}
           {project.projectStatus === 'approved' && (
-            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-m-2 p-3 rounded">
+            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
               <p className="text-sm font-semibold text-green-700 break-words">
                 ✅ Project approved by admin. Apply for site visit!
               </p>
@@ -743,12 +715,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 입찰 중 상태 강조 표시 */}
           {project.projectStatus === 'bidding' && (
-            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-m-2 p-3 rounded">
+            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
               <p className="text-sm font-semibold text-orange-700 flex items-start">
                 <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                 <span className="break-words">
                   {project.quote 
-                    ? '🔥 Bidding in progress. Submitted.' 
+                    ? '🔥 Bidding in progress. Quote submitted (Cannot be modified)' 
                     : '🔥 Bidding started! Submit your quote.'}
                 </span>
               </p>
@@ -757,7 +729,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* Failed Bid 상태 안내 */}
           {project.projectStatus === 'failed-bid' && (
-            <div className="mt-3 pt-3 border-t bg-red-50 -mx-2 md:-m-2 p-3 rounded">
+            <div className="mt-3 pt-3 border-t bg-red-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
               <p className="text-sm font-semibold text-red-700 flex items-start">
                 <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                 <span className="break-words">Failed to submit quote before deadline.</span>
@@ -780,7 +752,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 선정 상태 표시 */}
           {project.projectStatus === 'selected' && (
-            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-m-2 p-3 rounded">
+            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
               <p className="text-sm font-semibold text-green-700 flex items-start">
                 <Trophy className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
                 <span className="break-words">🎉 Congratulations! Customer has selected you.</span>
@@ -789,7 +761,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           )}
           
           {project.projectStatus === 'not-selected' && (
-            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-m-2 p-3 rounded">
+            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
               <p className="text-sm text-orange-800 break-words">
                 Customer selected another contractor.
               </p>
@@ -798,7 +770,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           
           {/* 프로젝트 종료 안내 */}
           {project.projectStatus === 'completed' && !project.selected_contractor_id && (
-            <div className="mt-3 pt-3 border-t bg-gray-50 -mx-2 md:-m-2 p-3 rounded">
+            <div className="mt-3 pt-3 border-t bg-gray-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
               <p className="text-sm text-gray-700 break-words">
                 Project completed.
               </p>
@@ -807,47 +779,55 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         </div>
         
         <div className="mt-4 flex flex-col sm:flex-row gap-2">
-          {/* Approved 상태 - 현장방문 신청 버튼 */}
-          {project.projectStatus === 'approved' && !project.siteVisit && (
+          {/* ✅ Approved 상태 또는 Site Visit Applied - 토글 버튼 */}
+          {(project.projectStatus === 'approved' || project.projectStatus === 'site-visit-applied') && (
             <button 
-              onClick={() => handleSiteVisitApplication(project)}
+              onClick={() => handleToggleSiteVisit(project)}
               disabled={isApplyingThis}
-              className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold transition-all ${
+              className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                 isApplyingThis
                   ? 'bg-gray-400 text-white cursor-wait'
+                  : project.siteVisit
+                  ? 'bg-red-500 text-white hover:bg-red-600'
                   : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
               {isApplyingThis ? (
                 <span className="flex items-center justify-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Applying...
+                  Processing...
                 </span>
+              ) : project.siteVisit ? (
+                <>
+                  <XCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>Cancel Site Visit</span>
+                </>
               ) : (
                 'Apply Site Visit'
               )}
             </button>
           )}
           
-          {/* ✅ 입찰 중 - 토글 버튼 (제출/취소) */}
+          {/* ✅ 입찰 중 - 견적서 제출 버튼 (취소 불가) */}
           {project.projectStatus === 'bidding' && project.siteVisit && (
             <button 
-              onClick={() => handleToggleBidding(project)}
+              onClick={() => handleSubmitQuote(project)}
+              disabled={!!project.quote}
               className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold flex items-center justify-center gap-2 ${
                 project.quote 
-                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
                   : 'bg-orange-500 text-white hover:bg-orange-600'
               }`}
             >
               {project.quote ? (
                 <>
                   <Ban className="w-4 h-4 flex-shrink-0" />
-                  <span>Cancel Bidding</span>
+                  <span>Cannot Modify</span>
                 </>
               ) : (
                 <>
                   <FileText className="w-4 h-4 flex-shrink-0" />
-                  <span>Join Bidding</span>
+                  <span>Submit Quote</span>
                 </>
               )}
             </button>
@@ -864,7 +844,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {/* ✅ 현장방문 완료 - 견적서 작성 버튼 */}
           {project.projectStatus === 'site-visit-completed' && !project.quote && (
             <button 
-              onClick={() => handleToggleBidding(project)}
+              onClick={() => handleSubmitQuote(project)}
               className="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 font-semibold"
             >
               Write Quote
@@ -874,7 +854,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {/* ✅ quote-submitted 상태 처리 */}
           {project.projectStatus === 'quoted' && (
             <div className="w-full sm:w-auto px-4 py-2 bg-purple-100 text-purple-700 rounded text-sm font-semibold text-center break-words">
-              Quote Submitted - Waiting for Decision
+              Quote Submitted - Cannot be modified
             </div>
           )}
           
