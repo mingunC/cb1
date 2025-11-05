@@ -353,14 +353,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         toast.dismiss('site-visit-action')
         toast.success('Site visit application cancelled')
         
-        // ✅ 즉시 데이터 새로고침 (로딩 화면 없이)
-        await loadProjects(false)
+        // ✅ 약간의 지연 후 데이터 새로고침 (DB 업데이트 완료 대기)
+        setTimeout(async () => {
+          await loadProjects(false)
+        }, 500)
 
       } catch (error: any) {
         console.error('Error cancelling site visit:', error)
         toast.dismiss('site-visit-action')
         toast.error(error.message || 'Failed to cancel site visit')
-        await loadProjects(false)
+        setTimeout(async () => {
+          await loadProjects(false)
+        }, 500)
       } finally {
         setApplyingProjectId(null)
       }
@@ -388,7 +392,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       if (response.status === 409) {
         toast.dismiss('site-visit-action')
         toast.error('You have already applied for this site visit')
-        await loadProjects(false)
+        setTimeout(async () => {
+          await loadProjects(false)
+        }, 500)
         return
       }
 
@@ -399,14 +405,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       toast.dismiss('site-visit-action')
       toast.success('Site visit application submitted!')
       
-      // ✅ 즉시 데이터 새로고침 (로딩 화면 없이)
-      await loadProjects(false)
+      // ✅ 약간의 지연 후 데이터 새로고침 (DB 업데이트 완료 대기)
+      setTimeout(async () => {
+        await loadProjects(false)
+      }, 500)
       
     } catch (error: any) {
       console.error('Error applying for site visit:', error)
       toast.dismiss('site-visit-action')
       toast.error(error.message || 'Failed to apply for site visit')
-      await loadProjects(false)
+      setTimeout(async () => {
+        await loadProjects(false)
+      }, 500)
     } finally {
       setApplyingProjectId(null)
     }
@@ -431,7 +441,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     console.log('✅ Quote submitted successfully')
     setShowQuoteModal(false)
     setSelectedProject(null)
-    await loadProjects(false) // 로딩 화면 없이 새로고침
+    
+    // ✅ 약간의 지연 후 데이터 새로고침
+    setTimeout(async () => {
+      await loadProjects(false)
+    }, 500)
   }
   
   // 필터링된 프로젝트
