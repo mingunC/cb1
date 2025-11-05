@@ -673,7 +673,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         <div className="px-3 pb-3 space-y-2">
           {/* 💰 예산 */}
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-amber-600">
+            <span className="text-base font-bold text-amber-600">
               💰 {getBudgetLabel()}
             </span>
           </div>
