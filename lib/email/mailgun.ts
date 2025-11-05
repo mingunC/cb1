@@ -67,14 +67,32 @@ export const sendEmail = async (options: EmailOptions) => {
   }
 };
 
-// 수수료 계산 함수
-export const calculateCommission = (budget: number): string => {
-  const commissionRate = 0.10;
-  const commission = budget * commissionRate;
-  return new Intl.NumberFormat('en-CA', {
+// ✅ 수수료 계산 함수 - 견적 금액에 따라 1%, 2%, 3% 차등 적용
+export const calculateCommission = (quotePrice: number): { amount: string; rate: string } => {
+  let commissionRate: number;
+  let rateLabel: string;
+  
+  if (quotePrice >= 100000) {
+    commissionRate = 0.01; // 1%
+    rateLabel = '1%';
+  } else if (quotePrice >= 50000) {
+    commissionRate = 0.02; // 2%
+    rateLabel = '2%';
+  } else {
+    commissionRate = 0.03; // 3%
+    rateLabel = '3%';
+  }
+  
+  const commission = quotePrice * commissionRate;
+  const formattedAmount = new Intl.NumberFormat('en-CA', {
     style: 'currency',
     currency: 'CAD'
   }).format(commission);
+  
+  return {
+    amount: formattedAmount,
+    rate: rateLabel
+  };
 };
 
 // ✅ 영어로 포맷팅하는 함수들
@@ -120,9 +138,7 @@ export const createSelectionEmailTemplate = (
   quoteInfo: any,
   customerInfo?: any // 고객 정보 추가
 ): string => {
-  const commission = calculateCommission(quoteInfo.price);
-  const completionDate = new Date();
-  completionDate.setDate(completionDate.getDate() + 7); // 7일 후로 변경
+  const commissionInfo = calculateCommission(quoteInfo.price);
   
   // 고객 이름
   const customerName = customerInfo 
@@ -233,7 +249,7 @@ export const createSelectionEmailTemplate = (
             <table class="info-table" style="background: white; border-radius: 5px;">
               <tr>
                 <td>Platform Commission</td>
-                <td><strong style="font-size: 18px; color: #28a745;">${commission}</strong></td>
+                <td><strong style="font-size: 18px; color: #28a745;">${commissionInfo.amount}</strong></td>
               </tr>
               <tr>
                 <td>Commission Rate</td>
@@ -245,7 +261,7 @@ export const createSelectionEmailTemplate = (
               </tr>
               <tr>
                 <td>Payment Due Date</td>
-                <td>${completionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                <td><strong>Please refer to the Policy</strong></td>
               </tr>
             </table>
             <div style="background: #e7f3ff; padding: 12px; border-radius: 5px; margin-top: 15px; font-size: 14px; color: #333;">
