@@ -221,9 +221,9 @@ const ProjectCard = React.memo(({
             </button>
           )}
           
-          {/* 입찰 참여/취소 버튼 (Bidding 상태) */}
+          {/* 입찰 참여/취소 버튼 (Bidding 상태) - ✅ siteVisit으로 체크 변경 */}
           {project.projectStatus === 'bidding' && onBiddingToggle && (
-            project.site_visit_application ? (
+            project.siteVisit ? (
               <button
                 onClick={() => onBiddingToggle(project)}
                 className={`w-full px-4 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
