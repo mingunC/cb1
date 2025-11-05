@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, User } from 'lucide-react'
+import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, User, DollarSign, Clock } from 'lucide-react'
 import { Project } from '@/types/contractor'
 import { BUDGET_LABELS, TIMELINE_LABELS } from '@/constants/contractor'
 import { 
@@ -67,7 +67,7 @@ const ProjectCard = React.memo(({
 
         {/* 고객 이름 표시 */}
         {customerName && (
-          <div className="flex items-center text-sm text-gray-600 mb-2">
+          <div className="flex items-center text-sm text-gray-600 mb-3">
             <User className="h-4 w-4 mr-1.5 flex-shrink-0" />
             <span className="truncate">{customerName}</span>
           </div>
@@ -80,39 +80,42 @@ const ProjectCard = React.memo(({
             return (
               <div
                 key={index}
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${typeInfo.color}`}
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}
               >
                 {typeInfo.label}
               </div>
             )
           }) || (
-            <div className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+            <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
               Project
             </div>
           )}
-        </div>
-        
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">Budget: </span>
-          {BUDGET_LABELS[project.budget] || project.budget}
         </div>
       </div>
 
       {/* 카드 바디 */}
       <div className="p-4 space-y-3">
-        {/* 기본 정보 */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex flex-col">
-            <span className="text-gray-500 font-medium text-xs">Timeline</span>
+        {/* Budget & Timeline - 세로 배치로 변경 */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <DollarSign className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            <span className="text-gray-900 font-medium">
+              {BUDGET_LABELS[project.budget] || project.budget}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
             <span className="text-gray-900 font-medium">
               {TIMELINE_LABELS[project.timeline] || project.timeline}
             </span>
           </div>
-          
-          <div className="flex flex-col">
-            <span className="text-gray-500 font-medium text-xs">Visit Date</span>
-            <span className="text-gray-900 font-medium">{visitDate}</span>
-          </div>
+        </div>
+
+        {/* Visit Date */}
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Calendar className="h-4 w-4 flex-shrink-0" />
+          <span className="font-medium">Visit: {visitDate}</span>
         </div>
 
         {/* 주소 */}
@@ -123,20 +126,16 @@ const ProjectCard = React.memo(({
 
         {/* 프로젝트 요구사항 */}
         {project.description && (
-          <div className="flex items-start gap-2 text-sm text-gray-600">
-            <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <span className="font-medium text-gray-700">Requirements:</span>
-              <p className="mt-1 text-gray-600 line-clamp-3">{project.description}</p>
+          <div className="pt-2 border-t border-gray-100">
+            <div className="flex items-start gap-2 text-sm text-gray-600">
+              <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="font-medium text-gray-700">Requirements:</span>
+                <p className="mt-1 text-gray-600 line-clamp-3">{project.description}</p>
+              </div>
             </div>
           </div>
         )}
-
-        {/* 등록일 */}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar className="h-4 w-4" />
-          <span>Created: {formatDate(project.created_at)}</span>
-        </div>
 
         {/* 견적 정보 */}
         {project.contractor_quote && (
