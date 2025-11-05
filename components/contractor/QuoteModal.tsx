@@ -121,10 +121,16 @@ export default function QuoteModal({
     window.open(data.signedUrl, '_blank')
   }
 
-  // ✅ 개선된 폼 제출 핸들러 - API 호출로 변경
+  // ✅ 개선된 폼 제출 핸들러 - finally 블록 추가
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!project || !contractorId) return
+    
+    console.log('🎯 Submit button clicked!')
+    
+    if (!project || !contractorId) {
+      console.error('❌ Missing project or contractorId')
+      return
+    }
 
     if (!pdfFile) {
       toast.error('Please upload a detailed quote PDF file.')
@@ -132,20 +138,21 @@ export default function QuoteModal({
     }
 
     if (isSubmitting) {
-      console.log('Already submitting')
+      console.log('⚠️ Already submitting, ignoring duplicate click')
       return
     }
 
+    console.log('✅ Starting quote submission...')
     setIsSubmitting(true)
     
     try {
       // 1단계: PDF 파일 업로드
-      console.log('📤 Uploading PDF file...')
+      console.log('📤 Step 1: Uploading PDF file...')
       const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
       console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
       
       // 2단계: API를 통해 견적서 제출 (이메일 자동 전송)
-      console.log('📧 Submitting quote via API (with email)...')
+      console.log('📧 Step 2: Submitting quote via API...')
       const response = await fetch('/api/quotes/submit', {
         method: 'POST',
         headers: {
@@ -155,18 +162,21 @@ export default function QuoteModal({
           projectId: project.id,
           contractorId: contractorId,
           price: price,
-          description: detailedDescription,
+          description: detailedDescription || '', // ✅ 빈 문자열로 전송
           pdfUrl: uploadResult.pdfUrl,
           pdfFilename: uploadResult.pdfFilename
         })
       })
 
-      const data = await response.json()
+      console.log('📡 API Response status:', response.status)
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit quote')
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
+        console.error('❌ API Error:', errorData)
+        throw new Error(errorData.error || 'Failed to submit quote')
       }
 
+      const data = await response.json()
       console.log('✅ Quote submitted successfully:', data)
       
       // 이메일 전송 결과 표시
@@ -175,25 +185,32 @@ export default function QuoteModal({
       } else {
         toast.success('Quote submitted successfully!')
         if (data.emailError) {
-          console.warn('Email notification failed:', data.emailError)
+          console.warn('⚠️ Email notification failed:', data.emailError)
         }
       }
       
-      setIsSubmitting(false)
-      
+      // 성공 후 콜백 호출
       setTimeout(() => {
         onSuccess()
       }, 100)
       
     } catch (error: any) {
-      console.error('Quote submission error:', error)
+      console.error('❌ Quote submission error:', error)
       toast.error(error.message || 'An error occurred while submitting the quote')
+    } finally {
+      // ✅ CRITICAL: 어떤 경우에도 로딩 상태 해제
+      console.log('🔄 Releasing loading state...')
       setIsSubmitting(false)
     }
   }
 
   // 모달 닫기 핸들러
   const handleClose = () => {
+    if (isSubmitting) {
+      console.log('⚠️ Cannot close while submitting')
+      return
+    }
+    
     setIsSubmitting(false)
     setPrice('')
     setPriceDisplay('')
@@ -220,7 +237,8 @@ export default function QuoteModal({
             </div>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+              disabled={isSubmitting}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="h-5 w-5" />
             </button>
@@ -370,14 +388,15 @@ export default function QuoteModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-6 py-2 text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-semibold"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 disabled:opacity-50 transition-colors font-semibold flex items-center gap-2"
+                  className="px-6 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
