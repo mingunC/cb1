@@ -683,7 +683,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </div>
           )}
           
-          {/* 견적 정보 */}
+          {/* 견적 정보 - Requirements 다음에 항상 같은 위치에 표시하여 레이아웃 일관성 유지 */}
           {project.quote && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-sm font-medium">
