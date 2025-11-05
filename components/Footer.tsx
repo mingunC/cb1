@@ -139,13 +139,9 @@ export default function Footer() {
 
         {/* Bottom Border */}
         <div className="border-t border-gray-800 mt-16 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 text-sm mb-4 md:mb-0">
+          <div className="flex justify-center items-center">
+            <div className="text-gray-400 text-sm">
               © 2025 Renovation Platform. All rights reserved.
-            </div>
-            <div className="flex space-x-6 text-sm text-gray-400">
-              <span>Business License: 123-45-67890</span>
-              <span>Tel: 416-555-1234</span>
             </div>
           </div>
         </div>
