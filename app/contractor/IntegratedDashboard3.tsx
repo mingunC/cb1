@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban, AlertCircle } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, UserCircle, Briefcase, TrendingUp, FileText, Ban, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -32,6 +32,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [showQuoteModal, setShowQuoteModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [applyingProjectId, setApplyingProjectId] = useState<string | null>(null)
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   
   // 선택된 업체 이름들을 미리 로드
   const loadSelectedContractorNames = async (contractorIds: string[]) => {
@@ -286,6 +287,19 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     toast.success('Data refreshed')
   }
 
+  // 카드 토글 함수
+  const toggleCard = (projectId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId)
+      } else {
+        newSet.add(projectId)
+      }
+      return newSet
+    })
+  }
+
   // ✅ 현장방문 신청/취소 토글 함수
   const handleToggleSiteVisit = async (project: Project) => {
     console.log('🔄 Toggle Site Visit clicked!', {
@@ -481,16 +495,16 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     )
   }
   
-  // 프로젝트 카드 컴포넌트
-  const SimpleProjectCard = ({ project }: { project: Project }) => {
+  // ✅ 새로운 컴팩트한 프로젝트 카드 컴포넌트
+  const CompactProjectCard = ({ project }: { project: Project }) => {
     const isApplyingThis = applyingProjectId === project.id
+    const isExpanded = expandedCards.has(project.id)
     
     const getStatusBadge = () => {
       const statusConfig: Record<string, { label: string; color: string; icon?: any }> = {
         'pending': { label: 'Pending', color: 'bg-gray-100 text-gray-700' },
-        'approved': { label: '✅ Approved - Apply Site Visit', color: 'bg-green-100 text-green-700' },
+        'approved': { label: '✅ Approved', color: 'bg-green-100 text-green-700' },
         'site-visit-applied': { label: 'Site Visit Applied', color: 'bg-blue-100 text-blue-700' },
-        'site-visit-pending': { label: 'Site Visit Pending', color: 'bg-yellow-100 text-yellow-700' },
         'site-visit-completed': { label: 'Site Visit Completed', color: 'bg-indigo-100 text-indigo-700' },
         'bidding': { 
           label: project.contractor_quote ? '🔥 Bidding (Submitted)' : '🔥 Bidding', 
@@ -513,7 +527,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           color: 'bg-red-100 text-red-800',
           icon: AlertCircle
         },
-        'completed': { label: 'Project Completed', color: 'bg-gray-500 text-white' },
+        'completed': { label: 'Completed', color: 'bg-gray-500 text-white' },
         'cancelled': { label: 'Cancelled', color: 'bg-gray-300 text-gray-600' }
       }
       
@@ -522,40 +536,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       const Icon = config?.icon
       
       return (
-        <span className={`px-2 md:px-3 py-1 rounded-full text-xs inline-flex items-center gap-1 whitespace-nowrap ${config.color}`}>
-          {Icon && <Icon className="w-3 h-3 flex-shrink-0" />}
-          <span className="truncate max-w-[150px] md:max-w-none">{config.label}</span>
+        <span className={`px-3 py-1.5 rounded-full text-sm inline-flex items-center gap-2 whitespace-nowrap ${config.color}`}>
+          {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
+          <span>{config.label}</span>
         </span>
       )
-    }
-    
-    // 고객 이름 표시
-    const getCustomerName = () => {
-      if (!project.customer) return 'No Customer Info'
-      const { first_name, last_name, email } = project.customer
-      if (first_name || last_name) {
-        return `${first_name || ''} ${last_name || ''}`.trim()
-      }
-      return email?.split('@')[0] || 'No Name'
-    }
-    
-    // 프로젝트 타입 표시
-    const getProjectTypeLabel = () => {
-      if (project.project_types && project.project_types.length > 0) {
-        return project.project_types.map(type => {
-          const typeLabels: Record<string, string> = {
-            'full_renovation': 'Full Renovation',
-            'partial_renovation': 'Partial Renovation',
-            'kitchen': 'Kitchen',
-            'bathroom': 'Bathroom',
-            'basement': 'Basement',
-            'painting': 'Painting',
-            'flooring': 'Flooring'
-          }
-          return typeLabels[type] || type
-        }).join(', ')
-      }
-      return 'Renovation'
     }
     
     // 공간 타입 표시
@@ -588,7 +573,49 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return budget || 'Not Set'
     }
     
-    // 시작시기 표시
+    // 카드 테두리 색상
+    const getBorderColor = () => {
+      if (project.projectStatus === 'selected') return 'border-l-8 border-l-green-500 bg-green-50/50'
+      if (project.projectStatus === 'not-selected') return 'border-l-8 border-l-red-300 bg-red-50/30'
+      if (project.projectStatus === 'failed-bid') return 'border-l-8 border-l-red-500 bg-red-50/50'
+      if (project.projectStatus === 'bidding') return 'border-l-8 border-l-orange-500 bg-orange-50/50'
+      if (project.projectStatus === 'site-visit-applied') return 'border-l-8 border-l-blue-500 bg-blue-50/30'
+      if (project.projectStatus === 'site-visit-completed') return 'border-l-8 border-l-indigo-500 bg-indigo-50/30'
+      if (project.projectStatus === 'quoted') return 'border-l-8 border-l-purple-500 bg-purple-50/30'
+      if (project.projectStatus === 'approved') return 'border-l-8 border-l-green-300 bg-green-50/20'
+      return 'border-l-4 border-l-gray-300 bg-white'
+    }
+    
+    // 고객 이름
+    const getCustomerName = () => {
+      if (!project.customer) return 'No Customer Info'
+      const { first_name, last_name, email } = project.customer
+      if (first_name || last_name) {
+        return `${first_name || ''} ${last_name || ''}`.trim()
+      }
+      return email?.split('@')[0] || 'No Name'
+    }
+    
+    // 프로젝트 타입
+    const getProjectTypeLabel = () => {
+      if (project.project_types && project.project_types.length > 0) {
+        return project.project_types.map(type => {
+          const typeLabels: Record<string, string> = {
+            'full_renovation': 'Full Renovation',
+            'partial_renovation': 'Partial Renovation',
+            'kitchen': 'Kitchen',
+            'bathroom': 'Bathroom',
+            'basement': 'Basement',
+            'painting': 'Painting',
+            'flooring': 'Flooring'
+          }
+          return typeLabels[type] || type
+        }).join(', ')
+      }
+      return 'Renovation'
+    }
+    
+    // 시작시기
     const getTimelineLabel = () => {
       const timeline = project.timeline
       const timelineLabels: Record<string, string> = {
@@ -601,10 +628,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'within_3_months': '3 Months',
         'planning': 'Planning',
         'planning_stage': 'Planning',
-        'flexible': 'Flexible',
-        'flexible_schedule': 'Flexible Schedule'
+        'flexible': 'Flexible'
       }
-      
       return timelineLabels[timeline] || timeline || 'Not Set'
     }
     
@@ -623,7 +648,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
     }
     
-    // 방문 날짜 가져오기
+    // 방문 날짜
     const getVisitDate = () => {
       if (project.visit_dates && project.visit_dates.length > 0) {
         return formatDate(project.visit_dates[0])
@@ -634,238 +659,168 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return 'Not Set'
     }
     
-    // 카드 테두리 색상
-    const getBorderColor = () => {
-      if (project.projectStatus === 'selected') return 'border-green-500 border-6 shadow-lg bg-green-50/30'
-      if (project.projectStatus === 'not-selected') return 'border-red-300 border-6 bg-red-50/20'
-      if (project.projectStatus === 'failed-bid') return 'border-red-500 border-6 shadow-lg bg-red-50/30'
-      if (project.projectStatus === 'bidding') return 'border-orange-500 border-6 shadow-lg bg-orange-50/30'
-      if (project.projectStatus === 'site-visit-applied') return 'border-blue-500 border-6 shadow-md bg-blue-50/20'
-      if (project.projectStatus === 'site-visit-completed') return 'border-indigo-500 border-6 shadow-md bg-indigo-50/20'
-      if (project.projectStatus === 'quoted') return 'border-purple-500 border-6 shadow-md bg-purple-50/20'
-      if (project.projectStatus === 'approved') return 'border-green-300 border-4 bg-green-50/10'
-      return 'border-gray-200 border-2'
-    }
-    
     return (
-      <div className={`bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
-          <div className="flex-1 min-w-0">
-            {/* ✅ 제목 - truncate 제거, 줄바꿈 허용 */}
-            <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 break-words line-clamp-2">
-              {getSpaceTypeLabel()}
-            </h3>
-            <div className="flex items-center text-sm text-gray-600 mt-1 mb-3">
-              <User className="w-4 h-4 mr-2 text-[#daa520] flex-shrink-0" />
-              <span className="font-light break-words">{getCustomerName()}</span>
-            </div>
-            {/* ✅ 프로젝트 정보 - whitespace-nowrap 제거, 줄바꿈 허용 */}
-            <div className="space-y-1.5">
-              <p className="text-sm text-gray-600 font-light break-words">
-                <span className="font-medium">Project:</span> {getProjectTypeLabel()}
-              </p>
-              <p className="text-sm text-gray-600 font-light break-words">
-                <span className="font-medium">Budget:</span> {getBudgetLabel()}
-              </p>
-              <p className="text-sm text-gray-600 font-light break-words">
-                <span className="font-medium">Timeline:</span> {getTimelineLabel()}
-              </p>
-            </div>
+      <div className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden ${getBorderColor()}`}>
+        {/* 헤더 - 제목 + 상태 */}
+        <div className="p-4 flex justify-between items-start gap-4">
+          <h3 className="text-xl font-bold text-gray-800 flex-1">
+            {getSpaceTypeLabel()}
+          </h3>
+          {getStatusBadge()}
+        </div>
+        
+        {/* 메인 정보 - 예산 + 주소 */}
+        <div className="px-4 pb-4 space-y-3">
+          {/* 💰 예산 - 크고 진하게 */}
+          <div className="flex items-center gap-2">
+            <span className="text-3xl font-bold text-amber-600">
+              💰 {getBudgetLabel()}
+            </span>
           </div>
-          <div className="flex-shrink-0 sm:ml-4">
-            {getStatusBadge()}
+          
+          {/* 📍 주소 */}
+          <div className="flex items-start gap-2 text-gray-700">
+            <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+            <span className="text-sm break-words">
+              {project.full_address || project.postal_code || 'No Address'}
+            </span>
           </div>
         </div>
         
-        <div className="space-y-3 text-sm mt-4 pt-4 border-t border-gray-100">
-          <div className="flex items-start text-gray-600 font-light">
-            <Calendar className="w-4 h-4 mr-3 text-[#daa520] flex-shrink-0 mt-0.5" />
-            <span className="break-words">Visit Date: {getVisitDate()}</span>
+        {/* 토글 가능한 상세 정보 */}
+        {isExpanded && (
+          <div className="px-4 pb-4 space-y-3 border-t border-gray-200 pt-4">
+            {/* 고객 정보 */}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+              <span>{getCustomerName()}</span>
+            </div>
+            
+            {/* 프로젝트 타입 */}
+            <div className="text-sm text-gray-600">
+              <span className="font-semibold">Project:</span> {getProjectTypeLabel()}
+            </div>
+            
+            {/* 타임라인 */}
+            <div className="text-sm text-gray-600">
+              <span className="font-semibold">Timeline:</span> {getTimelineLabel()}
+            </div>
+            
+            {/* 방문 날짜 */}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
+              <span>Visit Date: {getVisitDate()}</span>
+            </div>
+            
+            {/* 요구사항 */}
+            {project.description && (
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-1 font-semibold">Requirements:</p>
+                <p className="text-sm text-gray-700 break-words line-clamp-3">
+                  {project.description}
+                </p>
+              </div>
+            )}
+            
+            {/* 제출된 견적 */}
+            {project.contractor_quote && (
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-sm font-semibold text-gray-800">
+                  Submitted Quote: <span className="text-amber-600">${project.contractor_quote.price?.toLocaleString()}</span>
+                </p>
+              </div>
+            )}
           </div>
-          <div className="flex items-start text-gray-600 font-light">
-            <MapPin className="w-4 h-4 mr-3 text-[#daa520] flex-shrink-0 mt-0.5" />
-            <span className="break-words">{project.full_address || project.postal_code || 'No Address'}</span>
-          </div>
-          
-          {/* 요구사항 표시 */}
-          {project.description && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-gray-500 mb-1">Requirements:</p>
-              <p className="text-sm text-gray-700 break-words line-clamp-3">
-                {project.description}
-              </p>
-            </div>
-          )}
-          
-          {/* 견적 정보 */}
-          {project.contractor_quote && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-sm font-medium">
-                Submitted Quote: ${project.contractor_quote.price?.toLocaleString()}
-              </p>
-            </div>
-          )}
-          
-          {/* Approved 상태 안내 */}
-          {project.projectStatus === 'approved' && (
-            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
-              <p className="text-sm font-semibold text-green-700 break-words">
-                ✅ Project approved by admin. Apply for site visit!
-              </p>
-            </div>
-          )}
-          
-          {/* 입찰 중 상태 강조 표시 */}
-          {project.projectStatus === 'bidding' && (
-            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
-              <p className="text-sm font-semibold text-orange-700 flex items-start">
-                <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                <span className="break-words">
-                  {project.contractor_quote 
-                    ? '🔥 Bidding in progress. Quote submitted' 
-                    : '🔥 Bidding started! Submit your quote.'}
-                </span>
-              </p>
-            </div>
-          )}
-          
-          {/* Failed Bid 상태 안내 */}
-          {project.projectStatus === 'failed-bid' && (
-            <div className="mt-3 pt-3 border-t bg-red-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
-              <p className="text-sm font-semibold text-red-700 flex items-start">
-                <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                <span className="break-words">Failed to submit quote before deadline.</span>
-              </p>
-            </div>
-          )}
-          
-          {/* 현장방문 정보 - 활성 상태에서만 표시 */}
-          {project.siteVisit && 
-           (project.projectStatus === 'site-visit-applied' || 
-            project.projectStatus === 'site-visit-completed' ||
-            project.projectStatus === 'quoted' ||
-            project.projectStatus === 'approved') && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-sm text-blue-600">
-                Site Visit {project.siteVisit.status === 'completed' ? 'Completed' : 'Applied'}
-              </p>
-            </div>
-          )}
-          
-          {/* 선정 상태 표시 */}
-          {project.projectStatus === 'selected' && (
-            <div className="mt-3 pt-3 border-t bg-green-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
-              <p className="text-sm font-semibold text-green-700 flex items-start">
-                <Trophy className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                <span className="break-words">🎉 Congratulations! Customer has selected you.</span>
-              </p>
-            </div>
-          )}
-          
-          {project.projectStatus === 'not-selected' && (
-            <div className="mt-3 pt-3 border-t bg-orange-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
-              <p className="text-sm text-orange-800 break-words">
-                Customer selected another contractor.
-              </p>
-            </div>
-          )}
-          
-          {/* 프로젝트 종료 안내 */}
-          {project.projectStatus === 'completed' && !project.selected_contractor_id && (
-            <div className="mt-3 pt-3 border-t bg-gray-50 -mx-2 md:-mx-6 px-2 md:px-6 py-3 rounded">
-              <p className="text-sm text-gray-700 break-words">
-                Project completed.
-              </p>
-            </div>
-          )}
-        </div>
+        )}
         
-        <div className="mt-4 flex flex-col sm:flex-row gap-2">
-          {/* ✅ Approved 상태 또는 Site Visit Applied - 토글 버튼 */}
-          {(project.projectStatus === 'approved' || project.projectStatus === 'site-visit-applied') && (
-            <button 
-              onClick={() => handleToggleSiteVisit(project)}
-              disabled={isApplyingThis}
-              className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                isApplyingThis
-                  ? 'bg-gray-400 text-white cursor-wait'
-                  : project.siteVisit
-                  ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-            >
-              {isApplyingThis ? (
-                <span className="flex items-center justify-center gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Processing...
-                </span>
-              ) : project.siteVisit ? (
-                <>
-                  <XCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>Cancel Site Visit</span>
-                </>
-              ) : (
-                'Apply Site Visit'
-              )}
-            </button>
-          )}
+        {/* 액션 버튼 */}
+        <div className="p-4 bg-gray-50 flex gap-2">
+          {/* 주 액션 버튼 */}
+          <div className="flex-1">
+            {/* Approved 상태 - 현장방문 신청 */}
+            {(project.projectStatus === 'approved' || project.projectStatus === 'site-visit-applied') && (
+              <button 
+                onClick={() => handleToggleSiteVisit(project)}
+                disabled={isApplyingThis}
+                className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  isApplyingThis
+                    ? 'bg-gray-400 text-white cursor-wait'
+                    : project.siteVisit
+                    ? 'bg-red-500 text-white hover:bg-red-600'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                {isApplyingThis ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : project.siteVisit ? (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    Cancel Site Visit
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Apply Site Visit
+                  </>
+                )}
+              </button>
+            )}
+            
+            {/* Bidding 상태 - 견적서 제출 */}
+            {project.projectStatus === 'bidding' && (
+              <button 
+                onClick={() => handleSubmitQuote(project)}
+                disabled={!!project.contractor_quote}
+                className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 ${
+                  project.contractor_quote 
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }`}
+              >
+                {project.contractor_quote ? (
+                  <>
+                    <Ban className="w-4 h-4" />
+                    Cannot Modify
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Submit Quote
+                  </>
+                )}
+              </button>
+            )}
+            
+            {/* Selected 상태 */}
+            {project.projectStatus === 'selected' && (
+              <div className="w-full px-4 py-2.5 bg-green-100 text-green-700 rounded-lg text-sm font-semibold text-center">
+                🎉 Check your email for customer contact info
+              </div>
+            )}
+            
+            {/* Completed 상태 */}
+            {project.projectStatus === 'completed' && (
+              <div className="w-full px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold text-center">
+                Project Completed
+              </div>
+            )}
+          </div>
           
-          {/* ✅ 입찰 중 - 견적서 제출 버튼 (취소 불가) */}
-          {project.projectStatus === 'bidding' && project.siteVisit && (
-            <button 
-              onClick={() => handleSubmitQuote(project)}
-              disabled={!!project.contractor_quote}
-              className={`w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold flex items-center justify-center gap-2 ${
-                project.contractor_quote 
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                  : 'bg-orange-500 text-white hover:bg-orange-600'
-              }`}
-            >
-              {project.contractor_quote ? (
-                <>
-                  <Ban className="w-4 h-4 flex-shrink-0" />
-                  <span>Cannot Modify</span>
-                </>
-              ) : (
-                <>
-                  <FileText className="w-4 h-4 flex-shrink-0" />
-                  <span>Submit Quote</span>
-                </>
-              )}
-            </button>
-          )}
-          
-          {/* ✅ 입찰 중 - 현장방문을 하지 않은 경우 */}
-          {project.projectStatus === 'bidding' && !project.siteVisit && (
-            <div className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-600 rounded text-sm font-semibold flex items-center justify-center gap-2 cursor-not-allowed">
-              <FileText className="w-4 h-4 flex-shrink-0" />
-              <span>Site Visit Required</span>
-            </div>
-          )}
-          
-          {/* ✅ 현장방문 완료 - 견적서 작성 버튼 */}
-          {project.projectStatus === 'site-visit-completed' && !project.contractor_quote && (
-            <button 
-              onClick={() => handleSubmitQuote(project)}
-              className="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 font-semibold"
-            >
-              Write Quote
-            </button>
-          )}
-          
-          {/* ✅ quote-submitted 상태 처리 */}
-          {project.projectStatus === 'quoted' && (
-            <div className="w-full sm:w-auto px-4 py-2 bg-purple-100 text-purple-700 rounded text-sm font-semibold text-center break-words">
-              Quote Submitted - Cannot be modified
-            </div>
-          )}
-          
-          {/* Selected 상태 */}
-          {project.projectStatus === 'selected' && (
-            <button className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded text-sm font-medium cursor-default break-words text-center">
-              Customer contact info will be sent to your email.
-            </button>
-          )}
+          {/* 토글 버튼 */}
+          <button
+            onClick={() => toggleCard(project.id)}
+            className="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+          >
+            <span>Details</span>
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
         </div>
       </div>
     )
@@ -1094,7 +1049,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 <div className="p-4 md:p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredProjects.map((project) => (
-                      <SimpleProjectCard key={project.id} project={project} />
+                      <CompactProjectCard key={project.id} project={project} />
                     ))}
                   </div>
                 </div>
