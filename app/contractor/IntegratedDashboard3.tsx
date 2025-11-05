@@ -639,22 +639,22 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       <div className={`bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border border-[#daa520]/20 hover:shadow-xl transition-all duration-300 ${getBorderColor()}`}>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 break-words">
+            <h3 className="text-lg md:text-xl font-serif font-light text-[#2c5f4e] mb-2 truncate">
               {getSpaceTypeLabel()}
             </h3>
             <div className="flex items-center text-sm text-gray-600 mt-1 mb-3">
               <User className="w-4 h-4 mr-2 text-[#daa520] flex-shrink-0" />
               <span className="font-light truncate">{getCustomerName()}</span>
             </div>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600 font-light break-words">
-                Project: {getProjectTypeLabel()}
+            <div className="space-y-1.5">
+              <p className="text-sm text-gray-600 font-light overflow-hidden">
+                <span className="whitespace-nowrap">Project: {getProjectTypeLabel()}</span>
               </p>
-              <p className="text-sm text-gray-600 font-light break-words">
-                Budget: {getBudgetLabel()}
+              <p className="text-sm text-gray-600 font-light overflow-hidden">
+                <span className="whitespace-nowrap">Budget: {getBudgetLabel()}</span>
               </p>
-              <p className="text-sm text-gray-600 font-light break-words">
-                Timeline: {getTimelineLabel()}
+              <p className="text-sm text-gray-600 font-light overflow-hidden">
+                <span className="whitespace-nowrap">Timeline: {getTimelineLabel()}</span>
               </p>
             </div>
           </div>
