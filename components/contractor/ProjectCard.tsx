@@ -54,8 +54,29 @@ const ProjectCard = React.memo(({
   const isNotSelected = project.projectStatus === 'not-selected'
   const selectedContractorName = project.selected_contractor?.company_name
 
+  // 상태별 카드 스타일 (테두리 + 배경)
+  const getCardStyle = () => {
+    const status = project.projectStatus
+    
+    const styles = {
+      'selected': 'border-l-4 border-green-500 shadow-lg shadow-green-100/50',
+      'bidding': 'border-l-4 border-orange-500 shadow-lg shadow-orange-100/50',
+      'not-selected': 'border-l-4 border-red-400 shadow-md shadow-red-50/50',
+      'failed-bid': 'border-l-4 border-red-600 shadow-lg shadow-red-100/50',
+      'quoted': 'border-l-4 border-purple-500 shadow-md shadow-purple-50/50',
+      'site-visit-applied': 'border-l-4 border-blue-500 shadow-md shadow-blue-50/50',
+      'site-visit-completed': 'border-l-4 border-indigo-500 shadow-md shadow-indigo-50/50',
+      'approved': 'border-l-4 border-emerald-400 shadow-md shadow-emerald-50/50',
+      'completed': 'border-l-4 border-gray-400 shadow-sm',
+      'cancelled': 'border-l-4 border-gray-300 shadow-sm',
+      'pending': 'border-l-4 border-yellow-400 shadow-sm'
+    }
+    
+    return styles[status as keyof typeof styles] || 'border-l-4 border-gray-200'
+  }
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${getCardStyle()}`}>
       {/* 카드 헤더 */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between mb-3">
