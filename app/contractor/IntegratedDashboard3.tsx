@@ -1080,6 +1080,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                           setSelectedProject(project)
                           setShowQuoteModal(true)
                         }}
+                        onBiddingToggle={handleToggleBidding}
                       />
                     ))}
                   </div>
