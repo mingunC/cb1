@@ -624,6 +624,9 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       if (project.projectStatus === 'not-selected') return 'border-red-300 border-2'
       if (project.projectStatus === 'failed-bid') return 'border-red-500 border-2 shadow-lg'
       if (project.projectStatus === 'bidding') return 'border-orange-500 border-2 shadow-lg'
+      if (project.projectStatus === 'site-visit-applied') return 'border-blue-500 border-2 shadow-md'
+      if (project.projectStatus === 'site-visit-completed') return 'border-indigo-500 border-2 shadow-md'
+      if (project.projectStatus === 'quoted') return 'border-purple-500 border-2 shadow-md'
       if (project.projectStatus === 'approved') return 'border-blue-300 border-2'
       return 'border-gray-200'
     }
