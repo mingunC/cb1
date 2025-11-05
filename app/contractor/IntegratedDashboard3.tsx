@@ -1061,7 +1061,26 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 <div className="p-4 md:p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {filteredProjects.map((project) => (
-                      <SimpleProjectCard key={project.id} project={project} />
+                      <ProjectCard 
+                        key={project.id} 
+                        project={project}
+                        contractorId={contractorData?.id || ''}
+                        onSiteVisitApply={(projectId) => {
+                          const proj = projects.find(p => p.id === projectId)
+                          if (proj) handleSiteVisitApplication(proj)
+                        }}
+                        onSiteVisitCancel={(appId, projectId) => {
+                          console.log('Cancel site visit:', appId)
+                        }}
+                        onQuoteCreate={(project) => {
+                          setSelectedProject(project)
+                          setShowQuoteModal(true)
+                        }}
+                        onQuoteView={(project) => {
+                          setSelectedProject(project)
+                          setShowQuoteModal(true)
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
