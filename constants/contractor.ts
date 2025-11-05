@@ -60,9 +60,9 @@ export const FILTER_OPTIONS = [
 
 // Budget option labels
 export const BUDGET_LABELS: Record<string, string> = {
-  'under_50k': 'Under $50,000',
-  '50k_100k': '$50,000-$100,000',
-  'over_100k': 'Over $100,000'
+  'under_50k': 'Under $50K',
+  '50k_100k': '$50K - 100K',
+  'over_100k': '100K+'
 }
 
 // Timeline labels
