@@ -55,7 +55,7 @@ export default function CustomerDashboard() {
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
-        setIsLoading(false)  // ⭐ 추가!
+        setIsLoading(false)
         router.push('/login')
         return
       }
@@ -63,7 +63,7 @@ export default function CustomerDashboard() {
       await loadProjects(user.id)
     } catch (error) {
       console.error('Error:', error)
-      setIsLoading(false)  // ⭐ 추가!
+      setIsLoading(false)
       router.push('/login')
     }
   }
@@ -86,7 +86,7 @@ export default function CustomerDashboard() {
       
       // 입찰 중이거나 종료된 프로젝트의 견적서 로드
       const biddingProjects = (projectsData || []).filter(
-        p => p.status === 'bidding' || p.status === 'bidding-closed' || p.status === 'contractor-selected' || p.status === 'quote-submitted'
+        p => p.status === 'bidding' || p.status === 'bidding-closed' || p.status === 'contractor-selected'
       )
       
       for (const project of biddingProjects) {
@@ -279,7 +279,6 @@ export default function CustomerDashboard() {
       'site-visit-pending': { label: '현장방문 예정', color: 'bg-blue-100 text-blue-800' },
       'bidding': { label: '입찰 진행중', color: 'bg-orange-100 text-orange-800' },
       'bidding-closed': { label: '입찰 종료', color: 'bg-indigo-100 text-indigo-800' },
-      'quote-submitted': { label: '견적서 제출됨', color: 'bg-purple-100 text-purple-800' },
       'contractor-selected': { label: '업체선정완료', color: 'bg-purple-100 text-purple-800' },
       'in-progress': { label: '진행중', color: 'bg-blue-100 text-blue-800' },
       'completed': { label: '완료', color: 'bg-gray-500 text-white' },
@@ -498,7 +497,8 @@ export default function CustomerDashboard() {
             {projects.map((project) => {
               const quotes = selectedProjectQuotes[project.id] || []
               const isExpanded = expandedProject === project.id
-              const canSelectContractor = (project.status === 'bidding' || project.status === 'bidding-closed' || project.status === 'quote-submitted') && !project.selected_contractor_id
+              // ✅ 수정: bidding 상태일 때만 버튼 표시 (quote-submitted 제거)
+              const canSelectContractor = project.status === 'bidding' && !project.selected_contractor_id
               const canStartProject = (project.status === 'bidding-closed' || project.status === 'contractor-selected') && project.selected_contractor_id
 
               console.log('🔍 프로젝트 렌더링:', {
