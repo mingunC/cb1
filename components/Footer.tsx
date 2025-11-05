@@ -20,13 +20,12 @@ export default function Footer() {
   const footerLinks = {
     company: [
       { name: 'About Us', href: '/about' },
-      { name: 'Careers', href: '/careers' },
       { name: 'Terms of Service', href: '/terms' },
       { name: 'Privacy Policy', href: '/privacy' }
     ],
     services: [
       { name: 'Request a Quote', href: '/quote-request' },
-      { name: 'Find Professionals', href: '/pros' },
+      { name: 'Find Partners', href: '/pros' },
       { name: 'Portfolio', href: '/portfolio' },
       { name: 'Events', href: '/events' }
     ],
