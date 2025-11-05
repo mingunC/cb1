@@ -35,12 +35,29 @@ export default function ContractorLoginPage() {
   
   const router = useRouter()
   const supabase = createBrowserClient()
+  const checkingRef = useRef(false) // 중복 실행 방지
 
   // 세션 체크 - 이미 로그인된 상태 확인
   useEffect(() => {
+    // 이미 체크 중이면 무시
+    if (checkingRef.current) return
+    
     const checkSession = async () => {
+      checkingRef.current = true
+      
       try {
-        const userInfo = await getCurrentUser()
+        console.log('🔍 Checking session...')
+        
+        // Timeout 추가 (5초)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        )
+        
+        const userInfoPromise = getCurrentUser()
+        
+        const userInfo = await Promise.race([userInfoPromise, timeoutPromise]) as any
+        
+        console.log('✅ Session check result:', userInfo)
         
         if (userInfo.user) {
           setCurrentUser({
@@ -48,11 +65,16 @@ export default function ContractorLoginPage() {
             userType: userInfo.userType,
             contractorData: userInfo.contractorData
           })
+        } else {
+          setCurrentUser(null)
         }
-        setCheckingSession(false)
       } catch (error) {
-        console.error('Session check error:', error)
+        console.error('❌ Session check error:', error)
+        setCurrentUser(null)
+      } finally {
+        console.log('✅ Session check complete, setting checkingSession to false')
         setCheckingSession(false)
+        checkingRef.current = false
       }
     }
 
