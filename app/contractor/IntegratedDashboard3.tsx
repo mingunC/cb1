@@ -444,7 +444,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       return projects.filter(p => p.projectStatus === 'bidding')
     }
     if (projectFilter === 'failed-bid') {
-      return projects.filter(p => p.projectStatus === 'failed-bid')
+      return projects.filter(p => p.projectStatus === 'failed-bid'
     }
     return projects.filter(p => p.projectStatus === projectFilter)
   }, [projects, projectFilter])
@@ -536,8 +536,8 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       const Icon = config?.icon
       
       return (
-        <span className={`px-3 py-1.5 rounded-full text-sm inline-flex items-center gap-2 whitespace-nowrap ${config.color}`}>
-          {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
+        <span className={`px-2.5 py-1 rounded-full text-xs inline-flex items-center gap-1.5 whitespace-nowrap ${config.color}`}>
+          {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" />}
           <span>{config.label}</span>
         </span>
       )
@@ -660,27 +660,27 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     }
     
     return (
-      <div className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden ${getBorderColor()}`}>
+      <div className={`bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden ${getBorderColor()}`}>
         {/* 헤더 - 제목 + 상태 */}
-        <div className="p-4 flex justify-between items-start gap-4">
-          <h3 className="text-xl font-bold text-gray-800 flex-1">
+        <div className="p-3 flex justify-between items-start gap-3">
+          <h3 className="text-lg font-bold text-gray-800 flex-1">
             {getSpaceTypeLabel()}
           </h3>
           {getStatusBadge()}
         </div>
         
         {/* 메인 정보 - 예산 + 주소 (기본 표시) */}
-        <div className="px-4 pb-4 space-y-3">
-          {/* 💰 예산 - 크고 진하게! */}
+        <div className="px-3 pb-3 space-y-2">
+          {/* 💰 예산 */}
           <div className="flex items-center gap-2">
-            <span className="text-4xl font-extrabold text-amber-600">
+            <span className="text-xl font-bold text-amber-600">
               💰 {getBudgetLabel()}
             </span>
           </div>
           
           {/* 📍 주소 */}
           <div className="flex items-start gap-2 text-gray-700">
-            <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+            <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
             <span className="text-sm break-words">
               {project.full_address || project.postal_code || 'No Address'}
             </span>
@@ -689,7 +689,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         
         {/* 토글 가능한 상세 정보 */}
         {isExpanded && (
-          <div className="px-4 pb-4 space-y-3 border-t border-gray-200 pt-4">
+          <div className="px-3 pb-3 space-y-2 border-t border-gray-200 pt-3">
             {/* 고객 정보 */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
@@ -734,7 +734,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         )}
         
         {/* 액션 버튼 */}
-        <div className="p-4 bg-gray-50 flex gap-2">
+        <div className="p-3 bg-gray-50 flex gap-2">
           {/* 주 액션 버튼 */}
           <div className="flex-1">
             {/* Approved 상태 - 현장방문 신청 */}
@@ -742,7 +742,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <button 
                 onClick={() => handleToggleSiteVisit(project)}
                 disabled={isApplyingThis}
-                className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                   isApplyingThis
                     ? 'bg-gray-400 text-white cursor-wait'
                     : project.siteVisit
@@ -752,17 +752,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               >
                 {isApplyingThis ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     Processing...
                   </>
                 ) : project.siteVisit ? (
                   <>
-                    <XCircle className="w-4 h-4" />
+                    <XCircle className="w-3.5 h-3.5" />
                     Cancel Site Visit
                   </>
                 ) : (
                   <>
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-3.5 h-3.5" />
                     Apply Site Visit
                   </>
                 )}
@@ -774,7 +774,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <button 
                 onClick={() => handleSubmitQuote(project)}
                 disabled={!!project.contractor_quote}
-                className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 ${
+                className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 ${
                   project.contractor_quote 
                     ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
                     : 'bg-orange-500 text-white hover:bg-orange-600'
@@ -782,13 +782,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               >
                 {project.contractor_quote ? (
                   <>
-                    <Ban className="w-4 h-4" />
+                    <Ban className="w-3.5 h-3.5" />
                     수정 불가 (Cannot Modify)
                   </>
                 ) : (
                   <>
-                    <FileText className="w-4 h-4" />
-                    📝 견적서 작성하기 (Submit Quote)
+                    <FileText className="w-3.5 h-3.5" />
+                    📝 견적서 작성하기
                   </>
                 )}
               </button>
@@ -796,14 +796,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             
             {/* Selected 상태 */}
             {project.projectStatus === 'selected' && (
-              <div className="w-full px-4 py-2.5 bg-green-100 text-green-700 rounded-lg text-sm font-semibold text-center">
+              <div className="w-full px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-semibold text-center">
                 🎉 Check your email for customer contact info
               </div>
             )}
             
             {/* Completed 상태 */}
             {project.projectStatus === 'completed' && (
-              <div className="w-full px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold text-center">
+              <div className="w-full px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold text-center">
                 Project Completed
               </div>
             )}
@@ -812,7 +812,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {/* 토글 버튼 */}
           <button
             onClick={() => toggleCard(project.id)}
-            className="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
           >
             <span>상세 {isExpanded ? '∧' : '∨'}</span>
           </button>
