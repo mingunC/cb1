@@ -271,6 +271,10 @@ export default function QuoteRequestForm() {
     })
   }
 
+  // Commercial 타입 전용 단일 선택 핸들러
+  const handleCommercialProjectTypeChange = (value: string) => {
+    setFormData(prev => ({ ...prev, projectTypes: [value] }))
+  }
 
   const formatPostalCode = (value: string) => {
     // 영문자와 숫자만 추출
@@ -441,11 +445,11 @@ export default function QuoteRequestForm() {
                     {commercialProjectTypes.map((type) => (
                       <label key={type.value} className="relative cursor-pointer">
                         <input
-                          type="checkbox"
-                          name="projectTypes"
+                          type="radio"
+                          name="commercialProjectType"
                           value={type.value}
                           checked={formData.projectTypes.includes(type.value)}
-                          onChange={() => handleProjectTypeChange(type.value, false)}
+                          onChange={() => handleCommercialProjectTypeChange(type.value)}
                           className="sr-only"
                         />
                         <div className={`p-6 border-2 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-1 ${
