@@ -103,14 +103,14 @@ export async function POST(request: NextRequest) {
       .eq('id', currentProject.customer_id)
       .single()
 
-    const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || '고객'
+    const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || 'Customer'
 
     // 8. 고객에게 프로젝트 시작 축하 이메일 발송
     if (customerInfo?.email) {
       try {
         await sendEmail({
           to: customerInfo.email,
-          subject: '🎉 프로젝트의 시작을 축하드립니다!',
+          subject: '🎉 Congratulations! Your Project Has Started',
           html: `
             <!DOCTYPE html>
             <html>
@@ -129,51 +129,51 @@ export async function POST(request: NextRequest) {
             <body>
               <div class="container">
                 <div class="header">
-                  <h1 style="margin: 0; font-size: 32px;">🎉 축하합니다!</h1>
-                  <p style="margin: 10px 0 0 0; font-size: 18px;">프로젝트의 시작을 진심으로 축하드립니다</p>
+                  <h1 style="margin: 0; font-size: 32px;">🎉 Congratulations!</h1>
+                  <p style="margin: 10px 0 0 0; font-size: 18px;">Your renovation project has officially started</p>
                 </div>
                 
                 <div class="content">
-                  <p>안녕하세요, <strong>${customerName}</strong>님</p>
+                  <p>Hello, <strong>${customerName}</strong></p>
                   
                   <div class="highlight">
-                    <h3 style="margin-top: 0; color: #d97706;">✨ 프로젝트가 공식적으로 시작되었습니다!</h3>
-                    <p style="margin-bottom: 0;">꿈꾸던 공간으로의 변화가 이제 시작됩니다.</p>
+                    <h3 style="margin-top: 0; color: #d97706;">✨ Your Project Has Officially Started!</h3>
+                    <p style="margin-bottom: 0;">The transformation of your dream space begins now.</p>
                   </div>
 
                   <div class="info-box">
-                    <h3 style="color: #667eea; margin-top: 0;">📋 프로젝트 정보</h3>
-                    <p style="margin: 10px 0;"><strong>선정 업체:</strong> ${contractorInfo?.company_name || '업체'}</p>
-                    <p style="margin: 10px 0;"><strong>프로젝트 유형:</strong> ${currentProject.space_type}</p>
-                    <p style="margin: 10px 0;"><strong>주소:</strong> ${currentProject.full_address}</p>
+                    <h3 style="color: #667eea; margin-top: 0;">📋 Project Information</h3>
+                    <p style="margin: 10px 0;"><strong>Selected Contractor:</strong> ${contractorInfo?.company_name || 'Contractor'}</p>
+                    <p style="margin: 10px 0;"><strong>Project Type:</strong> ${currentProject.space_type}</p>
+                    <p style="margin: 10px 0;"><strong>Address:</strong> ${currentProject.full_address}</p>
                   </div>
                   
                   <div class="info-box">
-                    <h3 style="color: #667eea; margin-top: 0;">👷 다음 단계</h3>
+                    <h3 style="color: #667eea; margin-top: 0;">👷 Next Steps</h3>
                     <ul style="padding-left: 20px;">
-                      <li>공사 준비 사항 확인</li>
-                      <li>정기적인 진행 상황 체크</li>
-                      <li>완료 후 최종 검수</li>
+                      <li>Confirm construction preparation details</li>
+                      <li>Regular progress updates</li>
+                      <li>Final inspection upon completion</li>
                     </ul>
                   </div>
 
                   <div class="highlight">
-                    <p style="margin: 0;"><strong>💡 팁:</strong> 궁금한 사항이나 변경사항이 있으시면 업체와 수시로 소통해주세요!</p>
+                    <p style="margin: 0;"><strong>💡 Tip:</strong> Please communicate regularly with the contractor if you have any questions or changes!</p>
                   </div>
                   
                   <p style="margin-top: 30px; text-align: center;">
-                    <strong>성공적인 프로젝트 완료를 기원합니다!</strong>
+                    <strong>We wish you a successful project completion!</strong>
                   </p>
                   
                   <p style="text-align: center;">
-                    감사합니다.<br>
-                    <strong>Canada Beaver 팀</strong>
+                    Thank you,<br>
+                    <strong>Canada Beaver Team</strong>
                   </p>
                 </div>
                 
                 <div class="footer">
                   <p>© 2024 Canada Beaver. All rights reserved.</p>
-                  <p>문의사항이 있으시면 언제든지 연락주세요.</p>
+                  <p>If you have any questions, please feel free to contact us.</p>
                 </div>
               </div>
             </body>
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
       try {
         await sendEmail({
           to: contractorInfo.email,
-          subject: '🚀 프로젝트가 시작되었습니다',
+          subject: '🚀 Project Started',
           html: `
             <!DOCTYPE html>
             <html>
@@ -209,34 +209,34 @@ export async function POST(request: NextRequest) {
             <body>
               <div class="container">
                 <div class="header">
-                  <h1>🚀 프로젝트 시작!</h1>
-                  <p style="margin: 0;">고객이 프로젝트 시작을 확인했습니다</p>
+                  <h1>🚀 Project Started!</h1>
+                  <p style="margin: 0;">The customer has confirmed the project start</p>
                 </div>
                 
                 <div class="content">
-                  <p>안녕하세요, <strong>${contractorInfo.company_name}</strong>님</p>
+                  <p>Hello, <strong>${contractorInfo.company_name}</strong></p>
                   
                   <div class="info-box">
-                    <h3 style="color: #28a745; margin-top: 0;">🎉 프로젝트가 공식적으로 시작되었습니다</h3>
-                    <p><strong>${customerName}</strong>님이 프로젝트 시작을 확인했습니다.</p>
-                    <p style="margin: 15px 0;">📋 프로젝트 유형: ${currentProject.space_type}</p>
-                    <p style="margin: 15px 0;">📍 주소: ${currentProject.full_address}</p>
-                    <p style="margin: 15px 0;">📅 시작일: ${new Date().toLocaleDateString('ko-KR')}</p>
+                    <h3 style="color: #28a745; margin-top: 0;">🎉 The Project Has Officially Started</h3>
+                    <p><strong>${customerName}</strong> has confirmed the project start.</p>
+                    <p style="margin: 15px 0;">📋 Project Type: ${currentProject.space_type}</p>
+                    <p style="margin: 15px 0;">📍 Address: ${currentProject.full_address}</p>
+                    <p style="margin: 15px 0;">📅 Start Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                   </div>
                   
-                  <p><strong>다음 단계:</strong></p>
+                  <p><strong>Next Steps:</strong></p>
                   <ul>
-                    <li>공사 일정 최종 확인</li>
-                    <li>필요한 자재 및 인력 준비</li>
-                    <li>정기적인 진행 상황 업데이트</li>
-                    <li>완료 후 최종 점검</li>
+                    <li>Final confirmation of construction schedule</li>
+                    <li>Prepare necessary materials and workforce</li>
+                    <li>Regular progress updates</li>
+                    <li>Final inspection upon completion</li>
                   </ul>
                   
-                  <p style="margin-top: 30px;">성공적인 프로젝트 완료를 기원합니다!</p>
+                  <p style="margin-top: 30px;">We wish you a successful project completion!</p>
                   
                   <p>
-                    감사합니다.<br>
-                    <strong>Canada Beaver 팀</strong>
+                    Thank you,<br>
+                    <strong>Canada Beaver Team</strong>
                   </p>
                 </div>
                 
