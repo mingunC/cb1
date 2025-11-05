@@ -1,15 +1,43 @@
 'use client'
 
-import { Calendar, MapPin, ArrowRight } from 'lucide-react'
+import { Calendar, MapPin, ArrowRight, Percent, Gift, Tag } from 'lucide-react'
 import Link from 'next/link'
 
 export default function EventsSection() {
-  const event = {
-    title: 'melody',
-    subtitle: 'melody',
-    date: 'July 1, 2020',
-    location: ''
-  }
+  const events = [
+    {
+      id: 1,
+      title: 'Winter Kitchen Renovation Sale',
+      subtitle: 'Up to 30% off on complete kitchen makeovers',
+      date: 'Nov 15 - Dec 31, 2025',
+      location: 'Toronto & GTA',
+      tag: 'Hot Deal',
+      tagColor: 'bg-red-500 text-white',
+      discount: '30%',
+      icon: Percent
+    },
+    {
+      id: 2,
+      title: 'Bathroom Renovation Package',
+      subtitle: 'Free fixture upgrade with any bathroom renovation',
+      date: 'Nov 10 - Nov 30, 2025',
+      location: 'Vancouver & Area',
+      tag: 'Limited Offer',
+      tagColor: 'bg-emerald-500 text-white',
+      gift: 'Free Upgrade',
+      icon: Gift
+    },
+    {
+      id: 3,
+      title: 'Home Office Design Workshop',
+      subtitle: 'Free consultation with award-winning designers',
+      date: 'December 5, 2025',
+      location: 'Online Event',
+      tag: 'Free Event',
+      tagColor: 'bg-blue-500 text-white',
+      icon: Tag
+    }
+  ]
 
   return (
     <section className="py-24 bg-neutral-50">
@@ -30,58 +58,94 @@ export default function EventsSection() {
 
           {/* Subtitle */}
           <p className="text-base text-gray-500 max-w-3xl mx-auto">
-            Join special events with industry experts
+            Don't miss out on special offers and expert-led workshops
           </p>
         </div>
 
-        {/* Event Card */}
-        <div className="max-w-md mx-auto mb-12">
-          <div className="bg-white rounded-2xl shadow-lg p-8 relative">
-            {/* Invited Tag */}
-            <div className="absolute top-4 left-4">
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
-                invited
-              </span>
-            </div>
+        {/* Events Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {events.map((event) => {
+            const IconComponent = event.icon
+            return (
+              <div 
+                key={event.id} 
+                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 relative group hover:scale-105"
+              >
+                {/* Tag */}
+                <div className="absolute top-4 right-4">
+                  <span className={`px-3 py-1 ${event.tagColor} rounded-full text-xs font-medium shadow-md`}>
+                    {event.tag}
+                  </span>
+                </div>
 
-            {/* Event Title */}
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2 mt-8">
-              {event.title}
-            </h3>
+                {/* Icon */}
+                <div className="mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-amber-100 rounded-xl flex items-center justify-center">
+                    <IconComponent className="h-6 w-6 text-emerald-700" />
+                  </div>
+                </div>
 
-            {/* Event Subtitle */}
-            <p className="text-gray-400 text-sm mb-4">
-              {event.subtitle}
-            </p>
+                {/* Discount Badge */}
+                {event.discount && (
+                  <div className="mb-3">
+                    <span className="inline-block bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-2xl">
+                      {event.discount} OFF
+                    </span>
+                  </div>
+                )}
 
-            {/* Separator */}
-            <div className="h-px bg-gray-200 my-6"></div>
+                {/* Gift Badge */}
+                {event.gift && (
+                  <div className="mb-3">
+                    <span className="inline-block bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold">
+                      🎁 {event.gift}
+                    </span>
+                  </div>
+                )}
 
-            {/* Date */}
-            <div className="flex items-center text-gray-400 text-sm mb-3">
-              <Calendar className="h-4 w-4 mr-2 text-amber-600" />
-              <span>{event.date}</span>
-            </div>
+                {/* Event Title */}
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                  {event.title}
+                </h3>
 
-            {/* Location */}
-            <div className="flex items-center text-gray-400 text-sm mb-6">
-              <MapPin className="h-4 w-4 mr-2 text-amber-600" />
-              <span>{event.location || ''}</span>
-            </div>
+                {/* Event Subtitle */}
+                <p className="text-gray-600 text-sm mb-4 min-h-[40px]">
+                  {event.subtitle}
+                </p>
 
-            {/* Learn More Link */}
-            <Link href="/events" className="flex items-center text-gray-400 text-sm hover:text-gray-600 transition-colors">
-              Learn More
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Link>
-          </div>
+                {/* Separator */}
+                <div className="h-px bg-gray-200 my-6"></div>
+
+                {/* Date */}
+                <div className="flex items-center text-gray-600 text-sm mb-3">
+                  <Calendar className="h-4 w-4 mr-2 text-amber-600" />
+                  <span>{event.date}</span>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center text-gray-600 text-sm mb-6">
+                  <MapPin className="h-4 w-4 mr-2 text-amber-600" />
+                  <span>{event.location}</span>
+                </div>
+
+                {/* Learn More Link */}
+                <Link 
+                  href="/events" 
+                  className="flex items-center text-emerald-700 text-sm font-semibold hover:text-emerald-800 transition-colors group-hover:gap-2 gap-1"
+                >
+                  Learn More
+                  <ArrowRight className="h-4 w-4 transition-all" />
+                </Link>
+              </div>
+            )
+          })}
         </div>
 
         {/* View All Events Button */}
         <div className="text-center">
           <Link
             href="/events"
-            className="inline-flex items-center border-2 border-emerald-700 text-emerald-700 bg-transparent hover:bg-emerald-700 hover:text-white px-10 py-3 rounded-full font-semibold transition-all duration-300"
+            className="inline-flex items-center border-2 border-emerald-700 text-emerald-700 bg-transparent hover:bg-emerald-700 hover:text-white px-10 py-3 rounded-full font-semibold transition-all duration-300 hover:shadow-lg"
           >
             View All Events
             <ArrowRight className="h-5 w-5 ml-2" />
