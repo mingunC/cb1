@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, User, DollarSign, Clock } from 'lucide-react'
+import { Calendar, MapPin, FileText, Eye, Plus, Minus, XCircle, User, DollarSign, Clock, Ban } from 'lucide-react'
 import { Project } from '@/types/contractor'
 import { BUDGET_LABELS, TIMELINE_LABELS } from '@/constants/contractor'
 import { 
@@ -19,6 +19,7 @@ interface ProjectCardProps {
   onSiteVisitCancel: (applicationId: string, projectId: string) => void
   onQuoteCreate: (project: Project) => void
   onQuoteView: (project: Project) => void
+  onBiddingToggle?: (project: Project) => void
 }
 
 /**
@@ -30,7 +31,8 @@ const ProjectCard = React.memo(({
   onSiteVisitApply,
   onSiteVisitCancel,
   onQuoteCreate,
-  onQuoteView
+  onQuoteView,
+  onBiddingToggle
 }: ProjectCardProps) => {
   
   const spaceInfo = getSpaceTypeInfo(project.space_type)
@@ -54,31 +56,31 @@ const ProjectCard = React.memo(({
   const isNotSelected = project.projectStatus === 'not-selected'
   const selectedContractorName = project.selected_contractor?.company_name
 
-  // 상태별 카드 스타일 (테두리 + 배경)
+  // 상태별 카드 스타일 (강화된 테두리 + 배경 + 그림자)
   const getCardStyle = () => {
     const status = project.projectStatus
     
     const styles = {
-      'selected': 'border-l-4 border-green-500 shadow-lg shadow-green-100/50',
-      'bidding': 'border-l-4 border-orange-500 shadow-lg shadow-orange-100/50',
-      'not-selected': 'border-l-4 border-red-400 shadow-md shadow-red-50/50',
-      'failed-bid': 'border-l-4 border-red-600 shadow-lg shadow-red-100/50',
-      'quoted': 'border-l-4 border-purple-500 shadow-md shadow-purple-50/50',
-      'site-visit-applied': 'border-l-4 border-blue-500 shadow-md shadow-blue-50/50',
-      'site-visit-completed': 'border-l-4 border-indigo-500 shadow-md shadow-indigo-50/50',
-      'approved': 'border-l-4 border-emerald-400 shadow-md shadow-emerald-50/50',
-      'completed': 'border-l-4 border-gray-400 shadow-sm',
-      'cancelled': 'border-l-4 border-gray-300 shadow-sm',
-      'pending': 'border-l-4 border-yellow-400 shadow-sm'
+      'selected': 'border-l-[6px] border-green-500 bg-green-50/30 shadow-lg shadow-green-100',
+      'bidding': 'border-l-[6px] border-orange-500 bg-orange-50/30 shadow-lg shadow-orange-100',
+      'not-selected': 'border-l-[6px] border-red-400 bg-red-50/30 shadow-md shadow-red-50',
+      'failed-bid': 'border-l-[6px] border-red-600 bg-red-50/30 shadow-lg shadow-red-100',
+      'quoted': 'border-l-[6px] border-purple-500 bg-purple-50/30 shadow-md shadow-purple-50',
+      'site-visit-applied': 'border-l-[6px] border-blue-500 bg-blue-50/30 shadow-md shadow-blue-50',
+      'site-visit-completed': 'border-l-[6px] border-indigo-500 bg-indigo-50/30 shadow-md shadow-indigo-50',
+      'approved': 'border-l-[6px] border-emerald-400 bg-emerald-50/30 shadow-md shadow-emerald-50',
+      'completed': 'border-l-[6px] border-gray-400 bg-gray-50/30 shadow-sm',
+      'cancelled': 'border-l-[6px] border-gray-300 bg-gray-50/30 shadow-sm',
+      'pending': 'border-l-[6px] border-yellow-400 bg-yellow-50/30 shadow-sm'
     }
     
-    return styles[status as keyof typeof styles] || 'border-l-4 border-gray-200'
+    return styles[status as keyof typeof styles] || 'border-l-[6px] border-gray-200 bg-white'
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${getCardStyle()}`}>
+    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden ${getCardStyle()}`}>
       {/* 카드 헤더 */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-gray-100 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-lg font-semibold text-gray-900 truncate">
             {spaceInfo.label}
@@ -115,7 +117,7 @@ const ProjectCard = React.memo(({
       </div>
 
       {/* 카드 바디 */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 bg-white/60">
         {/* Budget & Timeline - 세로 배치로 변경 */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm">
@@ -181,7 +183,7 @@ const ProjectCard = React.memo(({
       </div>
 
       {/* 카드 푸터 - 액션 버튼 */}
-      <div className="p-4 bg-gray-50 border-t border-gray-100">
+      <div className="p-4 bg-gray-50/80 border-t border-gray-100">
         <div className="flex flex-col gap-2">
           
           {/* 현장방문 누락 표시 */}
@@ -217,6 +219,37 @@ const ProjectCard = React.memo(({
               <Minus className="h-4 w-4" />
               {project.site_visit_application.is_cancelled ? 'Cancelled' : 'Cancel Site Visit'}
             </button>
+          )}
+          
+          {/* 입찰 참여/취소 버튼 (Bidding 상태) */}
+          {project.projectStatus === 'bidding' && onBiddingToggle && (
+            project.site_visit_application ? (
+              <button
+                onClick={() => onBiddingToggle(project)}
+                className={`w-full px-4 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  project.contractor_quote
+                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                }`}
+              >
+                {project.contractor_quote ? (
+                  <>
+                    <Ban className="h-4 w-4" />
+                    Cancel Bidding
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    Join Bidding
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="w-full px-4 py-2 bg-gray-300 text-gray-600 rounded-md text-sm font-medium flex items-center justify-center gap-2 cursor-not-allowed">
+                <FileText className="h-4 w-4" />
+                Site Visit Required
+              </div>
+            )
           )}
           
           {/* 견적서 작성 버튼 */}
