@@ -85,19 +85,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 프로젝트 상태를 quote-submitted로 변경
-    const { error: statusError } = await supabase
-      .from('quote_requests')
-      .update({ 
-        status: 'quote-submitted',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', projectId)
-
-    if (statusError) {
-      console.error('프로젝트 상태 업데이트 오류:', statusError)
-      // 견적서는 저장되었으므로 경고만 로그
-    }
+    // ⚠️ 프로젝트 상태는 'bidding'으로 유지 (여러 업체가 견적서 제출 가능)
+    // ⚠️ 고객이 업체를 선택하거나 관리자가 입찰을 종료할 때 'bidding-closed'로 변경됨
+    console.log('✅ 견적서 저장 완료 - 프로젝트는 bidding 상태 유지')
 
     // ✅ 개선된 이메일 전송 로직
     console.log('📧 이메일 전송 프로세스 시작')
