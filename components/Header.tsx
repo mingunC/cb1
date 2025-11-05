@@ -249,20 +249,18 @@ export default function Header() {
     }
   }, [isUserDropdownOpen])
 
-  // ✅ 개선된 로그아웃 함수
+  // ✅ 최종 개선된 로그아웃 함수 - 강제 즉시 완료
   const handleSignOut = async () => {
     if (isLoggingOut) {
       console.log('⚠️ 이미 로그아웃 진행 중입니다.')
       return // 이중 클릭 방지
     }
     
+    setIsLoggingOut(true)
+    console.log('🚪 로그아웃 시작...')
+    
     try {
-      setIsLoggingOut(true)
-      console.log('🚪 로그아웃 시작...')
-      
-      const supabase = createBrowserClient()
-      
-      // ✅ 1단계: 즉시 UI 상태 초기화 (사용자 경험 개선)
+      // ✅ 1단계: 즉시 UI 상태 초기화
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
@@ -271,44 +269,51 @@ export default function Header() {
       setIsUserDropdownOpen(false)
       console.log('✅ UI 상태 초기화 완료')
       
-      // ✅ 2단계: localStorage 캐시 클리어
-      localStorage.removeItem('cached_user_name')
-      localStorage.removeItem('cached_user_type')
-      console.log('✅ localStorage 캐시 클리어 완료')
+      // ✅ 2단계: localStorage 완전 클리어
+      try {
+        localStorage.removeItem('cached_user_name')
+        localStorage.removeItem('cached_user_type')
+        // Supabase 관련 모든 캐시도 클리어
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-') || key.includes('supabase')) {
+            localStorage.removeItem(key)
+          }
+        })
+        console.log('✅ localStorage 완전 클리어 완료')
+      } catch (e) {
+        console.error('⚠️ localStorage 클리어 에러:', e)
+      }
       
-      // ✅ 3단계: Supabase 로그아웃 (백그라운드 처리)
-      // 실패해도 상관없도록 독립적으로 처리
-      supabase.auth.signOut().catch((error) => {
-        console.error('⚠️ Supabase 로그아웃 에러 (무시됨):', error)
-      })
+      // ✅ 3단계: sessionStorage도 클리어
+      try {
+        sessionStorage.clear()
+        console.log('✅ sessionStorage 클리어 완료')
+      } catch (e) {
+        console.error('⚠️ sessionStorage 클리어 에러:', e)
+      }
       
-      // ✅ 4단계: 즉시 페이지 리디렉션 (타임아웃 없이)
-      console.log('✅ 홈페이지로 리디렉션')
+      // ✅ 4단계: Supabase 로그아웃 (동기적으로 대기)
+      const supabase = createBrowserClient()
+      await supabase.auth.signOut({ scope: 'local' })
+      console.log('✅ Supabase 로그아웃 완료')
       
-      // 200ms 딜레이 후 리디렉션 (UI 업데이트 반영)
-      setTimeout(() => {
-        window.location.href = '/'
-      }, 200)
+      // ✅ 5단계: 즉시 강제 페이지 리로드 (캐시 무시)
+      console.log('✅ 홈페이지로 강제 리디렉션')
+      window.location.replace('/')
       
     } catch (error) {
       console.error('❌ 로그아웃 에러:', error)
       
-      // 에러가 발생해도 상태 초기화 및 리디렉션
-      setUser(null)
-      setUserProfile(null)
-      setContractorProfile(null)
-      setDisplayName('')
-      currentUserId.current = null
-      setIsUserDropdownOpen(false)
-      
-      // localStorage 클리어
-      localStorage.removeItem('cached_user_name')
-      localStorage.removeItem('cached_user_type')
+      // 에러가 발생해도 무조건 로그아웃 처리
+      try {
+        localStorage.clear()
+        sessionStorage.clear()
+      } catch (e) {
+        console.error('⚠️ 스토리지 클리어 에러:', e)
+      }
       
       // 강제 리디렉션
-      window.location.href = '/'
-    } finally {
-      // 로그아웃 플래그는 리셋하지 않음 (리디렉션이 일어나므로)
+      window.location.replace('/')
     }
   }
 
