@@ -563,13 +563,13 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     const getBudgetLabel = () => {
       const budget = project.budget
       const budgetLabels: Record<string, string> = {
-        'under_50k': 'Under $50,000',
-        '50k_100k': '$50,000 - $100,000',
-        '50k_to_100k': '$50,000 - $100,000',
-        'over_100k': '$100,000+',
-        '100k_200k': '$100,000 - $200,000',
-        '200k_500k': '$200,000 - $500,000',
-        'over_500k': '$500,000+'
+        'under_50k': 'Under $50K',
+        '50k_100k': '$50K - $100K',
+        '50k_to_100k': '$50K - $100K',
+        'over_100k': '$100K+',
+        '100k_200k': '$100K - $200K',
+        '200k_500k': '$200K - $500K',
+        'over_500k': '$500K+'
       }
       
       if (budgetLabels[budget]) return budgetLabels[budget]
@@ -584,13 +584,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         'immediate': 'Immediate',
         'immediately': 'Immediate',
         'asap': 'Immediate',
-        '1_month': 'Within 1 month',
-        'within_1_month': 'Within 1 month',
-        '3_months': 'Within 3 months',
-        'within_3_months': 'Within 3 months',
+        '1_month': '1 Month',
+        'within_1_month': '1 Month',
+        '3_months': '3 Months',
+        'within_3_months': '3 Months',
         'planning': 'Planning',
         'planning_stage': 'Planning',
-        'flexible': 'Flexible'
+        'flexible': 'Flexible',
+        'flexible_schedule': 'Flexible Schedule'
       }
       
       return timelineLabels[timeline] || timeline || 'Not Set'
