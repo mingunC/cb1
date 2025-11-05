@@ -176,6 +176,55 @@ export default function AdminQuotesPage() {
     }
   }
 
+  // ✅ 프로젝트 완료 처리 - API 라우트 사용
+  const handleCompleteProject = async (projectId: string) => {
+    console.log('🔄 프로젝트 종료 API 호출 - 프로젝트 ID:', projectId)
+    
+    try {
+      const response = await fetch('/api/complete-project', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ projectId }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('❌ API 에러:', result)
+        alert(`프로젝트 종료 실패:\n${result.error}\n\n상세: ${JSON.stringify(result.details || {}, null, 2)}`)
+        return
+      }
+
+      console.log('✅ 프로젝트 종료 성공:', result)
+      
+      // 로컬 상태 업데이트
+      setQuotes(quotes.map(quote => 
+        quote.id === projectId 
+          ? { ...quote, status: 'completed' as any, updated_at: new Date().toISOString() }
+          : quote
+      ))
+
+      if (selectedQuote && selectedQuote.id === projectId) {
+        setSelectedQuote({
+          ...selectedQuote,
+          status: 'completed' as any,
+          updated_at: new Date().toISOString()
+        })
+      }
+
+      alert('✅ 프로젝트가 완료 처리되었습니다.')
+      
+      // 새로고침
+      await fetchQuotes()
+      
+    } catch (error: any) {
+      console.error('❌ 프로젝트 종료 API 호출 실패:', error)
+      alert(`프로젝트 종료 중 오류가 발생했습니다:\n${error.message}`)
+    }
+  }
+
   // ✅ 현장방문 완료 → 자동으로 입찰 시작
   const handleSiteVisitCompleted = async (quoteId: string) => {
     console.log('🏠 Completing site visit and starting bidding:', quoteId)
@@ -376,7 +425,7 @@ export default function AdminQuotesPage() {
             onClick={() => {
               console.log('🔄 프로젝트 종료 버튼 클릭 - 상태:', quote.status, '프로젝트 ID:', quote.id)
               if (confirm('프로젝트를 종료하시겠습니까?')) {
-                updateQuoteStatus(quote.id, 'completed')
+                handleCompleteProject(quote.id)
               }
             }}
             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
@@ -391,7 +440,7 @@ export default function AdminQuotesPage() {
             onClick={() => {
               console.log('🔄 프로젝트 종료 버튼 클릭 - 진행중 상태, 프로젝트 ID:', quote.id)
               if (confirm('프로젝트를 완료하시겠습니까?')) {
-                updateQuoteStatus(quote.id, 'completed')
+                handleCompleteProject(quote.id)
               }
             }}
             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
@@ -692,7 +741,7 @@ export default function AdminQuotesPage() {
                     <button
                       onClick={() => {
                         console.log('🔄 모달에서 프로젝트 종료 클릭 - 상태:', selectedQuote.status)
-                        updateQuoteStatus(selectedQuote.id, 'completed')
+                        handleCompleteProject(selectedQuote.id)
                         setSelectedQuote(null)
                       }}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
