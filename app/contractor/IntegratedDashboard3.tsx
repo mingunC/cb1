@@ -650,7 +650,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               <p className="text-sm text-gray-600 font-light">
                 Project: {getProjectTypeLabel()}
               </p>
-              <p className="text-sm text-gray-600 font-light">
+              <p className="text-sm text-gray-600 font-light whitespace-nowrap">
                 Budget: {getBudgetLabel()}
               </p>
               <p className="text-sm text-gray-600 font-light">
@@ -723,8 +723,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             </div>
           )}
           
-          {/* 현장방문 정보 */}
-          {project.siteVisit && project.projectStatus !== 'bidding' && project.projectStatus !== 'failed-bid' && (
+          {/* 현장방문 정보 - 활성 상태에서만 표시 */}
+          {project.siteVisit && 
+           (project.projectStatus === 'site-visit-applied' || 
+            project.projectStatus === 'site-visit-completed' ||
+            project.projectStatus === 'quoted' ||
+            project.projectStatus === 'approved') && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-sm text-blue-600">
                 Site Visit {project.siteVisit.status === 'completed' ? 'Completed' : 'Applied'}
