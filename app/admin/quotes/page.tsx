@@ -93,7 +93,6 @@ export default function AdminQuotesPage() {
           case 'bidding':
             return quote.status === 'bidding'
           case 'contractor-selected':
-            // ✅ 수정: quote-submitted 상태도 포함
             return quote.status === 'contractor-selected' || 
                    quote.status === 'bidding-closed' || 
                    quote.status === 'quote-submitted'
@@ -119,21 +118,37 @@ export default function AdminQuotesPage() {
   }, [quotes, activeTab, searchTerm])
 
   const updateQuoteStatus = async (quoteId: string, newStatus: string) => {
+    console.log('🔄 Updating quote status:', { quoteId, newStatus })
+    
     try {
       const supabase = createBrowserClient()
       
-      const { error } = await supabase
+      console.log('📡 Sending update request...')
+      
+      const { data, error } = await supabase
         .from('quote_requests')
         .update({ 
           status: newStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', quoteId)
+        .select()
+      
+      console.log('📡 Update response:', { data, error })
       
       if (error) {
-        alert('상태 업데이트 실패: ' + error.message)
+        console.error('❌ Update failed:', error)
+        alert(`상태 업데이트 실패:\n${error.message}\n\n상세: ${JSON.stringify(error, null, 2)}`)
         return
       }
+
+      if (!data || data.length === 0) {
+        console.error('❌ No data returned after update')
+        alert('업데이트는 성공했지만 데이터를 받지 못했습니다.')
+        return
+      }
+
+      console.log('✅ Update successful:', data)
 
       // 로컬 상태 업데이트
       setQuotes(quotes.map(quote => 
@@ -150,31 +165,40 @@ export default function AdminQuotesPage() {
         })
       }
 
-      alert('상태가 업데이트되었습니다.')
-    } catch (error) {
-      console.error('Error:', error)
-      alert('오류가 발생했습니다.')
+      alert(`✅ 상태가 '${newStatus}'(으)로 업데이트되었습니다.`)
+      
+      // 새로고침
+      await fetchQuotes()
+      
+    } catch (error: any) {
+      console.error('❌ Unexpected error:', error)
+      alert(`오류가 발생했습니다:\n${error.message}\n\n${error.stack || ''}`)
     }
   }
 
   // ✅ 현장방문 완료 → 자동으로 입찰 시작
   const handleSiteVisitCompleted = async (quoteId: string) => {
+    console.log('🏠 Completing site visit and starting bidding:', quoteId)
+    
     try {
       const supabase = createBrowserClient()
       
-      // 현장방문 완료 → 자동으로 입찰 시작
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('quote_requests')
         .update({ 
-          status: 'bidding',  // 자동으로 입찰 시작
+          status: 'bidding',
           updated_at: new Date().toISOString()
         })
         .eq('id', quoteId)
+        .select()
       
       if (error) {
+        console.error('❌ Site visit completion failed:', error)
         alert('상태 업데이트 실패: ' + error.message)
         return
       }
+
+      console.log('✅ Site visit completed and bidding started:', data)
 
       // 로컬 상태 업데이트
       setQuotes(quotes.map(quote => 
@@ -191,10 +215,12 @@ export default function AdminQuotesPage() {
         })
       }
 
-      alert('현장방문이 완료되고 자동으로 입찰이 시작되었습니다.')
-    } catch (error) {
-      console.error('Error:', error)
-      alert('오류가 발생했습니다.')
+      alert('✅ 현장방문이 완료되고 자동으로 입찰이 시작되었습니다.')
+      await fetchQuotes()
+      
+    } catch (error: any) {
+      console.error('❌ Unexpected error:', error)
+      alert(`오류가 발생했습니다: ${error.message}`)
     }
   }
 
@@ -270,7 +296,6 @@ export default function AdminQuotesPage() {
     { id: 'approved', label: '승인됨', count: quotes.filter(q => q.status === 'approved').length },
     { id: 'site-visit', label: '현장방문대기', count: quotes.filter(q => q.status === 'site-visit-pending').length },
     { id: 'bidding', label: '입찰중', count: quotes.filter(q => q.status === 'bidding').length },
-    // ✅ 수정: quote-submitted 상태도 카운트에 포함
     { 
       id: 'contractor-selected', 
       label: '업체선정완료', 
@@ -343,28 +368,28 @@ export default function AdminQuotesPage() {
         )
       
       case 'bidding-closed':
+      case 'contractor-selected':
+      case 'quote-submitted':
+        // 고객이 업체를 선택하고 프로젝트 시작 버튼을 누르면 자동으로 in-progress로 변경됨
         return (
           <button
             onClick={() => {
+              console.log('🔄 프로젝트 종료 버튼 클릭 - 상태:', quote.status, '프로젝트 ID:', quote.id)
               if (confirm('프로젝트를 종료하시겠습니까?')) {
                 updateQuoteStatus(quote.id, 'completed')
               }
             }}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
+            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors whitespace-nowrap"
           >
-            프로젝트 종료
+            프로젝트종료
           </button>
         )
-      
-      case 'contractor-selected':
-      case 'quote-submitted':
-        // 고객이 업체를 선택하고 프로젝트 시작 버튼을 누르면 자동으로 in-progress로 변경됨
-        return null
       
       case 'in-progress':
         return (
           <button
             onClick={() => {
+              console.log('🔄 프로젝트 종료 버튼 클릭 - 진행중 상태, 프로젝트 ID:', quote.id)
               if (confirm('프로젝트를 완료하시겠습니까?')) {
                 updateQuoteStatus(quote.id, 'completed')
               }
@@ -487,7 +512,7 @@ export default function AdminQuotesPage() {
                     <tr key={quote.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {quote.customer_id.slice(0, 8)}...
+                          {quote.id.slice(0, 8)}...
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -614,7 +639,7 @@ export default function AdminQuotesPage() {
                   {getStatusBadge(selectedQuote.status, !!selectedQuote.selected_contractor_id)}
                 </div>
 
-                {/* ✅ 개선된 액션 버튼 - 상태별로 다음 단계 버튼 표시 */}
+                {/* 액션 버튼 */}
                 <div className="flex gap-2 pt-4">
                   {selectedQuote.status === 'pending' && (
                     <button
@@ -660,9 +685,13 @@ export default function AdminQuotesPage() {
                       입찰 종료
                     </button>
                   )}
-                  {selectedQuote.status === 'in-progress' && (
+                  {(selectedQuote.status === 'in-progress' || 
+                    selectedQuote.status === 'bidding-closed' || 
+                    selectedQuote.status === 'contractor-selected' || 
+                    selectedQuote.status === 'quote-submitted') && (
                     <button
                       onClick={() => {
+                        console.log('🔄 모달에서 프로젝트 종료 클릭 - 상태:', selectedQuote.status)
                         updateQuoteStatus(selectedQuote.id, 'completed')
                         setSelectedQuote(null)
                       }}
