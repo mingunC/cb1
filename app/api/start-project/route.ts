@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     // 1. 현재 프로젝트 상태 확인
     const { data: currentProject, error: checkError } = await supabase
@@ -289,7 +289,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     const { data: project, error } = await supabase
       .from('quote_requests')
