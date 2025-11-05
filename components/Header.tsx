@@ -392,9 +392,10 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-bold transition-all duration-200 hover:bg-gray-100 rounded-lg"
+                className="relative text-gray-600 hover:text-emerald-700 px-3 py-2 text-sm font-bold transition-all duration-300 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-amber-50 rounded-lg group hover:shadow-md hover:scale-105"
               >
                 {item.name}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-emerald-600 to-amber-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
             ))}
           </nav>
@@ -533,7 +534,7 @@ export default function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 block px-3 py-2 text-base font-bold rounded-lg transition-all duration-200"
+                  className="text-gray-600 hover:text-emerald-700 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-amber-50 block px-3 py-2 text-base font-bold rounded-lg transition-all duration-300 hover:shadow-sm"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
