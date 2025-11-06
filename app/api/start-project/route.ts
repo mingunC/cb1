@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server-clients'
+import { createServerClient, createAdminClient } from '@/lib/supabase/server-clients'
 import { sendEmail } from '@/lib/email/mailgun'
 
 // 수수료 비율 계산 함수
@@ -370,27 +370,38 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 7. 선정된 견적 정보 조회
+    // 7. 선정된 견적 정보 조회 - Admin client 사용
     console.log('🔍 Fetching selected quote info...')
     console.log('📌 Quote ID:', currentProject.selected_quote_id)
-    const { data: selectedQuote, error: quoteError } = await supabase
+    
+    const adminClient = createAdminClient()
+    let selectedQuote = null
+    
+    // 먼저 quote_id로 조회
+    const { data: quoteById, error: quoteError } = await adminClient
       .from('contractor_quotes')
-      .select('price')
+      .select('price, id')
       .eq('id', currentProject.selected_quote_id)
-      .single()
-
-    if (quoteError) {
-      console.error('❌ Quote query error:', quoteError)
-      console.error('📌 Failed to get quote for ID:', currentProject.selected_quote_id)
-    } else if (!selectedQuote) {
-      console.error('❌ Quote not found for ID:', currentProject.selected_quote_id)
-    } else if (!selectedQuote.price) {
-      console.error('❌ Quote has no price:', currentProject.selected_quote_id)
+      .maybeSingle()
+    if (!quoteError && quoteById) {
+      selectedQuote = quoteById
+      console.log('✅ Quote found:', { price: quoteById.price, id: quoteById.id })
     } else {
-      console.log('✅ Quote info loaded:', {
-        price: selectedQuote.price,
-        quote_id: currentProject.selected_quote_id
-      })
+      // Fallback: project_id와 contractor_id로 조회
+      console.log('🔄 Trying fallback: project_id + contractor_id...')
+      const { data: fallbackQuote } = await adminClient
+        .from('contractor_quotes')
+        .select('price, id')
+        .eq('project_id', projectId)
+        .eq('contractor_id', currentProject.selected_contractor_id)
+        .maybeSingle()
+      
+      if (fallbackQuote) {
+        selectedQuote = fallbackQuote
+        console.log('✅ Quote found via fallback:', { price: fallbackQuote.price, id: fallbackQuote.id })
+      } else {
+        console.error('❌ Quote not found')
+      }
     }
 
     // 8. ✅ 개선된 Commission tracking 생성
@@ -403,7 +414,7 @@ export async function POST(request: NextRequest) {
       const projectTitle = `${currentProject.space_type} - ${currentProject.full_address}`
       
       commissionResult = await createCommissionTracking(
-        supabase,
+        adminClient,
         projectId,
         currentProject.selected_contractor_id,
         contractorInfo.company_name,
