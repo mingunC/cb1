@@ -10,99 +10,37 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams()
   const supabase = createBrowserClient()
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const hasProcessed = useRef(false) // Prevent double execution
+  const hasProcessed = useRef(false)
   
   const loginType = searchParams.get('type')
+  const authCode = searchParams.get('code') // 실제 인증 코드 확인
 
   useEffect(() => {
-    // Prevent multiple executions
+    // 이미 처리됐으면 스킵
     if (hasProcessed.current) {
       return
     }
-    hasProcessed.current = true
 
     const handleAuthCallback = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
+        // 먼저 세션 확인
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        if (error) {
-          console.error('Auth callback error:', error)
-          setVerificationStatus('error')
-          setTimeout(() => router.push('/login?error=auth_callback_failed'), 3000)
-          return
-        }
-        
-        if (session) {
-          console.log('Email verification successful:', session.user.email)
+        // 1. 인증 코드가 없고 이미 세션이 있으면 -> 이미 로그인된 상태
+        if (!authCode && session) {
+          console.log('Already logged in, redirecting...')
+          hasProcessed.current = true
           
-          // ✅ 이메일 확인 완료 - Google OAuth 처리
-          if (session.user.app_metadata?.provider === 'google') {
-            console.log('🔍 Google OAuth user')
-            
-            // Google 사용자 users 테이블에 저장
-            const { data: existingUser } = await supabase
-              .from('users')
-              .select('id')
-              .eq('id', session.user.id)
-              .maybeSingle()
-            
-            if (!existingUser) {
-              console.log('Creating new user record for Google user')
-              const fullName = session.user.user_metadata?.full_name || ''
-              const nameParts = fullName.split(' ')
-              
-              await supabase
-                .from('users')
-                .insert({
-                  id: session.user.id,
-                  email: session.user.email,
-                  user_type: 'customer',
-                  first_name: nameParts[0] || '',
-                  last_name: nameParts.slice(1).join(' ') || '',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                })
-            }
-          }
+          // 사용자 타입에 따라 리다이렉트
+          const { data: contractorData } = await supabase
+            .from('contractors')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
           
-          // 업체 로그인 타입인 경우
-          if (loginType === 'contractor') {
-            const { data: contractorData } = await supabase
-              .from('contractors')
-              .select('id, company_name')
-              .eq('user_id', session.user.id)
-              .maybeSingle()
-            
-            if (contractorData) {
-              console.log('Contractor login successful:', contractorData.company_name)
-              setVerificationStatus('success')
-              setTimeout(() => router.push('/contractor'), 1500)
-              return
-            } else {
-              console.log('Not a contractor, redirecting to contractor signup')
-              setVerificationStatus('error')
-              setTimeout(() => router.push('/contractor-signup?message=not_contractor'), 3000)
-              return
-            }
-          }
-          
-          // 일반 로그인 처리
-          try {
-            // 먼저 업체인지 확인
-            const { data: contractorData } = await supabase
-              .from('contractors')
-              .select('id')
-              .eq('user_id', session.user.id)
-              .maybeSingle()
-            
-            if (contractorData) {
-              console.log('Contractor user, redirecting to contractor dashboard')
-              setVerificationStatus('success')
-              setTimeout(() => router.push('/contractor'), 1500)
-              return
-            }
-            
-            // 일반 사용자 타입 확인
+          if (contractorData) {
+            router.replace('/contractor')
+          } else {
             const { data: userData } = await supabase
               .from('users')
               .select('user_type')
@@ -110,25 +48,128 @@ function AuthCallbackContent() {
               .maybeSingle()
             
             if (userData?.user_type === 'admin') {
-              console.log('Admin user, redirecting to admin dashboard')
-              setVerificationStatus('success')
-              setTimeout(() => router.push('/admin'), 1500)
+              router.replace('/admin')
             } else {
-              // ✅ 이메일 확인 완료 - 일반 사용자 홈으로
-              console.log('Email verified, redirecting to home')
-              setVerificationStatus('success')
-              setTimeout(() => router.push('/'), 1500)
+              router.replace('/')
             }
-          } catch (redirectError) {
-            console.error('Redirect error:', redirectError)
-            setVerificationStatus('success')
-            setTimeout(() => router.push('/'), 1500)
+          }
+          return
+        }
+
+        // 2. 인증 코드가 있으면 -> 실제 이메일 인증 처리
+        if (authCode) {
+          hasProcessed.current = true
+          
+          // exchangeCodeForSession이 이미 처리되었으므로 세션 다시 가져오기
+          const { data: { session: newSession }, error } = await supabase.auth.getSession()
+          
+          if (error) {
+            console.error('Auth callback error:', error)
+            setVerificationStatus('error')
+            setTimeout(() => router.push('/login?error=auth_callback_failed'), 3000)
+            return
+          }
+          
+          if (newSession) {
+            console.log('Email verification successful:', newSession.user.email)
+            
+            // Google OAuth 처리
+            if (newSession.user.app_metadata?.provider === 'google') {
+              console.log('🔍 Google OAuth user')
+              
+              const { data: existingUser } = await supabase
+                .from('users')
+                .select('id')
+                .eq('id', newSession.user.id)
+                .maybeSingle()
+              
+              if (!existingUser) {
+                console.log('Creating new user record for Google user')
+                const fullName = newSession.user.user_metadata?.full_name || ''
+                const nameParts = fullName.split(' ')
+                
+                await supabase
+                  .from('users')
+                  .insert({
+                    id: newSession.user.id,
+                    email: newSession.user.email,
+                    user_type: 'customer',
+                    first_name: nameParts[0] || '',
+                    last_name: nameParts.slice(1).join(' ') || '',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  })
+              }
+            }
+            
+            // 업체 로그인 타입인 경우
+            if (loginType === 'contractor') {
+              const { data: contractorData } = await supabase
+                .from('contractors')
+                .select('id, company_name')
+                .eq('user_id', newSession.user.id)
+                .maybeSingle()
+              
+              if (contractorData) {
+                console.log('Contractor login successful:', contractorData.company_name)
+                setVerificationStatus('success')
+                setTimeout(() => router.replace('/contractor'), 1500)
+                return
+              } else {
+                console.log('Not a contractor, redirecting to contractor signup')
+                setVerificationStatus('error')
+                setTimeout(() => router.push('/contractor-signup?message=not_contractor'), 3000)
+                return
+              }
+            }
+            
+            // 일반 로그인 처리
+            try {
+              const { data: contractorData } = await supabase
+                .from('contractors')
+                .select('id')
+                .eq('user_id', newSession.user.id)
+                .maybeSingle()
+              
+              if (contractorData) {
+                console.log('Contractor user, redirecting to contractor dashboard')
+                setVerificationStatus('success')
+                setTimeout(() => router.replace('/contractor'), 1500)
+                return
+              }
+              
+              const { data: userData } = await supabase
+                .from('users')
+                .select('user_type')
+                .eq('id', newSession.user.id)
+                .maybeSingle()
+              
+              if (userData?.user_type === 'admin') {
+                console.log('Admin user, redirecting to admin dashboard')
+                setVerificationStatus('success')
+                setTimeout(() => router.replace('/admin'), 1500)
+              } else {
+                console.log('Email verified, redirecting to home')
+                setVerificationStatus('success')
+                setTimeout(() => router.replace('/'), 1500)
+              }
+            } catch (redirectError) {
+              console.error('Redirect error:', redirectError)
+              setVerificationStatus('success')
+              setTimeout(() => router.replace('/'), 1500)
+            }
+          } else {
+            // 세션이 없으면 로그인 페이지로
+            const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
+            setVerificationStatus('error')
+            setTimeout(() => router.push(redirectTo), 3000)
           }
         } else {
-          // 세션이 없으면 로그인 페이지로
+          // 3. 인증 코드도 없고 세션도 없으면 -> 로그인 페이지로
+          console.log('No auth code and no session, redirecting to login')
+          hasProcessed.current = true
           const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
-          setVerificationStatus('error')
-          setTimeout(() => router.push(redirectTo), 3000)
+          router.replace(redirectTo)
         }
       } catch (err) {
         console.error('Unexpected error:', err)
@@ -138,9 +179,9 @@ function AuthCallbackContent() {
     }
 
     handleAuthCallback()
-  }, []) // Empty dependency array - only run once
+  }, [router, authCode, loginType, supabase])
 
-  // ✅ 이메일 확인 성공 화면
+  // 이메일 확인 성공 화면
   if (verificationStatus === 'success') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -161,7 +202,7 @@ function AuthCallbackContent() {
     )
   }
 
-  // ✅ 이메일 확인 실패 화면
+  // 이메일 확인 실패 화면
   if (verificationStatus === 'error') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
