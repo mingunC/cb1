@@ -35,10 +35,16 @@
 ## 방법 2: Custom SMTP 설정 (권장)
 
 ### 왜 Custom SMTP?
-- ✅ 자신의 도메인 사용 가능 (noreply@canadabeaver.com)
+- ✅ 자신의 도메인 사용 가능
 - ✅ 스팸 필터링 회피 가능
 - ✅ 전문적인 이미지
 - ✅ 더 높은 이메일 전송률
+
+### ⚠️ 보안 주의사항
+**절대로 실제 비밀번호나 API 키를 Git에 커밋하지 마세요!**
+- 환경 변수 사용: `.env.local` 파일 (Git에 추가하지 않음)
+- Supabase Dashboard에서 직접 설정
+- 비밀 관리 도구 사용 (AWS Secrets Manager, 1Password 등)
 
 ### Gmail SMTP 설정
 
@@ -56,16 +62,21 @@
    ```
    Enable Custom SMTP: ON
    Sender Name: Canada Beaver
-   Sender Email: noreply@canadabeaver.com (또는 gmail 주소)
+   Sender Email: YOUR_EMAIL@gmail.com (환경 변수 사용)
    Host: smtp.gmail.com
    Port: 587
-   Username: your-email@gmail.com
-   Password: [16자리 앱 비밀번호]
+   Username: YOUR_EMAIL@gmail.com (환경 변수 사용)
+   Password: YOUR_APP_PASSWORD (환경 변수 사용 - 절대 Git에 커밋하지 마세요!)
    ```
 
-3. **테스트**
-   - Save 후 회원가입 테스트
-   - 이메일 발신자 확인
+3. **환경 변수 설정 (.env.local)**
+   ```bash
+   # 이 파일은 .gitignore에 추가하세요!
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASSWORD=your-16-char-app-password
+   ```
 
 ### SendGrid SMTP 설정 (무료 100통/일)
 
@@ -82,11 +93,21 @@
    ```
    Enable Custom SMTP: ON
    Sender Name: Canada Beaver
-   Sender Email: noreply@canadabeaver.com
+   Sender Email: YOUR_SENDER_EMAIL (환경 변수)
    Host: smtp.sendgrid.net
    Port: 587
    Username: apikey
-   Password: [SendGrid API Key]
+   Password: YOUR_SENDGRID_API_KEY (환경 변수 - 절대 Git에 커밋하지 마세요!)
+   ```
+
+4. **환경 변수 설정 (.env.local)**
+   ```bash
+   # 이 파일은 .gitignore에 추가하세요!
+   SMTP_HOST=smtp.sendgrid.net
+   SMTP_PORT=587
+   SMTP_USER=apikey
+   SMTP_PASSWORD=your-actual-sendgrid-api-key-here
+   SENDER_EMAIL=noreply@yourdomain.com
    ```
 
 ### AWS SES 설정 (대량 발송 시)
@@ -100,11 +121,11 @@
    ```
    Enable Custom SMTP: ON
    Sender Name: Canada Beaver
-   Sender Email: noreply@canadabeaver.com
-   Host: email-smtp.[region].amazonaws.com
+   Sender Email: YOUR_SENDER_EMAIL (환경 변수)
+   Host: email-smtp.REGION.amazonaws.com (환경 변수)
    Port: 587
-   Username: [AWS SMTP Username]
-   Password: [AWS SMTP Password]
+   Username: YOUR_AWS_SMTP_USERNAME (환경 변수)
+   Password: YOUR_AWS_SMTP_PASSWORD (환경 변수 - 절대 Git에 커밋하지 마세요!)
    ```
 
 ## 이메일 템플릿 커스터마이징
@@ -212,9 +233,18 @@ Authentication > Email Templates > Confirm signup
 
 ### 프로덕션 환경
 - SendGrid 또는 AWS SES 사용
-- 자체 도메인 (noreply@canadabeaver.com)
+- 자체 도메인 사용
 - SPF/DKIM 설정
 - 커스텀 이메일 템플릿
+- **모든 자격 증명은 환경 변수로 관리**
+
+## 보안 체크리스트
+
+- [ ] `.env.local` 파일이 `.gitignore`에 추가되었는지 확인
+- [ ] Git 히스토리에 비밀번호가 없는지 확인
+- [ ] Supabase Dashboard에서 직접 SMTP 설정
+- [ ] API 키를 정기적으로 rotate
+- [ ] SendGrid/AWS 계정에 2FA 활성화
 
 ## 참고 링크
 
