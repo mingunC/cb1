@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, MapPin, Send } from 'lucide-react'
+import { ArrowLeft, Mail, MapPin, Send } from 'lucide-react'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -165,18 +165,6 @@ export default function ContactPage() {
                 className="text-emerald-600 font-medium hover:text-emerald-700"
               >
                 admin@canadabeaver.pro
-              </a>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <Phone className="h-10 w-10 text-amber-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Call Us</h3>
-              <p className="text-gray-600 mb-3">Mon-Fri, 9am-5pm EST</p>
-              <a
-                href="tel:1-800-RENOVATE"
-                className="text-amber-600 font-medium hover:text-amber-700"
-              >
-                1-800-RENOVATE
               </a>
             </div>
 

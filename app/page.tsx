@@ -14,8 +14,8 @@ export default function HomePage() {
       <ServiceProcessSection />
       <ProcessSection />
       <PortfolioSection />
-      <SocialMediaSection />
       <CtaSection />
+      <SocialMediaSection />
     </div>
   )
 }
