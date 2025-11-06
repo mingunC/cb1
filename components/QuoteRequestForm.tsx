@@ -73,12 +73,12 @@ export default function QuoteRequestForm() {
   })
 
   const onSubmit = async (e?: React.FormEvent) => {
-    // 폼 제출 시 기본 동작 방지
+    // Prevent default form submission
     if (e) {
       e.preventDefault()
     }
     
-    // 이미 제출 중이면 중복 실행 방지
+    // Prevent duplicate submission
     if (isSubmitting) {
       console.log('Already submitting, ignoring duplicate call')
       return
@@ -90,17 +90,17 @@ export default function QuoteRequestForm() {
     try {
       const supabase = createBrowserClient()
       
-      // 1. 사용자 확인
+      // 1. Check user authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       console.log('User check:', { user, authError })
       
       if (authError || !user) {
-        alert('로그인이 필요합니다.')
+        alert('Please log in to submit a quote request.')
         window.location.href = '/login'
         return
       }
 
-      // 2. 데이터 준비
+      // 2. Prepare data
       console.log('Step 2: Preparing data...')
       console.log('Form data:', formData)
 
@@ -135,7 +135,7 @@ export default function QuoteRequestForm() {
         status: typeof insertData.status
       })
 
-      // 3. 데이터베이스에 삽입
+      // 3. Insert into database
       console.log('Step 3: Inserting to database...')
       const { data: result, error: insertError } = await supabase
         .from('quote_requests')
@@ -147,7 +147,7 @@ export default function QuoteRequestForm() {
 
       if (insertError) {
         console.error('Insert failed:', insertError)
-        toast.error(`저장 실패: ${insertError.message}`)
+        toast.error(`Save failed: ${insertError.message}`)
         setIsSubmitting(false)
         return
       }
@@ -159,13 +159,13 @@ export default function QuoteRequestForm() {
         setIsSubmitting(false)
       } else {
         console.error('No data returned after insert')
-        toast.error('저장은 되었으나 데이터를 확인할 수 없습니다.')
+        toast.error('Saved but cannot verify data.')
         setIsSubmitting(false)
       }
       
     } catch (error: any) {
       console.error('Unexpected error:', error)
-      toast.error(`예기치 않은 오류: ${error.message}`)
+      toast.error(`Unexpected error: ${error.message}`)
       setIsSubmitting(false)
     } finally {
       console.log('=== SUBMISSION COMPLETE ===')
@@ -190,46 +190,46 @@ export default function QuoteRequestForm() {
     switch(step) {
       case 1:
         if (!formData.spaceType) {
-          alert('부동산 유형을 선택해주세요.')
+          alert('Please select a property type.')
           return false
         }
         break
       case 2:
         if (formData.projectTypes.length === 0) {
-          alert('프로젝트 영역을 선택해주세요.')
+          alert('Please select at least one project area.')
           return false
         }
         break
       case 3:
         if (!formData.budget) {
-          alert('예산 범위를 선택해주세요.')
+          alert('Please select a budget range.')
           return false
         }
         break
       case 4:
         if (!formData.timeline) {
-          alert('시작 시기를 선택해주세요.')
+          alert('Please select a start time.')
           return false
         }
         break
       case 5:
         if (!formData.postalCode || !formData.fullAddress) {
-          alert('Postal Code와 주소를 모두 입력해주세요.')
+          alert('Please enter both postal code and full address.')
           return false
         }
         const postalPattern = /^[A-Z]\d[A-Z] \d[A-Z]\d$/
         if (!postalPattern.test(formData.postalCode)) {
-          alert('올바른 Postal Code 형식을 입력해주세요. (예: A0A 0A0)')
+          alert('Please enter a valid postal code format. (e.g., A0A 0A0)')
           return false
         }
         break
       case 6:
         if (!formData.description) {
-          alert('프로젝트 설명을 입력해주세요.')
+          alert('Please enter a project description.')
           return false
         }
         if (!formData.phone || formData.phone.trim() === '') {
-          alert('전화번호를 입력해주세요.')
+          alert('Please enter your phone number.')
           return false
         }
         break
@@ -246,20 +246,20 @@ export default function QuoteRequestForm() {
       let newTypes = [...prev.projectTypes]
       
       if (isExclusive) {
-        // 배타적 옵션 선택 시 (전체 리노베이션 또는 기타)
+        // When selecting exclusive option (full renovation or other)
         if (newTypes.includes(value)) {
-          // 이미 선택되어 있으면 해제
+          // Deselect if already selected
           newTypes = []
         } else {
-          // 새로 선택하면 다른 모든 옵션 제거하고 현재 옵션만 선택
+          // Remove all other options and select only this one
           newTypes = [value]
         }
       } else {
-        // 일반 옵션 선택 시
-        // 먼저 모든 배타적 옵션들 제거 (full_renovation, other)
+        // When selecting regular option
+        // First remove all exclusive options (full_renovation, other)
         newTypes = newTypes.filter(type => type !== 'full_renovation' && type !== 'other')
         
-        // 현재 옵션 토글
+        // Toggle current option
         if (newTypes.includes(value)) {
           newTypes = newTypes.filter(type => type !== value)
         } else {
@@ -271,16 +271,16 @@ export default function QuoteRequestForm() {
     })
   }
 
-  // Commercial 타입 전용 단일 선택 핸들러
+  // Single selection handler for commercial type
   const handleCommercialProjectTypeChange = (value: string) => {
     setFormData(prev => ({ ...prev, projectTypes: [value] }))
   }
 
   const formatPostalCode = (value: string) => {
-    // 영문자와 숫자만 추출
+    // Extract only letters and numbers
     const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
     
-    // 캐나다 Postal Code 형식으로 포맷팅 (A0A 0A0)
+    // Format as Canadian postal code (A0A 0A0)
     if (cleaned.length <= 3) {
       return cleaned
     } else if (cleaned.length <= 6) {
@@ -291,13 +291,13 @@ export default function QuoteRequestForm() {
   }
 
   const formatPhoneNumber = (value: string) => {
-    // 숫자만 추출
+    // Extract only numbers
     const cleaned = value.replace(/\D/g, '')
     
-    // 최대 10자리까지만 허용
+    // Limit to 10 digits
     const limited = cleaned.slice(0, 10)
     
-    // 캐나다 전화번호 형식으로 포맷팅 (123) 123-1234
+    // Format as Canadian phone number (123) 123-1234
     if (limited.length === 0) {
       return ''
     } else if (limited.length <= 3) {
@@ -320,17 +320,17 @@ export default function QuoteRequestForm() {
     const inputValue = input.value
     const cursorPosition = input.selectionStart || 0
     
-    // 숫자만 추출
+    // Extract only numbers
     const cleaned = inputValue.replace(/\D/g, '')
     const previousCleaned = previousValue.replace(/\D/g, '')
     
-    // 포맷팅 적용
+    // Apply formatting
     const formatted = formatPhoneNumber(inputValue)
     
-    // 커서 위치 계산: 현재 커서 앞의 숫자 개수를 기준으로
+    // Calculate cursor position: based on number of digits before cursor
     const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
     
-    // 포맷된 문자열에서 같은 숫자 위치 찾기
+    // Find same digit position in formatted string
     let newCursorPosition = formatted.length
     let count = 0
     for (let i = 0; i < formatted.length; i++) {
@@ -345,7 +345,7 @@ export default function QuoteRequestForm() {
     
     setFormData(prev => ({ ...prev, phone: formatted }))
     
-    // 커서 위치 복원 (다음 렌더링 후)
+    // Restore cursor position (after next render)
     setTimeout(() => {
       if (phoneInputRef.current) {
         phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
