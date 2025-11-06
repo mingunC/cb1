@@ -36,6 +36,23 @@ interface ContractorQuote {
   amount: number
 }
 
+// 수수료 비율 계산 함수
+function calculateCommissionRate(quoteAmount: number): number {
+  if (quoteAmount < 50000) {
+    return 3.00 // 3%
+  } else if (quoteAmount >= 50000 && quoteAmount < 100000) {
+    return 2.00 // 2%
+  } else {
+    return 1.00 // 1%
+  }
+}
+
+// 수수료 금액 계산 함수
+function calculateCommissionAmount(quoteAmount: number): number {
+  const rate = calculateCommissionRate(quoteAmount)
+  return quoteAmount * (rate / 100)
+}
+
 export default function CommissionManagementPage() {
   const [commissions, setCommissions] = useState<CommissionRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -201,7 +218,9 @@ export default function CommissionManagementPage() {
         throw new Error('프로젝트 또는 견적 정보를 찾을 수 없습니다.')
       }
       
-      const commissionAmount = selectedQuoteData.amount * 0.10
+      // 올바른 수수료 계산
+      const commissionRate = calculateCommissionRate(selectedQuoteData.amount)
+      const commissionAmount = calculateCommissionAmount(selectedQuoteData.amount)
       
       // 수수료 추적 생성
       const { error } = await supabase
@@ -212,7 +231,7 @@ export default function CommissionManagementPage() {
           contractor_name: selectedQuoteData.contractor_name,
           project_title: project.title,
           quote_amount: selectedQuoteData.amount,
-          commission_rate: 10.00,
+          commission_rate: commissionRate,
           commission_amount: commissionAmount,
           status: 'pending',
           started_at: new Date(startDate).toISOString(),
@@ -649,41 +668,46 @@ export default function CommissionManagementPage() {
                     업체 견적 선택 *
                   </label>
                   <div className="space-y-2">
-                    {contractorQuotes.map((quote) => (
-                      <label
-                        key={quote.id}
-                        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selectedQuote === quote.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          <input
-                            type="radio"
-                            name="quote"
-                            value={quote.id}
-                            checked={selectedQuote === quote.id}
-                            onChange={(e) => setSelectedQuote(e.target.value)}
-                            className="mr-3"
-                          />
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {quote.contractor_name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              견적금액: {formatCurrency(quote.amount)}
+                    {contractorQuotes.map((quote) => {
+                      const commissionRate = calculateCommissionRate(quote.amount)
+                      const commissionAmount = calculateCommissionAmount(quote.amount)
+                      
+                      return (
+                        <label
+                          key={quote.id}
+                          className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                            selectedQuote === quote.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <input
+                              type="radio"
+                              name="quote"
+                              value={quote.id}
+                              checked={selectedQuote === quote.id}
+                              onChange={(e) => setSelectedQuote(e.target.value)}
+                              className="mr-3"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {quote.contractor_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                견적금액: {formatCurrency(quote.amount)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-blue-600">
-                            수수료: {formatCurrency(quote.amount * 0.10)}
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-blue-600">
+                              수수료: {formatCurrency(commissionAmount)}
+                            </div>
+                            <div className="text-xs text-gray-500">{commissionRate}%</div>
                           </div>
-                          <div className="text-xs text-gray-500">10%</div>
-                        </div>
-                      </label>
-                    ))}
+                        </label>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -711,6 +735,7 @@ export default function CommissionManagementPage() {
                       <li>고객이 프로젝트 시작 버튼을 누르지 않은 경우에만 사용하세요</li>
                       <li>업체로부터 프로젝트 시작 확인을 받은 후 등록하세요</li>
                       <li>수동 등록된 항목은 "(수동 등록)" 표시가 됩니다</li>
+                      <li>수수료는 견적 금액에 따라 자동 계산됩니다 (Under $50K: 3%, $50K-$100K: 2%, Over $100K: 1%)</li>
                     </ul>
                   </div>
                 </div>
