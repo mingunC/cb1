@@ -18,7 +18,7 @@ interface ContractorProfile {
   contact_name: string
 }
 
-// 페이지 로드 시 즉시 실행 (useEffect 밖에서)
+// Execute immediately on page load (outside useEffect)
 const getCachedUserName = () => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('cached_user_name') || ''
@@ -26,7 +26,7 @@ const getCachedUserName = () => {
   return ''
 }
 
-// 페이지 로드 시 즉시 실행 (useEffect 밖에서)
+// Execute immediately on page load (outside useEffect)
 const getCachedUserType = () => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('cached_user_type') || ''
@@ -45,10 +45,10 @@ export default function Header() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   
-  // 상태 추적을 위한 ref
+  // Refs for state tracking
   const isMounted = useRef(true)
   const authListenerSetupRef = useRef(false)
-  const currentUserId = useRef<string | null>(null) // 현재 로드된 사용자 ID 추적
+  const currentUserId = useRef<string | null>(null) // Track currently loaded user ID
 
   useEffect(() => {
     isMounted.current = true
@@ -64,7 +64,7 @@ export default function Header() {
     try {
       const supabase = createBrowserClient()
       
-      // 1. 현재 세션 확인
+      // 1. Check current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (!session?.user) {
@@ -72,20 +72,20 @@ export default function Header() {
           setIsLoading(false)
         }
         
-        // 세션이 없을 때만 auth 리스너 설정
+        // Set up auth listener only when there's no session
         if (!authListenerSetupRef.current) {
           setupAuthListener()
         }
         return
       }
 
-      // 2. 사용자 정보 설정
+      // 2. Set user info
       if (isMounted.current) {
         setUser(session.user)
         await loadUserProfile(session.user.id, session.user.email)
       }
 
-      // 3. Auth 리스너 설정 (한 번만)
+      // 3. Set up auth listener (only once)
       if (!authListenerSetupRef.current) {
         setupAuthListener()
       }
@@ -107,18 +107,18 @@ export default function Header() {
       async (event, session) => {
         if (!isMounted.current) return
         
-        // INITIAL_SESSION은 무시 (이미 loadUserData에서 처리)
+        // Ignore INITIAL_SESSION (already handled in loadUserData)
         if (event === 'INITIAL_SESSION') return
         
-        // TOKEN_REFRESHED는 프로필을 다시 로드하지 않음
+        // Don't reload profile on TOKEN_REFRESHED
         if (event === 'TOKEN_REFRESHED') {
-          // 토큰만 갱신되고 사용자는 동일하므로 무시
+          // Only token refreshed, user is the same so ignore
           return
         }
         
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
-          currentUserId.current = null // 새 사용자이므로 리셋
+          currentUserId.current = null // Reset for new user
           await loadUserProfile(session.user.id, session.user.email)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
@@ -135,25 +135,25 @@ export default function Header() {
   }
 
   const loadUserProfile = async (userId: string, email?: string | null) => {
-    // 이미 같은 사용자의 프로필이 로드되었으면 스킵
+    // Skip if profile for same user is already loaded
     if (currentUserId.current === userId) {
-      console.log('프로필 이미 로드됨:', userId)
+      console.log('Profile already loaded:', userId)
       return
     }
     
     try {
       const supabase = createBrowserClient()
       
-      console.log('🔍 사용자 프로필 로드 시작:', { userId, email })
+      console.log('🔍 Loading user profile:', { userId, email })
       
-      // 1. 먼저 업체인지 확인
+      // 1. First check if contractor
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, contact_name')
         .eq('user_id', userId)
         .maybeSingle()
 
-      console.log('🔍 contractors 테이블 조회 결과:', { contractorData, error: contractorError })
+      console.log('🔍 Contractors table query result:', { contractorData, error: contractorError })
 
       if (contractorData && isMounted.current) {
         setContractorProfile(contractorData)
@@ -161,35 +161,35 @@ export default function Header() {
         const finalDisplayName = contractorData.company_name || contractorData.contact_name || email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
-        // localStorage에 캐시 저장
+        // Cache in localStorage
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
-        console.log('✅ 업체로 인식됨:', { finalDisplayName })
+        console.log('✅ Identified as contractor:', { finalDisplayName })
         
-        currentUserId.current = userId // 로드 완료 표시
+        currentUserId.current = userId // Mark as loaded
         return
       }
 
-      // 2. 일반 사용자 정보 확인
+      // 2. Check general user info
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_type, first_name, last_name')
         .eq('id', userId)
         .maybeSingle()
 
-      console.log('🔍 users 테이블 조회 결과:', { userData, error: userError })
+      console.log('🔍 Users table query result:', { userData, error: userError })
 
       if (userData && isMounted.current) {
         setUserProfile(userData)
         setContractorProfile(null)
         
-        // 이름 설정 (Google OAuth: given_name=first_name, family_name=last_name)
+        // Set name (Google OAuth: given_name=first_name, family_name=last_name)
         const firstName = userData.first_name || ''
         const lastName = userData.last_name || ''
         const fullName = `${firstName} ${lastName}`.trim()
         
-        // 유효한 이름인지 확인 (빈 문자열이나 기본값 제외)
+        // Check if valid name (exclude empty strings or default values)
         const isValidName = fullName && 
                            fullName !== 'User' &&
                            fullName !== 'user' &&
@@ -199,39 +199,39 @@ export default function Header() {
         const finalDisplayName = isValidName ? fullName : email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
-        // localStorage에 캐시 저장
+        // Cache in localStorage
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', userData.user_type)
         
-        console.log('✅ 일반 사용자로 인식됨:', { userData, finalDisplayName })
+        console.log('✅ Identified as regular user:', { userData, finalDisplayName })
         
-        currentUserId.current = userId // 로드 완료 표시
+        currentUserId.current = userId // Mark as loaded
       } else if (isMounted.current) {
-        // 기본값 설정
+        // Set default values
         setUserProfile({ user_type: 'customer' })
         setContractorProfile(null)
         const finalDisplayName = email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
-        // localStorage에 캐시 저장
+        // Cache in localStorage
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
         
-        console.log('⚠️ 기본값으로 설정됨 (customer):', { finalDisplayName })
+        console.log('⚠️ Set to default (customer):', { finalDisplayName })
         
-        currentUserId.current = userId // 로드 완료 표시
+        currentUserId.current = userId // Mark as loaded
       }
       
     } catch (error) {
       console.error('Error loading profile:', error)
       if (isMounted.current) {
         setDisplayName(email?.split('@')[0] || '')
-        currentUserId.current = userId // 에러가 나도 로드 완료로 표시
+        currentUserId.current = userId // Mark as loaded even on error
       }
     }
   }
 
-  // 드롭다운 외부 클릭 처리
+  // Handle clicks outside dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
@@ -249,97 +249,97 @@ export default function Header() {
     }
   }, [isUserDropdownOpen])
 
-  // ✅ 최종 개선된 로그아웃 함수 - 강제 즉시 완료
+  // ✅ Final improved logout function - force immediate completion
   const handleSignOut = async () => {
     if (isLoggingOut) {
-      console.log('⚠️ 이미 로그아웃 진행 중입니다.')
-      return // 이중 클릭 방지
+      console.log('⚠️ Already logging out.')
+      return // Prevent double clicks
     }
     
     setIsLoggingOut(true)
-    console.log('🚪 로그아웃 시작...')
+    console.log('🚪 Starting logout...')
     
     try {
-      // ✅ 1단계: 즉시 UI 상태 초기화
+      // ✅ Step 1: Immediately reset UI state
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
       setDisplayName('')
       currentUserId.current = null
       setIsUserDropdownOpen(false)
-      console.log('✅ UI 상태 초기화 완료')
+      console.log('✅ UI state reset complete')
       
-      // ✅ 2단계: localStorage 완전 클리어
+      // ✅ Step 2: Complete localStorage clear
       try {
         localStorage.removeItem('cached_user_name')
         localStorage.removeItem('cached_user_type')
-        // Supabase 관련 모든 캐시도 클리어
+        // Clear all Supabase-related cache
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('sb-') || key.includes('supabase')) {
             localStorage.removeItem(key)
           }
         })
-        console.log('✅ localStorage 완전 클리어 완료')
+        console.log('✅ localStorage completely cleared')
       } catch (e) {
-        console.error('⚠️ localStorage 클리어 에러:', e)
+        console.error('⚠️ localStorage clear error:', e)
       }
       
-      // ✅ 3단계: sessionStorage도 클리어
+      // ✅ Step 3: Clear sessionStorage too
       try {
         sessionStorage.clear()
-        console.log('✅ sessionStorage 클리어 완료')
+        console.log('✅ sessionStorage cleared')
       } catch (e) {
-        console.error('⚠️ sessionStorage 클리어 에러:', e)
+        console.error('⚠️ sessionStorage clear error:', e)
       }
       
-      // ✅ 4단계: Supabase 로그아웃 (동기적으로 대기)
+      // ✅ Step 4: Supabase logout (wait synchronously)
       const supabase = createBrowserClient()
       await supabase.auth.signOut({ scope: 'local' })
-      console.log('✅ Supabase 로그아웃 완료')
+      console.log('✅ Supabase logout complete')
       
-      // ✅ 5단계: 즉시 강제 페이지 리로드 (캐시 무시)
-      console.log('✅ 홈페이지로 강제 리디렉션')
+      // ✅ Step 5: Force page reload immediately (ignore cache)
+      console.log('✅ Force redirect to homepage')
       window.location.replace('/')
       
     } catch (error) {
-      console.error('❌ 로그아웃 에러:', error)
+      console.error('❌ Logout error:', error)
       
-      // 에러가 발생해도 무조건 로그아웃 처리
+      // Even on error, force logout
       try {
         localStorage.clear()
         sessionStorage.clear()
       } catch (e) {
-        console.error('⚠️ 스토리지 클리어 에러:', e)
+        console.error('⚠️ Storage clear error:', e)
       }
       
-      // 강제 리디렉션
+      // Force redirect
       window.location.replace('/')
     }
   }
 
-  // 사용자 역할 확인
+  // Check user role
   const isAdmin = userProfile?.user_type === 'admin'
   const isContractor = !!contractorProfile
 
-  // 네비게이션 메뉴 설정
+  // Set navigation menu
   const getNavigation = () => {
-    // 기본 메뉴 (로그인 여부와 무관하게 항상 표시)
+    // Base menu (always displayed regardless of login status)
     const baseNavigation = [
       { name: 'Partners', href: '/pros' },
       { name: 'Portfolio', href: '/portfolio' },
       { name: 'Events', href: '/events' },
     ]
 
-    // 로그인하지 않은 경우 - MyPage 없이 기본 메뉴만
+    // If not logged in - only base menu without MyPage
     if (!user) {
       return baseNavigation
     }
 
-    // 로그인한 경우 - 역할에 따라 MyPage 추가
+    // If logged in - add MyPage based on role
     if (isAdmin) {
       return [
         ...baseNavigation,
-        { name: '관리자 대시보드', href: '/admin' },
+        { name: 'Admin Dashboard', href: '/admin' },
       ]
     } else if (isContractor) {
       return [
@@ -347,7 +347,7 @@ export default function Header() {
         { name: 'MyPage', href: '/contractor' },
       ]
     } else {
-      // 일반 고객
+      // Regular customer
       return [
         ...baseNavigation,
         { name: 'MyPage', href: '/my-quotes' },
@@ -357,12 +357,12 @@ export default function Header() {
 
   const navigation = getNavigation()
 
-  // 표시할 이름 가져오기
+  // Get display name
   const getDisplayName = () => {
-    // 캐시된 이름이 있으면 즉시 반환 (깜빡임 방지)
+    // Return cached name immediately if available (prevent flickering)
     if (displayName) return displayName
     
-    // 로딩 중이면 캐시된 이름 반환
+    // If loading, return cached name
     if (isLoading) {
       const cachedName = getCachedUserName()
       return cachedName || '...'
@@ -375,7 +375,7 @@ export default function Header() {
     <header className="bg-white shadow-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* 로고 */}
+          {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
               <img
@@ -386,7 +386,7 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* 데스크톱 네비게이션 */}
+          {/* Desktop navigation */}
           <nav className="hidden md:flex space-x-8">
             {navigation.map((item) => (
               <Link
@@ -400,11 +400,11 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* 로그인 상태에 따른 버튼 표시 */}
+          {/* Buttons based on login status */}
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <div className="flex items-center space-x-3">
-                {/* 사용자 이름 드롭다운 */}
+                {/* User name dropdown */}
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -416,7 +416,7 @@ export default function Header() {
                     </span>
                   </button>
                   
-                  {/* 드롭다운 메뉴 */}
+                  {/* Dropdown menu */}
                   {isUserDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                       <div className="py-2">
@@ -429,7 +429,7 @@ export default function Header() {
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
-                            관리자 대시보드
+                            Admin Dashboard
                           </Link>
                         )}
                         {isContractor && (
@@ -443,7 +443,7 @@ export default function Header() {
                         )}
                         <button
                           onClick={() => {
-                            console.log('✅ 로그아웃 버튼 클릭됨 (드롭다운)')
+                            console.log('✅ Logout button clicked (dropdown)')
                             setIsUserDropdownOpen(false)
                             handleSignOut()
                           }}
@@ -462,13 +462,13 @@ export default function Header() {
                   )}
                 </div>
                 
-                {/* 역할 배지 */}
+                {/* Role badge */}
                 {isAdmin && (
                   <Link
                     href="/admin"
                     className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full hover:bg-red-200 transition-colors"
                   >
-                    관리자
+                    Admin
                   </Link>
                 )}
                 {isContractor && (
@@ -497,7 +497,7 @@ export default function Header() {
               </div>
             )}
             
-            {/* 견적 요청 버튼 - 업체가 아닐 때만 표시 */}
+            {/* Get Quote button - only show if not contractor */}
             {!isContractor && (
               <Link
                 href="/quote-request"
@@ -511,7 +511,7 @@ export default function Header() {
             )}
           </div>
 
-          {/* 모바일 메뉴 버튼 */}
+          {/* Mobile menu button */}
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -526,7 +526,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* 모바일 메뉴 */}
+        {/* Mobile menu */}
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-100">
@@ -540,7 +540,7 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              {/* 견적 요청 버튼 - 업체가 아닐 때만 표시 */}
+              {/* Get Quote button - only show if not contractor */}
               {!isContractor && (
                 <div className="pt-4 space-y-2">
                   <Link
@@ -580,7 +580,7 @@ export default function Header() {
                               className="block mt-2 bg-red-100 text-red-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
-                              관리자 대시보드
+                              Admin Dashboard
                             </Link>
                           )}
                           {isContractor && (
@@ -595,7 +595,7 @@ export default function Header() {
                         </div>
                         <button
                           onClick={() => {
-                            console.log('✅ 로그아웃 버튼 클릭됨 (모바일)')
+                            console.log('✅ Logout button clicked (mobile)')
                             setIsMenuOpen(false)
                             handleSignOut()
                           }}
