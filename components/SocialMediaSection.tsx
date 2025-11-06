@@ -1,6 +1,6 @@
 'use client'
 
-import { Instagram, Youtube } from 'lucide-react'
+import { Instagram } from 'lucide-react'
 
 // Threads Icon Component
 const ThreadsIcon = ({ className }: { className?: string }) => (
@@ -18,22 +18,29 @@ const ThreadsIcon = ({ className }: { className?: string }) => (
 )
 
 export default function SocialMediaSection() {
+  // Renovation-related images
   const images = [
-    'https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1615529328331-f8917597711f?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1615529162924-f8605388461d?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800&auto=format&fit=crop', // Modern kitchen
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop', // Living room
+    'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop', // Bathroom
+    'https://images.unsplash.com/photo-1615873968403-89e068629265?w=800&auto=format&fit=crop', // Kitchen renovation
+    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop', // Bedroom
+    'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&auto=format&fit=crop', // Home office
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop', // Dining room
+    'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&auto=format&fit=crop', // Modern interior
+    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&auto=format&fit=crop', // Bathroom design
+    'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&auto=format&fit=crop', // Kitchen detail
+    'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&auto=format&fit=crop', // Living space
+    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop'  // Bedroom renovation
   ]
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 gap-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3">
               <span className="text-[#2c5f4e]">FOLLOW US</span>{' '}
               <span className="text-gray-900">ON SOCIAL MEDIA!</span>
             </h2>
@@ -41,16 +48,7 @@ export default function SocialMediaSection() {
           </div>
 
           {/* Social Icons */}
-          <div className="flex items-center gap-4">
-            <a
-              href="https://www.youtube.com/@canadabeaverservice"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-10 h-10 bg-gray-100 hover:bg-[#2c5f4e] rounded-lg flex items-center justify-center transition-colors group"
-              aria-label="YouTube"
-            >
-              <Youtube className="h-5 w-5 text-gray-700 group-hover:text-white transition-colors" />
-            </a>
+          <div className="flex items-center gap-4 mt-4 md:mt-0">
             <a
               href="https://www.instagram.com/canadabeaverservice/"
               target="_blank"
@@ -72,28 +70,30 @@ export default function SocialMediaSection() {
           </div>
         </div>
 
-        {/* Image Grid - Desktop: 6 columns, Mobile: 2 columns */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Image Grid - Full width, tight spacing */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
           {images.map((image, index) => (
             <a
               key={index}
               href="https://www.instagram.com/canadabeaverservice/"
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative aspect-square overflow-hidden rounded-lg"
+              className="group relative aspect-square overflow-hidden"
             >
               <img
                 src={image}
-                alt={`Social media post ${index + 1}`}
+                alt={`Renovation project ${index + 1}`}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                <Instagram className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
             </a>
           ))}
         </div>
 
         {/* Follow Button */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-8">
           <a
             href="https://www.instagram.com/canadabeaverservice/"
             target="_blank"
