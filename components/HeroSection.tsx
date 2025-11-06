@@ -41,8 +41,8 @@ export default function HeroSection() {
 
   return (
     <>
-      {/* Hero Section - Mobile Optimized */}
-      <section className="relative min-h-[600px] sm:h-[600px] lg:h-[700px] overflow-hidden">
+      {/* Hero Section - Full screen with centered content */}
+      <section className="relative min-h-[700px] sm:min-h-[750px] lg:min-h-[800px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -54,40 +54,35 @@ export default function HeroSection() {
             priority
           />
           {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="absolute inset-0 bg-black/50"></div>
         </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 h-full flex items-end sm:items-center lg:items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-8 lg:py-0 pb-16 sm:pb-8">
-          <div className="w-full">
-            {/* Main Layout: Stacked on Mobile, Side by Side on Desktop */}
-            <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start mb-8 lg:mb-12">
-              {/* Main Title */}
-              <div className="max-w-2xl">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight mb-4 lg:mb-6">
-                  Trusted Renovation Experts Across Canada
-                </h1>
-              </div>
+        {/* Content Container - Centered */}
+        <div className="relative z-10 h-full flex items-center justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-32">
+          <div className="text-center max-w-4xl">
+            {/* Main Title */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+              Trusted Renovation Experts Across Canada
+            </h1>
 
-              {/* Info Box */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg">
-                <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 lg:mb-6">
-                  Tired of Toronto renovation nightmares like scams, delays, and hidden costs? Our platform connects you with vetted pros through a secure bidding process for stress-free, trustworthy home transformations.
-                </p>
-                <Link
-                  href="/quote-request"
-                  onClick={handleQuoteRequest}
-                  className={`inline-flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 w-full sm:w-auto justify-center ${
-                    isContractor 
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                      : 'bg-white border-2 border-gray-300 text-gray-900 hover:bg-gray-50 shadow-md'
-                  }`}
-                >
-                  Start Your Furnishing Journey
-                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Link>
-              </div>
-            </div>
+            {/* Subtitle */}
+            <p className="text-lg sm:text-xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Tired of renovation scams? We connect you with vetted Toronto pros for secure, stress-free home transformations.
+            </p>
+
+            {/* CTA Button */}
+            <Link
+              href="/quote-request"
+              onClick={handleQuoteRequest}
+              className={`inline-flex items-center gap-3 px-8 py-4 rounded-lg font-semibold text-base transition-all duration-300 shadow-lg hover:shadow-xl ${
+                isContractor 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-white text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Start Your Furnishing Journey
+              <ArrowRight className="h-5 w-5" />
+            </Link>
           </div>
         </div>
       </section>
