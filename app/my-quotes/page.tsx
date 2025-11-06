@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { getQuoteRequests } from '@/lib/supabase/quotes'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User, Home, Play, Loader, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Calendar, MapPin, DollarSign, Download, FileText, Building, User, Home, Play, Loader, ChevronDown, ChevronUp, Edit, X } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface QuoteRequest {
@@ -18,6 +18,7 @@ interface QuoteRequest {
   full_address: string
   postal_code: string
   description: string
+  phone: string
   photos: string[]
   status: 'pending' | 'approved' | 'rejected' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted' | 'contractor-selected' | 'in-progress' | 'completed' | 'cancelled'
   created_at: string
@@ -83,6 +84,9 @@ export default function MyQuotesPage() {
   const [selectingContractor, setSelectingContractor] = useState<string | null>(null)
   const [collapsedQuotes, setCollapsedQuotes] = useState<Set<string>>(new Set())
   const [collapsedSiteVisits, setCollapsedSiteVisits] = useState<Set<string>>(new Set())
+  const [editingQuote, setEditingQuote] = useState<QuoteRequest | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const phoneInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -211,6 +215,80 @@ export default function MyQuotesPage() {
       console.error('Error fetching data:', error)
       setQuotes([])
       setContractorQuotes([])
+    }
+  }
+
+  const handleUpdateQuote = async () => {
+    if (!editingQuote) return
+    
+    setIsUpdating(true)
+    try {
+      const supabase = createBrowserClient()
+      
+      const updateData = {
+        space_type: editingQuote.space_type,
+        project_types: editingQuote.project_types,
+        budget: editingQuote.budget,
+        timeline: editingQuote.timeline,
+        postal_code: editingQuote.postal_code,
+        full_address: editingQuote.full_address,
+        visit_date: editingQuote.visit_date || null,
+        description: editingQuote.description,
+        phone: editingQuote.phone,
+        updated_at: new Date().toISOString()
+      }
+      
+      const { data, error } = await supabase
+        .from('quote_requests')
+        .update(updateData)
+        .eq('id', editingQuote.id)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('Update error:', error)
+        toast.error('Failed to update quote request')
+        return
+      }
+      
+      toast.success('Quote request updated successfully!')
+      setEditingQuote(null)
+      
+      if (user?.id) {
+        await fetchQuotes(user.id)
+      }
+      
+    } catch (error) {
+      console.error('Error updating quote:', error)
+      toast.error('Error updating quote request')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const formatPostalCode = (value: string) => {
+    const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+    if (cleaned.length <= 3) {
+      return cleaned
+    } else if (cleaned.length <= 6) {
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`
+    } else {
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)}`
+    }
+  }
+
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '')
+    const limited = cleaned.slice(0, 10)
+    
+    if (limited.length === 0) {
+      return ''
+    } else if (limited.length <= 3) {
+      return `(${limited})`
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
     }
   }
 
@@ -564,16 +642,30 @@ export default function MyQuotesPage() {
               const isProjectInProgress = quote.status === 'in-progress'
               const isProjectCompleted = quote.status === 'completed'
               
+              // 수정 가능 여부 - pending 상태일 때만
+              const canEdit = quote.status === 'pending'
+              
               return (
                 <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  {/* Status badge */}
+                  {/* Status badge and Edit button */}
                   <div className="flex items-center justify-between mb-4">
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
                       <IconComponent className="h-4 w-4 mr-2" />
                       {statusInfo.text}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(quote.created_at).toLocaleDateString()}
+                    <div className="flex items-center gap-2">
+                      {canEdit && (
+                        <button
+                          onClick={() => setEditingQuote(quote)}
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </button>
+                      )}
+                      <div className="text-sm text-gray-500">
+                        {new Date(quote.created_at).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
 
@@ -778,6 +870,112 @@ export default function MyQuotesPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingQuote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Edit Quote Request</h2>
+                <button
+                  onClick={() => setEditingQuote(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project Description *</label>
+                  <textarea
+                    value={editingQuote.description}
+                    onChange={(e) => setEditingQuote({ ...editingQuote, description: e.target.value })}
+                    rows={6}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="Describe your project requirements..."
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                  <input
+                    ref={phoneInputRef}
+                    type="tel"
+                    value={editingQuote.phone}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value)
+                      setEditingQuote({ ...editingQuote, phone: formatted })
+                    }}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="(416) 555-0100"
+                  />
+                </div>
+
+                {/* Postal Code */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code *</label>
+                  <input
+                    type="text"
+                    value={editingQuote.postal_code}
+                    onChange={(e) => {
+                      const formatted = formatPostalCode(e.target.value)
+                      setEditingQuote({ ...editingQuote, postal_code: formatted })
+                    }}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="A0A 0A0"
+                    maxLength={7}
+                  />
+                </div>
+
+                {/* Full Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Address *</label>
+                  <input
+                    type="text"
+                    value={editingQuote.full_address}
+                    onChange={(e) => setEditingQuote({ ...editingQuote, full_address: e.target.value })}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="123 Main Street, Toronto, ON"
+                  />
+                </div>
+
+                {/* Visit Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Visit Date</label>
+                  <input
+                    type="date"
+                    value={editingQuote.visit_date || ''}
+                    onChange={(e) => setEditingQuote({ ...editingQuote, visit_date: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-4">
+                  <button
+                    onClick={handleUpdateQuote}
+                    disabled={isUpdating}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  >
+                    {isUpdating ? 'Updating...' : 'Update'}
+                  </button>
+                  <button
+                    onClick={() => setEditingQuote(null)}
+                    className="px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
