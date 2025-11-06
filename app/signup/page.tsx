@@ -4,7 +4,6 @@ import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone, CheckCircle } from 'lucide-react'
-import { useAuth } from '@/lib/supabase/hooks'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
 export default function SignupPage() {
@@ -12,8 +11,8 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [emailSent, setEmailSent] = useState(false) // 이메일 전송 성공 상태
-  const [userEmail, setUserEmail] = useState('') // 가입한 이메일 저장
+  const [emailSent, setEmailSent] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -113,7 +112,9 @@ export default function SignupPage() {
     try {
       const supabase = createBrowserClient()
       
-      // ✅ 이메일 확인이 활성화된 상태로 회원가입
+      console.log('🚀 Starting signup process...')
+      
+      // 회원가입 시도
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -127,7 +128,12 @@ export default function SignupPage() {
         }
       })
       
-      console.log('Signup result:', { data, error })
+      console.log('✅ Signup response:', { 
+        userId: data.user?.id, 
+        email: data.user?.email,
+        emailConfirmed: data.user?.email_confirmed_at,
+        error 
+      })
       
       if (error) {
         setError(error.message)
@@ -136,9 +142,7 @@ export default function SignupPage() {
       }
       
       if (data.user) {
-        console.log('Signup successful, user:', data.user.email)
-        
-        // ✅ users 테이블에 저장 (이메일 확인 전이라도 데이터는 저장)
+        // users 테이블에 저장
         try {
           const { error: userError } = await supabase
             .from('users')
@@ -155,7 +159,7 @@ export default function SignupPage() {
 
           if (userError) {
             console.error('Users table save error:', userError)
-            // User may already exist, try to update
+            // Try to update if insert fails
             await supabase
               .from('users')
               .update({
@@ -171,9 +175,17 @@ export default function SignupPage() {
           console.error('Users table processing error:', userTableError)
         }
         
-        // ✅ 이메일 확인 안내 화면 표시
-        setUserEmail(formData.email)
-        setEmailSent(true)
+        // ✅ 이메일 확인 여부 체크
+        if (data.user.email_confirmed_at) {
+          // 이메일 확인이 비활성화되어 있거나 이미 확인된 경우
+          console.log('✅ Email already confirmed, redirecting to home...')
+          router.push('/?signup=success')
+        } else {
+          // 이메일 확인이 필요한 경우
+          console.log('📧 Email confirmation required')
+          setUserEmail(formData.email)
+          setEmailSent(true)
+        }
       }
     } catch (err) {
       console.error('Signup error:', err)
@@ -190,7 +202,7 @@ export default function SignupPage() {
     })
   }
 
-  // ✅ 이메일 확인 안내 화면
+  // 이메일 확인 안내 화면
   if (emailSent) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
