@@ -417,7 +417,6 @@ export default function PrivacyPage() {
                 <p className="text-gray-700 font-semibold mb-2">Canada Beaver - Privacy Officer</p>
                 <p className="text-gray-600">Email: privacyofficer@canadabeaver.pro</p>
                 <p className="text-gray-600">General Email: admin@canadabeaver.pro</p>
-                <p className="text-gray-600">Phone: 1-800-RENOVATE</p>
                 <p className="text-gray-600 mt-2">Address: Across Canada</p>
               </div>
 

@@ -331,7 +331,6 @@ export default function TermsPage() {
               <div className="bg-gray-50 rounded-lg p-6">
                 <p className="text-gray-700 font-semibold mb-2">Canada Beaver</p>
                 <p className="text-gray-600">Email: admin@canadabeaver.pro</p>
-                <p className="text-gray-600">Phone: 1-800-RENOVATE</p>
                 <p className="text-gray-600 mt-2">Address: Across Canada</p>
               </div>
             </section>
