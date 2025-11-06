@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
 
     // 6. 업체 정보 조회
     console.log('🔍 Fetching contractor info...')
+    console.log('📌 Contractor ID:', currentProject.selected_contractor_id)
     const { data: contractorInfo, error: contractorError } = await supabase
       .from('contractors')
       .select('company_name, contact_name, email')
@@ -151,13 +152,20 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (contractorError) {
-      console.error('⚠️ Contractor query error:', contractorError)
+      console.error('❌ Contractor query error:', contractorError)
+      console.error('📌 Failed to get contractor for ID:', currentProject.selected_contractor_id)
+    } else if (!contractorInfo) {
+      console.error('❌ Contractor not found for ID:', currentProject.selected_contractor_id)
     } else {
-      console.log('✅ Contractor info loaded:', contractorInfo?.company_name)
+      console.log('✅ Contractor info loaded:', {
+        company_name: contractorInfo.company_name,
+        email: contractorInfo.email
+      })
     }
 
     // 7. 선정된 견적 정보 조회
     console.log('🔍 Fetching selected quote info...')
+    console.log('📌 Quote ID:', currentProject.selected_quote_id)
     const { data: selectedQuote, error: quoteError } = await supabase
       .from('contractor_quotes')
       .select('price')
@@ -165,13 +173,27 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (quoteError) {
-      console.error('⚠️ Quote query error:', quoteError)
+      console.error('❌ Quote query error:', quoteError)
+      console.error('📌 Failed to get quote for ID:', currentProject.selected_quote_id)
+    } else if (!selectedQuote) {
+      console.error('❌ Quote not found for ID:', currentProject.selected_quote_id)
+    } else if (!selectedQuote.price) {
+      console.error('❌ Quote has no price:', currentProject.selected_quote_id)
     } else {
-      console.log('✅ Quote info loaded, price:', selectedQuote?.price)
+      console.log('✅ Quote info loaded:', {
+        price: selectedQuote.price,
+        quote_id: currentProject.selected_quote_id
+      })
     }
 
     // 8. Commission tracking 생성 (선정된 견적과 업체 정보가 있는 경우에만)
+    console.log('💰 === COMMISSION TRACKING CHECK ===')
+    console.log('📌 Has contractorInfo?', !!contractorInfo)
+    console.log('📌 Has selectedQuote?', !!selectedQuote)
+    console.log('📌 Has quote price?', selectedQuote?.price ? `$${selectedQuote.price}` : 'NO')
+    
     if (contractorInfo && selectedQuote && selectedQuote.price) {
+      console.log('✅ All conditions met for commission tracking')
       console.log('💰 Creating commission tracking...')
       
       // 견적 금액에 따라 수수료 비율 결정
@@ -182,45 +204,67 @@ export async function POST(request: NextRequest) {
       
       // 프로젝트 제목 생성
       const projectTitle = `${currentProject.space_type} - ${currentProject.full_address}`
+      console.log('📋 Project title:', projectTitle)
       
       // 이미 commission_tracking이 있는지 확인
-      const { data: existingCommission } = await supabase
+      console.log('🔍 Checking for existing commission tracking...')
+      const { data: existingCommission, error: checkCommissionError } = await supabase
         .from('commission_tracking')
         .select('id')
         .eq('quote_request_id', projectId)
         .single()
 
+      if (checkCommissionError && checkCommissionError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing commission:', checkCommissionError)
+      }
+
       if (existingCommission) {
-        console.log('ℹ️ Commission tracking already exists for this project')
+        console.log('ℹ️ Commission tracking already exists:', existingCommission.id)
       } else {
+        console.log('📝 Creating new commission tracking record...')
+        const commissionData = {
+          quote_request_id: projectId,
+          contractor_id: currentProject.selected_contractor_id,
+          contractor_name: contractorInfo.company_name,
+          project_title: projectTitle,
+          quote_amount: selectedQuote.price,
+          commission_rate: commissionRate,
+          commission_amount: commissionAmount,
+          status: 'pending',
+          started_at: projectStartTime,
+          marked_manually: false
+        }
+        
+        console.log('💾 Commission data to insert:', JSON.stringify(commissionData, null, 2))
+        
         const { data: newCommission, error: commissionError } = await supabase
           .from('commission_tracking')
-          .insert({
-            quote_request_id: projectId,
-            contractor_id: currentProject.selected_contractor_id,
-            contractor_name: contractorInfo.company_name,
-            project_title: projectTitle,
-            quote_amount: selectedQuote.price,
-            commission_rate: commissionRate,
-            commission_amount: commissionAmount,
-            status: 'pending',
-            started_at: projectStartTime,
-            marked_manually: false
-          })
+          .insert(commissionData)
           .select()
           .single()
 
         if (commissionError) {
           console.error('❌ Commission tracking creation error:', commissionError)
+          console.error('❌ Commission error details:', JSON.stringify(commissionError, null, 2))
+          console.error('❌ Failed commission data:', JSON.stringify(commissionData, null, 2))
           // Commission 생성 실패는 프로젝트 시작을 막지 않음
+        } else if (!newCommission) {
+          console.error('❌ Commission tracking created but no data returned')
         } else {
-          console.log('✅ Commission tracking created:', newCommission?.id)
-          console.log(`💵 Commission: $${commissionAmount} (${commissionRate}%)`)
+          console.log('✅ ✅ ✅ Commission tracking created successfully!')
+          console.log('💵 Commission ID:', newCommission.id)
+          console.log(`💵 Commission Amount: $${commissionAmount} (${commissionRate}%)`)
         }
       }
     } else {
-      console.warn('⚠️ Skipping commission tracking - missing contractor info or quote price')
+      console.error('❌ ❌ ❌ COMMISSION TRACKING NOT CREATED')
+      console.error('📌 Missing requirements:')
+      if (!contractorInfo) console.error('   - Contractor info is missing')
+      if (!selectedQuote) console.error('   - Selected quote is missing')
+      if (selectedQuote && !selectedQuote.price) console.error('   - Quote price is missing')
     }
+
+    console.log('💰 === COMMISSION TRACKING CHECK END ===')
 
     // 9. 고객 정보 조회
     console.log('🔍 Fetching customer info...')
