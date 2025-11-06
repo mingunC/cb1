@@ -35,10 +35,10 @@ export default function SocialMediaSection() {
   ]
 
   return (
-    <section className="py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <section className="py-12 bg-white">
+      {/* Header - Centered with max-width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3">
               <span className="text-[#2c5f4e]">FOLLOW US</span>{' '}
@@ -69,41 +69,28 @@ export default function SocialMediaSection() {
             </a>
           </div>
         </div>
+      </div>
 
-        {/* Image Grid - Full width, tight spacing */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
-          {images.map((image, index) => (
-            <a
-              key={index}
-              href="https://www.instagram.com/canadabeaverservice/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative aspect-square overflow-hidden"
-            >
-              <img
-                src={image}
-                alt={`Renovation project ${index + 1}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                <Instagram className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            </a>
-          ))}
-        </div>
-
-        {/* Follow Button */}
-        <div className="text-center mt-8">
+      {/* Image Grid - Full width, no padding */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0">
+        {images.map((image, index) => (
           <a
+            key={index}
             href="https://www.instagram.com/canadabeaverservice/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-[#2c5f4e] text-white rounded-lg font-semibold hover:bg-[#234a3d] transition-colors shadow-lg"
+            className="group relative aspect-square overflow-hidden"
           >
-            <Instagram className="h-5 w-5" />
-            Follow Us on Instagram
+            <img
+              src={image}
+              alt={`Renovation project ${index + 1}`}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+              <Instagram className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
           </a>
-        </div>
+        ))}
       </div>
     </section>
   )
