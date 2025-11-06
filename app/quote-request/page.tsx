@@ -18,17 +18,17 @@ export default function QuoteRequestPage() {
         
         if (!session || !session.user) {
           console.log('No session found, redirecting to login')
-          setIsLoading(false)  // ⚡ 즉시 로딩 해제
+          setIsLoading(false)  // ⚡ Immediately release loading
           router.push('/login')
           return
         }
         
         console.log('Session found for user:', session.user.email)
         setIsAuthenticated(true)
-        setIsLoading(false)  // ⚡ 즉시 로딩 해제
+        setIsLoading(false)  // ⚡ Immediately release loading
       } catch (error) {
         console.error('Auth check error:', error)
-        setIsLoading(false)  // ⚡ 에러 시에도 즉시 로딩 해제
+        setIsLoading(false)  // ⚡ Release loading even on error
         router.push('/login')
       }
     }
@@ -36,7 +36,7 @@ export default function QuoteRequestPage() {
     checkAuth()
   }, [router])
 
-  // 로딩 중
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
@@ -48,16 +48,16 @@ export default function QuoteRequestPage() {
     )
   }
 
-  // 인증되지 않은 경우 (리다이렉트 중)
+  // Unauthenticated (redirecting)
   if (!isAuthenticated) {
     return null
   }
 
-  // 인증된 경우에만 폼 표시
+  // Show form only when authenticated
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* 페이지 헤더 */}
+        {/* Page header */}
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             Request a Free Quote
@@ -65,7 +65,7 @@ export default function QuoteRequestPage() {
           <div className="w-20 h-1 bg-amber-600 mx-auto mb-4"></div>
         </div>
 
-        {/* 견적 요청 폼 */}
+        {/* Quote request form */}
         <QuoteRequestForm />
       </div>
     </div>
