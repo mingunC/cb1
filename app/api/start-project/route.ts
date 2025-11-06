@@ -18,26 +18,42 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerClient()
+    console.log('✅ Supabase client created')
 
     // 1. 현재 프로젝트 상태 확인
+    console.log('🔍 Fetching project data...')
     const { data: currentProject, error: checkError } = await supabase
       .from('quote_requests')
       .select('*, selected_contractor_id')
       .eq('id', projectId)
       .single()
 
-    if (checkError || !currentProject) {
-      console.error('프로젝트 조회 실패:', checkError)
+    if (checkError) {
+      console.error('❌ Project query error:', checkError)
+      return NextResponse.json(
+        { error: '프로젝트를 찾을 수 없습니다', details: checkError.message },
+        { status: 404 }
+      )
+    }
+
+    if (!currentProject) {
+      console.error('❌ Project not found')
       return NextResponse.json(
         { error: '프로젝트를 찾을 수 없습니다' },
         { status: 404 }
       )
     }
 
-    console.log('Current status:', currentProject.status)
+    console.log('✅ Project found:', {
+      id: currentProject.id,
+      status: currentProject.status,
+      selected_contractor_id: currentProject.selected_contractor_id,
+      project_started_at: currentProject.project_started_at
+    })
 
     // 2. 상태 검증 - contractor-selected 또는 bidding-closed 상태여야 함
     if (currentProject.status !== 'contractor-selected' && currentProject.status !== 'bidding-closed') {
+      console.warn('⚠️ Invalid status for starting project:', currentProject.status)
       return NextResponse.json(
         { 
           error: '업체가 선정된 프로젝트만 시작할 수 있습니다',
@@ -49,6 +65,7 @@ export async function POST(request: NextRequest) {
 
     // 3. 이미 진행 중이거나 완료된 경우
     if (currentProject.project_started_at) {
+      console.log('ℹ️ Project already started')
       return NextResponse.json(
         { 
           success: false,
@@ -60,6 +77,7 @@ export async function POST(request: NextRequest) {
 
     // 4. 선정된 업체가 있는지 확인
     if (!currentProject.selected_contractor_id) {
+      console.warn('⚠️ No contractor selected')
       return NextResponse.json(
         { error: '선정된 업체가 없습니다' },
         { status: 400 }
@@ -67,6 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 프로젝트 상태를 'in-progress'로 변경
+    console.log('📝 Updating project status to in-progress...')
     const { data: updatedProject, error: updateError } = await supabase
       .from('quote_requests')
       .update({ 
@@ -79,9 +98,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (updateError) {
-      console.error('프로젝트 업데이트 실패:', updateError)
+      console.error('❌ Project update error:', updateError)
       return NextResponse.json(
-        { error: '프로젝트 시작 처리 중 오류가 발생했습니다' },
+        { error: '프로젝트 시작 처리 중 오류가 발생했습니다', details: updateError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!updatedProject) {
+      console.error('❌ Updated project not returned')
+      return NextResponse.json(
+        { error: '프로젝트 업데이트에 실패했습니다' },
         { status: 500 }
       )
     }
@@ -90,24 +117,39 @@ export async function POST(request: NextRequest) {
     console.log('✅ Status updated to: in-progress')
 
     // 6. 업체 정보 조회 (알림 이메일 발송용)
-    const { data: contractorInfo } = await supabase
+    console.log('🔍 Fetching contractor info...')
+    const { data: contractorInfo, error: contractorError } = await supabase
       .from('contractors')
       .select('company_name, contact_name, email')
       .eq('id', currentProject.selected_contractor_id)
       .single()
 
+    if (contractorError) {
+      console.error('⚠️ Contractor query error (continuing):', contractorError)
+    } else {
+      console.log('✅ Contractor info loaded:', contractorInfo?.company_name)
+    }
+
     // 7. 고객 정보 조회
-    const { data: customerInfo } = await supabase
+    console.log('🔍 Fetching customer info...')
+    const { data: customerInfo, error: customerError } = await supabase
       .from('users')
       .select('first_name, last_name, email')
       .eq('id', currentProject.customer_id)
       .single()
+
+    if (customerError) {
+      console.error('⚠️ Customer query error (continuing):', customerError)
+    } else {
+      console.log('✅ Customer info loaded:', customerInfo?.email)
+    }
 
     const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || 'Customer'
 
     // 8. 고객에게 프로젝트 시작 축하 이메일 발송
     if (customerInfo?.email) {
       try {
+        console.log('📧 Sending congratulations email to customer...')
         await sendEmail({
           to: customerInfo.email,
           subject: '🎉 Congratulations! Your Project Has Started',
@@ -182,14 +224,17 @@ export async function POST(request: NextRequest) {
         })
         
         console.log('✅ Congratulations email sent to customer')
-      } catch (emailError) {
-        console.error('고객 이메일 발송 실패 (프로세스는 계속됨):', emailError)
+      } catch (emailError: any) {
+        console.error('⚠️ Customer email failed (process continues):', emailError.message)
       }
+    } else {
+      console.log('ℹ️ No customer email to send')
     }
 
     // 9. 업체에게 프로젝트 시작 알림 이메일 발송
     if (contractorInfo?.email) {
       try {
+        console.log('📧 Sending notification email to contractor...')
         await sendEmail({
           to: contractorInfo.email,
           subject: '🚀 Project Started',
@@ -250,9 +295,11 @@ export async function POST(request: NextRequest) {
         })
         
         console.log('✅ Notification email sent to contractor')
-      } catch (emailError) {
-        console.error('업체 이메일 발송 실패 (프로세스는 계속됨):', emailError)
+      } catch (emailError: any) {
+        console.error('⚠️ Contractor email failed (process continues):', emailError.message)
       }
+    } else {
+      console.log('ℹ️ No contractor email to send')
     }
 
     console.log('=== PROJECT START COMPLETE ===')
@@ -266,10 +313,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Start project API error:', error)
+    console.error('❌ Error stack:', error.stack)
     return NextResponse.json(
       { 
         error: '프로젝트 시작 처리 중 오류가 발생했습니다', 
-        details: error.message 
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }
     )
