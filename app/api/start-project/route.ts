@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { projectId } = body
 
-    console.log('=== START PROJECT API ==='
+    console.log('=== START PROJECT API ===')
     console.log('Project ID:', projectId)
 
     if (!projectId) {
