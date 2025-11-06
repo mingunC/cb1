@@ -40,7 +40,7 @@ function PortfolioContent() {
   const fetchPortfolios = async () => {
     try {
       setIsLoading(true)
-      console.log('🔍 포트폴리오 로딩 시작')
+      console.log('🔍 Loading portfolios...')
       
       const supabase = createBrowserClient()
       
@@ -63,15 +63,15 @@ function PortfolioContent() {
       const { data, error } = await query
       
       if (error) {
-        console.error('❌ 에러:', error)
+        console.error('❌ Error:', error)
         setPortfolios([])
       } else {
-        console.log('✅ 로드된 포트폴리오:', data?.length, '개')
+        console.log('✅ Loaded portfolios:', data?.length, 'items')
         
         const transformed: Portfolio[] = (data || []).map(p => ({
           id: p.id,
           contractor_id: p.contractor_id,
-          title: p.title || '제목 없음',
+          title: p.title || 'Untitled',
           description: p.description || '',
           images: Array.isArray(p.images) ? p.images : typeof p.images === 'string' ? [p.images] : [],
           category: p.category,
@@ -80,7 +80,7 @@ function PortfolioContent() {
           created_at: p.created_at,
           contractor: p.contractor ? {
             id: p.contractor.id,
-            company_name: p.contractor.company_name || '업체명 없음',
+            company_name: p.contractor.company_name || 'Unknown Company',
             logo_url: p.contractor.company_logo
           } : undefined
         }))
@@ -88,7 +88,7 @@ function PortfolioContent() {
         setPortfolios(transformed)
       }
     } catch (error) {
-      console.error('❌ 치명적 에러:', error)
+      console.error('❌ Critical error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -144,7 +144,7 @@ function PortfolioContent() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="업체명, 프로젝트명으로 검색..."
+              placeholder="Search by company or project name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base"
@@ -157,14 +157,14 @@ function PortfolioContent() {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">로딩 중...</p>
+            <p className="text-gray-600">Loading...</p>
           </div>
         ) : filteredPortfolios.length === 0 ? (
           <div className="text-center py-12">
             <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">포트폴리오가 없습니다</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Portfolios Available</h3>
             <p className="text-gray-500">
-              {searchTerm ? '검색 결과가 없습니다.' : '포트폴리오가 아직 없습니다.'}
+              {searchTerm ? 'No search results found.' : 'No portfolios available yet.'}
             </p>
           </div>
         ) : (
@@ -193,7 +193,7 @@ function PortfolioContent() {
 
                   {portfolio.images && portfolio.images.length > 1 && (
                     <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 text-white text-xs rounded-full">
-                      +{portfolio.images.length - 1} 더보기
+                      +{portfolio.images.length - 1} more
                     </div>
                   )}
                 </div>
@@ -358,7 +358,7 @@ export default function PortfolioGalleryPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">포트폴리오를 불러오는 중...</p>
+          <p className="text-gray-600">Loading portfolios...</p>
         </div>
       </div>
     }>
