@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server-clients'
 import { sendEmail } from '@/lib/email/mailgun'
 
+// 수수료 비율 계산 함수
+function calculateCommissionRate(quoteAmount: number): number {
+  if (quoteAmount < 50000) {
+    return 3.00 // 3%
+  } else if (quoteAmount >= 50000 && quoteAmount < 100000) {
+    return 2.00 // 2%
+  } else {
+    return 1.00 // 1%
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -163,8 +174,11 @@ export async function POST(request: NextRequest) {
     if (contractorInfo && selectedQuote && selectedQuote.price) {
       console.log('💰 Creating commission tracking...')
       
-      const commissionRate = 10.00 // 10%
+      // 견적 금액에 따라 수수료 비율 결정
+      const commissionRate = calculateCommissionRate(selectedQuote.price)
       const commissionAmount = selectedQuote.price * (commissionRate / 100)
+      
+      console.log(`💵 Quote: $${selectedQuote.price}, Rate: ${commissionRate}%, Commission: $${commissionAmount}`)
       
       // 프로젝트 제목 생성
       const projectTitle = `${currentProject.space_type} - ${currentProject.full_address}`
@@ -201,7 +215,7 @@ export async function POST(request: NextRequest) {
           // Commission 생성 실패는 프로젝트 시작을 막지 않음
         } else {
           console.log('✅ Commission tracking created:', newCommission?.id)
-          console.log('💵 Commission amount:', commissionAmount)
+          console.log(`💵 Commission: $${commissionAmount} (${commissionRate}%)`)
         }
       }
     } else {
