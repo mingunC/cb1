@@ -114,7 +114,7 @@ export default function SignupPage() {
       
       console.log('🚀 Starting signup process...')
       
-      // 회원가입 시도
+      // 회원가입 시도 (user metadata에 추가 정보 저장)
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -123,7 +123,8 @@ export default function SignupPage() {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            phone: formData.mobileNumber
+            phone: formData.mobileNumber,
+            user_type: 'customer'
           }
         }
       })
@@ -142,44 +143,15 @@ export default function SignupPage() {
       }
       
       if (data.user) {
-        // users 테이블에 저장
-        try {
-          const { error: userError } = await supabase
-            .from('users')
-            .insert({
-              id: data.user.id,
-              email: formData.email,
-              user_type: 'customer',
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              phone: formData.mobileNumber,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-
-          if (userError) {
-            console.error('Users table save error:', userError)
-            // Try to update if insert fails
-            await supabase
-              .from('users')
-              .update({
-                user_type: 'customer',
-                first_name: formData.firstName,
-                last_name: formData.lastName,
-                phone: formData.mobileNumber,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', data.user.id)
-          }
-        } catch (userTableError) {
-          console.error('Users table processing error:', userTableError)
-        }
+        // Database trigger가 자동으로 users 테이블에 레코드를 생성합니다
+        // 추가 정보는 이메일 확인 후 업데이트됩니다
         
-        // ✅ 이메일 확인 화면 표시
+        console.log('✅ User created successfully - database trigger will handle users table')
         console.log('📧 Email confirmation required - showing confirmation screen')
+        
         setUserEmail(formData.email)
         setEmailSent(true)
-        setIsLoading(false)  // ← 이것이 중요! 로딩 상태를 false로 설정
+        setIsLoading(false)
       }
     } catch (err) {
       console.error('Signup error:', err)
