@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, Suspense, useState } from 'react'
+import { useEffect, Suspense, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { CheckCircle } from 'lucide-react'
@@ -10,10 +10,17 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams()
   const supabase = createBrowserClient()
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const hasProcessed = useRef(false) // Prevent double execution
   
   const loginType = searchParams.get('type')
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasProcessed.current) {
+      return
+    }
+    hasProcessed.current = true
+
     const handleAuthCallback = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -69,7 +76,7 @@ function AuthCallbackContent() {
             if (contractorData) {
               console.log('Contractor login successful:', contractorData.company_name)
               setVerificationStatus('success')
-              setTimeout(() => router.push('/contractor'), 2000)
+              setTimeout(() => router.push('/contractor'), 1500)
               return
             } else {
               console.log('Not a contractor, redirecting to contractor signup')
@@ -91,7 +98,7 @@ function AuthCallbackContent() {
             if (contractorData) {
               console.log('Contractor user, redirecting to contractor dashboard')
               setVerificationStatus('success')
-              setTimeout(() => router.push('/contractor'), 2000)
+              setTimeout(() => router.push('/contractor'), 1500)
               return
             }
             
@@ -105,17 +112,17 @@ function AuthCallbackContent() {
             if (userData?.user_type === 'admin') {
               console.log('Admin user, redirecting to admin dashboard')
               setVerificationStatus('success')
-              setTimeout(() => router.push('/admin'), 2000)
+              setTimeout(() => router.push('/admin'), 1500)
             } else {
               // ✅ 이메일 확인 완료 - 일반 사용자 홈으로
               console.log('Email verified, redirecting to home')
               setVerificationStatus('success')
-              setTimeout(() => router.push('/'), 2000)
+              setTimeout(() => router.push('/'), 1500)
             }
           } catch (redirectError) {
             console.error('Redirect error:', redirectError)
             setVerificationStatus('success')
-            setTimeout(() => router.push('/'), 2000)
+            setTimeout(() => router.push('/'), 1500)
           }
         } else {
           // 세션이 없으면 로그인 페이지로
@@ -131,7 +138,7 @@ function AuthCallbackContent() {
     }
 
     handleAuthCallback()
-  }, [router, supabase, loginType])
+  }, []) // Empty dependency array - only run once
 
   // ✅ 이메일 확인 성공 화면
   if (verificationStatus === 'success') {
