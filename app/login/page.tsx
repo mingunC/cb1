@@ -8,22 +8,15 @@ import { signIn, getCurrentUser } from '@/lib/auth'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
-// 타입 정의
 interface FormData {
   email: string
   password: string
-}
-
-interface LoginError {
-  message: string
-  code?: string
 }
 
 export default function LoginPage() {
   const router = useRouter()
   const supabase = createBrowserClient()
   
-  // 상태 관리
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
@@ -32,7 +25,6 @@ export default function LoginPage() {
     password: ''
   })
 
-  // 세션 체크 및 자동 리다이렉트
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
@@ -41,11 +33,9 @@ export default function LoginPage() {
         if (session) {
           console.log('Existing session found:', session.user.email)
           
-          // 새로운 auth.ts의 getCurrentUser 함수 사용
           const userInfo = await getCurrentUser()
           
           if (userInfo.user && userInfo.userType) {
-            // 사용자 타입별 리다이렉트 (현재 프로젝트 구조에 맞게)
             let redirectTo = '/'
             
             if (userInfo.userType === 'admin') {
@@ -65,26 +55,21 @@ export default function LoginPage() {
         }
       } catch (error) {
         console.error('Session check error:', error)
-        // 에러 발생 시 조용히 처리 (로그인 페이지 그대로 유지)
       }
     }
 
     checkExistingSession()
-  }, [router, supabase]) // dependency array 추가
+  }, [router, supabase])
 
-
-  // 로그인 처리
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
-    // 유효성 검사
     if (!formData.email || !formData.password) {
       setError('이메일과 비밀번호를 모두 입력해주세요.')
       return
     }
 
-    // 이메일 형식 검사
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
       setError('올바른 이메일 형식을 입력해주세요.')
@@ -94,18 +79,24 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // 새로운 통합 로그인 함수 사용
       const result = await signIn({
         email: formData.email,
         password: formData.password
       })
 
       if (!result.success) {
+        // ✅ 이메일 미확인 에러 처리
+        if (result.error?.includes('Email not confirmed') || result.error?.includes('email_not_confirmed')) {
+          setError('Please verify your email before logging in. Check your inbox for the verification link.')
+          setIsLoading(false)
+          return
+        }
+        
         setError(result.error || '로그인에 실패했습니다.')
+        setIsLoading(false)
         return
       }
 
-      // 로그인 성공
       console.log('Login successful:', result.user?.email)
       
       if (result.userType === 'contractor' && result.contractorData) {
@@ -114,7 +105,6 @@ export default function LoginPage() {
         toast.success('로그인되었습니다')
       }
       
-      // 사용자 타입별 리다이렉트 (성공 시 로딩 상태 유지)
       router.push(result.redirectTo || '/')
 
     } catch (error: any) {
@@ -124,7 +114,6 @@ export default function LoginPage() {
     }
   }, [formData, router])
 
-  // Google 로그인 처리 - 수정된 버전
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
     setError('')
@@ -148,21 +137,18 @@ export default function LoginPage() {
         toast.error('Google 로그인에 실패했습니다')
         hasError = true
       }
-      // Google OAuth는 리다이렉트 방식이므로 성공 시 setIsLoading(false) 호출하지 않음
     } catch (error) {
       console.error('Google sign in error:', error)
       setError('Google 로그인 중 오류가 발생했습니다.')
       toast.error('Google 로그인 중 오류가 발생했습니다')
       hasError = true
     } finally {
-      // Google OAuth 에러 발생 시에만 로딩 상태 해제 (성공 시는 리다이렉트로 페이지 이동)
       if (hasError) {
         setIsLoading(false)
       }
     }
   }, [supabase])
 
-  // 입력 핸들러
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -170,11 +156,9 @@ export default function LoginPage() {
       [name]: value
     }))
     
-    // 입력 시 에러 메시지 제거
     if (error) setError('')
   }, [error])
 
-  // 비밀번호 표시 토글
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword(prev => !prev)
   }, [])
@@ -182,14 +166,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* 뒤로가기 버튼 - 위치 개선 */}
         <div className="mb-6">
           <Link 
             href="/" 
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-                <span>Back to Home</span>
+            <span>Back to Home</span>
           </Link>
         </div>
 
@@ -209,7 +192,6 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
-          {/* 에러 메시지 */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
               <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
@@ -218,7 +200,6 @@ export default function LoginPage() {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* 이메일 입력 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
@@ -242,7 +223,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 비밀번호 입력 */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -279,7 +259,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 추가 옵션 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -302,7 +281,6 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            {/* 로그인 버튼 */}
             <button
               type="submit"
               disabled={isLoading}
@@ -318,7 +296,6 @@ export default function LoginPage() {
               )}
             </button>
 
-            {/* 구분선 */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
@@ -328,7 +305,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Google 로그인 */}
             <button
               type="button"
               onClick={handleGoogleSignIn}
