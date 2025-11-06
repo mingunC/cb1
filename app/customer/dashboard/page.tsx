@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle, Download, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle, Download, Loader2, Edit, X } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface Project {
@@ -15,6 +15,8 @@ interface Project {
   full_address: string
   postal_code: string
   description: string
+  phone: string
+  visit_date?: string
   status: string
   created_at: string
   selected_contractor_id?: string
@@ -37,13 +39,70 @@ interface Quote {
   }
 }
 
+interface EditFormData {
+  space_type: string
+  project_types: string[]
+  budget: string
+  timeline: string
+  postal_code: string
+  full_address: string
+  visit_date: string
+  description: string
+  phone: string
+}
+
+const spaceTypes = [
+  { value: 'detached_house', label: 'Detached House' },
+  { value: 'town_house', label: 'Town House' },
+  { value: 'condo', label: 'Condo & Apartment' },
+  { value: 'commercial', label: 'Commercial' }
+]
+
+const residentialProjectTypes = [
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'basement', label: 'Basement' },
+  { value: 'flooring', label: 'Flooring' },
+  { value: 'painting', label: 'Painting' },
+  { value: 'full_renovation', label: 'Full Renovation' },
+  { value: 'other', label: 'Other' }
+]
+
+const commercialProjectTypes = [
+  { value: 'office', label: 'Office' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'education', label: 'Education' },
+  { value: 'hospitality', label: 'Hospitality' },
+  { value: 'other', label: 'Other' }
+]
+
+const budgetRanges = [
+  { value: 'under_50k', label: 'Under $50,000' },
+  { value: '50k_100k', label: '$50,000 - $100,000' },
+  { value: 'over_100k', label: '$100,000+' }
+]
+
+const timelines = [
+  { value: 'immediate', label: 'Immediate' },
+  { value: '1_month', label: 'Within 1 month' },
+  { value: '3_months', label: 'Within 3 months' },
+  { value: 'planning', label: 'Planning stage' }
+]
+
 export default function CustomerDashboard() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProjectQuotes, setSelectedProjectQuotes] = useState<Record<string, Quote[]>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
-  const [selectingContractor, setSelectingContractor] = useState<string | null>(null) // 선택 중인 견적서 ID
+  const [selectingContractor, setSelectingContractor] = useState<string | null>(null)
+  
+  // 수정 관련 상태
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [editFormData, setEditFormData] = useState<EditFormData | null>(null)
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false)
+  const phoneInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     checkAuthAndLoadProjects()
@@ -73,7 +132,6 @@ export default function CustomerDashboard() {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      // 내 프로젝트 가져오기
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*')
@@ -84,7 +142,6 @@ export default function CustomerDashboard() {
       
       setProjects(projectsData || [])
       
-      // 입찰 중이거나 종료된 프로젝트의 견적서 로드
       const biddingProjects = (projectsData || []).filter(
         p => p.status === 'bidding' || p.status === 'bidding-closed' || p.status === 'contractor-selected'
       )
@@ -120,8 +177,6 @@ export default function CustomerDashboard() {
       
       if (quotesError) throw quotesError
       
-      console.log('✅ Loaded quotes for project:', projectId, quotesData)
-      
       setSelectedProjectQuotes(prev => ({
         ...prev,
         [projectId]: quotesData || []
@@ -132,76 +187,38 @@ export default function CustomerDashboard() {
     }
   }
 
-  // PDF 다운로드 함수 - 개선된 버전
   const handleDownloadPDF = async (quote: Quote) => {
-    console.log('🔽 Download button clicked for quote:', quote.id)
-    console.log('📄 Quote data:', { 
-      id: quote.id, 
-      pdf_url: quote.pdf_url, 
-      pdf_filename: quote.pdf_filename,
-      contractor: quote.contractor?.company_name 
-    })
-    
     if (!quote.pdf_url) {
-      console.error('❌ No PDF URL found for quote:', quote.id)
       toast.error('PDF 파일 정보가 없습니다')
       return
     }
 
     try {
       const supabase = createBrowserClient()
-      
-      console.log('📦 Using PDF URL:', quote.pdf_url)
-      
-      // Supabase Storage에서 public URL 생성
       const { data: publicUrlData } = supabase.storage
         .from('contractor-quotes')
         .getPublicUrl(quote.pdf_url)
 
-      console.log('🔗 Generated public URL:', publicUrlData.publicUrl)
-
       if (publicUrlData?.publicUrl) {
-        // 새 탭에서 PDF 열기
-        const opened = window.open(publicUrlData.publicUrl, '_blank')
-        
-        if (opened) {
-          console.log('✅ PDF opened successfully')
-          toast.success('PDF 파일을 여는 중...')
-        } else {
-          console.error('❌ Failed to open new window (popup blocked?)')
-          toast.error('팝업 차단을 해제해주세요')
-        }
-      } else {
-        throw new Error('Failed to generate public URL')
+        window.open(publicUrlData.publicUrl, '_blank')
+        toast.success('PDF 파일을 여는 중...')
       }
-      
     } catch (error) {
-      console.error('❌ PDF download error:', error)
+      console.error('PDF download error:', error)
       toast.error('PDF 다운로드에 실패했습니다')
     }
   }
 
   const handleSelectContractor = async (projectId: string, contractorId: string, quoteId: string) => {
-    console.log('🎯 업체 선택하기 버튼 클릭:', { projectId, contractorId, quoteId })
-    console.log('📊 현재 상태:', {
-      selectingContractor,
-      isAlreadySelecting: selectingContractor !== null
-    })
-    
     if (selectingContractor) {
-      console.log('⚠️ 이미 다른 업체를 선택 중입니다')
       toast.error('처리 중입니다. 잠시만 기다려주세요.')
       return
     }
     
-    if (!confirm('이 업체를 선택하시겠습니까?')) {
-      console.log('❌ 사용자가 취소했습니다')
-      return
-    }
+    if (!confirm('이 업체를 선택하시겠습니까?')) return
     
     try {
       setSelectingContractor(quoteId)
-      console.log('📤 API 요청 시작...')
       
       const response = await fetch('/api/select-contractor', {
         method: 'POST',
@@ -209,32 +226,22 @@ export default function CustomerDashboard() {
         body: JSON.stringify({ projectId, contractorId, quoteId })
       })
       
-      console.log('📥 API 응답 상태:', response.status, response.statusText)
-      
       const responseData = await response.json()
-      console.log('📥 API 응답 데이터:', responseData)
       
       if (!response.ok) {
         throw new Error(responseData.error || 'Failed to select contractor')
       }
       
-      toast.success('✅ 업체가 선택되었습니다! 선택된 업체에게 축하 이메일이 발송됩니다.')
+      toast.success('✅ 업체가 선택되었습니다!')
       
-      // 프로젝트 새로고침
-      console.log('🔄 프로젝트 데이터 새로고침...')
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await loadProjects(user.id)
-        console.log('✅ 데이터 새로고침 완료')
-      }
+      if (user) await loadProjects(user.id)
       
     } catch (error: any) {
-      console.error('❌ 업체 선택 에러:', error)
       toast.error(`업체 선택에 실패했습니다: ${error.message}`)
     } finally {
       setSelectingContractor(null)
-      console.log('🏁 업체 선택 프로세스 종료')
     }
   }
 
@@ -242,44 +249,140 @@ export default function CustomerDashboard() {
     if (!confirm('공사 날짜가 확정되셨나요? 확정되셨으면 이 버튼을 눌러주세요.')) return
     
     try {
-      console.log('🚀 Starting project:', projectId)
-      
       const response = await fetch('/api/start-project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId })
       })
       
-      console.log('📥 Response status:', response.status, response.statusText)
-      
       const result = await response.json()
-      console.log('📥 API response:', result)
       
       if (!response.ok) {
-        // 더 상세한 에러 정보 표시
-        const errorMessage = result.error || 'Failed to start project'
-        const errorDetails = result.details ? `\n상세: ${result.details}` : ''
-        console.error('❌ API error:', { error: errorMessage, details: result.details, result })
-        throw new Error(errorMessage + errorDetails)
+        throw new Error(result.error || 'Failed to start project')
       }
       
-      toast.success('🎉 프로젝트가 시작되었습니다! 프로젝트 시작을 축하드립니다!')
+      toast.success('🎉 프로젝트가 시작되었습니다!')
       
-      // 프로젝트 새로고침
       const supabase = createBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await loadProjects(user.id)
-      }
+      if (user) await loadProjects(user.id)
       
     } catch (error: any) {
-      console.error('❌ 프로젝트 시작 에러:', error)
-      console.error('❌ Error details:', {
-        message: error.message,
-        stack: error.stack,
-        error
-      })
       toast.error(`프로젝트 시작에 실패했습니다: ${error.message}`)
+    }
+  }
+
+  // 수정 모달 열기
+  const handleEditClick = (project: Project) => {
+    setEditingProject(project)
+    setEditFormData({
+      space_type: project.space_type,
+      project_types: project.project_types,
+      budget: project.budget,
+      timeline: project.timeline,
+      postal_code: project.postal_code,
+      full_address: project.full_address,
+      visit_date: project.visit_date || '',
+      description: project.description,
+      phone: project.phone
+    })
+  }
+
+  // 수정 모달 닫기
+  const handleCancelEdit = () => {
+    setEditingProject(null)
+    setEditFormData(null)
+  }
+
+  // 수정 제출
+  const handleSubmitEdit = async () => {
+    if (!editingProject || !editFormData) return
+
+    // 유효성 검사
+    if (!editFormData.space_type) {
+      toast.error('부동산 유형을 선택해주세요')
+      return
+    }
+    if (editFormData.project_types.length === 0) {
+      toast.error('프로젝트 유형을 하나 이상 선택해주세요')
+      return
+    }
+    if (!editFormData.budget) {
+      toast.error('예산 범위를 선택해주세요')
+      return
+    }
+    if (!editFormData.timeline) {
+      toast.error('시작 시기를 선택해주세요')
+      return
+    }
+    if (!editFormData.postal_code || !editFormData.full_address) {
+      toast.error('우편번호와 전체 주소를 입력해주세요')
+      return
+    }
+    if (!editFormData.description) {
+      toast.error('프로젝트 설명을 입력해주세요')
+      return
+    }
+    if (!editFormData.phone) {
+      toast.error('전화번호를 입력해주세요')
+      return
+    }
+
+    try {
+      setIsSubmittingEdit(true)
+
+      const response = await fetch(`/api/quote-requests/${editingProject.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData)
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update quote request')
+      }
+
+      toast.success('✅ 견적요청이 수정되었습니다!')
+      
+      // 프로젝트 목록 새로고침
+      const supabase = createBrowserClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await loadProjects(user.id)
+      
+      handleCancelEdit()
+      
+    } catch (error: any) {
+      console.error('수정 에러:', error)
+      toast.error(`수정에 실패했습니다: ${error.message}`)
+    } finally {
+      setIsSubmittingEdit(false)
+    }
+  }
+
+  const formatPostalCode = (value: string) => {
+    const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+    if (cleaned.length <= 3) {
+      return cleaned
+    } else if (cleaned.length <= 6) {
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`
+    } else {
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)}`
+    }
+  }
+
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '')
+    const limited = cleaned.slice(0, 10)
+    
+    if (limited.length === 0) {
+      return ''
+    } else if (limited.length <= 3) {
+      return `(${limited})`
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
     }
   }
 
@@ -327,115 +430,23 @@ export default function CustomerDashboard() {
     'other': '기타'
   }
 
-  // 예산 범위 포맷팅 함수 - 개선된 버전
   const formatBudget = (budget: string): string => {
-    // 먼저 정의된 라벨 확인
     const budgetLabels: Record<string, string> = {
       'under_50k': '$50,000 미만',
       '50k_100k': '$50,000 - $100,000',
-      'over_100k': '$100,000 이상',
-      '100k_200k': '$100,000 - $200,000',
-      '200k_500k': '$200,000 - $500,000',
-      'over_500k': '$500,000 이상'
+      'over_100k': '$100,000 이상'
     }
-    
-    // 정확히 일치하는 경우
-    if (budgetLabels[budget]) {
-      return budgetLabels[budget]
-    }
-    
-    // 공백이나 대소문자 문제로 일치하지 않는 경우를 위한 정규화
-    const normalizedBudget = budget.trim().toLowerCase().replace(/\s+/g, '_')
-    if (budgetLabels[normalizedBudget]) {
-      return budgetLabels[normalizedBudget]
-    }
-    
-    // 패턴 매칭으로 변환 시도
-    if (normalizedBudget.includes('under') || normalizedBudget.includes('50k')) {
-      if (normalizedBudget.includes('under') || normalizedBudget.match(/^50k?$/)) {
-        return '$50,000 미만'
-      }
-    }
-    
-    if (normalizedBudget.includes('50') && normalizedBudget.includes('100')) {
-      return '$50,000 - $100,000'
-    }
-    
-    if (normalizedBudget.includes('100') && normalizedBudget.includes('200')) {
-      return '$100,000 - $200,000'
-    }
-    
-    if (normalizedBudget.includes('200') && normalizedBudget.includes('500')) {
-      return '$200,000 - $500,000'
-    }
-    
-    if (normalizedBudget.includes('over') || normalizedBudget.includes('above')) {
-      if (normalizedBudget.includes('500')) {
-        return '$500,000 이상'
-      }
-      if (normalizedBudget.includes('100')) {
-        return '$100,000 이상'
-      }
-    }
-    
-    // 숫자만 있는 경우 (예: "50000", "100000")
-    const numMatch = budget.match(/\d+/)
-    if (numMatch) {
-      const num = parseInt(numMatch[0])
-      if (num < 50000) return '$50,000 미만'
-      if (num >= 50000 && num <= 100000) return '$50,000 - $100,000'
-      if (num > 100000 && num <= 200000) return '$100,000 - $200,000'
-      if (num > 200000 && num <= 500000) return '$200,000 - $500,000'
-      if (num > 500000) return '$500,000 이상'
-    }
-    
-    // 변환할 수 없는 경우 원본 반환
-    return budget
+    return budgetLabels[budget] || budget
   }
 
-  // 시작시기 포맷팅 함수 추가
   const formatTimeline = (timeline: string): string => {
     const timelineLabels: Record<string, string> = {
-      'immediately': '즉시 시작',
-      'asap': '즉시 시작',
+      'immediate': '즉시 시작',
       '1_month': '1개월 내',
-      'within_1_month': '1개월 내',
       '3_months': '3개월 내',
-      'within_3_months': '3개월 내',
-      'planning': '계획단계',
-      'planning_stage': '계획단계'
+      'planning': '계획단계'
     }
-    
-    // 정확히 일치하는 경우
-    if (timelineLabels[timeline]) {
-      return timelineLabels[timeline]
-    }
-    
-    // 공백이나 대소문자 문제로 일치하지 않는 경우를 위한 정규화
-    const normalizedTimeline = timeline.trim().toLowerCase().replace(/\s+/g, '_')
-    if (timelineLabels[normalizedTimeline]) {
-      return timelineLabels[normalizedTimeline]
-    }
-    
-    // 패턴 매칭으로 변환 시도
-    if (normalizedTimeline.includes('immediately') || normalizedTimeline.includes('asap') || normalizedTimeline.includes('즉시')) {
-      return '즉시 시작'
-    }
-    
-    if (normalizedTimeline.includes('1') && (normalizedTimeline.includes('month') || normalizedTimeline.includes('개월'))) {
-      return '1개월 내'
-    }
-    
-    if (normalizedTimeline.includes('3') && (normalizedTimeline.includes('month') || normalizedTimeline.includes('개월'))) {
-      return '3개월 내'
-    }
-    
-    if (normalizedTimeline.includes('planning') || normalizedTimeline.includes('계획')) {
-      return '계획단계'
-    }
-    
-    // 변환할 수 없는 경우 원본 반환
-    return timeline
+    return timelineLabels[timeline] || timeline
   }
 
   if (isLoading) {
@@ -508,18 +519,9 @@ export default function CustomerDashboard() {
             {projects.map((project) => {
               const quotes = selectedProjectQuotes[project.id] || []
               const isExpanded = expandedProject === project.id
-              // ✅ 수정: bidding 상태일 때만 버튼 표시 (quote-submitted 제거)
               const canSelectContractor = project.status === 'bidding' && !project.selected_contractor_id
               const canStartProject = (project.status === 'bidding-closed' || project.status === 'contractor-selected') && project.selected_contractor_id
-
-              console.log('🔍 프로젝트 렌더링:', {
-                projectId: project.id,
-                status: project.status,
-                canSelectContractor,
-                canStartProject,
-                hasSelectedContractor: !!project.selected_contractor_id,
-                quotesCount: quotes.length
-              })
+              const canEdit = project.status === 'pending'
 
               return (
                 <div key={project.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-[#daa520]/20 overflow-hidden hover:shadow-xl transition-all duration-300">
@@ -532,6 +534,15 @@ export default function CustomerDashboard() {
                           <span className="text-sm text-gray-500">
                             {new Date(project.created_at).toLocaleDateString('ko-KR')}
                           </span>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleEditClick(project)}
+                              className="ml-2 flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
+                            >
+                              <Edit className="w-3 h-3" />
+                              수정
+                            </button>
+                          )}
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">
                           {spaceTypeLabels[project.space_type] || project.space_type}
@@ -564,7 +575,7 @@ export default function CustomerDashboard() {
                       )}
                     </div>
 
-                    {/* 견적서 목록 (입찰 중이거나 종료된 경우) */}
+                    {/* 견적서 목록 */}
                     {quotes.length > 0 && (
                       <div className="mt-6 border-t pt-6">
                         <button
@@ -584,17 +595,6 @@ export default function CustomerDashboard() {
                               const isSelected = project.selected_quote_id === quote.id
                               const isSelecting = selectingContractor === quote.id
                               
-                              console.log('🎯 견적서 렌더링:', {
-                                quoteId: quote.id,
-                                contractorId: quote.contractor_id,
-                                contractor: quote.contractor?.company_name,
-                                isSelected,
-                                isSelecting,
-                                canSelect: canSelectContractor,
-                                hasPDF: !!quote.pdf_url,
-                                selectingContractor
-                              })
-                              
                               return (
                                 <div
                                   key={quote.id}
@@ -606,7 +606,6 @@ export default function CustomerDashboard() {
                                 >
                                   <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1 min-w-0">
-                                      {/* 업체명 */}
                                       <h5 className="font-bold text-gray-900 text-lg mb-1">
                                         {quote.contractor?.company_name || '업체명 없음'}
                                       </h5>
@@ -616,12 +615,10 @@ export default function CustomerDashboard() {
                                         </p>
                                       )}
                                       
-                                      {/* 견적 금액 */}
                                       <p className="text-3xl font-bold text-blue-600 mb-3">
                                         ${quote.price.toLocaleString()} <span className="text-lg font-medium text-gray-500">CAD</span>
                                       </p>
                                       
-                                      {/* 작업 내용 */}
                                       {quote.description && (
                                         <div className="mb-3">
                                           <p className="text-xs text-gray-500 mb-1">상세 작업 내용:</p>
@@ -629,7 +626,6 @@ export default function CustomerDashboard() {
                                         </div>
                                       )}
                                       
-                                      {/* PDF 다운로드 버튼 */}
                                       {quote.pdf_url ? (
                                         <button
                                           onClick={() => handleDownloadPDF(quote)}
@@ -643,7 +639,6 @@ export default function CustomerDashboard() {
                                       )}
                                     </div>
                                     
-                                    {/* 선택 상태 or 선택 버튼 */}
                                     <div className="flex-shrink-0">
                                       {isSelected ? (
                                         <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold">
@@ -652,14 +647,7 @@ export default function CustomerDashboard() {
                                         </div>
                                       ) : canSelectContractor ? (
                                         <button
-                                          onClick={() => {
-                                            console.log('🎯 업체 선택하기 버튼 클릭됨!', {
-                                              projectId: project.id,
-                                              contractorId: quote.contractor_id,
-                                              quoteId: quote.id
-                                            })
-                                            handleSelectContractor(project.id, quote.contractor_id, quote.id)
-                                          }}
+                                          onClick={() => handleSelectContractor(project.id, quote.contractor_id, quote.id)}
                                           disabled={selectingContractor !== null}
                                           className={`px-6 py-2 rounded-lg font-semibold whitespace-nowrap flex items-center gap-2 transition-all ${
                                             selectingContractor !== null
@@ -712,10 +700,213 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
               )
-            })}
-          </div>
+            })}</div>
         )}
       </div>
+
+      {/* 수정 모달 */}
+      {editingProject && editFormData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">견적요청 수정</h2>
+                  <p className="text-sm opacity-90">관리자 승인 전까지만 수정 가능합니다</p>
+                </div>
+                <button
+                  onClick={handleCancelEdit}
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto space-y-6">
+              {/* Space Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">부동산 유형 *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {spaceTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setEditFormData({ ...editFormData, space_type: type.value, project_types: [] })}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        editFormData.space_type === type.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Project Types */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트 유형 *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(editFormData.space_type === 'commercial' ? commercialProjectTypes : residentialProjectTypes).map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        const types = editFormData.project_types
+                        if (types.includes(type.value)) {
+                          setEditFormData({ ...editFormData, project_types: types.filter(t => t !== type.value) })
+                        } else {
+                          setEditFormData({ ...editFormData, project_types: [...types, type.value] })
+                        }
+                      }}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        editFormData.project_types.includes(type.value)
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Budget */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">예산 범위 *</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {budgetRanges.map((budget) => (
+                    <button
+                      key={budget.value}
+                      type="button"
+                      onClick={() => setEditFormData({ ...editFormData, budget: budget.value })}
+                      className={`p-4 border-2 rounded-lg transition-all text-left ${
+                        editFormData.budget === budget.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {budget.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시작 시기 *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {timelines.map((timeline) => (
+                    <button
+                      key={timeline.value}
+                      type="button"
+                      onClick={() => setEditFormData({ ...editFormData, timeline: timeline.value })}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        editFormData.timeline === timeline.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {timeline.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">우편번호 *</label>
+                  <input
+                    type="text"
+                    value={editFormData.postal_code}
+                    onChange={(e) => setEditFormData({ ...editFormData, postal_code: formatPostalCode(e.target.value) })}
+                    maxLength={7}
+                    placeholder="A0A 0A0"
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">방문 희망일</label>
+                  <input
+                    type="date"
+                    value={editFormData.visit_date}
+                    onChange={(e) => setEditFormData({ ...editFormData, visit_date: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">전체 주소 *</label>
+                <input
+                  type="text"
+                  value={editFormData.full_address}
+                  onChange={(e) => setEditFormData({ ...editFormData, full_address: e.target.value })}
+                  placeholder="123 Main Street, Toronto, ON"
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트 설명 *</label>
+                <textarea
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  rows={4}
+                  placeholder="프로젝트에 대한 자세한 설명을 입력하세요..."
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">전화번호 *</label>
+                <input
+                  ref={phoneInputRef}
+                  type="tel"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: formatPhoneNumber(e.target.value) })}
+                  placeholder="(416) 555-0100"
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex justify-end gap-3">
+              <button
+                onClick={handleCancelEdit}
+                disabled={isSubmittingEdit}
+                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSubmitEdit}
+                disabled={isSubmittingEdit}
+                className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                  isSubmittingEdit
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                {isSubmittingEdit ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  '저장하기'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
