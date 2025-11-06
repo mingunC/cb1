@@ -554,7 +554,7 @@ export const createQuoteSubmissionTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>📋 New Quote Received</h1>
+          <h1>New Quote Received</h1>
           <p style="margin: 0; font-size: 18px;">A contractor has submitted a quote for your project</p>
         </div>
         

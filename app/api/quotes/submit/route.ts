@@ -215,12 +215,12 @@ export async function POST(request: NextRequest) {
       // 5단계: 이메일 전송
       console.log('📧 Step 5: Sending email...', {
         to: customer.email,
-        subject: '📋 New Quote Received for Your Project'
+        subject: 'New Quote Received for Your Project'
       })
 
       const emailResult = await sendEmail({
         to: customer.email,
-        subject: '📋 New Quote Received for Your Project',
+        subject: 'New Quote Received for Your Project',
         html: emailHTML,
         replyTo: 'support@canadabeaver.pro'
       })
