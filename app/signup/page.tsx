@@ -179,18 +179,22 @@ export default function SignupPage() {
         if (data.user.email_confirmed_at) {
           // 이메일 확인이 비활성화되어 있거나 이미 확인된 경우
           console.log('✅ Email already confirmed, redirecting to home...')
-          router.push('/?signup=success')
+          // router.push 대신 router.replace 사용하여 히스토리에서 제거
+          setTimeout(() => {
+            router.replace('/?signup=success')
+          }, 500)
+          // 로딩 상태는 리다이렉트 완료될 때까지 유지
         } else {
           // 이메일 확인이 필요한 경우
           console.log('📧 Email confirmation required')
           setUserEmail(formData.email)
           setEmailSent(true)
+          setIsLoading(false) // 이메일 확인 화면으로 전환시에는 로딩 해제
         }
       }
     } catch (err) {
       console.error('Signup error:', err)
       setError('An error occurred during sign up.')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -494,7 +498,17 @@ export default function SignupPage() {
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Signing up...' : 'Sign Up'}
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing up...
+                  </div>
+                ) : (
+                  'Sign Up'
+                )}
               </button>
             </div>
           </form>
