@@ -59,7 +59,7 @@ export const sendContractorSelectionEmails = async (data: ContractorSelectionDat
 
     const customerEmailResult = await sendEmail({
       to: data.customer.email,
-      subject: '✅ contractor selected',
+      subject: 'contractor selected',
       html: customerEmailHTML,
       replyTo: 'support@canadabeaver.pro'
     });
@@ -115,7 +115,7 @@ export const sendCustomerNotificationEmail = async (
   
   return await sendEmail({
     to: customerEmail,
-    subject: '✅ contractor selected',
+    subject: 'contractor selected',
     html: emailHTML
   });
 };

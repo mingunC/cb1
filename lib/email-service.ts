@@ -218,7 +218,7 @@ export const createCustomerNotificationTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>✅ Contractor selected</h1>
+          <h1>Contractor selected</h1>
           <p style="margin: 0; font-size: 18px;">The project is ready to start</p>
         </div>
         
