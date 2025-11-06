@@ -1,123 +1,121 @@
-import { FileText, CheckCircle, Gavel, Mail, Wrench } from 'lucide-react'
+'use client'
+
+import { ClipboardList, CheckCircle, Calendar, Mail, Hammer } from 'lucide-react'
+import Link from 'next/link'
 
 export default function ServiceProcessSection() {
   const steps = [
     {
       number: '01',
-      icon: FileText,
+      icon: ClipboardList,
       title: 'Complete Quote Request',
-      description: 'Fill out our simple 6-step quote request form with your project details'
+      description: 'Fill out our simple 6-step form with your project details and requirements'
     },
     {
       number: '02',
       icon: CheckCircle,
-      title: 'Admin Approval & Site Visit',
-      description: 'After approval, contractors visit your site on your preferred date'
+      title: 'Admin Approval',
+      description: 'Our team reviews and approves your request, ensuring quality matches'
     },
     {
       number: '03',
-      icon: Gavel,
-      title: 'Bidding Begins',
-      description: 'Verified contractors start preparing detailed quotes for your project'
+      icon: Calendar,
+      title: 'Site Visit Scheduled',
+      description: 'Contractors visit your site on your preferred date for assessment'
     },
     {
       number: '04',
       icon: Mail,
-      title: 'Receive Quotes',
-      description: 'Get multiple professional quotes within 7 days'
+      title: 'Receive Multiple Quotes',
+      description: 'Get detailed professional quotes within 7 days after site visits'
     },
     {
       number: '05',
-      icon: Wrench,
-      title: 'Start Your Project',
-      description: 'Choose your contractor and begin your renovation with confidence'
+      icon: Hammer,
+      title: 'Begin Your Project',
+      description: 'Choose your preferred contractor and start your transformation'
     }
   ]
 
   return (
-    <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 bg-[#fafaf8]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            The Service Process
+          {/* Process Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f5f1e8] rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.1)] mb-6">
+            <div className="w-1.5 h-1.5 bg-[#2c5f4e] rounded-full"></div>
+            <span className="text-xs text-gray-700 font-medium tracking-wide">Our Process</span>
+          </div>
+
+          {/* Title */}
+          <h2 className="text-4xl lg:text-5xl mb-3 tracking-tight">
+            <span className="font-serif text-gray-800">The Service</span>{' '}
+            <span className="font-serif text-[#2c5f4e] italic">Process</span>
           </h2>
-          <div className="w-20 h-1 bg-blue-500 mx-auto mb-6"></div>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            A simple, transparent process designed to connect you with the right professionals
+
+          {/* Subtitle */}
+          <p className="text-sm text-gray-600 font-normal">
+            간단하고 투명한 프로세스로 최고의 전문가와 연결됩니다
           </p>
         </div>
 
-        {/* Process Steps */}
-        <div className="relative">
-          {/* Connecting Line - Desktop only */}
-          <div className="hidden lg:block absolute top-20 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-200 to-transparent" 
-               style={{ top: '80px' }}></div>
+        {/* Process Timeline */}
+        <div className="max-w-5xl mx-auto">
+          {steps.map((step, index) => {
+            const Icon = step.icon
+            const isLast = index === steps.length - 1
+            
+            return (
+              <div key={index} className="relative">
+                {/* Connecting Line */}
+                {!isLast && (
+                  <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-gradient-to-b from-[#2c5f4e]/20 to-transparent hidden md:block" 
+                       style={{ height: 'calc(100% + 2rem)' }}></div>
+                )}
 
-          {/* Steps Grid */}
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon
-              
-              return (
-                <div 
-                  key={index}
-                  className="relative text-center group"
-                >
-                  {/* Step Number */}
-                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-white border-4 border-blue-100 rounded-full flex items-center justify-center z-10">
-                    <span className="text-blue-600 font-bold text-sm">{step.number}</span>
-                  </div>
-
-                  {/* Icon Container */}
-                  <div className="pt-12 mb-4">
-                    <div className="relative inline-block">
-                      <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center transform rotate-45 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 mx-auto">
-                        <Icon className="h-9 w-9 text-white transform -rotate-45" />
+                <div className="flex flex-col md:flex-row gap-6 mb-12 last:mb-0 group">
+                  {/* Icon Section */}
+                  <div className="flex-shrink-0">
+                    <div className="relative">
+                      {/* Number Badge */}
+                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#2c5f4e] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md z-10">
+                        {step.number}
+                      </div>
+                      
+                      {/* Icon Container */}
+                      <div className="w-14 h-14 bg-white border-2 border-[#2c5f4e]/20 rounded-2xl flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.08)] group-hover:shadow-[0_4px_12px_rgba(44,95,78,0.15)] group-hover:border-[#2c5f4e] transition-all duration-300">
+                        <Icon className="h-6 w-6 text-[#2c5f4e]" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 px-2">
-                    {step.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 leading-relaxed px-2">
-                    {step.description}
-                  </p>
-
-                  {/* Arrow - Desktop only */}
-                  {index < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-20 -right-4 text-blue-300">
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  )}
+                  {/* Content Section */}
+                  <div className="flex-1 bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-300">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {step.title}
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })}
         </div>
 
-        {/* CTA Section */}
-        <div className="mt-16 text-center">
-          <div className="inline-block bg-blue-50 rounded-2xl px-8 py-6 border border-blue-100">
-            <p className="text-gray-700 mb-4 text-lg">
-              Ready to start your renovation journey?
-            </p>
-            <a
-              href="/quote-request"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
-            >
-              Request a Quote Now
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </a>
-          </div>
+        {/* CTA Button */}
+        <div className="text-center mt-16">
+          <Link
+            href="/quote-request"
+            className="inline-flex items-center gap-2 border border-[#2c5f4e] bg-white text-[#2c5f4e] hover:bg-[#2c5f4e] hover:text-white px-8 py-3 rounded-lg font-medium text-sm transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+          >
+            Start Your Renovation Journey
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </Link>
         </div>
       </div>
     </section>
