@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Search, Calendar, Home, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Search, Calendar, Home, TrendingUp, Mail, Phone } from 'lucide-react'
 
 interface QuoteRequest {
   id: string
@@ -17,11 +17,14 @@ interface QuoteRequest {
   full_address: string
   postal_code: string
   description: string
+  phone: string
   photos: any[]
   status: 'pending' | 'approved' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'bidding-closed' | 'contractor-selected' | 'quote-submitted' | 'completed' | 'cancelled' | 'in-progress'
   selected_contractor_id?: string
   created_at: string
   updated_at: string
+  customer_email?: string
+  customer_name?: string
 }
 
 export default function AdminQuotesPage() {
@@ -58,9 +61,17 @@ export default function AdminQuotesPage() {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
+      // Join with users table to get customer email
       const { data, error } = await supabase
         .from('quote_requests')
-        .select('*')
+        .select(`
+          *,
+          users!quote_requests_customer_id_fkey (
+            email,
+            first_name,
+            last_name
+          )
+        `)
         .order('created_at', { ascending: false })
       
       if (error) {
@@ -68,7 +79,14 @@ export default function AdminQuotesPage() {
         return
       }
 
-      setQuotes(data || [])
+      // Transform data to include customer email and name
+      const transformedData = data?.map((quote: any) => ({
+        ...quote,
+        customer_email: quote.users?.email,
+        customer_name: quote.users ? `${quote.users.first_name || ''} ${quote.users.last_name || ''}`.trim() : ''
+      })) || []
+
+      setQuotes(transformedData)
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -110,7 +128,9 @@ export default function AdminQuotesPage() {
       filtered = filtered.filter(quote =>
         quote.customer_id?.toLowerCase().includes(search) ||
         quote.full_address?.toLowerCase().includes(search) ||
-        quote.space_type?.toLowerCase().includes(search)
+        quote.space_type?.toLowerCase().includes(search) ||
+        quote.customer_email?.toLowerCase().includes(search) ||
+        quote.customer_name?.toLowerCase().includes(search)
       )
     }
 
@@ -513,7 +533,7 @@ export default function AdminQuotesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="주소, 공간 유형, 예산 검색..."
+              placeholder="주소, 공간 유형, 이메일, 고객명으로 검색..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -649,8 +669,34 @@ export default function AdminQuotesPage() {
               <div className="space-y-4">
                 {/* 고객 정보 */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">고객 정보</h3>
-                  <p className="text-sm"><span className="font-medium">ID:</span> {selectedQuote.customer_id}</p>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    고객 정보
+                  </h3>
+                  <div className="space-y-2">
+                    <p className="text-sm"><span className="font-medium">ID:</span> {selectedQuote.customer_id}</p>
+                    {selectedQuote.customer_name && (
+                      <p className="text-sm"><span className="font-medium">이름:</span> {selectedQuote.customer_name}</p>
+                    )}
+                    {selectedQuote.customer_email && (
+                      <p className="text-sm flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-blue-500" />
+                        <span className="font-medium">이메일:</span> 
+                        <a href={`mailto:${selectedQuote.customer_email}`} className="text-blue-600 hover:text-blue-700">
+                          {selectedQuote.customer_email}
+                        </a>
+                      </p>
+                    )}
+                    {selectedQuote.phone && (
+                      <p className="text-sm flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-green-500" />
+                        <span className="font-medium">전화번호:</span> 
+                        <a href={`tel:${selectedQuote.phone}`} className="text-green-600 hover:text-green-700">
+                          {selectedQuote.phone}
+                        </a>
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* 프로젝트 정보 */}
