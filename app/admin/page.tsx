@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Users, FileText, Settings, LogOut, Image, TrendingUp, Clock, CheckCircle, Gift, MessageCircle, Star } from 'lucide-react'
+import { ArrowLeft, Users, FileText, DollarSign, LogOut, Image, TrendingUp, Clock, CheckCircle, Gift, MessageCircle, Star } from 'lucide-react'
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null)
@@ -17,7 +17,9 @@ export default function AdminPage() {
     completedProjects: 0,
     activeEvents: 0,
     totalReviews: 0,
-    reviewsWithoutReply: 0
+    reviewsWithoutReply: 0,
+    pendingCommissions: 0,
+    totalCommissionAmount: 0
   })
   const router = useRouter()
 
@@ -107,7 +109,9 @@ export default function AdminPage() {
         completedResult,
         eventsResult,
         reviewsResult,
-        reviewsNoReplyResult
+        reviewsNoReplyResult,
+        commissionsResult,
+        commissionAmountResult
       ] = await Promise.all([
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('contractors').select('*', { count: 'exact', head: true }),
@@ -116,8 +120,12 @@ export default function AdminPage() {
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
         supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('reviews').select('*', { count: 'exact', head: true }),
-        supabase.from('reviews').select('*', { count: 'exact', head: true }).is('contractor_reply', null)
+        supabase.from('reviews').select('*', { count: 'exact', head: true }).is('contractor_reply', null),
+        supabase.from('commission_tracking').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('commission_tracking').select('commission_amount').eq('status', 'pending')
       ])
+      
+      const totalCommissionAmount = commissionAmountResult.data?.reduce((sum, item) => sum + (item.commission_amount || 0), 0) || 0
       
       const newStats = {
         pendingQuotes: pendingResult.count || 0,
@@ -127,7 +135,9 @@ export default function AdminPage() {
         completedProjects: completedResult.count || 0,
         activeEvents: eventsResult.count || 0,
         totalReviews: reviewsResult.count || 0,
-        reviewsWithoutReply: reviewsNoReplyResult.count || 0
+        reviewsWithoutReply: reviewsNoReplyResult.count || 0,
+        pendingCommissions: commissionsResult.count || 0,
+        totalCommissionAmount
       }
       
       console.log('✅ 통계 로드 완료:', newStats)
@@ -149,6 +159,13 @@ export default function AdminPage() {
       console.error('❌ 로그아웃 실패:', error)
       router.push('/')
     }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ko-KR', {
+      style: 'currency',
+      currency: 'CAD'
+    }).format(amount)
   }
 
   if (isLoading) {
@@ -221,12 +238,12 @@ export default function AdminPage() {
       stats: '검증 필요'
     },
     {
-      title: '시스템 설정',
-      description: '플랫폼 설정을 관리합니다',
-      icon: Settings,
-      href: '/admin/settings',
-      color: 'bg-gray-500',
-      stats: '관리'
+      title: '수수료 관리',
+      description: '프로젝트 수수료를 추적하고 관리합니다',
+      icon: DollarSign,
+      href: '/admin/commission',
+      color: 'bg-emerald-500',
+      stats: `${stats.pendingCommissions}건 미수령`
     }
   ]
 
@@ -269,7 +286,7 @@ export default function AdminPage() {
         </div>
 
         {/* 통계 카드들 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="bg-yellow-100 rounded-lg p-3">
@@ -323,6 +340,17 @@ export default function AdminPage() {
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalReviews}</p>
             <p className="text-sm text-gray-600">전체 리뷰</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-emerald-100 rounded-lg p-3">
+                <DollarSign className="h-6 w-6 text-emerald-600" />
+              </div>
+              <span className="text-sm font-semibold text-emerald-600">수수료</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.totalCommissionAmount)}</p>
+            <p className="text-sm text-gray-600">{stats.pendingCommissions}건 미수령</p>
           </div>
         </div>
 
