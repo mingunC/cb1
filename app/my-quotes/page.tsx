@@ -445,6 +445,11 @@ export default function MyQuotesPage() {
   }
 
   const handleStartProject = async (projectId: string) => {
+    if (startingProject) {
+      console.log('Already starting a project')
+      return
+    }
+
     try {
       if (!confirm('Do you want to start the project?\n\nPlease coordinate with the contractor and schedule before clicking this button.')) {
         return
@@ -470,15 +475,17 @@ export default function MyQuotesPage() {
       console.log('API response:', result)
       toast.success('Project started! 🚀')
       
-      if (user?.id) {
-        await fetchQuotes(user.id)
-      }
-      
     } catch (error) {
       console.error('Error starting project:', error)
       toast.error('Error starting project.')
     } finally {
+      // ✅ fetchQuotes 호출 전에 로딩 상태 해제
       setStartingProject(null)
+      
+      // 데이터 새로고침
+      if (user?.id) {
+        await fetchQuotes(user.id)
+      }
     }
   }
 
