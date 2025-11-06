@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, Phone, MapPin, Instagram } from 'lucide-react'
+import { Mail, MapPin, Instagram } from 'lucide-react'
 
 // Threads Icon Component using the provided SVG
 const ThreadsIcon = ({ className }: { className?: string }) => (
@@ -65,10 +65,6 @@ export default function Footer() {
               <div className="flex items-center text-gray-400 hover:text-amber-400 transition-colors">
                 <Mail className="h-4 w-4 mr-3 text-amber-600" />
                 <span className="text-sm">admin@canadabeaver.pro</span>
-              </div>
-              <div className="flex items-center text-gray-400 hover:text-amber-400 transition-colors">
-                <Phone className="h-4 w-4 mr-3 text-amber-600" />
-                <span className="text-sm">1-800-RENOVATE</span>
               </div>
               <div className="flex items-center text-gray-400 hover:text-amber-400 transition-colors">
                 <MapPin className="h-4 w-4 mr-3 text-amber-600" />

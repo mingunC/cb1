@@ -8,15 +8,15 @@ export default function FAQPage() {
       questions: [
         {
           q: 'How do I create an account?',
-          a: 'Click on the "Sign Up" button in the top right corner. You can register using your email address or sign in with your Google account. Fill in your basic information, and you\'ll be ready to start requesting quotes!'
+          a: 'Click on the "Login" button in the top right corner. You can register using your email address or sign in with your Google account. Fill in your basic information, and you\'ll be ready to start requesting quotes!'
         },
         {
           q: 'Is the platform free to use?',
-          a: 'Yes! Creating an account and requesting quotes from contractors is completely free for homeowners. We only charge service fees when you successfully hire a contractor through our platform.'
+          a: 'Yes! Creating an account and requesting quotes from contractors is completely free for homeowners.'
         },
         {
           q: 'What areas do you serve?',
-          a: 'We currently serve all major cities and regions across Canada. When you submit a quote request, you\'ll be matched with qualified contractors in your area.'
+          a: 'We plan to launch our service in Ontario first and gradually expand to other regions.'
         }
       ]
     },
@@ -25,15 +25,15 @@ export default function FAQPage() {
       questions: [
         {
           q: 'How do I request a quote?',
-          a: 'Navigate to the "Request a Quote" page, fill out the project details including type of work, timeline, budget, and location. You can also upload photos to help contractors better understand your needs. Submit the form, and you\'ll start receiving quotes within 24-48 hours.'
+          a: 'Navigate to the "Request a Quote" page, and complete the quote request form in 6 simple steps. After you submit the request, our administrator will review and approve it. Once our partner contractors complete the necessary site visits, you will start receiving their quotes.'
         },
         {
           q: 'How many quotes will I receive?',
-          a: 'Typically, you\'ll receive 3-5 quotes from qualified contractors in your area. The exact number may vary depending on the type of project and contractor availability.'
+          a: 'Typically, you\'ll receive 1-5 quotes from qualified contractors in your area. The exact number may vary depending on the type of project and contractor availability.'
         },
         {
           q: 'How long does it take to get quotes?',
-          a: 'Most homeowners start receiving quotes within 24-48 hours. Complex projects may take slightly longer as contractors need time to properly assess the requirements.'
+          a: 'You will receive quotes from the partner contractors who completed a site visit for up to 7 days after the site visit is finished. Complex projects may take slightly longer as contractors need time to properly assess the requirements.'
         },
         {
           q: 'Can I edit my quote request after submitting?',
