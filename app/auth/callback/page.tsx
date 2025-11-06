@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, Suspense } from 'react'
+import { useEffect, Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import { CheckCircle } from 'lucide-react'
 
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createBrowserClient()
+  const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading')
   
-  // URL 파라미터에서 type 확인 (contractor 여부)
   const loginType = searchParams.get('type')
 
   useEffect(() => {
@@ -19,30 +20,46 @@ function AuthCallbackContent() {
         
         if (error) {
           console.error('Auth callback error:', error)
-          router.push('/login?error=auth_callback_failed')
+          setVerificationStatus('error')
+          setTimeout(() => router.push('/login?error=auth_callback_failed'), 3000)
           return
         }
         
         if (session) {
-          console.log('Login successful:', session.user.email)
+          console.log('Email verification successful:', session.user.email)
           
-          // Google OAuth 메타데이터 디버깅
+          // ✅ 이메일 확인 완료 - Google OAuth 처리
           if (session.user.app_metadata?.provider === 'google') {
-            console.log('🔍 Google OAuth 메타데이터:')
-            console.log('- user_metadata:', session.user.user_metadata)
-            console.log('- app_metadata:', session.user.app_metadata)
-            console.log('- identities:', session.user.identities)
+            console.log('🔍 Google OAuth user')
             
-            // Google Identity 데이터 상세 확인
-            const googleIdentity = session.user.identities?.find(id => id.provider === 'google')
-            if (googleIdentity) {
-              console.log('- Google Identity data:', googleIdentity.identity_data)
+            // Google 사용자 users 테이블에 저장
+            const { data: existingUser } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', session.user.id)
+              .maybeSingle()
+            
+            if (!existingUser) {
+              console.log('Creating new user record for Google user')
+              const fullName = session.user.user_metadata?.full_name || ''
+              const nameParts = fullName.split(' ')
+              
+              await supabase
+                .from('users')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  user_type: 'customer',
+                  first_name: nameParts[0] || '',
+                  last_name: nameParts.slice(1).join(' ') || '',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
             }
           }
           
           // 업체 로그인 타입인 경우
           if (loginType === 'contractor') {
-            // 업체 여부 확인
             const { data: contractorData } = await supabase
               .from('contractors')
               .select('id, company_name')
@@ -51,11 +68,13 @@ function AuthCallbackContent() {
             
             if (contractorData) {
               console.log('Contractor login successful:', contractorData.company_name)
-              router.push('/contractor')
+              setVerificationStatus('success')
+              setTimeout(() => router.push('/contractor'), 2000)
               return
             } else {
               console.log('Not a contractor, redirecting to contractor signup')
-              router.push('/contractor-signup?message=not_contractor')
+              setVerificationStatus('error')
+              setTimeout(() => router.push('/contractor-signup?message=not_contractor'), 3000)
               return
             }
           }
@@ -70,9 +89,9 @@ function AuthCallbackContent() {
               .maybeSingle()
             
             if (contractorData) {
-              // 업체면 업체 대시보드로
               console.log('Contractor user, redirecting to contractor dashboard')
-              router.push('/contractor')
+              setVerificationStatus('success')
+              setTimeout(() => router.push('/contractor'), 2000)
               return
             }
             
@@ -81,41 +100,87 @@ function AuthCallbackContent() {
               .from('users')
               .select('user_type')
               .eq('id', session.user.id)
-              .single()
+              .maybeSingle()
             
             if (userData?.user_type === 'admin') {
-              // 관리자면 관리자 대시보드로
               console.log('Admin user, redirecting to admin dashboard')
-              router.push('/admin')
+              setVerificationStatus('success')
+              setTimeout(() => router.push('/admin'), 2000)
             } else {
-              // 일반 사용자면 홈페이지로
-              console.log('Regular user, redirecting to home')
-              router.push('/')
+              // ✅ 이메일 확인 완료 - 일반 사용자 홈으로
+              console.log('Email verified, redirecting to home')
+              setVerificationStatus('success')
+              setTimeout(() => router.push('/'), 2000)
             }
           } catch (redirectError) {
             console.error('Redirect error:', redirectError)
-            // 오류 시 홈페이지로 리다이렉트
-            router.push('/')
+            setVerificationStatus('success')
+            setTimeout(() => router.push('/'), 2000)
           }
         } else {
           // 세션이 없으면 로그인 페이지로
           const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
-          router.push(redirectTo)
+          setVerificationStatus('error')
+          setTimeout(() => router.push(redirectTo), 3000)
         }
       } catch (err) {
         console.error('Unexpected error:', err)
-        router.push('/login?error=unexpected_error')
+        setVerificationStatus('error')
+        setTimeout(() => router.push('/login?error=unexpected_error'), 3000)
       }
     }
 
     handleAuthCallback()
   }, [router, supabase, loginType])
 
+  // ✅ 이메일 확인 성공 화면
+  if (verificationStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+            <CheckCircle className="h-10 w-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Email Verified! ✅
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Your account has been successfully activated.
+          </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-sm text-gray-500">Redirecting...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ✅ 이메일 확인 실패 화면
+  if (verificationStatus === 'error') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+            <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Verification Failed
+          </h2>
+          <p className="text-gray-600">
+            There was an issue verifying your email. Redirecting to login...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // 로딩 중
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">로그인 처리 중...</p>
+        <p className="mt-4 text-gray-600">Verifying your email...</p>
       </div>
     </div>
   )
@@ -127,7 +192,7 @@ export default function AuthCallback() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     }>
