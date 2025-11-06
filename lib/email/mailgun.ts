@@ -117,11 +117,11 @@ const formatProjectTypes = (projectTypes: string[]): string => {
 
 const formatSpaceType = (spaceType: string): string => {
   const spaceTypeMap: { [key: string]: string } = {
-    'detached-house': 'Detached House',
-    'detached_house': 'Detached House',
+    'detached-house': 'Detached house',
+    'detached_house': 'Detached house',
     'condo': 'Condo',
-    'townhouse': 'Townhouse',
-    'town_house': 'Townhouse',
+    'townhouse': 'Town house',
+    'town_house': 'Town house',
     'commercial': 'Commercial',
     'beecroft': 'Beecroft',
     'apartment': 'Apartment',
@@ -129,6 +129,16 @@ const formatSpaceType = (spaceType: string): string => {
   }
   
   return spaceTypeMap[spaceType] || spaceType
+}
+
+const formatBudget = (budget: string): string => {
+  const budgetMap: { [key: string]: string } = {
+    'under_50k': 'under 50k',
+    '50k_to_100k': '50k to 100k',
+    'over_100k': 'over 100k'
+  }
+  
+  return budgetMap[budget] || budget
 }
 
 // ✅ 업체에게 보낼 이메일 템플릿 (고객 정보 포함)
@@ -605,12 +615,12 @@ export const createQuoteSubmissionTemplate = (
               </tr>
               <tr>
                 <td>Space Type</td>
-                <td>${projectInfo.space_type || 'Not specified'}</td>
+                <td>${formatSpaceType(projectInfo.space_type || '')}</td>
               </tr>
               ${projectInfo.budget ? `
               <tr>
                 <td>Budget</td>
-                <td>${projectInfo.budget}</td>
+                <td>${formatBudget(projectInfo.budget)}</td>
               </tr>
               ` : ''}
             </table>
@@ -630,13 +640,13 @@ export const createQuoteSubmissionTemplate = (
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-            If you have any questions, please contact us anytime at support@canadabeaver.pro.
+            If you have any questions, please contact us anytime at admin@canadabeaver.pro.
           </p>
         </div>
         
         <div class="footer">
           <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>© 2024 Canada Beaver. All rights reserved.</p>
+          <p>© 2025 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
     </body>
