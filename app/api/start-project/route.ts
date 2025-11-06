@@ -364,6 +364,7 @@ export async function POST(request: NextRequest) {
                   <p><strong>Next Steps:</strong></p>
                   <ul>
                     <li>Final confirmation of construction schedule</li>
+                    <li>Commission due within 3 days of signing.</li>
                     <li>Prepare necessary materials and workforce</li>
                     <li>Regular progress updates</li>
                     <li>Final inspection upon completion</li>
