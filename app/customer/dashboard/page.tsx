@@ -242,7 +242,7 @@ export default function CustomerDashboard() {
     if (!confirm('공사 날짜가 확정되셨나요? 확정되셨으면 이 버튼을 눌러주세요.')) return
     
     try {
-      console.log('🚀 프로젝트 시작 API 호출...')
+      console.log('🚀 Starting project:', projectId)
       
       const response = await fetch('/api/start-project', {
         method: 'POST',
@@ -250,11 +250,17 @@ export default function CustomerDashboard() {
         body: JSON.stringify({ projectId })
       })
       
+      console.log('📥 Response status:', response.status, response.statusText)
+      
       const result = await response.json()
-      console.log('📥 API 응답:', result)
+      console.log('📥 API response:', result)
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to start project')
+        // 더 상세한 에러 정보 표시
+        const errorMessage = result.error || 'Failed to start project'
+        const errorDetails = result.details ? `\n상세: ${result.details}` : ''
+        console.error('❌ API error:', { error: errorMessage, details: result.details, result })
+        throw new Error(errorMessage + errorDetails)
       }
       
       toast.success('🎉 프로젝트가 시작되었습니다! 프로젝트 시작을 축하드립니다!')
@@ -268,6 +274,11 @@ export default function CustomerDashboard() {
       
     } catch (error: any) {
       console.error('❌ 프로젝트 시작 에러:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        error
+      })
       toast.error(`프로젝트 시작에 실패했습니다: ${error.message}`)
     }
   }
