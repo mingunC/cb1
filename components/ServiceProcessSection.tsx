@@ -56,7 +56,7 @@ export default function ServiceProcessSection() {
 
           {/* Subtitle */}
           <p className="text-sm text-gray-600 font-normal">
-            간단하고 투명한 프로세스로 최고의 전문가와 연결됩니다
+            Connect with top professionals through a simple and transparent process
           </p>
         </div>
 

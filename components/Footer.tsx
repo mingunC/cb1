@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Mail, MapPin, Instagram } from 'lucide-react'
 
 // Threads Icon Component using the provided SVG
@@ -49,12 +50,13 @@ export default function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <div className="flex items-center mb-6">
-              <div className="h-10 w-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">R</span>
-              </div>
-              <span className="ml-3 text-2xl font-bold bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent">
-                Renovation
-              </span>
+              <Image
+                src="/logo.png"
+                alt="Canada Beaver"
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
             </div>
             <p className="text-gray-400 mb-6 leading-relaxed">
               Trusted professionals ready to transform your space. Connect with verified experts across Canada.
@@ -149,7 +151,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-16 pt-8">
           <div className="flex justify-center items-center">
             <div className="text-gray-400 text-sm">
-              © 2025 Renovation Platform. All rights reserved.
+              © 2025 Canada Beaver. All rights reserved.
             </div>
           </div>
         </div>

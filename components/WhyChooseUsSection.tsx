@@ -43,7 +43,7 @@ export default function WhyChooseUsSection() {
 
           {/* Subtitle */}
           <p className="text-sm text-gray-600 font-normal max-w-2xl mx-auto">
-            토론토 주택 소유주들이 직면한 신뢰 위기를 해결합니다
+            Solving the trust crisis facing Canadian homeowners
           </p>
         </div>
 

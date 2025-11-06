@@ -100,11 +100,11 @@ export default function EventsPromotionPage() {
 
   const getEventTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      'discount': '할인',
-      'gift': '증정',
-      'special': '특별',
-      'season': '시즌',
-      'collaboration': '제휴'
+      'discount': 'Discount',
+      'gift': 'Gift',
+      'special': 'Special',
+      'season': 'Season',
+      'collaboration': 'Collaboration'
     }
     return labels[type] || type
   }
@@ -127,7 +127,7 @@ export default function EventsPromotionPage() {
     const end = new Date(endDate)
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     
-    if (diff < 0) return '종료'
+    if (diff < 0) return 'Ended'
     if (diff === 0) return 'D-Day'
     return `D-${diff}`
   }
@@ -159,10 +159,10 @@ export default function EventsPromotionPage() {
         </div>
       </div>
 
-      {/* 필터 섹션 */}
+      {/* Filter Section */}
       <div className="bg-white border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 상태 필터 */}
+          {/* Status Filter */}
           <div className="flex gap-6 py-4 border-b">
             {(['ongoing', 'upcoming', 'ended'] as StatusFilter[]).map(status => (
               <button
@@ -174,9 +174,9 @@ export default function EventsPromotionPage() {
                     : 'text-gray-500 border-transparent hover:text-gray-700'
                 }`}
               >
-                {status === 'ongoing' && '진행중'}
-                {status === 'upcoming' && '예정'}
-                {status === 'ended' && '종료'}
+                {status === 'ongoing' && 'Ongoing'}
+                {status === 'upcoming' && 'Upcoming'}
+                {status === 'ended' && 'Ended'}
                 <span className="ml-2 text-sm">
                   ({events.filter(e => {
                     const now = new Date()
@@ -191,7 +191,7 @@ export default function EventsPromotionPage() {
             ))}
           </div>
 
-          {/* 타입 필터 */}
+          {/* Type Filter */}
           <div className="flex gap-2 py-4 overflow-x-auto">
             <button
               onClick={() => setFilterType('all')}
@@ -201,7 +201,7 @@ export default function EventsPromotionPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              전체
+              All
             </button>
             {(['discount', 'gift', 'special', 'season', 'collaboration'] as FilterType[]).map(type => (
               <button
@@ -221,7 +221,7 @@ export default function EventsPromotionPage() {
         </div>
       </div>
 
-      {/* 이벤트 목록 */}
+      {/* Events List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -238,14 +238,14 @@ export default function EventsPromotionPage() {
         ) : filteredEvents.length === 0 ? (
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">현재 진행중인 이벤트가 없습니다.</p>
+            <p className="text-gray-500">No events available at this time.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEvents.map(event => {
               const dday = calculateDday(event.end_date)
               const progress = calculateProgress(event.current_participants, event.max_participants)
-              const isEnded = dday === '종료'
+              const isEnded = dday === 'Ended'
 
               return (
                 <div
@@ -255,7 +255,7 @@ export default function EventsPromotionPage() {
                   }`}
                   onClick={() => setSelectedEvent(event)}
                 >
-                  {/* 이미지 */}
+                  {/* Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={event.image_url}
@@ -263,7 +263,7 @@ export default function EventsPromotionPage() {
                       className="w-full h-full object-cover"
                     />
                     
-                    {/* 배지들 */}
+                    {/* Badges */}
                     <div className="absolute top-3 left-3 flex gap-2">
                       {event.is_featured && !isEnded && (
                         <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">
@@ -290,7 +290,7 @@ export default function EventsPromotionPage() {
                       {dday}
                     </div>
 
-                    {/* 할인율 */}
+                    {/* Discount Rate */}
                     {event.discount_rate && !isEnded && (
                       <div className="absolute bottom-3 left-3 bg-red-500 text-white px-3 py-2 rounded-lg">
                         <div className="text-2xl font-bold">{event.discount_rate}%</div>
@@ -299,9 +299,9 @@ export default function EventsPromotionPage() {
                     )}
                   </div>
 
-                  {/* 내용 */}
+                  {/* Content */}
                   <div className="p-4">
-                    {/* 업체명 */}
+                    {/* Contractor Name */}
                     {event.contractor && (
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-sm text-gray-500">
@@ -310,33 +310,33 @@ export default function EventsPromotionPage() {
                       </div>
                     )}
 
-                    {/* 제목 */}
+                    {/* Title */}
                     <h3 className="font-bold text-gray-900 mb-1">{event.title}</h3>
                     <p className="text-sm text-gray-600 mb-3">{event.subtitle}</p>
 
-                    {/* 가격 정보 */}
+                    {/* Price Information */}
                     {event.original_price && (
                       <div className="mb-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-400 line-through">
-                            {event.original_price.toLocaleString()}원
+                            ${event.original_price.toLocaleString()}
                           </span>
                           {event.discounted_price && (
                             <span className="text-lg font-bold text-red-500">
-                              {event.discounted_price.toLocaleString()}원
+                              ${event.discounted_price.toLocaleString()}
                             </span>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {/* 참여 현황 */}
+                    {/* Participant Status */}
                     {event.max_participants && (
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-600">참여 현황</span>
+                          <span className="text-gray-600">Participants</span>
                           <span className="font-medium">
-                            {event.current_participants || 0}/{event.max_participants}명
+                            {event.current_participants || 0}/{event.max_participants}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -348,7 +348,7 @@ export default function EventsPromotionPage() {
                       </div>
                     )}
 
-                    {/* 기간 */}
+                    {/* Period */}
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <Calendar className="h-4 w-4" />
                       <span>
@@ -357,7 +357,7 @@ export default function EventsPromotionPage() {
                       </span>
                     </div>
 
-                    {/* 태그 */}
+                    {/* Tags */}
                     {event.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-3">
                         {event.tags.slice(0, 3).map((tag, index) => (
@@ -378,7 +378,7 @@ export default function EventsPromotionPage() {
         )}
       </div>
 
-      {/* 상세 모달 */}
+      {/* Detail Modal */}
       {selectedEvent && (
         <div 
           className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
@@ -388,7 +388,7 @@ export default function EventsPromotionPage() {
             className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 모달 이미지 */}
+            {/* Modal Image */}
             <div className="relative h-64 md:h-80">
               <img
                 src={selectedEvent.image_url}
@@ -403,9 +403,9 @@ export default function EventsPromotionPage() {
               </button>
             </div>
 
-            {/* 모달 내용 */}
+            {/* Modal Content */}
             <div className="p-6">
-              {/* 업체 정보 */}
+              {/* Contractor Info */}
               {selectedEvent.contractor && (
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-sm text-gray-600">
@@ -414,19 +414,19 @@ export default function EventsPromotionPage() {
                 </div>
               )}
 
-              {/* 제목 및 설명 */}
+              {/* Title and Description */}
               <h2 className="text-2xl font-bold mb-2">{selectedEvent.title}</h2>
               <p className="text-gray-600 mb-4">{selectedEvent.subtitle}</p>
               <p className="text-gray-700 leading-relaxed mb-6">
                 {selectedEvent.description}
               </p>
 
-              {/* 이벤트 정보 */}
+              {/* Event Information */}
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold mb-3">이벤트 정보</h3>
+                <h3 className="font-semibold mb-3">Event Information</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">기간</span>
+                    <span className="text-gray-600">Period</span>
                     <span className="font-medium">
                       {new Date(selectedEvent.start_date).toLocaleDateString()} ~ 
                       {new Date(selectedEvent.end_date).toLocaleDateString()}
@@ -434,15 +434,15 @@ export default function EventsPromotionPage() {
                   </div>
                   {selectedEvent.discount_rate && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">할인율</span>
+                      <span className="text-gray-600">Discount Rate</span>
                       <span className="font-medium text-red-500">
-                        {selectedEvent.discount_rate}% 할인
+                        {selectedEvent.discount_rate}% OFF
                       </span>
                     </div>
                   )}
                   {selectedEvent.target_space && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">대상 공간</span>
+                      <span className="text-gray-600">Target Space</span>
                       <span className="font-medium">
                         {selectedEvent.target_space.join(', ')}
                       </span>
@@ -450,27 +450,27 @@ export default function EventsPromotionPage() {
                   )}
                   {selectedEvent.min_budget && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">최소 예산</span>
+                      <span className="text-gray-600">Minimum Budget</span>
                       <span className="font-medium">
-                        {selectedEvent.min_budget.toLocaleString()}원 이상
+                        ${selectedEvent.min_budget.toLocaleString()} or more
                       </span>
                     </div>
                   )}
                   {selectedEvent.max_participants && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">참여 현황</span>
+                      <span className="text-gray-600">Participants</span>
                       <span className="font-medium">
-                        {selectedEvent.current_participants || 0} / {selectedEvent.max_participants}명
+                        {selectedEvent.current_participants || 0} / {selectedEvent.max_participants}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* 이용 조건 */}
+              {/* Terms and Conditions */}
               {selectedEvent.terms_conditions.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="font-semibold mb-3">이용 조건</h3>
+                  <h3 className="font-semibold mb-3">Terms and Conditions</h3>
                   <ul className="space-y-1">
                     {selectedEvent.terms_conditions.map((term, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
@@ -482,13 +482,13 @@ export default function EventsPromotionPage() {
                 </div>
               )}
 
-              {/* 액션 버튼 */}
+              {/* Action Buttons */}
               <div className="flex gap-3">
                 <button className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
-                  이벤트 참여하기
+                  Join Event
                 </button>
                 <button className="px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium">
-                  업체 문의
+                  Contact Contractor
                 </button>
               </div>
             </div>
