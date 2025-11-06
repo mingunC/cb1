@@ -3,7 +3,7 @@ import WhyChooseUsSection from '@/components/WhyChooseUsSection'
 import ServiceProcessSection from '@/components/ServiceProcessSection'
 import ProcessSection from '@/components/ProcessSection'
 import PortfolioSection from '@/components/PortfolioSection'
-import EventsSection from '@/components/EventsSection'
+import SocialMediaSection from '@/components/SocialMediaSection'
 import CtaSection from '@/components/CtaSection'
 
 export default function HomePage() {
@@ -14,7 +14,7 @@ export default function HomePage() {
       <ServiceProcessSection />
       <ProcessSection />
       <PortfolioSection />
-      <EventsSection />
+      <SocialMediaSection />
       <CtaSection />
     </div>
   )
