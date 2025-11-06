@@ -116,7 +116,8 @@ export default function AdminPage() {
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('contractors').select('*', { count: 'exact', head: true }),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-        supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['site-visit-pending', 'site-visit-completed', 'bidding']),
+        // ✅ 수정: in-progress와 contractor-selected 상태 추가
+        supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['site-visit-pending', 'site-visit-completed', 'bidding', 'bidding-closed', 'contractor-selected', 'in-progress']),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
         supabase.from('events').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('reviews').select('*', { count: 'exact', head: true }),
