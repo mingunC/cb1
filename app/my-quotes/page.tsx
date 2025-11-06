@@ -201,7 +201,7 @@ export default function MyQuotesPage() {
       console.log('Successfully fetched quotes:', quotesData?.length || 0)
       setQuotes(quotesData || [])
       setContractorQuotes([])
-      // 기본적으로 모든 견적서 섹션을 접혀있게 설정
+      // Collapse all quote sections by default
       if (quotesData && quotesData.length > 0) {
         setCollapsedQuotes(new Set(quotesData.map(q => q.id)))
         setCollapsedSiteVisits(new Set(quotesData.map(q => q.id)))
@@ -344,7 +344,7 @@ export default function MyQuotesPage() {
 
       const result = await response.json()
 
-      if (!response.ok && !result.message?.includes('이미 업체가 선정된')) {
+      if (!response.ok && !result.message?.includes('contractor already selected')) {
         console.error('API error:', result)
         if (user?.id) {
           await fetchQuotes(user.id)
@@ -360,7 +360,7 @@ export default function MyQuotesPage() {
       if (user?.id) {
         await fetchQuotes(user.id)
       }
-      toast.error('업체 선택 중 오류가 발생했습니다.')
+      toast.error('Error selecting contractor.')
     } finally {
       setSelectingContractor(null)
     }
@@ -406,11 +406,11 @@ export default function MyQuotesPage() {
 
   const downloadQuote = async (quoteId: string) => {
     if (downloadingQuotes.has(quoteId)) {
-      console.log('⚠️ 이미 다운로드 중입니다:', quoteId)
+      console.log('⚠️ Already downloading:', quoteId)
       return
     }
 
-    console.log('🔽 PDF 다운로드 시작, 견적서 ID:', quoteId)
+    console.log('🔽 Starting PDF download, quote ID:', quoteId)
     setDownloadingQuotes(prev => new Set(prev).add(quoteId))
     
     try {
@@ -427,23 +427,23 @@ export default function MyQuotesPage() {
       }
 
       if (!quoteData) {
-        console.error('❌ 견적서 데이터가 존재하지 않습니다')
+        console.error('❌ Quote data does not exist')
         toast.error('Quote information not found.')
         return
       }
 
       if (!quoteData.pdf_url) {
-        console.error('❌ PDF URL이 비어있습니다')
+        console.error('❌ PDF URL is empty')
         toast.error('Quote file not uploaded.')
         return
       }
 
       const originalUrl = quoteData.pdf_url
-      console.log('📄 원본 URL:', originalUrl)
+      console.log('📄 Original URL:', originalUrl)
 
       if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
         window.open(originalUrl, '_blank')
-        toast.success('견적서를 새 탭에서 엽니다...')
+        toast.success('Opening quote in new tab...')
         return
       }
 
@@ -455,7 +455,6 @@ export default function MyQuotesPage() {
         }
       }
 
-      // 정규식 수정: 슬래시는 이스케이프 불필요
       filePath = filePath.replace(/^\/+|\/+$/g, '')
 
       const supabase = createBrowserClient()
@@ -465,7 +464,7 @@ export default function MyQuotesPage() {
 
       if (publicUrlData?.publicUrl) {
         window.open(publicUrlData.publicUrl, '_blank')
-        toast.success('견적서를 새 탭에서 엽니다...')
+        toast.success('Opening quote in new tab...')
         return
       }
 
@@ -475,14 +474,14 @@ export default function MyQuotesPage() {
 
       if (!signedError && signedData?.signedUrl) {
         window.open(signedData.signedUrl, '_blank')
-        toast.success('견적서를 새 탭에서 엽니다...')
+        toast.success('Opening quote in new tab...')
         return
       }
 
       toast.error('Quote file not found.')
 
     } catch (error: any) {
-      console.error('❌ 오류 발생:', error)
+      console.error('❌ Error occurred:', error)
       toast.error('Error downloading quote.')
     } finally {
       setDownloadingQuotes(prev => {
@@ -567,7 +566,7 @@ export default function MyQuotesPage() {
               
               return (
                 <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  {/* 상태 배지 */}
+                  {/* Status badge */}
                   <div className="flex items-center justify-between mb-4">
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
                       <IconComponent className="h-4 w-4 mr-2" />
@@ -578,7 +577,7 @@ export default function MyQuotesPage() {
                     </div>
                   </div>
 
-                  {/* 프로젝트 정보 */}
+                  {/* Project information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -604,7 +603,7 @@ export default function MyQuotesPage() {
                     </div>
                   </div>
 
-                  {/* 현장방문 신청 목록 - 새로 추가 */}
+                  {/* Site visit applications list */}
                   {siteVisitCount > 0 && (
                     <div className="mt-4 border-t pt-4">
                       <button
@@ -675,7 +674,7 @@ export default function MyQuotesPage() {
                     </div>
                   )}
 
-                  {/* 견적서 목록 */}
+                  {/* Contractor quotes list */}
                   {quoteCount > 0 && (
                     <div className="mt-4 border-t pt-4">
                       <button
@@ -748,7 +747,7 @@ export default function MyQuotesPage() {
                     </div>
                   )}
 
-                  {/* 프로젝트 시작 버튼 */}
+                  {/* Start project button */}
                   {canStartProject && (
                     <div className="mt-4 border-t pt-4">
                       <p className="text-base font-medium text-gray-700 mb-3">
