@@ -285,6 +285,7 @@ export default function MyQuotesPage() {
   const timelineMap: { [key: string]: string } = {
     'asap': 'As soon as possible',
     'immediate': 'Immediate',
+    '1_month': '1 month',
     'within_1_month': 'Within 1 month',
     'within_3_months': 'Within 3 months',
     '3_months': 'Within 3 months',
