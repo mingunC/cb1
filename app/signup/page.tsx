@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone, CheckCircle } from 'lucide-react'
 import { useAuth } from '@/lib/supabase/hooks'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
@@ -12,6 +12,8 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailSent, setEmailSent] = useState(false) // 이메일 전송 성공 상태
+  const [userEmail, setUserEmail] = useState('') // 가입한 이메일 저장
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,13 +28,9 @@ export default function SignupPage() {
 
   // Format phone number to (XXX) XXX - XXXX format
   const formatPhoneNumber = (value: string) => {
-    // Extract only digits
     const cleaned = value.replace(/\D/g, '')
-    
-    // Limit to 10 digits
     const limited = cleaned.slice(0, 10)
     
-    // Format as (XXX) XXX - XXXX
     if (limited.length === 0) {
       return ''
     } else if (limited.length <= 3) {
@@ -44,44 +42,33 @@ export default function SignupPage() {
     }
   }
 
-  // Handle phone number input change with cursor position management
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target
     const previousValue = formData.mobileNumber
     const inputValue = input.value
     const cursorPosition = input.selectionStart || 0
     
-    // Extract only digits
     const cleaned = inputValue.replace(/\D/g, '')
     const previousCleaned = previousValue.replace(/\D/g, '')
-    
-    // Check if it's a deletion (going backwards)
     const isDeletion = cleaned.length < previousCleaned.length
-    
-    // Apply formatting
     const formatted = formatPhoneNumber(inputValue)
     
-    // Calculate cursor position: count digits before cursor
     const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
     
-    // Find position in formatted string
     let newCursorPosition = formatted.length
     let count = 0
     for (let i = 0; i < formatted.length; i++) {
       if (/\d/.test(formatted[i])) {
         count++
         if (count === beforeCursor) {
-          // If deletion, position after the digit; if insertion, position after format character
           newCursorPosition = isDeletion ? i + 1 : i + 1
           break
         }
       }
     }
     
-    // Update state
     setFormData(prev => ({ ...prev, mobileNumber: formatted }))
     
-    // Restore cursor position
     setTimeout(() => {
       if (phoneInputRef.current) {
         phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
@@ -97,12 +84,14 @@ export default function SignupPage() {
     // Password confirmation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.')
+      setIsLoading(false)
       return
     }
 
     // Required fields check
     if (!formData.firstName || !formData.lastName || !formData.mobileNumber) {
       setError('Please fill in all fields.')
+      setIsLoading(false)
       return
     }
 
@@ -117,35 +106,40 @@ export default function SignupPage() {
 
     if (!Object.values(passwordRequirements).every(req => req)) {
       setError('Password must meet all requirements.')
+      setIsLoading(false)
       return
     }
 
     try {
       const supabase = createBrowserClient()
+      
+      // ✅ 이메일 확인이 활성화된 상태로 회원가입
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-      })
-      
-      console.log('Signup result:', { data, error }) // 디버깅용
-      
-      if (error) {
-        setError(error.message)
-      } else if (data.user) {
-        console.log('Signup successful, user:', data.user.email) // 디버깅용
-        
-        // 고객 정보를 users 테이블에 저장
-        try {
-          const supabase = createBrowserClient()
-          console.log('Saving user data to users table:', {
-            id: data.user.id,
-            email: formData.email,
-            user_type: 'customer',
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
             phone: formData.mobileNumber
-          })
-          
+          }
+        }
+      })
+      
+      console.log('Signup result:', { data, error })
+      
+      if (error) {
+        setError(error.message)
+        setIsLoading(false)
+        return
+      }
+      
+      if (data.user) {
+        console.log('Signup successful, user:', data.user.email)
+        
+        // ✅ users 테이블에 저장 (이메일 확인 전이라도 데이터는 저장)
+        try {
           const { error: userError } = await supabase
             .from('users')
             .insert({
@@ -162,7 +156,7 @@ export default function SignupPage() {
           if (userError) {
             console.error('Users table save error:', userError)
             // User may already exist, try to update
-            const { error: updateError } = await supabase
+            await supabase
               .from('users')
               .update({
                 user_type: 'customer',
@@ -172,20 +166,14 @@ export default function SignupPage() {
                 updated_at: new Date().toISOString()
               })
               .eq('id', data.user.id)
-
-            if (updateError) {
-              console.error('Users table update error:', updateError)
-            }
-          } else {
-            console.log('Users table save successful!')
           }
         } catch (userTableError) {
           console.error('Users table processing error:', userTableError)
         }
         
-        // Redirect to home page after successful signup
-        alert('Sign up completed!')
-        router.push('/')
+        // ✅ 이메일 확인 안내 화면 표시
+        setUserEmail(formData.email)
+        setEmailSent(true)
       }
     } catch (err) {
       console.error('Signup error:', err)
@@ -202,10 +190,52 @@ export default function SignupPage() {
     })
   }
 
+  // ✅ 이메일 확인 안내 화면
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                Check Your Email
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                We've sent a verification email to:
+              </p>
+              <p className="mt-1 text-sm font-medium text-gray-900">
+                {userEmail}
+              </p>
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>📧 Next Step:</strong> Click the verification link in your email to activate your account.
+                </p>
+              </div>
+              <div className="mt-6 space-y-2 text-sm text-gray-600">
+                <p>• Check your spam folder if you don't see the email</p>
+                <p>• The link will expire in 24 hours</p>
+              </div>
+              <div className="mt-8">
+                <Link 
+                  href="/login"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Return to Login
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Back button */}
         <Link href="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
           <ArrowLeft className="h-6 w-6" />
         </Link>
@@ -228,7 +258,6 @@ export default function SignupPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
               <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
@@ -261,7 +290,6 @@ export default function SignupPage() {
 
             {/* Name input */}
             <div className="grid grid-cols-2 gap-4">
-              {/* First Name */}
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                   First Name *
@@ -283,7 +311,6 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Last Name */}
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                   Last Name *
@@ -431,7 +458,6 @@ export default function SignupPage() {
                 </div>
               </div>
               
-              {/* Password match confirmation */}
               {formData.confirmPassword && (
                 <div className="mt-2">
                   {formData.password === formData.confirmPassword ? (
