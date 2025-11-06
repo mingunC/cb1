@@ -12,16 +12,46 @@ export default function ContactPage() {
     message: ''
   })
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setStatus('sending')
+    setErrorMessage('')
     
-    // Simulate sending (replace with actual API call)
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message')
+      }
+
       setStatus('success')
       setFormData({ name: '', email: '', subject: '', message: '' })
-    }, 1500)
+      
+      // Reset success message after 5 seconds
+      setTimeout(() => {
+        setStatus('idle')
+      }, 5000)
+    } catch (error) {
+      console.error('Error sending message:', error)
+      setStatus('error')
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to send message. Please try again.')
+      
+      // Reset error message after 5 seconds
+      setTimeout(() => {
+        setStatus('idle')
+        setErrorMessage('')
+      }, 5000)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -64,6 +94,12 @@ export default function ContactPage() {
                 </div>
               )}
 
+              {status === 'error' && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                  {errorMessage || 'Failed to send message. Please try again.'}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -79,6 +115,7 @@ export default function ContactPage() {
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       placeholder="John Doe"
+                      disabled={status === 'sending'}
                     />
                   </div>
                   <div>
@@ -94,6 +131,7 @@ export default function ContactPage() {
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       placeholder="john@example.com"
+                      disabled={status === 'sending'}
                     />
                   </div>
                 </div>
@@ -109,6 +147,7 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    disabled={status === 'sending'}
                   >
                     <option value="">Select a subject</option>
                     <option value="general">General Inquiry</option>
@@ -133,6 +172,7 @@ export default function ContactPage() {
                     rows={6}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
                     placeholder="Tell us how we can help you..."
+                    disabled={status === 'sending'}
                   />
                 </div>
 
