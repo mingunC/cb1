@@ -444,7 +444,7 @@ export const createSiteVisitApplicationTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>🏠 New Site Visit Application</h1>
+          <h1>New Site Visit Application</h1>
           <p style="margin: 0; font-size: 18px;">A contractor wants to visit your property</p>
         </div>
         
@@ -454,7 +454,7 @@ export const createSiteVisitApplicationTemplate = (
           <p>Good news! A contractor has applied for a site visit to your renovation project.</p>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #4A90E2;">🏢 Contractor Information</h3>
+            <h3 style="margin-top: 0; color: #4A90E2;">Contractor Information</h3>
             <table class="info-table">
               <tr>
                 <td>Company Name</td>
@@ -476,7 +476,7 @@ export const createSiteVisitApplicationTemplate = (
           </div>
           
           <div class="highlight-box">
-            <strong>📅 Next Steps:</strong>
+            <strong>Next Steps:</strong>
             <p style="margin: 10px 0 0 0;">We will inform you of the contractor's scheduled site visit time one week prior to the visit date you requested through Canada Beaver.</p>
           </div>
           
@@ -489,13 +489,13 @@ export const createSiteVisitApplicationTemplate = (
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-            If you have any questions, please contact us anytime at support@canadabeaver.pro.
+            If you have any questions, please contact us anytime at admin@canadabeaver.pro.
           </p>
         </div>
         
         <div class="footer">
           <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>© 2024 Canada Beaver. All rights reserved.</p>
+          <p>© 2025 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
     </body>
