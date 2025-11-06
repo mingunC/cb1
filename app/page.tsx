@@ -1,5 +1,6 @@
 import HeroSection from '@/components/HeroSection'
 import WhyChooseUsSection from '@/components/WhyChooseUsSection'
+import ServiceProcessSection from '@/components/ServiceProcessSection'
 import ProcessSection from '@/components/ProcessSection'
 import PortfolioSection from '@/components/PortfolioSection'
 import EventsSection from '@/components/EventsSection'
@@ -10,6 +11,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       <HeroSection />
       <WhyChooseUsSection />
+      <ServiceProcessSection />
       <ProcessSection />
       <PortfolioSection />
       <EventsSection />
