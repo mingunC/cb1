@@ -528,7 +528,7 @@ export async function POST(request: NextRequest) {
                 </div>
                 
                 <div class="footer">
-                  <p>© 2024 Canada Beaver. All rights reserved.</p>
+                  <p>© 2025 Canada Beaver. All rights reserved.</p>
                   <p>If you have any questions, please feel free to contact us.</p>
                 </div>
               </div>
@@ -601,7 +601,7 @@ export async function POST(request: NextRequest) {
                 </div>
                 
                 <div class="footer">
-                  <p>© 2024 Canada Beaver. All rights reserved.</p>
+                  <p>© 2025 Canada Beaver. All rights reserved.</p>
                 </div>
               </div>
             </body>

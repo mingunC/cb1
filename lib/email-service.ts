@@ -186,7 +186,7 @@ export const createSelectionEmailTemplate = (
         <div class="footer">
           <p>This email was automatically sent by the Canada Beaver Platform.</p>
           <p>Contact: support@canadabeaver.pro</p>
-          <p>© 2024 Canada Beaver. All rights reserved.</p>
+          <p>© 2025 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -245,7 +245,7 @@ export const createCustomerNotificationTemplate = (
         </div>
         
         <div class="footer">
-          <p>© 2024 Canada Beaver. All rights reserved.</p>
+          <p>© 2025 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
     </body>
