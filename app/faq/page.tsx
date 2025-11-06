@@ -33,7 +33,7 @@ export default function FAQPage() {
         },
         {
           q: 'How long does it take to get quotes?',
-          a: 'You will receive quotes from the partner contractors who completed a site visit for up to 7 days after the site visit is finished. Complex projects may take slightly longer as contractors need time to properly assess the requirements.'
+          a: 'You will receive quotes from the partner contractors who completed a site visit for up to 7 days after the site visit is finished.'
         },
         {
           q: 'Can I edit my quote request after submitting?',
@@ -45,20 +45,24 @@ export default function FAQPage() {
       category: 'Working with Contractors',
       questions: [
         {
+          q: 'What is a site visit?',
+          a: 'A site visit is a mandatory step required to create an accurate and realistic quote. After reviewing the quote request, our partner contractors will visit the site in person to carefully inspect the work environment, exact measurements, and any potential variables. This process ensures that you, the customer, can proceed with the project as planned without unexpected additional costs later on.'
+        },
+        {
           q: 'How are contractors verified?',
           a: 'All contractors on our platform undergo a verification process that includes license validation, insurance confirmation, and background checks. We also review their work history and customer feedback.'
         },
         {
           q: 'How do I choose the right contractor?',
-          a: 'Review each contractor\'s profile, including their ratings, reviews, portfolio, and specialties. Compare their quotes, timeline estimates, and communication style. Don\'t hesitate to ask questions before making your decision.'
+          a: 'Review each contractor\'s profile, including their reviews, portfolio, and specialties. Compare their quotes, timeline estimates, and communication style. Don\'t hesitate to ask questions before making your decision.'
         },
         {
           q: 'What if I\'m not satisfied with the quotes I receive?',
-          a: 'You\'re never obligated to accept any quote. You can request additional information from contractors, ask for revised quotes, or submit a new quote request with modified requirements.'
+          a: 'Even after selecting a contractor, you can still request additional information, or submit a new quote request with modified requirements.'
         },
         {
           q: 'How do I communicate with contractors?',
-          a: 'Once you receive quotes, you can message contractors directly through our platform. All communication is tracked and saved for your reference.'
+          a: 'After receiving the quotes, we request that you direct any questions you may have through Canada Beaver. You will not be able to communicate directly with the contractors before selecting one during the bidding process.'
         }
       ]
     },
@@ -75,24 +79,7 @@ export default function FAQPage() {
         },
         {
           q: 'Are there any hidden fees?',
-          a: 'No hidden fees! Contractors provide all-inclusive quotes that detail the costs. Our platform service fee is clearly disclosed before you confirm any booking.'
-        }
-      ]
-    },
-    {
-      category: 'Account & Security',
-      questions: [
-        {
-          q: 'How do I reset my password?',
-          a: 'Click "Forgot Password" on the login page, enter your email address, and you\'ll receive instructions to reset your password. If you don\'t receive the email, check your spam folder or contact support.'
-        },
-        {
-          q: 'Is my personal information secure?',
-          a: 'Yes! We use industry-standard encryption and security measures to protect your data. We never share your personal information without your consent. Read our Privacy Policy for more details.'
-        },
-        {
-          q: 'Can I delete my account?',
-          a: 'Yes, you can request account deletion from your account settings. Please note that this action is permanent and will remove all your project history and data.'
+          a: 'No hidden fees! Contractors provide all-inclusive quotes that detail the costs.'
         }
       ]
     },
@@ -100,12 +87,12 @@ export default function FAQPage() {
       category: 'Reviews & Ratings',
       questions: [
         {
-          q: 'How do I leave a review?',
-          a: 'After your project is completed, you\'ll receive a notification to review your contractor. You can rate their work, professionalism, and communication, and leave detailed feedback to help other homeowners.'
+          q: 'Who can leave a review?',
+          a: 'Only individuals who have actually used the services of Canada Beaver at least once can leave a review. Reviews can be left on the respective contractor\'s profile, and since they cannot be edited, we kindly ask you to be careful and deliberate when writing them. If you wish to delete a review, please contact Canada Beaver directly.'
         },
         {
-          q: 'Can contractors see my review before I submit it?',
-          a: 'No, your review is private until you submit it. Once submitted, it becomes visible on the contractor\'s profile and cannot be edited (but can be deleted within 48 hours).'
+          q: 'How do I leave a review?',
+          a: 'After your project is completed, you\'ll receive an email to review your contractor. You can rate their work, professionalism, and communication, and leave detailed feedback to help other homeowners. Reviews containing unsubstantiated slander or baseless accusations against a contractor may be subject to deletion.'
         },
         {
           q: 'What if I have a dispute with a contractor?',

@@ -27,7 +27,7 @@ export default function SupportPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Support Options Grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 mb-16">
           <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
             <Mail className="h-12 w-12 text-emerald-600 mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 mb-3">Email Support</h3>
@@ -60,12 +60,23 @@ export default function SupportPage() {
             <Clock className="h-8 w-8 text-emerald-600 mr-3" />
             <h2 className="text-3xl font-bold text-gray-900">Support Hours</h2>
           </div>
+<<<<<<< HEAD
           <div className="max-w-2xl">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Email & Chat Support</h3>
             <div className="space-y-2 text-gray-700">
               <p><span className="font-medium">Monday - Friday:</span> 9:00 AM - 6:00 PM EST</p>
               <p><span className="font-medium">Saturday:</span> 10:00 AM - 4:00 PM EST</p>
               <p><span className="font-medium">Sunday:</span> Closed</p>
+=======
+          <div className="grid md:grid-cols-1 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Email & Chat Support</h3>
+              <div className="space-y-2 text-gray-700">
+                <p><span className="font-medium">Monday - Friday:</span> 9:00 AM - 5:00 PM EST</p>
+                <p><span className="font-medium">Saturday:</span> 10:00 AM - 4:00 PM EST</p>
+                <p><span className="font-medium">Sunday:</span> Closed</p>
+              </div>
+>>>>>>> 3027e3c (Remove phone support, update FAQ content, and add site visit explanation)
             </div>
           </div>
         </div>
