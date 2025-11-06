@@ -8,12 +8,12 @@ import { CheckCircle } from 'lucide-react'
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createBrowserClient()
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const hasProcessed = useRef(false)
   
+  // searchParams에서 값 미리 추출
   const loginType = searchParams.get('type')
-  const authCode = searchParams.get('code') // 실제 인증 코드 확인
+  const authCode = searchParams.get('code')
 
   useEffect(() => {
     // 이미 처리됐으면 스킵
@@ -22,6 +22,8 @@ function AuthCallbackContent() {
     }
 
     const handleAuthCallback = async () => {
+      const supabase = createBrowserClient()
+      
       try {
         // 먼저 세션 확인
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -179,7 +181,7 @@ function AuthCallbackContent() {
     }
 
     handleAuthCallback()
-  }, [router, authCode, loginType, supabase])
+  }, []) // ✅ 빈 배열로 변경 - 컴포넌트 마운트 시 한 번만 실행
 
   // 이메일 확인 성공 화면
   if (verificationStatus === 'success') {
