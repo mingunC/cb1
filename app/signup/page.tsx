@@ -175,22 +175,11 @@ export default function SignupPage() {
           console.error('Users table processing error:', userTableError)
         }
         
-        // ✅ 이메일 확인 여부 체크
-        if (data.user.email_confirmed_at) {
-          // 이메일 확인이 비활성화되어 있거나 이미 확인된 경우
-          console.log('✅ Email already confirmed, redirecting to home...')
-          // router.push 대신 router.replace 사용하여 히스토리에서 제거
-          setTimeout(() => {
-            router.replace('/?signup=success')
-          }, 500)
-          // 로딩 상태는 리다이렉트 완료될 때까지 유지
-        } else {
-          // 이메일 확인이 필요한 경우
-          console.log('📧 Email confirmation required')
-          setUserEmail(formData.email)
-          setEmailSent(true)
-          setIsLoading(false) // 이메일 확인 화면으로 전환시에는 로딩 해제
-        }
+        // ✅ 이메일 확인 화면 표시
+        console.log('📧 Email confirmation required - showing confirmation screen')
+        setUserEmail(formData.email)
+        setEmailSent(true)
+        setIsLoading(false)  // ← 이것이 중요! 로딩 상태를 false로 설정
       }
     } catch (err) {
       console.error('Signup error:', err)
