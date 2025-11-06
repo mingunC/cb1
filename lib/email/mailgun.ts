@@ -475,29 +475,9 @@ export const createSiteVisitApplicationTemplate = (
             </table>
           </div>
           
-          <div class="info-box">
-            <h3 style="margin-top: 0; color: #4A90E2;">📋 Project Details</h3>
-            <table class="info-table">
-              <tr>
-                <td>Address</td>
-                <td>${projectInfo.full_address || 'Not specified'}</td>
-              </tr>
-              <tr>
-                <td>Space Type</td>
-                <td>${projectInfo.space_type || 'Not specified'}</td>
-              </tr>
-              ${projectInfo.budget ? `
-              <tr>
-                <td>Budget</td>
-                <td>${projectInfo.budget}</td>
-              </tr>
-              ` : ''}
-            </table>
-          </div>
-          
           <div class="highlight-box">
             <strong>📅 Next Steps:</strong>
-            <p style="margin: 10px 0 0 0;">The contractor will visit your property to better understand the project scope. You can view and manage site visit applications in your dashboard.</p>
+            <p style="margin: 10px 0 0 0;">We will inform you of the contractor's scheduled site visit time one week prior to the visit date you requested through Canada Beaver.</p>
           </div>
           
           <p>Thank you for choosing our service!</p>
