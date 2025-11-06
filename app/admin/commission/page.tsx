@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, DollarSign, Check, X, Plus, Calendar, AlertCircle } from 'lucide-react'
+import { ArrowLeft, DollarSign, Check, X, Plus, Calendar, AlertCircle, Search } from 'lucide-react'
 
 interface CommissionRecord {
   id: string
@@ -22,6 +22,20 @@ interface CommissionRecord {
   created_at: string
 }
 
+interface Project {
+  id: string
+  title: string
+  status: string
+  created_at: string
+}
+
+interface ContractorQuote {
+  id: string
+  contractor_id: string
+  contractor_name: string
+  amount: number
+}
+
 export default function CommissionManagementPage() {
   const [commissions, setCommissions] = useState<CommissionRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -29,6 +43,15 @@ export default function CommissionManagementPage() {
   const [isAddingManual, setIsAddingManual] = useState(false)
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [noteText, setNoteText] = useState('')
+  
+  // 수동 등록 관련 상태
+  const [availableProjects, setAvailableProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [contractorQuotes, setContractorQuotes] = useState<ContractorQuote[]>([])
+  const [selectedQuote, setSelectedQuote] = useState<string>('')
+  const [startDate, setStartDate] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
   const router = useRouter()
 
   useEffect(() => {
@@ -76,6 +99,140 @@ export default function CommissionManagementPage() {
       alert('수수료 내역을 불러오는데 실패했습니다.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadAvailableProjects = async () => {
+    try {
+      const supabase = createBrowserClient()
+      
+      // 이미 수수료 추적이 있는 프로젝트 ID 가져오기
+      const { data: existingCommissions } = await supabase
+        .from('commission_tracking')
+        .select('quote_request_id')
+      
+      const existingProjectIds = existingCommissions?.map(c => c.quote_request_id) || []
+      
+      // 수수료 추적이 없고, 선택된 견적이 있는 프로젝트 가져오기
+      let query = supabase
+        .from('quote_requests')
+        .select('id, title, status, created_at, selected_contractor_quote_id')
+        .not('selected_contractor_quote_id', 'is', null)
+        .order('created_at', { ascending: false })
+      
+      if (existingProjectIds.length > 0) {
+        query = query.not('id', 'in', `(${existingProjectIds.join(',')})`)
+      }
+      
+      const { data, error } = await query
+      
+      if (error) throw error
+      
+      setAvailableProjects(data || [])
+    } catch (error) {
+      console.error('Error loading projects:', error)
+      alert('프로젝트 목록을 불러오는데 실패했습니다.')
+    }
+  }
+
+  const loadContractorQuotes = async (projectId: string) => {
+    try {
+      const supabase = createBrowserClient()
+      
+      const { data, error } = await supabase
+        .from('contractor_quotes')
+        .select(`
+          id,
+          amount,
+          contractor_id,
+          contractors (
+            company_name
+          )
+        `)
+        .eq('quote_request_id', projectId)
+      
+      if (error) throw error
+      
+      const quotes = data?.map(q => ({
+        id: q.id,
+        contractor_id: q.contractor_id,
+        contractor_name: (q.contractors as any)?.company_name || '업체명 없음',
+        amount: q.amount
+      })) || []
+      
+      setContractorQuotes(quotes)
+    } catch (error) {
+      console.error('Error loading quotes:', error)
+      alert('견적 목록을 불러오는데 실패했습니다.')
+    }
+  }
+
+  const handleProjectSelect = async (projectId: string) => {
+    setSelectedProject(projectId)
+    setSelectedQuote('')
+    if (projectId) {
+      await loadContractorQuotes(projectId)
+    } else {
+      setContractorQuotes([])
+    }
+  }
+
+  const handleManualSubmit = async () => {
+    if (!selectedProject || !selectedQuote || !startDate) {
+      alert('모든 필드를 입력해주세요.')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const supabase = createBrowserClient()
+      
+      // 선택된 프로젝트 정보 가져오기
+      const { data: project } = await supabase
+        .from('quote_requests')
+        .select('title')
+        .eq('id', selectedProject)
+        .single()
+      
+      // 선택된 견적 정보 가져오기
+      const selectedQuoteData = contractorQuotes.find(q => q.id === selectedQuote)
+      
+      if (!project || !selectedQuoteData) {
+        throw new Error('프로젝트 또는 견적 정보를 찾을 수 없습니다.')
+      }
+      
+      const commissionAmount = selectedQuoteData.amount * 0.10
+      
+      // 수수료 추적 생성
+      const { error } = await supabase
+        .from('commission_tracking')
+        .insert({
+          quote_request_id: selectedProject,
+          contractor_id: selectedQuoteData.contractor_id,
+          contractor_name: selectedQuoteData.contractor_name,
+          project_title: project.title,
+          quote_amount: selectedQuoteData.amount,
+          commission_rate: 10.00,
+          commission_amount: commissionAmount,
+          status: 'pending',
+          started_at: new Date(startDate).toISOString(),
+          marked_manually: true
+        })
+      
+      if (error) throw error
+      
+      alert('수수료가 성공적으로 등록되었습니다.')
+      setIsAddingManual(false)
+      setSelectedProject('')
+      setSelectedQuote('')
+      setStartDate('')
+      setContractorQuotes([])
+      loadCommissions()
+    } catch (error) {
+      console.error('Error creating manual commission:', error)
+      alert('수수료 등록에 실패했습니다.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -190,6 +347,16 @@ export default function CommissionManagementPage() {
               </button>
               <h1 className="text-xl font-bold text-gray-900">수수료 관리</h1>
             </div>
+            <button
+              onClick={() => {
+                setIsAddingManual(true)
+                loadAvailableProjects()
+              }}
+              className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              수동 등록
+            </button>
           </div>
         </div>
       </div>
@@ -427,6 +594,154 @@ export default function CommissionManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* 수동 등록 모달 */}
+      {isAddingManual && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">수수료 수동 등록</h2>
+                <button
+                  onClick={() => {
+                    setIsAddingManual(false)
+                    setSelectedProject('')
+                    setSelectedQuote('')
+                    setStartDate('')
+                    setContractorQuotes([])
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* 프로젝트 선택 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  프로젝트 선택 *
+                </label>
+                <select
+                  value={selectedProject}
+                  onChange={(e) => handleProjectSelect(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">프로젝트를 선택하세요</option>
+                  {availableProjects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title} ({project.status})
+                    </option>
+                  ))}
+                </select>
+                {availableProjects.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    등록 가능한 프로젝트가 없습니다.
+                  </p>
+                )}
+              </div>
+
+              {/* 업체 견적 선택 */}
+              {contractorQuotes.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    업체 견적 선택 *
+                  </label>
+                  <div className="space-y-2">
+                    {contractorQuotes.map((quote) => (
+                      <label
+                        key={quote.id}
+                        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedQuote === quote.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            name="quote"
+                            value={quote.id}
+                            checked={selectedQuote === quote.id}
+                            onChange={(e) => setSelectedQuote(e.target.value)}
+                            className="mr-3"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {quote.contractor_name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              견적금액: {formatCurrency(quote.amount)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-blue-600">
+                            수수료: {formatCurrency(quote.amount * 0.10)}
+                          </div>
+                          <div className="text-xs text-gray-500">10%</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 시작일 입력 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  프로젝트 시작일 *
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* 안내 메시지 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-1">수동 등록 안내</p>
+                    <ul className="list-disc list-inside space-y-1 text-blue-700">
+                      <li>고객이 프로젝트 시작 버튼을 누르지 않은 경우에만 사용하세요</li>
+                      <li>업체로부터 프로젝트 시작 확인을 받은 후 등록하세요</li>
+                      <li>수동 등록된 항목은 "(수동 등록)" 표시가 됩니다</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setIsAddingManual(false)
+                  setSelectedProject('')
+                  setSelectedQuote('')
+                  setStartDate('')
+                  setContractorQuotes([])
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                disabled={isSubmitting}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleManualSubmit}
+                disabled={!selectedProject || !selectedQuote || !startDate || isSubmitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? '등록 중...' : '등록하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
