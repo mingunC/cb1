@@ -24,7 +24,11 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Fetching project data...')
     const { data: currentProject, error: checkError } = await supabase
       .from('quote_requests')
-      .select('*, selected_contractor_id')
+      .select(`
+        *,
+        selected_contractor_id,
+        selected_quote_id
+      `)
       .eq('id', projectId)
       .single()
 
@@ -48,6 +52,7 @@ export async function POST(request: NextRequest) {
       id: currentProject.id,
       status: currentProject.status,
       selected_contractor_id: currentProject.selected_contractor_id,
+      selected_quote_id: currentProject.selected_quote_id,
       project_started_at: currentProject.project_started_at
     })
 
@@ -84,14 +89,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 4-1. 선정된 견적이 있는지 확인
+    if (!currentProject.selected_quote_id) {
+      console.warn('⚠️ No quote selected')
+      return NextResponse.json(
+        { error: '선정된 견적이 없습니다' },
+        { status: 400 }
+      )
+    }
+
     // 5. 프로젝트 상태를 'in-progress'로 변경
     console.log('📝 Updating project status to in-progress...')
+    const projectStartTime = new Date().toISOString()
     const { data: updatedProject, error: updateError } = await supabase
       .from('quote_requests')
       .update({ 
         status: 'in-progress',
-        project_started_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        project_started_at: projectStartTime,
+        updated_at: projectStartTime
       })
       .eq('id', projectId)
       .select()
@@ -116,7 +131,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Project started:', updatedProject.id)
     console.log('✅ Status updated to: in-progress')
 
-    // 6. 업체 정보 조회 (알림 이메일 발송용)
+    // 6. 업체 정보 조회
     console.log('🔍 Fetching contractor info...')
     const { data: contractorInfo, error: contractorError } = await supabase
       .from('contractors')
@@ -125,12 +140,75 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (contractorError) {
-      console.error('⚠️ Contractor query error (continuing):', contractorError)
+      console.error('⚠️ Contractor query error:', contractorError)
     } else {
       console.log('✅ Contractor info loaded:', contractorInfo?.company_name)
     }
 
-    // 7. 고객 정보 조회
+    // 7. 선정된 견적 정보 조회
+    console.log('🔍 Fetching selected quote info...')
+    const { data: selectedQuote, error: quoteError } = await supabase
+      .from('contractor_quotes')
+      .select('price')
+      .eq('id', currentProject.selected_quote_id)
+      .single()
+
+    if (quoteError) {
+      console.error('⚠️ Quote query error:', quoteError)
+    } else {
+      console.log('✅ Quote info loaded, price:', selectedQuote?.price)
+    }
+
+    // 8. Commission tracking 생성 (선정된 견적과 업체 정보가 있는 경우에만)
+    if (contractorInfo && selectedQuote && selectedQuote.price) {
+      console.log('💰 Creating commission tracking...')
+      
+      const commissionRate = 10.00 // 10%
+      const commissionAmount = selectedQuote.price * (commissionRate / 100)
+      
+      // 프로젝트 제목 생성
+      const projectTitle = `${currentProject.space_type} - ${currentProject.full_address}`
+      
+      // 이미 commission_tracking이 있는지 확인
+      const { data: existingCommission } = await supabase
+        .from('commission_tracking')
+        .select('id')
+        .eq('quote_request_id', projectId)
+        .single()
+
+      if (existingCommission) {
+        console.log('ℹ️ Commission tracking already exists for this project')
+      } else {
+        const { data: newCommission, error: commissionError } = await supabase
+          .from('commission_tracking')
+          .insert({
+            quote_request_id: projectId,
+            contractor_id: currentProject.selected_contractor_id,
+            contractor_name: contractorInfo.company_name,
+            project_title: projectTitle,
+            quote_amount: selectedQuote.price,
+            commission_rate: commissionRate,
+            commission_amount: commissionAmount,
+            status: 'pending',
+            started_at: projectStartTime,
+            marked_manually: false
+          })
+          .select()
+          .single()
+
+        if (commissionError) {
+          console.error('❌ Commission tracking creation error:', commissionError)
+          // Commission 생성 실패는 프로젝트 시작을 막지 않음
+        } else {
+          console.log('✅ Commission tracking created:', newCommission?.id)
+          console.log('💵 Commission amount:', commissionAmount)
+        }
+      }
+    } else {
+      console.warn('⚠️ Skipping commission tracking - missing contractor info or quote price')
+    }
+
+    // 9. 고객 정보 조회
     console.log('🔍 Fetching customer info...')
     const { data: customerInfo, error: customerError } = await supabase
       .from('users')
@@ -146,7 +224,7 @@ export async function POST(request: NextRequest) {
 
     const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || 'Customer'
 
-    // 8. 고객에게 프로젝트 시작 축하 이메일 발송
+    // 10. 고객에게 프로젝트 시작 축하 이메일 발송
     if (customerInfo?.email) {
       try {
         console.log('📧 Sending congratulations email to customer...')
@@ -231,7 +309,7 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ No customer email to send')
     }
 
-    // 9. 업체에게 프로젝트 시작 알림 이메일 발송
+    // 11. 업체에게 프로젝트 시작 알림 이메일 발송
     if (contractorInfo?.email) {
       try {
         console.log('📧 Sending notification email to contractor...')
