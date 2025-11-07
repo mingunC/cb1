@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone, CheckCircle } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import { toast } from 'react-hot-toast'
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -24,6 +25,43 @@ export default function SignupPage() {
   
   const router = useRouter()
   const phoneInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createBrowserClient()
+
+  // ✅ Google OAuth 로그인 함수 추가
+  const handleGoogleSignUp = async () => {
+    setIsLoading(true)
+    setError('')
+    let hasError = false
+
+    try {
+      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      })
+
+      if (googleError) {
+        console.error('Google signup error:', googleError)
+        setError('Google 회원가입에 실패했습니다.')
+        toast.error('Google 회원가입에 실패했습니다')
+        hasError = true
+      }
+    } catch (error) {
+      console.error('Google sign up error:', error)
+      setError('Google 회원가입 중 오류가 발생했습니다.')
+      toast.error('Google 회원가입 중 오류가 발생했습니다')
+      hasError = true
+    } finally {
+      if (hasError) {
+        setIsLoading(false)
+      }
+    }
+  }
 
   // Format phone number to (XXX) XXX - XXXX format
   const formatPhoneNumber = (value: string) => {
@@ -110,8 +148,6 @@ export default function SignupPage() {
     }
 
     try {
-      const supabase = createBrowserClient()
-      
       console.log('🚀 Starting signup process...')
       
       // 회원가입 시도 (user metadata에 추가 정보 저장)
@@ -191,6 +227,11 @@ export default function SignupPage() {
                   <strong>📧 Next Step:</strong> Click the verification link in your email to activate your account.
                 </p>
               </div>
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-md p-4">
+                <p className="text-sm text-green-800">
+                  <strong>💡 Tip:</strong> After verifying your email, you can also sign in with Google using the same email address!
+                </p>
+              </div>
               <div className="mt-6 space-y-2 text-sm text-gray-600">
                 <p>• Check your spam folder if you don't see the email</p>
                 <p>• The link will expire in 24 hours</p>
@@ -241,6 +282,30 @@ export default function SignupPage() {
               <span className="text-sm text-red-600">{error}</span>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleGoogleSignUp}
+            disabled={isLoading}
+            className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+          >
+            <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.05-4.71 1.05-3.62 0-6.69-2.44-7.79-5.72H.65v2.86C2.36 19.08 5.89 23 12 23z" />
+              <path fill="#FBBC05" d="M4.21 14.28c-.28-.82-.44-1.69-.44-2.61 0-.92.16-1.79.44-2.61V6.2H.65C.24 7.01 0 7.99 0 9s.24 1.99.65 2.8l3.56 2.48z" />
+              <path fill="#EA4335" d="M12 4.75c2.04 0 3.87.7 5.31 2.07l3.99-3.99C19.46 1.09 16.97 0 12 0 5.89 0 2.36 3.92.65 6.2l3.56 2.48C5.31 7.19 8.38 4.75 12 4.75z" />
+            </svg>
+            Sign up with Google
+          </button>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or sign up with email</span>
+            </div>
+          </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Email input */}

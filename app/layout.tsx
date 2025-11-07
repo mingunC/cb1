@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   description: '신뢰할 수 있는 전문 업체와 연결되어 완벽한 리노베이션을 경험하세요. 5단계 간편 견적 요청으로 시작하세요.',
   keywords: '리노베이션, 인테리어, 업체, 견적, 홈리모델링',
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
 }
 

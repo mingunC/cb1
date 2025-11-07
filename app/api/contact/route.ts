@@ -17,6 +17,14 @@ export async function POST(request: NextRequest) {
     const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN
     const TO_EMAIL = process.env.CONTACT_EMAIL || 'admin@canadabeaver.pro'
 
+    // 🔍 디버깅 로그 추가
+    console.log('==========================================')
+    console.log('📧 환경 변수 확인:')
+    console.log('CONTACT_EMAIL:', process.env.CONTACT_EMAIL)
+    console.log('TO_EMAIL (실제 사용):', TO_EMAIL)
+    console.log('MAILGUN_DOMAIN:', MAILGUN_DOMAIN)
+    console.log('==========================================')
+
     if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
       console.error('Mailgun configuration missing')
       return NextResponse.json(

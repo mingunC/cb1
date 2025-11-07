@@ -11,12 +11,10 @@ function AuthCallbackContent() {
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const hasProcessed = useRef(false)
   
-  // searchParams에서 값 미리 추출
   const loginType = searchParams.get('type')
   const authCode = searchParams.get('code')
 
   useEffect(() => {
-    // 이미 처리됐으면 스킵
     if (hasProcessed.current) {
       return
     }
@@ -25,15 +23,12 @@ function AuthCallbackContent() {
       const supabase = createBrowserClient()
       
       try {
-        // 먼저 세션 확인
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        // 1. 인증 코드가 없고 이미 세션이 있으면 -> 이미 로그인된 상태
         if (!authCode && session) {
           console.log('Already logged in, redirecting...')
           hasProcessed.current = true
           
-          // 사용자 타입에 따라 리다이렉트
           const { data: contractorData } = await supabase
             .from('contractors')
             .select('id')
@@ -58,11 +53,16 @@ function AuthCallbackContent() {
           return
         }
 
-        // 2. 인증 코드가 있으면 -> 실제 이메일 인증 처리
         if (authCode) {
           hasProcessed.current = true
           
-          // exchangeCodeForSession이 이미 처리되었으므로 세션 다시 가져오기
+          if (sessionError) {
+            console.error('Auth callback error:', sessionError)
+            setVerificationStatus('error')
+            setTimeout(() => router.push('/login?error=auth_callback_failed'), 3000)
+            return
+          }
+          
           const { data: { session: newSession }, error } = await supabase.auth.getSession()
           
           if (error) {
@@ -73,24 +73,23 @@ function AuthCallbackContent() {
           }
           
           if (newSession) {
-            console.log('Email verification successful:', newSession.user.email)
+            console.log('Authentication successful:', newSession.user.email)
             
-            // Google OAuth 처리
             if (newSession.user.app_metadata?.provider === 'google') {
-              console.log('🔍 Google OAuth user')
+              console.log('🔍 Google OAuth user detected')
               
               const { data: existingUser } = await supabase
                 .from('users')
-                .select('id')
+                .select('id, email, created_at')
                 .eq('id', newSession.user.id)
                 .maybeSingle()
               
               if (!existingUser) {
-                console.log('Creating new user record for Google user')
+                console.log('✨ New Google user - creating user record')
                 const fullName = newSession.user.user_metadata?.full_name || ''
                 const nameParts = fullName.split(' ')
                 
-                await supabase
+                const { error: insertError } = await supabase
                   .from('users')
                   .insert({
                     id: newSession.user.id,
@@ -101,10 +100,17 @@ function AuthCallbackContent() {
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                   })
+                
+                if (insertError) {
+                  console.error('Error creating user record:', insertError)
+                }
+              } else {
+                console.log('✅ Automatic Linking: Google identity linked to existing account')
+                console.log('   Existing user:', existingUser.email)
+                console.log('   Created at:', existingUser.created_at)
               }
             }
             
-            // 업체 로그인 타입인 경우
             if (loginType === 'contractor') {
               const { data: contractorData } = await supabase
                 .from('contractors')
@@ -125,7 +131,6 @@ function AuthCallbackContent() {
               }
             }
             
-            // 일반 로그인 처리
             try {
               const { data: contractorData } = await supabase
                 .from('contractors')
@@ -151,7 +156,7 @@ function AuthCallbackContent() {
                 setVerificationStatus('success')
                 setTimeout(() => router.replace('/admin'), 1500)
               } else {
-                console.log('Email verified, redirecting to home')
+                console.log('Customer user, redirecting to home')
                 setVerificationStatus('success')
                 setTimeout(() => router.replace('/'), 1500)
               }
@@ -161,13 +166,11 @@ function AuthCallbackContent() {
               setTimeout(() => router.replace('/'), 1500)
             }
           } else {
-            // 세션이 없으면 로그인 페이지로
             const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
             setVerificationStatus('error')
             setTimeout(() => router.push(redirectTo), 3000)
           }
         } else {
-          // 3. 인증 코드도 없고 세션도 없으면 -> 로그인 페이지로
           console.log('No auth code and no session, redirecting to login')
           hasProcessed.current = true
           const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
@@ -181,9 +184,8 @@ function AuthCallbackContent() {
     }
 
     handleAuthCallback()
-  }, []) // ✅ 빈 배열로 변경 - 컴포넌트 마운트 시 한 번만 실행
+  }, [authCode, loginType, router])
 
-  // 이메일 확인 성공 화면
   if (verificationStatus === 'success') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -192,10 +194,10 @@ function AuthCallbackContent() {
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Email Verified! ✅
+            Welcome! 🎉
           </h2>
           <p className="text-gray-600 mb-4">
-            Your account has been successfully activated.
+            Your account is ready.
           </p>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-sm text-gray-500">Redirecting...</p>
@@ -204,7 +206,6 @@ function AuthCallbackContent() {
     )
   }
 
-  // 이메일 확인 실패 화면
   if (verificationStatus === 'error') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -218,19 +219,18 @@ function AuthCallbackContent() {
             Verification Failed
           </h2>
           <p className="text-gray-600">
-            There was an issue verifying your email. Redirecting to login...
+            There was an issue. Redirecting to login...
           </p>
         </div>
       </div>
     )
   }
 
-  // 로딩 중
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Verifying your email...</p>
+        <p className="mt-4 text-gray-600">Processing...</p>
       </div>
     </div>
   )

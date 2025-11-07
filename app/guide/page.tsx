@@ -166,37 +166,6 @@ export default function GuidePage() {
           </div>
         </div>
 
-        {/* Video Tutorials Section */}
-        <div className="bg-gradient-to-br from-emerald-50 to-amber-50 rounded-2xl p-8 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Video Tutorials</h2>
-          <p className="text-gray-700 mb-8">
-            Coming soon! We're creating helpful video tutorials to guide you through every step of the process.
-          </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg p-6 text-center">
-              <div className="h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Video Preview</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Getting Started Tutorial</h3>
-              <p className="text-sm text-gray-600">5 minutes</p>
-            </div>
-            <div className="bg-white rounded-lg p-6 text-center">
-              <div className="h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Video Preview</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">How to Request Quotes</h3>
-              <p className="text-sm text-gray-600">7 minutes</p>
-            </div>
-            <div className="bg-white rounded-lg p-6 text-center">
-              <div className="h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Video Preview</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Choosing the Right Contractor</h3>
-              <p className="text-sm text-gray-600">10 minutes</p>
-            </div>
-          </div>
-        </div>
-
         {/* Need More Help */}
         <div className="bg-gradient-to-r from-emerald-700 to-amber-600 rounded-2xl p-8 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Need More Help?</h2>
