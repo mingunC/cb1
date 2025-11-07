@@ -38,7 +38,7 @@ const getCachedUserType = () => {
 // ✅ Global cache for image load status (prevents duplicate failures)
 const imageLoadCache = new Map<string, boolean>()
 
-// ✅ User Avatar Component with global image cache
+// ✅ User Avatar Component - 업체는 로고 또는 업체명 이니셜만 표시
 const UserAvatar = ({ 
   user, 
   displayName,
@@ -50,14 +50,14 @@ const UserAvatar = ({
   contractorProfile?: ContractorProfile | null
   size?: 'sm' | 'md' | 'lg'
 }) => {
-  // Get avatar URL
+  // Get avatar URL - 업체는 company_logo만, 일반 유저는 Google 이미지
   const getAvatarUrl = () => {
     if (contractorProfile) {
-      // Contractor: company logo
+      // ✅ Contractor: company logo ONLY (구글 이미지 사용 안 함)
       if (contractorProfile.company_logo) {
         return contractorProfile.company_logo
       }
-      return null
+      return null  // 로고 없으면 null 반환 -> 업체명 이니셜 표시
     } else {
       // Regular user: Google profile image
       return user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null
@@ -84,8 +84,24 @@ const UserAvatar = ({
     }
   }, [avatarUrl])
 
-  // Get initials from display name or email
+  // ✅ Get initials - 업체는 업체명 기반, 일반 유저는 이름 기반
   const getInitials = () => {
+    // Contractor: 업체명으로 이니셜 생성
+    if (contractorProfile) {
+      const companyName = contractorProfile.company_name || displayName
+      if (companyName && companyName !== '...') {
+        const parts = companyName.trim().split(' ')
+        if (parts.length >= 2) {
+          // 두 단어 이상: 첫 단어와 마지막 단어의 첫 글자
+          return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        }
+        // 한 단어: 첫 두 글자 또는 첫 글자
+        return companyName.substring(0, 2).toUpperCase()
+      }
+      return 'CO'  // Company의 약자
+    }
+    
+    // Regular user: 이름 또는 이메일로 이니셜 생성
     if (displayName && displayName !== '...') {
       const parts = displayName.trim().split(' ')
       if (parts.length >= 2) {
@@ -117,7 +133,19 @@ const UserAvatar = ({
     'bg-pink-500'
   ]
 
+  // ✅ Get background color - 업체는 업체명 기반, 일반 유저는 이메일 기반
   const getBackgroundColor = () => {
+    if (contractorProfile) {
+      // Contractor: 업체명 기반으로 색상 선택
+      const companyName = contractorProfile.company_name || displayName
+      if (companyName) {
+        const charCode = companyName.charCodeAt(0)
+        return bgColors[charCode % bgColors.length]
+      }
+      return 'bg-emerald-500'  // 업체 기본 색상
+    }
+    
+    // Regular user: 이메일 기반으로 색상 선택
     if (!user?.email) return bgColors[0]
     const charCode = user.email.charCodeAt(0)
     return bgColors[charCode % bgColors.length]
