@@ -295,7 +295,7 @@ export default function AdminPage() {
               </div>
               <span className="text-sm font-semibold text-yellow-600">대기중</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.pendingQuotes}</p>
+            <p className="text-2xl font-semibold text-gray-900 mb-1">{stats.pendingQuotes}</p>
             <p className="text-sm text-gray-600">대기 중인 견적</p>
           </div>
           
@@ -306,7 +306,7 @@ export default function AdminPage() {
               </div>
               <span className="text-sm font-semibold text-blue-600">진행중</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.activeProjects}</p>
+            <p className="text-2xl font-semibold text-gray-900 mb-1">{stats.activeProjects}</p>
             <p className="text-sm text-gray-600">활성 프로젝트</p>
           </div>
           
@@ -317,7 +317,7 @@ export default function AdminPage() {
               </div>
               <span className="text-sm font-semibold text-green-600">완료</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.completedProjects}</p>
+            <p className="text-2xl font-semibold text-gray-900 mb-1">{stats.completedProjects}</p>
             <p className="text-sm text-gray-600">완료된 프로젝트</p>
           </div>
           
@@ -328,7 +328,7 @@ export default function AdminPage() {
               </div>
               <span className="text-sm font-semibold text-purple-600">업체</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalContractors}</p>
+            <p className="text-2xl font-semibold text-gray-900 mb-1">{stats.totalContractors}</p>
             <p className="text-sm text-gray-600">등록된 업체</p>
           </div>
           
@@ -339,7 +339,7 @@ export default function AdminPage() {
               </div>
               <span className="text-sm font-semibold text-amber-600">리뷰</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalReviews}</p>
+            <p className="text-2xl font-semibold text-gray-900 mb-1">{stats.totalReviews}</p>
             <p className="text-sm text-gray-600">전체 리뷰</p>
           </div>
 
@@ -350,7 +350,7 @@ export default function AdminPage() {
               </div>
               <span className="text-sm font-semibold text-emerald-600">수수료</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.totalCommissionAmount)}</p>
+            <p className="text-xl font-semibold text-gray-900 mb-1">{formatCurrency(stats.totalCommissionAmount)}</p>
             <p className="text-sm text-gray-600">{stats.pendingCommissions}건 미수령</p>
           </div>
         </div>

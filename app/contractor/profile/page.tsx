@@ -328,14 +328,7 @@ export default function ContractorProfile() {
               </button>
             </div>
             <h1 className="text-xl font-semibold">Profile Management</h1>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
+            <div className="w-24" />
           </div>
         </div>
       </div>
@@ -543,6 +536,18 @@ export default function ContractorProfile() {
                   placeholder="Enter insurance information"
                 />
               </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
         </div>
