@@ -44,6 +44,8 @@ const UserAvatar = ({
   displayName: string
   size?: 'sm' | 'md' | 'lg'
 }) => {
+  const [imageError, setImageError] = useState(false)
+  
   // Get avatar URL from Google OAuth or other providers
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
 
@@ -90,28 +92,25 @@ const UserAvatar = ({
     return bgColors[charCode % bgColors.length]
   }
 
-  if (avatarUrl) {
-    // Display Google profile picture
+  // If image failed to load or no avatar URL, show initials
+  if (!avatarUrl || imageError) {
     return (
-      <img
-        src={avatarUrl}
-        alt={displayName || 'User'}
-        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
-        onError={(e) => {
-          // If image fails to load, hide it and show initials instead
-          e.currentTarget.style.display = 'none'
-        }}
-      />
+      <div 
+        className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-semibold ${getBackgroundColor()}`}
+      >
+        {getInitials()}
+      </div>
     )
   }
 
-  // Display initials avatar
+  // Try to display Google profile picture
   return (
-    <div 
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-semibold ${getBackgroundColor()}`}
-    >
-      {getInitials()}
-    </div>
+    <img
+      src={avatarUrl}
+      alt={displayName || 'User'}
+      className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
+      onError={() => setImageError(true)}
+    />
   )
 }
 
