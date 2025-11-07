@@ -16,6 +16,7 @@ interface UserProfile {
 interface ContractorProfile {
   company_name: string
   contact_name: string
+  profile_image?: string  // ✅ 추가
 }
 
 // Execute immediately on page load (outside useEffect)
@@ -34,23 +35,40 @@ const getCachedUserType = () => {
   return ''
 }
 
-// User Avatar Component with proper error handling
+// ✅ User Avatar Component - 업체용 우선순위 변경
 const UserAvatar = ({ 
   user, 
-  displayName, 
+  displayName,
+  contractorProfile,  // ✅ 추가
   size = 'md' 
 }: { 
   user: any
   displayName: string
+  contractorProfile?: ContractorProfile | null  // ✅ 추가
   size?: 'sm' | 'md' | 'lg'
 }) => {
-  // Get avatar URL from Google OAuth or other providers
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+  // ✅ 업체인 경우: 1. 업체 프로필 이미지 -> 2. 이름 이니셜 -> 3. 구글 이미지
+  // ✅ 일반 사용자: 1. 구글 이미지 -> 2. 이름 이니셜
+  const getAvatarUrl = () => {
+    if (contractorProfile) {
+      // 업체인 경우: 업체 프로필 이미지 우선
+      if (contractorProfile.profile_image) {
+        return contractorProfile.profile_image
+      }
+      // 업체 프로필 이미지가 없으면 null 반환 (이니셜 표시)
+      return null
+    } else {
+      // 일반 사용자: 구글 프로필 이미지 사용
+      return user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null
+    }
+  }
+
+  const avatarUrl = getAvatarUrl()
   
-  // ✅ Initialize imageLoaded based on whether avatarUrl exists
+  // Initialize imageLoaded based on whether avatarUrl exists
   const [imageLoaded, setImageLoaded] = useState(!!avatarUrl)
   
-  // ✅ Reset imageLoaded when avatarUrl changes
+  // Reset imageLoaded when avatarUrl changes
   useEffect(() => {
     setImageLoaded(!!avatarUrl)
   }, [avatarUrl])
@@ -109,7 +127,7 @@ const UserAvatar = ({
     )
   }
 
-  // Try to display Google profile picture with error handling
+  // Try to display profile picture with error handling
   return (
     <img
       src={avatarUrl}
@@ -250,10 +268,10 @@ export default function Header() {
       
       console.log('🔍 Loading user profile:', { userId, email })
       
-      // 1. First check if contractor
+      // ✅ 1. First check if contractor (profile_image 포함)
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('company_name, contact_name')
+        .select('company_name, contact_name, profile_image')
         .eq('user_id', userId)
         .maybeSingle()
 
@@ -269,7 +287,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
-        console.log('✅ Identified as contractor:', { finalDisplayName })
+        console.log('✅ Identified as contractor:', { finalDisplayName, hasProfileImage: !!contractorData.profile_image })
         
         currentUserId.current = userId // Mark as loaded
         return
@@ -508,7 +526,12 @@ export default function Header() {
                     className="flex items-center p-1 rounded-full hover:bg-gray-100 transition-colors"
                     aria-label="User menu"
                   >
-                    <UserAvatar user={user} displayName={getDisplayName()} size="md" />
+                    <UserAvatar 
+                      user={user} 
+                      displayName={getDisplayName()} 
+                      contractorProfile={contractorProfile}
+                      size="md" 
+                    />
                   </button>
                   
                   {/* Dropdown menu */}
@@ -517,7 +540,12 @@ export default function Header() {
                       <div className="py-2">
                         <div className="px-4 py-3 border-b border-gray-100">
                           <div className="flex items-center space-x-3">
-                            <UserAvatar user={user} displayName={getDisplayName()} size="md" />
+                            <UserAvatar 
+                              user={user} 
+                              displayName={getDisplayName()} 
+                              contractorProfile={contractorProfile}
+                              size="md" 
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-gray-900 truncate">
                                 {getDisplayName()}
@@ -669,7 +697,12 @@ export default function Header() {
                         <div className="text-center py-3">
                           {currentUserId.current ? (
                             <div className="flex flex-col items-center space-y-2">
-                              <UserAvatar user={user} displayName={getDisplayName()} size="lg" />
+                              <UserAvatar 
+                                user={user} 
+                                displayName={getDisplayName()} 
+                                contractorProfile={contractorProfile}
+                                size="lg" 
+                              />
                               <div>
                                 <div className="font-medium text-gray-900">
                                   {getDisplayName()}
