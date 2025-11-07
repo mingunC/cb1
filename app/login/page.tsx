@@ -40,13 +40,13 @@ export default function LoginPage() {
             
             if (userInfo.userType === 'admin') {
               redirectTo = '/admin'
-              toast.success('관리자 계정으로 로그인되었습니다')
+              toast.success('Signed in as admin.')
             } else if (userInfo.userType === 'contractor' && userInfo.contractorData) {
               redirectTo = '/contractor'
-              toast.success(`${userInfo.contractorData.company_name} 계정으로 로그인되었습니다`)
+              toast.success(`Signed in as ${userInfo.contractorData.company_name}.`)
             } else {
               redirectTo = '/'
-              toast.success('로그인되었습니다')
+              toast.success('Signed in successfully.')
             }
             
             console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
@@ -66,13 +66,13 @@ export default function LoginPage() {
     setError('')
     
     if (!formData.email || !formData.password) {
-      setError('이메일과 비밀번호를 모두 입력해주세요.')
+      setError('Please enter both email and password.')
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('올바른 이메일 형식을 입력해주세요.')
+      setError('Please enter a valid email address.')
       return
     }
 
@@ -92,7 +92,7 @@ export default function LoginPage() {
           return
         }
         
-        setError(result.error || '로그인에 실패했습니다.')
+        setError(result.error || 'Login failed.')
         setIsLoading(false)
         return
       }
@@ -100,16 +100,16 @@ export default function LoginPage() {
       console.log('Login successful:', result.user?.email)
       
       if (result.userType === 'contractor' && result.contractorData) {
-        toast.success(`${result.contractorData.company_name} 계정으로 로그인되었습니다`)
+        toast.success(`Signed in as ${result.contractorData.company_name}.`)
       } else {
-        toast.success('로그인되었습니다')
+        toast.success('Signed in successfully.')
       }
       
       router.push(result.redirectTo || '/')
 
     } catch (error: any) {
       console.error('Unexpected error during login:', error)
-      setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      setError('An unexpected error occurred during login. Please try again later.')
       setIsLoading(false)
     }
   }, [formData, router])
@@ -133,14 +133,14 @@ export default function LoginPage() {
 
       if (googleError) {
         console.error('Google login error:', googleError)
-        setError('Google 로그인에 실패했습니다.')
-        toast.error('Google 로그인에 실패했습니다')
+        setError('Google sign-in failed.')
+        toast.error('Google sign-in failed.')
         hasError = true
       }
     } catch (error) {
       console.error('Google sign in error:', error)
-      setError('Google 로그인 중 오류가 발생했습니다.')
-      toast.error('Google 로그인 중 오류가 발생했습니다')
+      setError('An error occurred during Google sign-in.')
+      toast.error('An error occurred during Google sign-in.')
       hasError = true
     } finally {
       if (hasError) {
