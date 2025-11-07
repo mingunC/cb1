@@ -646,10 +646,7 @@ export default function QuoteRequestForm() {
                   {/* ✅ 현장방문 날짜 - 필수 강화 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <span className="flex items-center gap-2">
-                        Site Visit Date 
-                        <span className="text-red-600 font-bold text-base">* REQUIRED</span>
-                      </span>
+                      Site Visit Date *
                     </label>
                     <input
                       ref={dateInputRef}
@@ -661,8 +658,8 @@ export default function QuoteRequestForm() {
                       min={new Date().toISOString().split('T')[0]}
                       className={`w-full p-4 border-2 rounded-lg focus:ring-2 focus:border-transparent text-lg [&::-webkit-calendar-picker-indicator]:cursor-pointer transition-all ${
                         formData.visitDate 
-                          ? 'border-emerald-300 focus:ring-emerald-500 bg-emerald-50' 
-                          : 'border-red-300 focus:ring-red-500 bg-red-50'
+                          ? 'border-gray-200 focus:ring-emerald-500 bg-white' 
+                          : 'border-gray-200 focus:ring-indigo-500 bg-white'
                       }`}
                       style={{ 
                         colorScheme: 'light',
@@ -672,17 +669,7 @@ export default function QuoteRequestForm() {
                     />
                     
                     {/* ✅ 선택 여부에 따른 메시지 */}
-                    {!formData.visitDate ? (
-                      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mt-3 animate-pulse">
-                        <p className="text-sm text-red-800 font-bold flex items-center gap-2">
-                          <span className="text-xl">⚠️</span>
-                          <span>Please select a site visit date to continue. This field is mandatory!</span>
-                        </p>
-                        <p className="text-xs text-red-700 mt-2 ml-7">
-                          Contractors need to visit your site to provide accurate estimates.
-                        </p>
-                      </div>
-                    ) : (
+                    {formData.visitDate && (
                       <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-3 mt-3">
                         <p className="text-sm text-emerald-800 font-medium flex items-center gap-2">
                           <span className="text-lg">✅</span>
@@ -770,7 +757,7 @@ export default function QuoteRequestForm() {
                       }`}
                       title={!isStep5Complete() ? 'Please complete all required fields including site visit date' : 'Continue to next step'}
                     >
-                      {isStep5Complete() ? 'Next →' : '🔒 Complete All Fields'}
+                      Next →
                     </button>
                   ) : (
                     <button
