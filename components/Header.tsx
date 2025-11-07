@@ -34,7 +34,7 @@ const getCachedUserType = () => {
   return ''
 }
 
-// User Avatar Component
+// User Avatar Component with proper error handling
 const UserAvatar = ({ 
   user, 
   displayName, 
@@ -44,6 +44,8 @@ const UserAvatar = ({
   displayName: string
   size?: 'sm' | 'md' | 'lg'
 }) => {
+  const [imageLoaded, setImageLoaded] = useState(true)
+  
   // Get avatar URL from Google OAuth or other providers
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
 
@@ -90,24 +92,29 @@ const UserAvatar = ({
     return bgColors[charCode % bgColors.length]
   }
 
-  // If avatar URL exists, always show the image (even if blocked by ad blocker)
-  if (avatarUrl) {
+  // If no avatar URL or image failed to load, show initials
+  if (!avatarUrl || !imageLoaded) {
     return (
-      <img
-        src={avatarUrl}
-        alt={displayName || 'User'}
-        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
-      />
+      <div 
+        className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-semibold ${getBackgroundColor()}`}
+      >
+        {getInitials()}
+      </div>
     )
   }
 
-  // Show initials only if no avatar URL exists
+  // Try to display Google profile picture with error handling
   return (
-    <div 
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-semibold ${getBackgroundColor()}`}
-    >
-      {getInitials()}
-    </div>
+    <img
+      src={avatarUrl}
+      alt={displayName || 'User'}
+      className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
+      onError={() => {
+        console.log('⚠️ Image failed to load, showing initials instead')
+        setImageLoaded(false)
+      }}
+      onLoad={() => setImageLoaded(true)}
+    />
   )
 }
 
