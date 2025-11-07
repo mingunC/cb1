@@ -485,16 +485,14 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <div className="flex items-center space-x-3">
-                {/* User profile button with avatar */}
+                {/* User profile button with avatar only */}
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                    className="flex items-center space-x-2 text-sm text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="User menu"
                   >
-                    <UserAvatar user={user} displayName={getDisplayName()} size="sm" />
-                    <span className="font-medium">
-                      {getDisplayName()}
-                    </span>
+                    <UserAvatar user={user} displayName={getDisplayName()} size="md" />
                   </button>
                   
                   {/* Dropdown menu */}
@@ -553,21 +551,13 @@ export default function Header() {
                   )}
                 </div>
                 
-                {/* Role badge */}
+                {/* Admin badge only */}
                 {isAdmin && (
                   <Link
                     href="/admin"
                     className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full hover:bg-red-200 transition-colors"
                   >
                     Admin
-                  </Link>
-                )}
-                {isContractor && (
-                  <Link
-                    href="/contractor"
-                    className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full hover:bg-green-200 transition-colors"
-                  >
-                    Partners
                   </Link>
                 )}
               </div>
