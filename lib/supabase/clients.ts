@@ -32,8 +32,12 @@ export const createBrowserClient = () => {
     }
   })
 
-  // 세션 상태 변경 리스너 추가
+  // 세션 상태 변경 리스너 추가 (중요한 이벤트만 로그)
   browserClient.auth.onAuthStateChange((event, session) => {
+    // Skip logging for token refresh and initial session events
+    if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+      return
+    }
     console.log('🔐 Auth state changed:', event, session?.user?.id)
   })
 
