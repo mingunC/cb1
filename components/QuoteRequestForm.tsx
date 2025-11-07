@@ -96,6 +96,7 @@ export default function QuoteRequestForm() {
       
       if (authError || !user) {
         alert('Please log in to submit a quote request.')
+        setIsSubmitting(false) // ✅ Fixed: Set isSubmitting to false before redirect
         window.location.href = '/login'
         return
       }
@@ -148,26 +149,24 @@ export default function QuoteRequestForm() {
       if (insertError) {
         console.error('Insert failed:', insertError)
         toast.error(`Save failed: ${insertError.message}`)
-        setIsSubmitting(false)
-        return
+        return // Will be caught by finally block
       }
 
       if (result) {
         console.log('SUCCESS! Quote saved:', result)
         toast.success('Quote request submitted successfully!')
         setIsCompleted(true)
-        setIsSubmitting(false)
       } else {
         console.error('No data returned after insert')
         toast.error('Saved but cannot verify data.')
-        setIsSubmitting(false)
       }
       
     } catch (error: any) {
       console.error('Unexpected error:', error)
       toast.error(`Unexpected error: ${error.message}`)
-      setIsSubmitting(false)
     } finally {
+      // ✅ Fixed: Always set isSubmitting to false in finally block
+      setIsSubmitting(false)
       console.log('=== SUBMISSION COMPLETE ===')
     }
   }
