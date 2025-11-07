@@ -1,7 +1,13 @@
 -- ============================================
--- Google OAuth 로그인 문제 해결을 위한 RLS 정책 수정
+-- Google OAuth 로그인 문제 해결을 위한 RLS 정책 수정 (수정판)
 -- ============================================
 -- 이 스크립트는 Google OAuth 로그인 시 발생하는 RLS 정책 문제를 해결합니다.
+-- first_name, last_name NOT NULL 제약조건도 함께 처리합니다.
+
+-- 0. users 테이블의 NOT NULL 제약조건 제거 (nullable로 변경)
+ALTER TABLE users 
+ALTER COLUMN first_name DROP NOT NULL,
+ALTER COLUMN last_name DROP NOT NULL;
 
 -- 1. users 테이블의 기존 INSERT 정책 제거
 DROP POLICY IF EXISTS "Users can insert own profile" ON users;
@@ -9,6 +15,7 @@ DROP POLICY IF EXISTS "Enable insert during signup" ON users;
 DROP POLICY IF EXISTS "Allow signup insert" ON users;
 DROP POLICY IF EXISTS "Enable insert for authenticated users during signup" ON users;
 DROP POLICY IF EXISTS "Users can insert own profile on signup" ON users;
+DROP POLICY IF EXISTS "Enable insert for signup and oauth" ON users;
 
 -- 2. 새로운 INSERT 정책 생성
 -- OAuth 콜백 중에도 사용자 레코드를 생성할 수 있도록 anon 역할 포함
@@ -68,17 +75,41 @@ LANGUAGE plpgsql
 SECURITY DEFINER  -- 이 설정으로 RLS를 우회하여 실행
 SET search_path = public
 AS $$
+DECLARE
+  full_name TEXT;
+  name_parts TEXT[];
 BEGIN
+  -- Google OAuth에서 full_name 추출
+  full_name := NEW.raw_user_meta_data->>'full_name';
+  
+  -- 이름을 공백으로 분리
+  IF full_name IS NOT NULL THEN
+    name_parts := string_to_array(full_name, ' ');
+  END IF;
+  
   -- auth.users에 사용자가 추가될 때 자동으로 users 테이블에도 추가
-  INSERT INTO public.users (id, email, user_type, created_at, updated_at)
+  INSERT INTO public.users (
+    id, 
+    email, 
+    user_type, 
+    first_name, 
+    last_name,
+    created_at, 
+    updated_at
+  )
   VALUES (
     NEW.id, 
     NEW.email, 
     'customer',  -- 기본값은 customer
+    COALESCE(name_parts[1], ''),  -- first_name (빈 문자열 기본값)
+    COALESCE(array_to_string(name_parts[2:array_length(name_parts, 1)], ' '), ''),  -- last_name (빈 문자열 기본값)
     NOW(), 
     NOW()
   )
-  ON CONFLICT (id) DO NOTHING;  -- 이미 존재하면 무시
+  ON CONFLICT (id) DO UPDATE SET
+    first_name = COALESCE(EXCLUDED.first_name, users.first_name, ''),
+    last_name = COALESCE(EXCLUDED.last_name, users.last_name, ''),
+    updated_at = NOW();
   
   RETURN NEW;
 EXCEPTION
@@ -97,20 +128,39 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION create_user_profile();
 
 -- 10. 기존 auth.users에 있지만 public.users에 없는 사용자들을 위한 레코드 생성
-INSERT INTO public.users (id, email, user_type, created_at, updated_at)
+INSERT INTO public.users (id, email, user_type, first_name, last_name, created_at, updated_at)
 SELECT 
   au.id, 
   au.email, 
   'customer',  -- 기본값
+  COALESCE(split_part(au.raw_user_meta_data->>'full_name', ' ', 1), ''),  -- first_name
+  COALESCE(
+    CASE 
+      WHEN array_length(string_to_array(au.raw_user_meta_data->>'full_name', ' '), 1) > 1 
+      THEN substring(au.raw_user_meta_data->>'full_name' from position(' ' in au.raw_user_meta_data->>'full_name') + 1)
+      ELSE ''
+    END,
+    ''
+  ),  -- last_name
   au.created_at, 
   NOW()
 FROM auth.users au
 WHERE NOT EXISTS (
   SELECT 1 FROM public.users pu WHERE pu.id = au.id
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  first_name = COALESCE(EXCLUDED.first_name, users.first_name, ''),
+  last_name = COALESCE(EXCLUDED.last_name, users.last_name, ''),
+  updated_at = NOW();
 
--- 11. Google OAuth 사용자의 이름 동기화를 위한 함수
+-- 11. 기존 NULL 값을 빈 문자열로 업데이트
+UPDATE users 
+SET 
+  first_name = COALESCE(first_name, ''),
+  last_name = COALESCE(last_name, '')
+WHERE first_name IS NULL OR last_name IS NULL;
+
+-- 12. Google OAuth 사용자의 이름 동기화를 위한 함수
 CREATE OR REPLACE FUNCTION sync_google_user_metadata()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -124,7 +174,8 @@ BEGIN
     SET
       first_name = COALESCE(
         split_part(NEW.raw_user_meta_data->>'full_name', ' ', 1),
-        first_name
+        first_name,
+        ''
       ),
       last_name = COALESCE(
         CASE 
@@ -132,7 +183,8 @@ BEGIN
           THEN substring(NEW.raw_user_meta_data->>'full_name' from position(' ' in NEW.raw_user_meta_data->>'full_name') + 1)
           ELSE last_name
         END,
-        last_name
+        last_name,
+        ''
       ),
       updated_at = NOW()
     WHERE id = NEW.id;
@@ -146,7 +198,7 @@ EXCEPTION
 END;
 $$;
 
--- 12. Google 사용자 메타데이터 동기화 트리거
+-- 13. Google 사용자 메타데이터 동기화 트리거
 DROP TRIGGER IF EXISTS on_auth_user_created_sync_google ON auth.users;
 CREATE TRIGGER on_auth_user_created_sync_google
   AFTER INSERT ON auth.users
@@ -154,7 +206,7 @@ CREATE TRIGGER on_auth_user_created_sync_google
   WHEN (NEW.raw_app_meta_data->>'provider' = 'google')
   EXECUTE FUNCTION sync_google_user_metadata();
 
--- 13. 정책 확인
+-- 14. 정책 확인
 SELECT 
   schemaname, 
   tablename, 
@@ -178,5 +230,6 @@ ORDER BY tablename, policyname;
 DO $$
 BEGIN
   RAISE NOTICE '✅ Google OAuth 로그인 RLS 정책이 성공적으로 수정되었습니다.';
+  RAISE NOTICE '✅ first_name, last_name 제약조건이 nullable로 변경되었습니다.';
   RAISE NOTICE '이제 Google 로그인을 다시 시도해보세요.';
 END $$;
