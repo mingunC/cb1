@@ -60,6 +60,7 @@ export default function QuoteRequestForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const phoneInputRef = useRef<HTMLInputElement>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState<QuoteFormData>({
     spaceType: '',
     projectTypes: [],
@@ -352,6 +353,26 @@ export default function QuoteRequestForm() {
     }, 0)
   }
 
+  // 날짜 입력 핸들러 추가
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // 유효한 날짜 형식인지 확인 (YYYY-MM-DD)
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/
+    
+    if (value === '' || datePattern.test(value)) {
+      setFormData(prev => ({ ...prev, visitDate: value }))
+    }
+  }
+
+  // 날짜 입력 필드에 키보드 입력 방지 (달력만 사용하도록)
+  const handleDateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // 특정 키(Tab, Delete, Backspace, Arrow keys)만 허용
+    const allowedKeys = ['Tab', 'Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
+    if (!allowedKeys.includes(e.key)) {
+      e.preventDefault()
+    }
+  }
+
   if (isCompleted) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
@@ -566,7 +587,7 @@ export default function QuoteRequestForm() {
               </div>
             )}
 
-            {/* Step 5: Location */}
+            {/* Step 5: Location - 수정됨 */}
             {currentStep === 5 && (
               <div className="animate-fadeIn">
                 <div className="mb-8">
@@ -604,13 +625,20 @@ export default function QuoteRequestForm() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Visit Date</label>
                     <input
+                      ref={dateInputRef}
                       type="date"
                       value={formData.visitDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, visitDate: e.target.value }))}
+                      onChange={handleDateChange}
+                      onKeyDown={handleDateKeyDown}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg cursor-pointer"
+                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      style={{ 
+                        colorScheme: 'light',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'textfield'
+                      }}
                     />
-                    <p className="text-sm text-gray-600 mt-2">Companies will visit to provide accurate estimates</p>
+                    <p className="text-sm text-gray-600 mt-2">📅 Please use the calendar picker. Companies will visit to provide accurate estimates</p>
                   </div>
                 </div>
               </div>
