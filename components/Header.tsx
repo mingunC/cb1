@@ -16,7 +16,7 @@ interface UserProfile {
 interface ContractorProfile {
   company_name: string
   contact_name: string
-  company_logo?: string  // ✅ profile_image → company_logo로 변경
+  company_logo?: string
 }
 
 // Execute immediately on page load (outside useEffect)
@@ -35,7 +35,10 @@ const getCachedUserType = () => {
   return ''
 }
 
-// ✅ User Avatar Component - 업체용 우선순위 변경
+// ✅ Global cache for image load status (prevents duplicate failures)
+const imageLoadCache = new Map<string, boolean>()
+
+// ✅ User Avatar Component with global image cache
 const UserAvatar = ({ 
   user, 
   displayName,
@@ -47,45 +50,50 @@ const UserAvatar = ({
   contractorProfile?: ContractorProfile | null
   size?: 'sm' | 'md' | 'lg'
 }) => {
-  // ✅ 업체인 경우: 1. 업체 로고 -> 2. 이름 이니셜 -> 3. 구글 이미지
-  // ✅ 일반 사용자: 1. 구글 이미지 -> 2. 이름 이니셜
+  // Get avatar URL
   const getAvatarUrl = () => {
     if (contractorProfile) {
-      // 업체인 경우: company_logo 우선
+      // Contractor: company logo
       if (contractorProfile.company_logo) {
         return contractorProfile.company_logo
       }
-      // 업체 로고가 없으면 null 반환 (이니셜 표시)
       return null
     } else {
-      // 일반 사용자: 구글 프로필 이미지 사용
+      // Regular user: Google profile image
       return user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null
     }
   }
 
   const avatarUrl = getAvatarUrl()
   
-  // Initialize imageLoaded based on whether avatarUrl exists
-  const [imageLoaded, setImageLoaded] = useState(!!avatarUrl)
+  // ✅ Check global cache first
+  const cachedLoadStatus = avatarUrl ? imageLoadCache.get(avatarUrl) : undefined
+  const [imageLoaded, setImageLoaded] = useState(cachedLoadStatus ?? !!avatarUrl)
   
   // Reset imageLoaded when avatarUrl changes
   useEffect(() => {
-    setImageLoaded(!!avatarUrl)
+    if (avatarUrl) {
+      const cached = imageLoadCache.get(avatarUrl)
+      if (cached !== undefined) {
+        setImageLoaded(cached)
+      } else {
+        setImageLoaded(true) // Try to load
+      }
+    } else {
+      setImageLoaded(false)
+    }
   }, [avatarUrl])
 
   // Get initials from display name or email
   const getInitials = () => {
     if (displayName && displayName !== '...') {
-      // If display name has spaces (e.g., "Messi Choi"), take first letter of each word
       const parts = displayName.trim().split(' ')
       if (parts.length >= 2) {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
       }
-      // Otherwise take first letter
       return displayName[0].toUpperCase()
     }
     
-    // Fallback to email
     if (user?.email) {
       return user.email[0].toUpperCase()
     }
@@ -109,7 +117,6 @@ const UserAvatar = ({
     'bg-pink-500'
   ]
 
-  // Generate consistent color based on email
   const getBackgroundColor = () => {
     if (!user?.email) return bgColors[0]
     const charCode = user.email.charCodeAt(0)
@@ -134,11 +141,19 @@ const UserAvatar = ({
       alt={displayName || 'User'}
       className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
       onError={() => {
-        console.log('⚠️ Image failed to load, showing initials instead')
+        console.log('⚠️ Image failed to load:', avatarUrl)
+        // ✅ Cache the failure globally
+        if (avatarUrl) {
+          imageLoadCache.set(avatarUrl, false)
+        }
         setImageLoaded(false)
       }}
       onLoad={() => {
-        console.log('✅ Avatar image loaded successfully')
+        console.log('✅ Avatar image loaded successfully:', avatarUrl)
+        // ✅ Cache the success globally
+        if (avatarUrl) {
+          imageLoadCache.set(avatarUrl, true)
+        }
         setImageLoaded(true)
       }}
     />
@@ -159,7 +174,7 @@ export default function Header() {
   // Refs for state tracking
   const isMounted = useRef(true)
   const authListenerSetupRef = useRef(false)
-  const currentUserId = useRef<string | null>(null) // Track currently loaded user ID
+  const currentUserId = useRef<string | null>(null)
 
   useEffect(() => {
     isMounted.current = true
@@ -175,7 +190,6 @@ export default function Header() {
     try {
       const supabase = createBrowserClient()
       
-      // 1. Check current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (!session?.user) {
@@ -183,20 +197,17 @@ export default function Header() {
           setIsLoading(false)
         }
         
-        // Set up auth listener only when there's no session
         if (!authListenerSetupRef.current) {
           setupAuthListener()
         }
         return
       }
 
-      // 2. Set user info
       if (isMounted.current) {
         setUser(session.user)
         await loadUserProfile(session.user.id, session.user.email)
       }
 
-      // 3. Set up auth listener (only once)
       if (!authListenerSetupRef.current) {
         setupAuthListener()
       }
@@ -218,12 +229,9 @@ export default function Header() {
       async (event, session) => {
         if (!isMounted.current) return
         
-        // Ignore INITIAL_SESSION (already handled in loadUserData)
         if (event === 'INITIAL_SESSION') return
         
-        // Don't reload profile on TOKEN_REFRESHED
         if (event === 'TOKEN_REFRESHED') {
-          // ✅ Update user object to get latest metadata (including avatar)
           if (session?.user && isMounted.current) {
             console.log('🔄 Token refreshed, updating user metadata')
             setUser(session.user)
@@ -232,15 +240,14 @@ export default function Header() {
         }
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // ✅ Only reload if it's a different user
           if (currentUserId.current !== session.user.id) {
             console.log('🔄 New user signed in, loading profile')
             setUser(session.user)
-            currentUserId.current = null // Reset for new user
+            currentUserId.current = null
             await loadUserProfile(session.user.id, session.user.email)
           } else {
             console.log('✅ Same user, updating user object')
-            setUser(session.user) // ✅ Update to get latest metadata
+            setUser(session.user)
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
@@ -249,6 +256,8 @@ export default function Header() {
           setDisplayName('')
           currentUserId.current = null
           setIsUserDropdownOpen(false)
+          // ✅ Clear image cache on logout
+          imageLoadCache.clear()
         }
       }
     )
@@ -257,7 +266,6 @@ export default function Header() {
   }
 
   const loadUserProfile = async (userId: string, email?: string | null) => {
-    // Skip if profile for same user is already loaded
     if (currentUserId.current === userId) {
       console.log('✅ Profile already loaded for user:', userId)
       return
@@ -268,7 +276,6 @@ export default function Header() {
       
       console.log('🔍 Loading user profile:', { userId, email })
       
-      // ✅ 1. First check if contractor (company_logo 사용)
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, contact_name, company_logo')
@@ -283,17 +290,15 @@ export default function Header() {
         const finalDisplayName = contractorData.company_name || contractorData.contact_name || email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
-        // Cache in localStorage
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
         console.log('✅ Identified as contractor:', { finalDisplayName, hasLogo: !!contractorData.company_logo })
         
-        currentUserId.current = userId // Mark as loaded
+        currentUserId.current = userId
         return
       }
 
-      // 2. Check general user info
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_type, first_name, last_name')
@@ -306,12 +311,10 @@ export default function Header() {
         setUserProfile(userData)
         setContractorProfile(null)
         
-        // Set name (Google OAuth: given_name=first_name, family_name=last_name)
         const firstName = userData.first_name || ''
         const lastName = userData.last_name || ''
         const fullName = `${firstName} ${lastName}`.trim()
         
-        // Check if valid name (exclude empty strings or default values)
         const isValidName = fullName && 
                            fullName !== 'User' &&
                            fullName !== 'user' &&
@@ -321,39 +324,35 @@ export default function Header() {
         const finalDisplayName = isValidName ? fullName : email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
-        // Cache in localStorage
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', userData.user_type)
         
         console.log('✅ Identified as regular user:', { userData, finalDisplayName })
         
-        currentUserId.current = userId // Mark as loaded
+        currentUserId.current = userId
       } else if (isMounted.current) {
-        // Set default values
         setUserProfile({ user_type: 'customer' })
         setContractorProfile(null)
         const finalDisplayName = email?.split('@')[0] || ''
         setDisplayName(finalDisplayName)
         
-        // Cache in localStorage
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
         
         console.log('⚠️ Set to default (customer):', { finalDisplayName })
         
-        currentUserId.current = userId // Mark as loaded
+        currentUserId.current = userId
       }
       
     } catch (error) {
       console.error('Error loading profile:', error)
       if (isMounted.current) {
         setDisplayName(email?.split('@')[0] || '')
-        currentUserId.current = userId // Mark as loaded even on error
+        currentUserId.current = userId
       }
     }
   }
 
-  // Handle clicks outside dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
@@ -371,18 +370,16 @@ export default function Header() {
     }
   }, [isUserDropdownOpen])
 
-  // ✅ Final improved logout function - force immediate completion
   const handleSignOut = async () => {
     if (isLoggingOut) {
       console.log('⚠️ Already logging out.')
-      return // Prevent double clicks
+      return
     }
     
     setIsLoggingOut(true)
     console.log('🚪 Starting logout...')
     
     try {
-      // ✅ Step 1: Immediately reset UI state
       setUser(null)
       setUserProfile(null)
       setContractorProfile(null)
@@ -391,11 +388,9 @@ export default function Header() {
       setIsUserDropdownOpen(false)
       console.log('✅ UI state reset complete')
       
-      // ✅ Step 2: Complete localStorage clear
       try {
         localStorage.removeItem('cached_user_name')
         localStorage.removeItem('cached_user_type')
-        // Clear all Supabase-related cache
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('sb-') || key.includes('supabase')) {
             localStorage.removeItem(key)
@@ -406,7 +401,6 @@ export default function Header() {
         console.error('⚠️ localStorage clear error:', e)
       }
       
-      // ✅ Step 3: Clear sessionStorage too
       try {
         sessionStorage.clear()
         console.log('✅ sessionStorage cleared')
@@ -414,19 +408,19 @@ export default function Header() {
         console.error('⚠️ sessionStorage clear error:', e)
       }
       
-      // ✅ Step 4: Supabase logout (wait synchronously)
+      // ✅ Clear image cache
+      imageLoadCache.clear()
+      
       const supabase = createBrowserClient()
       await supabase.auth.signOut({ scope: 'local' })
       console.log('✅ Supabase logout complete')
       
-      // ✅ Step 5: Force page reload immediately (ignore cache)
       console.log('✅ Force redirect to homepage')
       window.location.replace('/')
       
     } catch (error) {
       console.error('❌ Logout error:', error)
       
-      // Even on error, force logout
       try {
         localStorage.clear()
         sessionStorage.clear()
@@ -434,50 +428,39 @@ export default function Header() {
         console.error('⚠️ Storage clear error:', e)
       }
       
-      // Force redirect
       window.location.replace('/')
     }
   }
 
-  // Check user role
   const isAdmin = userProfile?.user_type === 'admin'
   const isContractor = !!contractorProfile
 
-  // Set navigation menu
   const getNavigation = () => {
-    // Base menu (always displayed regardless of login status)
     const baseNavigation = [
       { name: 'Partners', href: '/pros' },
       { name: 'Portfolio', href: '/portfolio' },
       { name: 'Events', href: '/events' },
     ]
 
-    // If not logged in - only base menu
     if (!user) {
       return baseNavigation
     }
 
-    // If logged in - add Admin Dashboard for admins only
     if (isAdmin) {
       return [
         ...baseNavigation,
         { name: 'Admin Dashboard', href: '/admin' },
       ]
     } else {
-      // For contractors and customers, only show base navigation
-      // MyPage is accessible through dropdown menu
       return baseNavigation
     }
   }
 
   const navigation = getNavigation()
 
-  // Get display name
   const getDisplayName = () => {
-    // Return cached name immediately if available (prevent flickering)
     if (displayName) return displayName
     
-    // If loading, return cached name
     if (isLoading) {
       const cachedName = getCachedUserName()
       return cachedName || '...'
