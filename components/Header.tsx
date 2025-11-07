@@ -411,28 +411,21 @@ export default function Header() {
       { name: 'Events', href: '/events' },
     ]
 
-    // If not logged in - only base menu without MyPage
+    // If not logged in - only base menu
     if (!user) {
       return baseNavigation
     }
 
-    // If logged in - add MyPage based on role
+    // If logged in - add Admin Dashboard for admins only
     if (isAdmin) {
       return [
         ...baseNavigation,
         { name: 'Admin Dashboard', href: '/admin' },
       ]
-    } else if (isContractor) {
-      return [
-        ...baseNavigation,
-        { name: 'MyPage', href: '/contractor' },
-      ]
     } else {
-      // Regular customer
-      return [
-        ...baseNavigation,
-        { name: 'MyPage', href: '/my-quotes' },
-      ]
+      // For contractors and customers, only show base navigation
+      // MyPage is accessible through dropdown menu
+      return baseNavigation
     }
   }
 
@@ -524,6 +517,15 @@ export default function Header() {
                         {isContractor && (
                           <Link
                             href="/contractor"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserDropdownOpen(false)}
+                          >
+                            MyPage
+                          </Link>
+                        )}
+                        {!isAdmin && !isContractor && (
+                          <Link
+                            href="/my-quotes"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
@@ -674,6 +676,15 @@ export default function Header() {
                             <Link
                               href="/contractor"
                               className="block mt-3 bg-green-100 text-green-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-200"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              MyPage
+                            </Link>
+                          )}
+                          {!isAdmin && !isContractor && (
+                            <Link
+                              href="/my-quotes"
+                              className="block mt-3 bg-blue-100 text-blue-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-blue-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
                               MyPage
