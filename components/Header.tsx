@@ -16,7 +16,7 @@ interface UserProfile {
 interface ContractorProfile {
   company_name: string
   contact_name: string
-  profile_image?: string  // ✅ 추가
+  company_logo?: string  // ✅ profile_image → company_logo로 변경
 }
 
 // Execute immediately on page load (outside useEffect)
@@ -39,23 +39,23 @@ const getCachedUserType = () => {
 const UserAvatar = ({ 
   user, 
   displayName,
-  contractorProfile,  // ✅ 추가
+  contractorProfile,
   size = 'md' 
 }: { 
   user: any
   displayName: string
-  contractorProfile?: ContractorProfile | null  // ✅ 추가
+  contractorProfile?: ContractorProfile | null
   size?: 'sm' | 'md' | 'lg'
 }) => {
-  // ✅ 업체인 경우: 1. 업체 프로필 이미지 -> 2. 이름 이니셜 -> 3. 구글 이미지
+  // ✅ 업체인 경우: 1. 업체 로고 -> 2. 이름 이니셜 -> 3. 구글 이미지
   // ✅ 일반 사용자: 1. 구글 이미지 -> 2. 이름 이니셜
   const getAvatarUrl = () => {
     if (contractorProfile) {
-      // 업체인 경우: 업체 프로필 이미지 우선
-      if (contractorProfile.profile_image) {
-        return contractorProfile.profile_image
+      // 업체인 경우: company_logo 우선
+      if (contractorProfile.company_logo) {
+        return contractorProfile.company_logo
       }
-      // 업체 프로필 이미지가 없으면 null 반환 (이니셜 표시)
+      // 업체 로고가 없으면 null 반환 (이니셜 표시)
       return null
     } else {
       // 일반 사용자: 구글 프로필 이미지 사용
@@ -268,10 +268,10 @@ export default function Header() {
       
       console.log('🔍 Loading user profile:', { userId, email })
       
-      // ✅ 1. First check if contractor (profile_image 포함)
+      // ✅ 1. First check if contractor (company_logo 사용)
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('company_name, contact_name, profile_image')
+        .select('company_name, contact_name, company_logo')
         .eq('user_id', userId)
         .maybeSingle()
 
@@ -287,7 +287,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
-        console.log('✅ Identified as contractor:', { finalDisplayName, hasProfileImage: !!contractorData.profile_image })
+        console.log('✅ Identified as contractor:', { finalDisplayName, hasLogo: !!contractorData.company_logo })
         
         currentUserId.current = userId // Mark as loaded
         return
