@@ -44,10 +44,16 @@ const UserAvatar = ({
   displayName: string
   size?: 'sm' | 'md' | 'lg'
 }) => {
-  const [imageLoaded, setImageLoaded] = useState(true)
-  
   // Get avatar URL from Google OAuth or other providers
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+  
+  // ✅ Initialize imageLoaded based on whether avatarUrl exists
+  const [imageLoaded, setImageLoaded] = useState(!!avatarUrl)
+  
+  // ✅ Reset imageLoaded when avatarUrl changes
+  useEffect(() => {
+    setImageLoaded(!!avatarUrl)
+  }, [avatarUrl])
 
   // Get initials from display name or email
   const getInitials = () => {
@@ -113,7 +119,10 @@ const UserAvatar = ({
         console.log('⚠️ Image failed to load, showing initials instead')
         setImageLoaded(false)
       }}
-      onLoad={() => setImageLoaded(true)}
+      onLoad={() => {
+        console.log('✅ Avatar image loaded successfully')
+        setImageLoaded(true)
+      }}
     />
   )
 }
@@ -196,7 +205,11 @@ export default function Header() {
         
         // Don't reload profile on TOKEN_REFRESHED
         if (event === 'TOKEN_REFRESHED') {
-          // Only token refreshed, user is the same so ignore
+          // ✅ Update user object to get latest metadata (including avatar)
+          if (session?.user && isMounted.current) {
+            console.log('🔄 Token refreshed, updating user metadata')
+            setUser(session.user)
+          }
           return
         }
         
@@ -208,7 +221,8 @@ export default function Header() {
             currentUserId.current = null // Reset for new user
             await loadUserProfile(session.user.id, session.user.email)
           } else {
-            console.log('✅ Same user, skipping profile reload')
+            console.log('✅ Same user, updating user object')
+            setUser(session.user) // ✅ Update to get latest metadata
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
