@@ -34,6 +34,87 @@ const getCachedUserType = () => {
   return ''
 }
 
+// User Avatar Component
+const UserAvatar = ({ 
+  user, 
+  displayName, 
+  size = 'md' 
+}: { 
+  user: any
+  displayName: string
+  size?: 'sm' | 'md' | 'lg'
+}) => {
+  // Get avatar URL from Google OAuth or other providers
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+
+  // Get initials from display name or email
+  const getInitials = () => {
+    if (displayName && displayName !== '...') {
+      // If display name has spaces (e.g., "Messi Choi"), take first letter of each word
+      const parts = displayName.trim().split(' ')
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      }
+      // Otherwise take first letter
+      return displayName[0].toUpperCase()
+    }
+    
+    // Fallback to email
+    if (user?.email) {
+      return user.email[0].toUpperCase()
+    }
+    
+    return 'U'
+  }
+
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-sm',
+    md: 'w-10 h-10 text-base',
+    lg: 'w-12 h-12 text-lg'
+  }
+
+  const bgColors = [
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-yellow-500',
+    'bg-red-500',
+    'bg-indigo-500',
+    'bg-purple-500',
+    'bg-pink-500'
+  ]
+
+  // Generate consistent color based on email
+  const getBackgroundColor = () => {
+    if (!user?.email) return bgColors[0]
+    const charCode = user.email.charCodeAt(0)
+    return bgColors[charCode % bgColors.length]
+  }
+
+  if (avatarUrl) {
+    // Display Google profile picture
+    return (
+      <img
+        src={avatarUrl}
+        alt={displayName || 'User'}
+        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
+        onError={(e) => {
+          // If image fails to load, hide it and show initials instead
+          e.currentTarget.style.display = 'none'
+        }}
+      />
+    )
+  }
+
+  // Display initials avatar
+  return (
+    <div 
+      className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-semibold ${getBackgroundColor()}`}
+    >
+      {getInitials()}
+    </div>
+  )
+}
+
 export default function Header() {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -404,13 +485,13 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <div className="flex items-center space-x-3">
-                {/* User name dropdown */}
+                {/* User profile button with avatar */}
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                     className="flex items-center space-x-2 text-sm text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                   >
-                    <User className="h-4 w-4" />
+                    <UserAvatar user={user} displayName={getDisplayName()} size="sm" />
                     <span className="font-medium">
                       {getDisplayName()}
                     </span>
@@ -420,8 +501,18 @@ export default function Header() {
                   {isUserDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                       <div className="py-2">
-                        <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100 break-words">
-                          {user.email}
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <div className="flex items-center space-x-3">
+                            <UserAvatar user={user} displayName={getDisplayName()} size="md" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 truncate">
+                                {getDisplayName()}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {user.email}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                         {isAdmin && (
                           <Link
@@ -560,16 +651,22 @@ export default function Header() {
                   <>
                     {user ? (
                       <div className="space-y-2">
-                        <div className="text-center text-sm text-gray-600 py-2">
+                        <div className="text-center py-3">
                           {currentUserId.current ? (
-                            <>
-                              <div className="font-medium text-gray-900">
-                                {getDisplayName()}
+                            <div className="flex flex-col items-center space-y-2">
+                              <UserAvatar user={user} displayName={getDisplayName()} size="lg" />
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {getDisplayName()}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1 break-words px-2">
+                                  {user.email}
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-500 mt-1 break-words px-2">{user.email}</div>
-                            </>
+                            </div>
                           ) : (
                             <div className="animate-pulse">
+                              <div className="h-12 w-12 bg-gray-200 rounded-full mx-auto mb-2"></div>
                               <div className="h-4 bg-gray-200 rounded w-24 mx-auto mb-2"></div>
                               <div className="h-3 bg-gray-100 rounded w-32 mx-auto"></div>
                             </div>
@@ -577,7 +674,7 @@ export default function Header() {
                           {isAdmin && (
                             <Link
                               href="/admin"
-                              className="block mt-2 bg-red-100 text-red-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-200"
+                              className="block mt-3 bg-red-100 text-red-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
                               Admin Dashboard
@@ -586,7 +683,7 @@ export default function Header() {
                           {isContractor && (
                             <Link
                               href="/contractor"
-                              className="block mt-2 bg-green-100 text-green-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-200"
+                              className="block mt-3 bg-green-100 text-green-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
                               MyPage
