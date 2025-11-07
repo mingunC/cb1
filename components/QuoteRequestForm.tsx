@@ -222,6 +222,11 @@ export default function QuoteRequestForm() {
           alert('Please enter a valid postal code format. (e.g., A0A 0A0)')
           return false
         }
+        // ✅ 현장방문 날짜 필수 검증 추가
+        if (!formData.visitDate || formData.visitDate.trim() === '') {
+          alert('Please select a preferred site visit date. This is required for contractors to provide accurate estimates.')
+          return false
+        }
         break
       case 6:
         if (!formData.description) {
@@ -587,15 +592,15 @@ export default function QuoteRequestForm() {
               </div>
             )}
 
-            {/* Step 5: Location - 수정됨 */}
+            {/* Step 5: Location - 현장방문 필수로 수정됨 */}
             {currentStep === 5 && (
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">5</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Location & Visit</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">Location & Site Visit</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Enter project location and visit schedule</p>
+                  <p className="text-gray-600 ml-11">Enter project location and required site visit schedule</p>
                 </div>
                 
                 <div className="space-y-6 mb-8">
@@ -623,22 +628,29 @@ export default function QuoteRequestForm() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Visit Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Site Visit Date * <span className="text-red-500">(Required)</span>
+                    </label>
                     <input
                       ref={dateInputRef}
                       type="date"
+                      required
                       value={formData.visitDate}
                       onChange={handleDateChange}
                       onKeyDown={handleDateKeyDown}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className="w-full p-4 border-2 border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       style={{ 
                         colorScheme: 'light',
                         WebkitAppearance: 'none',
                         MozAppearance: 'textfield'
                       }}
                     />
-                    <p className="text-sm text-gray-600 mt-2">📅 Please use the calendar picker. Companies will visit to provide accurate estimates</p>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-3">
+                      <p className="text-sm text-emerald-800 font-medium">
+                        🏠 <strong>Site Visit Required:</strong> Contractors must visit your site to provide accurate estimates. Please select your preferred date using the calendar picker.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
