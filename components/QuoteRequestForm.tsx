@@ -186,6 +186,22 @@ export default function QuoteRequestForm() {
     }
   }
 
+  // ✅ Step 5의 Next 버튼 활성화 여부를 체크하는 함수
+  const isStep5Complete = (): boolean => {
+    if (!formData.postalCode || !formData.fullAddress) {
+      return false
+    }
+    const postalPattern = /^[A-Z]\d[A-Z] \d[A-Z]\d$/
+    if (!postalPattern.test(formData.postalCode)) {
+      return false
+    }
+    // ✅ 현장방문 날짜가 반드시 입력되어야 함
+    if (!formData.visitDate || formData.visitDate.trim() === '') {
+      return false
+    }
+    return true
+  }
+
   const validateStep = (step: number): boolean => {
     switch(step) {
       case 1:
@@ -222,9 +238,9 @@ export default function QuoteRequestForm() {
           alert('Please enter a valid postal code format. (e.g., A0A 0A0)')
           return false
         }
-        // ✅ 현장방문 날짜 필수 검증 추가
+        // ✅ 현장방문 날짜 필수 검증 강화
         if (!formData.visitDate || formData.visitDate.trim() === '') {
-          alert('Please select a preferred site visit date. This is required for contractors to provide accurate estimates.')
+          alert('⚠️ Site visit date is REQUIRED!\n\nContractors need to visit your site to provide accurate estimates. Please select a preferred date using the calendar.')
           return false
         }
         break
@@ -592,7 +608,7 @@ export default function QuoteRequestForm() {
               </div>
             )}
 
-            {/* Step 5: Location - 현장방문 필수로 수정됨 */}
+            {/* Step 5: Location - 현장방문 필수로 강화 */}
             {currentStep === 5 && (
               <div className="animate-fadeIn">
                 <div className="mb-8">
@@ -627,9 +643,13 @@ export default function QuoteRequestForm() {
                     />
                   </div>
                   
+                  {/* ✅ 현장방문 날짜 - 필수 강화 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Site Visit Date * <span className="text-red-500">(Required)</span>
+                      <span className="flex items-center gap-2">
+                        Site Visit Date 
+                        <span className="text-red-600 font-bold text-base">* REQUIRED</span>
+                      </span>
                     </label>
                     <input
                       ref={dateInputRef}
@@ -639,16 +659,41 @@ export default function QuoteRequestForm() {
                       onChange={handleDateChange}
                       onKeyDown={handleDateKeyDown}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full p-4 border-2 border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className={`w-full p-4 border-2 rounded-lg focus:ring-2 focus:border-transparent text-lg [&::-webkit-calendar-picker-indicator]:cursor-pointer transition-all ${
+                        formData.visitDate 
+                          ? 'border-emerald-300 focus:ring-emerald-500 bg-emerald-50' 
+                          : 'border-red-300 focus:ring-red-500 bg-red-50'
+                      }`}
                       style={{ 
                         colorScheme: 'light',
                         WebkitAppearance: 'none',
                         MozAppearance: 'textfield'
                       }}
                     />
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-3">
-                      <p className="text-sm text-emerald-800 font-medium">
-                        🏠 <strong>Site Visit Required:</strong> Contractors must visit your site to provide accurate estimates. Please select your preferred date using the calendar picker.
+                    
+                    {/* ✅ 선택 여부에 따른 메시지 */}
+                    {!formData.visitDate ? (
+                      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mt-3 animate-pulse">
+                        <p className="text-sm text-red-800 font-bold flex items-center gap-2">
+                          <span className="text-xl">⚠️</span>
+                          <span>Please select a site visit date to continue. This field is mandatory!</span>
+                        </p>
+                        <p className="text-xs text-red-700 mt-2 ml-7">
+                          Contractors need to visit your site to provide accurate estimates.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-3 mt-3">
+                        <p className="text-sm text-emerald-800 font-medium flex items-center gap-2">
+                          <span className="text-lg">✅</span>
+                          <span>Site visit scheduled for <strong>{new Date(formData.visitDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                      <p className="text-xs text-blue-800">
+                        💡 <strong>Why is this required?</strong> Contractors must physically inspect your property to understand the scope of work and provide you with the most accurate quote possible.
                       </p>
                     </div>
                   </div>
@@ -711,13 +756,32 @@ export default function QuoteRequestForm() {
               <div className="flex-1"></div>
 
               {currentStep < 6 ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="px-10 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300"
-                >
-                  Next →
-                </button>
+                <>
+                  {/* ✅ Step 5에서만 조건부 비활성화 */}
+                  {currentStep === 5 ? (
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      disabled={!isStep5Complete()}
+                      className={`px-10 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                        isStep5Complete()
+                          ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                      }`}
+                      title={!isStep5Complete() ? 'Please complete all required fields including site visit date' : 'Continue to next step'}
+                    >
+                      {isStep5Complete() ? 'Next →' : '🔒 Complete All Fields'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      className="px-10 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300"
+                    >
+                      Next →
+                    </button>
+                  )}
+                </>
               ) : (
                 <button
                   type="button"
