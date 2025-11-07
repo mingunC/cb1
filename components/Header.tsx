@@ -201,9 +201,15 @@ export default function Header() {
         }
         
         if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user)
-          currentUserId.current = null // Reset for new user
-          await loadUserProfile(session.user.id, session.user.email)
+          // ✅ Only reload if it's a different user
+          if (currentUserId.current !== session.user.id) {
+            console.log('🔄 New user signed in, loading profile')
+            setUser(session.user)
+            currentUserId.current = null // Reset for new user
+            await loadUserProfile(session.user.id, session.user.email)
+          } else {
+            console.log('✅ Same user, skipping profile reload')
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setUserProfile(null)
@@ -221,7 +227,7 @@ export default function Header() {
   const loadUserProfile = async (userId: string, email?: string | null) => {
     // Skip if profile for same user is already loaded
     if (currentUserId.current === userId) {
-      console.log('Profile already loaded:', userId)
+      console.log('✅ Profile already loaded for user:', userId)
       return
     }
     
