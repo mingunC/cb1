@@ -66,21 +66,37 @@ const UserAvatar = ({
 
   const avatarUrl = getAvatarUrl()
   
-  // ✅ Check global cache first
-  const cachedLoadStatus = avatarUrl ? imageLoadCache.get(avatarUrl) : undefined
-  const [imageLoaded, setImageLoaded] = useState(cachedLoadStatus ?? !!avatarUrl)
+  // ✅ Check global cache first - 더 안전한 초기화
+  const getInitialLoadState = () => {
+    if (!avatarUrl) return false
+    
+    // 캐시에 있으면 캐시된 값 사용
+    const cachedStatus = imageLoadCache.get(avatarUrl)
+    if (cachedStatus !== undefined) {
+      return cachedStatus
+    }
+    
+    // 캐시에 없으면 false로 시작 (이미지 로드를 기다림)
+    return false
+  }
   
-  // Reset imageLoaded when avatarUrl changes
+  const [imageLoaded, setImageLoaded] = useState(getInitialLoadState())
+  const [imageAttempted, setImageAttempted] = useState(false)
+  
+  // Reset when avatarUrl changes
   useEffect(() => {
     if (avatarUrl) {
       const cached = imageLoadCache.get(avatarUrl)
       if (cached !== undefined) {
         setImageLoaded(cached)
+        setImageAttempted(true)
       } else {
-        setImageLoaded(true) // Try to load
+        setImageLoaded(false)
+        setImageAttempted(false)
       }
     } else {
       setImageLoaded(false)
+      setImageAttempted(true)
     }
   }, [avatarUrl])
 
@@ -164,27 +180,39 @@ const UserAvatar = ({
 
   // Try to display profile picture with error handling
   return (
-    <img
-      src={avatarUrl}
-      alt={displayName || 'User'}
-      className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
-      onError={() => {
-        console.log('⚠️ Image failed to load:', avatarUrl)
-        // ✅ Cache the failure globally
-        if (avatarUrl) {
-          imageLoadCache.set(avatarUrl, false)
-        }
-        setImageLoaded(false)
-      }}
-      onLoad={() => {
-        console.log('✅ Avatar image loaded successfully:', avatarUrl)
-        // ✅ Cache the success globally
-        if (avatarUrl) {
-          imageLoadCache.set(avatarUrl, true)
-        }
-        setImageLoaded(true)
-      }}
-    />
+    <>
+      <img
+        src={avatarUrl}
+        alt={displayName || 'User'}
+        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
+        onError={() => {
+          console.log('⚠️ Image failed to load:', avatarUrl)
+          // ✅ Cache the failure globally
+          if (avatarUrl) {
+            imageLoadCache.set(avatarUrl, false)
+          }
+          setImageLoaded(false)
+          setImageAttempted(true)
+        }}
+        onLoad={() => {
+          console.log('✅ Avatar image loaded successfully:', avatarUrl)
+          // ✅ Cache the success globally
+          if (avatarUrl) {
+            imageLoadCache.set(avatarUrl, true)
+          }
+          setImageLoaded(true)
+          setImageAttempted(true)
+        }}
+        style={{ display: imageLoaded ? 'block' : 'none' }}
+      />
+      {!imageAttempted && (
+        <div 
+          className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-semibold ${getBackgroundColor()}`}
+        >
+          {getInitials()}
+        </div>
+      )}
+    </>
   )
 }
 
