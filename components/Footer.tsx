@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Mail, MapPin, Instagram } from 'lucide-react'
 
 // Threads Icon Component using the provided SVG
@@ -49,19 +48,15 @@ export default function Footer() {
         <div className="grid lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex flex-col mb-6">
-              <div className="flex items-center space-x-2">
-                <Image
-                  src="/white-logo.png"
-                  alt="Canada Beaver"
-                  width={64}
-                  height={64}
-                  className="h-12 w-auto"
-                />
-                <div className="flex flex-col">
-                  <span className="text-2xl md:text-3xl font-black tracking-wide text-white">CANADA</span>
-                  <span className="text-2xl md:text-3xl font-black tracking-wide text-white -mt-1">BEAVER</span>
-                </div>
+            <Link href="/" className="flex items-center gap-3 mb-6">
+              <img
+                src="/white-logo.png"
+                alt="Canada Beaver"
+                className="h-16 w-auto"
+              />
+              <div className="flex flex-col">
+                <span className="text-2xl md:text-3xl font-black tracking-wide text-white">CANADA</span>
+                <span className="text-2xl md:text-3xl font-black tracking-wide text-white -mt-1">BEAVER</span>
               </div>
             </Link>
             <p className="text-gray-400 mb-6 leading-relaxed">
