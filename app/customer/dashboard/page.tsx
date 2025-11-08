@@ -604,7 +604,8 @@ export default function CustomerDashboard() {
                                       : 'border-gray-200 hover:border-gray-300'
                                   }`}
                                 >
-                                  <div className="flex justify-between items-start gap-4">
+                                  <div className="flex flex-col gap-4">
+                                    {/* 업체 정보 */}
                                     <div className="flex-1 min-w-0">
                                       <h5 className="font-bold text-gray-900 text-lg mb-1">
                                         {quote.contractor?.company_name || '업체명 없음'}
@@ -620,28 +621,27 @@ export default function CustomerDashboard() {
                                       </p>
                                       
                                       {quote.description && (
-                                        <div className="mb-3">
+                                        <div className="mb-4">
                                           <p className="text-xs text-gray-500 mb-1">상세 작업 내용:</p>
                                           <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.description}</p>
                                         </div>
                                       )}
-                                      
-                                      {quote.pdf_url ? (
-                                        <button
-                                          onClick={() => handleDownloadPDF(quote)}
-                                          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
-                                        >
-                                          <Download className="w-4 h-4" />
-                                          견적서 다운로드
-                                        </button>
-                                      ) : (
-                                        <p className="text-sm text-gray-500 italic">견적서 파일이 없습니다</p>
-                                      )}
                                     </div>
                                     
-                                    <div className="flex-shrink-0">
+                                    {/* 버튼 영역 - 모바일에서 수직 정렬 */}
+                                    <div className="flex flex-col sm:flex-row gap-3 w-full">
+                                      {quote.pdf_url && (
+                                        <button
+                                          onClick={() => handleDownloadPDF(quote)}
+                                          className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors text-sm font-semibold w-full sm:flex-1"
+                                        >
+                                          <Download className="w-4 h-4" />
+                                          View Quote
+                                        </button>
+                                      )}
+                                      
                                       {isSelected ? (
-                                        <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold">
+                                        <div className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-3 rounded-lg font-semibold w-full sm:flex-1">
                                           <CheckCircle className="w-5 h-5" />
                                           선택됨
                                         </div>
@@ -649,10 +649,10 @@ export default function CustomerDashboard() {
                                         <button
                                           onClick={() => handleSelectContractor(project.id, quote.contractor_id, quote.id)}
                                           disabled={selectingContractor !== null}
-                                          className={`px-6 py-2 rounded-lg font-semibold whitespace-nowrap flex items-center gap-2 transition-all ${
+                                          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold whitespace-nowrap transition-all w-full sm:flex-1 ${
                                             selectingContractor !== null
-                                              ? 'bg-gray-400 cursor-not-allowed'
-                                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                              ? 'bg-gray-400 cursor-not-allowed text-white'
+                                              : 'bg-green-600 hover:bg-green-700 text-white'
                                           }`}
                                         >
                                           {isSelecting ? (
@@ -661,7 +661,7 @@ export default function CustomerDashboard() {
                                               처리 중...
                                             </>
                                           ) : (
-                                            '업체 선택하기'
+                                            'Select'
                                           )}
                                         </button>
                                       ) : null}
