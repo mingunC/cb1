@@ -48,16 +48,9 @@ export default function Footer() {
         <div className="grid lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-3 mb-6">
-              <img
-                src="/white-logo.png"
-                alt="Canada Beaver"
-                className="h-16 w-auto"
-              />
-              <div className="flex flex-col">
-                <span className="text-2xl md:text-3xl font-black tracking-wide text-white">CANADA</span>
-                <span className="text-2xl md:text-3xl font-black tracking-wide text-white -mt-1">BEAVER</span>
-              </div>
+            <Link href="/" className="flex flex-col mb-6">
+              <span className="text-3xl md:text-4xl font-black tracking-wide text-white">CANADA</span>
+              <span className="text-3xl md:text-4xl font-black tracking-wide text-white -mt-1">BEAVER</span>
             </Link>
             <p className="text-gray-400 mb-6 leading-relaxed">
               Trusted professionals ready to transform your space. Connect with verified experts across Canada.
