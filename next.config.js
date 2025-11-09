@@ -9,8 +9,6 @@ const nextConfig = {
     ],
   },
   eslint: {
-    // 빌드 시 ESLint 오류 무시 (임시)
-    ignoreDuringBuilds: true,
   },
 }
 
