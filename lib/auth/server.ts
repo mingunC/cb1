@@ -2,8 +2,8 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/supabase-js'
 import type { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server-clients'
-import type { Database } from '@/lib/types/database'
-import type { AuthCredentials, AuthResult, UserType } from './types'
+import type { Database } from '@/types'
+import type { AuthCredentials, AuthResult, UserType } from '@/types'
 import { checkPathPermission as checkPermission, getRedirectPath, getUserProfile, mapAuthErrorMessage } from './utils'
 
 /**

@@ -5,7 +5,7 @@
 
 import { useAuth } from '@/lib/supabase/hooks'
 import { useProjects } from '@/hooks/useProjects'
-import { StatusBadge } from '@/components/StatusBadge'
+import { StatusBadge } from '@/components/ui'
 import { ProjectService } from '@/services/project.service'
 import { toast } from 'react-hot-toast'
 

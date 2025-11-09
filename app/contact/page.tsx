@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Mail, MapPin, Send } from 'lucide-react'
+import { Input, Textarea } from '@/components/ui'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -102,38 +103,30 @@ export default function ContactPage() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Name *
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      placeholder="John Doe"
-                      disabled={status === 'sending'}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      placeholder="john@example.com"
-                      disabled={status === 'sending'}
-                    />
-                  </div>
+                  <Input
+                    label="Your Name *"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="John Doe"
+                    disabled={status === 'sending'}
+                    fullWidth
+                    className="py-3"
+                  />
+                  <Input
+                    label="Email Address *"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="john@example.com"
+                    disabled={status === 'sending'}
+                    fullWidth
+                    leftIcon={<Mail className="h-4 w-4 text-gray-400" />}
+                    className="py-3"
+                  />
                 </div>
 
                 <div>
@@ -159,22 +152,18 @@ export default function ContactPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Message *
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    required
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                    placeholder="Tell us how we can help you..."
-                    disabled={status === 'sending'}
-                  />
-                </div>
+                <Textarea
+                  label="Message *"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                  rows={6}
+                  placeholder="Tell us how we can help you..."
+                  disabled={status === 'sending'}
+                  fullWidth
+                  className="py-3 resize-none"
+                />
 
                 <button
                   type="submit"

@@ -22,7 +22,16 @@ export interface Database {
           full_address: string
           visit_dates: string[]
           details: Json
-          status: 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted'
+          status:
+            | 'pending'
+            | 'approved'
+            | 'in_progress'
+            | 'completed'
+            | 'cancelled'
+            | 'site-visit-pending'
+            | 'site-visit-completed'
+            | 'bidding'
+            | 'quote-submitted'
           created_at: string
           updated_at: string
           assigned_at: string | null
@@ -40,7 +49,16 @@ export interface Database {
           full_address: string
           visit_date?: string | null
           details?: Json
-          status?: 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted'
+          status?:
+            | 'pending'
+            | 'approved'
+            | 'in_progress'
+            | 'completed'
+            | 'cancelled'
+            | 'site-visit-pending'
+            | 'site-visit-completed'
+            | 'bidding'
+            | 'quote-submitted'
           created_at?: string
           updated_at?: string
           assigned_at?: string | null
@@ -58,7 +76,16 @@ export interface Database {
           full_address?: string
           visit_date?: string | null
           details?: Json
-          status?: 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'site-visit-pending' | 'site-visit-completed' | 'bidding' | 'quote-submitted'
+          status?:
+            | 'pending'
+            | 'approved'
+            | 'in_progress'
+            | 'completed'
+            | 'cancelled'
+            | 'site-visit-pending'
+            | 'site-visit-completed'
+            | 'bidding'
+            | 'quote-submitted'
           created_at?: string
           updated_at?: string
           assigned_at?: string | null
@@ -368,3 +395,4 @@ export interface Database {
     }
   }
 }
+

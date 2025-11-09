@@ -10,7 +10,7 @@ import {
   isSiteVisitMissed,
   canApplySiteVisit
 } from '@/lib/contractor/projectHelpers'
-import StatusBadge from './StatusBadge'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, StatusBadge } from '@/components/ui'
 
 interface ProjectCardProps {
   project: Project
@@ -79,13 +79,17 @@ const ProjectCard = React.memo(({
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden ${getCardStyle()}`}>
+    <Card
+      variant="bordered"
+      padding="none"
+      className={`hover:shadow-xl transition-all duration-300 overflow-hidden ${getCardStyle()}`}
+    >
       {/* 카드 헤더 */}
-      <div className="p-4 border-b border-gray-100 bg-white/80 backdrop-blur-sm">
+      <CardHeader className="p-4 border-b border-gray-100 bg-white/80 backdrop-blur-sm mb-0">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-lg font-semibold text-gray-900 truncate">
+          <CardTitle className="text-lg font-semibold text-gray-900 truncate mb-0">
             {spaceInfo.label}
-          </h4>
+          </CardTitle>
           <StatusBadge status={project.projectStatus!} />
         </div>
         
@@ -107,10 +111,10 @@ const ProjectCard = React.memo(({
             </div>
           )}
         </div>
-      </div>
+      </CardHeader>
 
       {/* 카드 바디 */}
-      <div className="p-4 space-y-3 bg-white/60">
+      <CardContent className="p-4 space-y-3 bg-white/60">
         {/* Budget & Timeline - 세로 배치로 변경 */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm">
@@ -186,10 +190,10 @@ const ProjectCard = React.memo(({
             </p>
           </div>
         )}
-      </div>
+      </CardContent>
 
       {/* 카드 푸터 - 액션 버튼 */}
-      <div className="p-4 bg-gray-50/80 border-t border-gray-100">
+      <CardFooter className="bg-gray-50/80 border-gray-100 mt-0 pt-0 p-4">
         <div className="flex flex-col gap-2">
           
           {/* 현장방문 누락 표시 */}
@@ -283,8 +287,8 @@ const ProjectCard = React.memo(({
           )}
           
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 })
 

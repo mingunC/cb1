@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Calendar, MapPin, DollarSign, Clock, Award, Play, Eye, CheckCircle, Download, Loader2, Edit, X } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { StatusBadge } from '@/components/ui'
 
 interface Project {
   id: string
@@ -400,11 +401,7 @@ export default function CustomerDashboard() {
     }
     
     const badge = badges[status] || badges['pending']
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-        {badge.label}
-      </span>
-    )
+    return <StatusBadge status={status} label={badge.label} size="sm" />
   }
 
   const spaceTypeLabels: Record<string, string> = {

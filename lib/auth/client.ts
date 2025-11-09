@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@/lib/supabase/clients'
-import type { AuthCredentials, AuthResult } from './types'
+import type { AuthCredentials, AuthResult } from '@/types'
 import { getRedirectPath, getUserProfile, mapAuthErrorMessage } from './utils'
 
 /**

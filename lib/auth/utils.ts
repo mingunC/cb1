@@ -1,6 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '../types/database'
-import type { ContractorSummary, UserProfileResult, UserType } from './types'
+import type { Database, ContractorSummary, UserProfileResult, UserType } from '@/types'
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'Invalid login credentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
