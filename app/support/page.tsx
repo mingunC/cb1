@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, Headphones, Clock, MessageCircle, Mail } from 'lucide-react'
 
@@ -60,14 +62,6 @@ export default function SupportPage() {
             <Clock className="h-8 w-8 text-emerald-600 mr-3" />
             <h2 className="text-3xl font-bold text-gray-900">Support Hours</h2>
           </div>
-<<<<<<< HEAD
-          <div className="max-w-2xl">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Email & Chat Support</h3>
-            <div className="space-y-2 text-gray-700">
-              <p><span className="font-medium">Monday - Friday:</span> 9:00 AM - 6:00 PM EST</p>
-              <p><span className="font-medium">Saturday:</span> 10:00 AM - 4:00 PM EST</p>
-              <p><span className="font-medium">Sunday:</span> Closed</p>
-=======
           <div className="grid md:grid-cols-1 gap-8">
             <div>
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Email & Chat Support</h3>
@@ -76,7 +70,6 @@ export default function SupportPage() {
                 <p><span className="font-medium">Saturday:</span> 10:00 AM - 4:00 PM EST</p>
                 <p><span className="font-medium">Sunday:</span> Closed</p>
               </div>
->>>>>>> 3027e3c (Remove phone support, update FAQ content, and add site visit explanation)
             </div>
           </div>
         </div>
