@@ -50,10 +50,11 @@ export default function TermsPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Introduction</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                This website and any related applications, features, and online services (the "Platform") is owned and operated by Canada Beaver ("Canada Beaver", "we", "us", "our"). The Platform and all content are made available to you ("you", "your") subject to your compliance with these Terms of Service ("Terms") and our Privacy Policy.
+                {`This website and any related applications, features, and online services (the "Platform") is owned and operated by Canada Beaver ("Canada Beaver", "we", "us", "our"). The Platform and all content are made available to you ("you", "your") subject to your compliance with these Terms of Service ("Terms") and our Privacy Policy.`}
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>THESE TERMS CONSTITUTE A BINDING LEGAL AGREEMENT.</strong> By accessing or using the Platform, you represent and warrant that you have read, understood, and agree to be bound by these Terms. Canada Beaver reserves the right to modify these Terms at any time. Your continued use after modifications constitutes acceptance of the updated Terms.
+                <strong>THESE TERMS CONSTITUTE A BINDING LEGAL AGREEMENT.</strong>{' '}
+                {`By accessing or using the Platform, you represent and warrant that you have read, understood, and agree to be bound by these Terms. Canada Beaver reserves the right to modify these Terms at any time. Your continued use after modifications constitutes acceptance of the updated Terms.`}
               </p>
             </section>
 
@@ -77,7 +78,8 @@ export default function TermsPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Content and Platform Services</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                The Platform contains content provided by Canada Beaver and third parties, including editorial content, information, graphics, and other materials ("Content"). <strong>YOU ACKNOWLEDGE AND AGREE THAT THE PLATFORM AND CONTENT ARE PROVIDED FOR INFORMATIONAL PURPOSES ONLY.</strong> Neither the Platform nor any Content should be relied upon as accurate, complete, current, or fit for any particular purpose without independent verification.
+                {`The Platform contains content provided by Canada Beaver and third parties, including editorial content, information, graphics, and other materials ("Content").`} <strong>YOU ACKNOWLEDGE AND AGREE THAT THE PLATFORM AND CONTENT ARE PROVIDED FOR INFORMATIONAL PURPOSES ONLY.</strong>{' '}
+                {`Neither the Platform nor any Content should be relied upon as accurate, complete, current, or fit for any particular purpose without independent verification.`}
               </p>
               <p className="text-gray-700 leading-relaxed">
                 The Content may no longer be accurate as a result of the passage of time. No one should act, or refrain from acting, solely on the basis of the Platform or Content.
@@ -88,12 +90,12 @@ export default function TermsPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Your Content and License</h2>
               <h3 className="text-xl font-semibold text-gray-800 mb-3">4.1 Your Content</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                You may share, upload, post, or provide content to the Platform ("Your Content"). By providing Your Content, you represent and warrant that you have all necessary rights and licenses to do so. You are solely responsible and liable for Your Content.
+                {`You may share, upload, post, or provide content to the Platform ("Your Content"). By providing Your Content, you represent and warrant that you have all necessary rights and licenses to do so. You are solely responsible and liable for Your Content.`}
               </p>
               
               <h3 className="text-xl font-semibold text-gray-800 mb-3">4.2 License Grant</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                By providing Your Content to the Platform, you automatically grant Canada Beaver a <strong>non-exclusive, royalty-free, irrevocable, sublicensable, perpetual, worldwide license</strong> to use, copy, modify, display, publish, distribute, and create derivative works from Your Content in any manner and for any purpose, including marketing and promoting the Platform, without notice, compensation, or approval from you.
+                {`By providing Your Content to the Platform, you automatically grant Canada Beaver a `}<strong>non-exclusive, royalty-free, irrevocable, sublicensable, perpetual, worldwide license</strong>{` to use, copy, modify, display, publish, distribute, and create derivative works from Your Content in any manner and for any purpose, including marketing and promoting the Platform, without notice, compensation, or approval from you.`}
               </p>
 
               <h3 className="text-xl font-semibold text-gray-800 mb-3">4.3 Content Removal</h3>
@@ -105,7 +107,7 @@ export default function TermsPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Prohibited Content and Activities</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                You agree not to post, upload, or provide any Content that:
+                {`You agree not to post, upload, or provide any Content that:`}
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
                 <li>Contains offensive language or imagery that could harass, upset, or alarm others</li>
@@ -120,7 +122,7 @@ export default function TermsPage() {
               </ul>
 
               <p className="text-gray-700 leading-relaxed mb-4">
-                You may not access or use the Platform for any purpose that is unlawful or contravenes these Terms. Without limiting the foregoing, you will not:
+                {`You may not access or use the Platform for any purpose that is unlawful or contravenes these Terms. Without limiting the foregoing, you will not:`}
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Exploit, reproduce, or distribute any Platform content without authorization</li>
@@ -140,37 +142,37 @@ export default function TermsPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Contractor Services</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Canada Beaver acts as a marketplace connecting homeowners with contractors. <strong>We do not directly provide renovation services and are not a party to any agreements between homeowners and contractors.</strong>
+                {`Canada Beaver acts as a marketplace connecting homeowners with contractors.`} <strong>We do not directly provide renovation services and are not a party to any agreements between homeowners and contractors.</strong>
               </p>
               <p className="text-gray-700 leading-relaxed">
-                While we verify contractors on our Platform, we do not guarantee the quality, timeliness, or legality of their work. Users are strongly encouraged to conduct their own due diligence when selecting a contractor, including verifying licenses, insurance, and references.
+                {`While we verify contractors on our Platform, we do not guarantee the quality, timeliness, or legality of their work. Users are strongly encouraged to conduct their own due diligence when selecting a contractor, including verifying licenses, insurance, and references.`}
               </p>
             </section>
 
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Intellectual Property</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                All intellectual property rights in the Platform, including trademarks, logos, content, software, design elements, and compilation of materials ("Canada Beaver Property"), are owned by or licensed to Canada Beaver and are protected by Canadian and international copyright and trademark laws.
+                {`All intellectual property rights in the Platform, including trademarks, logos, content, software, design elements, and compilation of materials ("Canada Beaver Property"), are owned by or licensed to Canada Beaver and are protected by Canadian and international copyright and trademark laws.`}
               </p>
               <p className="text-gray-700 leading-relaxed">
-                You are granted a limited, non-exclusive, non-transferable license to access and use the Platform for personal, non-commercial purposes only. Any use of Canada Beaver Property not expressly permitted by these Terms is strictly prohibited and may subject you to civil and criminal penalties.
+                {`You are granted a limited, non-exclusive, non-transferable license to access and use the Platform for personal, non-commercial purposes only. Any use of Canada Beaver Property not expressly permitted by these Terms is strictly prohibited and may subject you to civil and criminal penalties.`}
               </p>
             </section>
 
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Payment and Fees</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                All payment transactions between homeowners and contractors are handled directly between the parties. Canada Beaver may charge service fees as outlined in our pricing structure, which will be clearly communicated before any transaction.
+                {`All payment transactions between homeowners and contractors are handled directly between the parties. Canada Beaver may charge service fees as outlined in our pricing structure, which will be clearly communicated before any transaction.`}
               </p>
               <p className="text-gray-700 leading-relaxed">
-                All fees are in Canadian dollars and non-refundable unless otherwise stated. You are responsible for all applicable taxes.
+                {`All fees are in Canadian dollars and non-refundable unless otherwise stated. You are responsible for all applicable taxes.`}
               </p>
             </section>
 
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Indemnification</h2>
               <p className="text-gray-700 leading-relaxed">
-                You agree to indemnify, defend, and hold harmless Canada Beaver and its affiliates, directors, officers, employees, and agents from any claims, damages, losses, liabilities, and expenses (including legal fees on a full indemnity basis) arising out of or relating to: (a) your breach of these Terms; (b) Your Content; (c) your use of the Platform; (d) your violation of any law or rights of any third party; or (e) your negligence, fraud, or willful misconduct.
+                {`You agree to indemnify, defend, and hold harmless Canada Beaver and its affiliates, directors, officers, employees, and agents from any claims, damages, losses, liabilities, and expenses (including legal fees on a full indemnity basis) arising out of or relating to: (a) your breach of these Terms; (b) Your Content; (c) your use of the Platform; (d) your violation of any law or rights of any third party; or (e) your negligence, fraud, or willful misconduct.`}
               </p>
             </section>
 
@@ -181,7 +183,7 @@ export default function TermsPage() {
                   <strong>YOU ACKNOWLEDGE AND AGREE THAT:</strong>
                 </p>
                 <p className="text-gray-700 leading-relaxed mb-4">
-                  (A) THE PLATFORM IS PROVIDED ON AN "AS IS", "AS AVAILABLE", AND "WITH ALL FAULTS" BASIS WITHOUT WARRANTY OF ANY KIND, AND YOUR USE IS ENTIRELY AT YOUR OWN RISK;
+                  {`(A) THE PLATFORM IS PROVIDED ON AN "AS IS", "AS AVAILABLE", AND "WITH ALL FAULTS" BASIS WITHOUT WARRANTY OF ANY KIND, AND YOUR USE IS ENTIRELY AT YOUR OWN RISK;`}
                 </p>
                 <p className="text-gray-700 leading-relaxed mb-4">
                   (B) TO THE MAXIMUM EXTENT PERMITTED BY LAW, CANADA BEAVER DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT;
