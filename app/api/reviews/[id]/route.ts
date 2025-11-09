@@ -7,11 +7,11 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('🔍 PATCH /api/reviews/[id] - Starting...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 PATCH /api/reviews/[id] - Starting...')
     
     // 쿠키 디버깅
     const allCookies = request.cookies.getAll()
-    console.log('🍪 All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
+    if (process.env.NODE_ENV === 'development') console.log('🍪 All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
     
     // Request 객체에서 직접 쿠키 읽기
     const supabase = createServerClient(
@@ -31,10 +31,10 @@ export async function PATCH(
       }
     )
     
-    console.log('🔍 Getting user session...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Getting user session...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    console.log('🔍 Auth result:', { 
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Auth result:', { 
       hasUser: !!user, 
       userId: user?.id, 
       authError: authError?.message 
@@ -51,7 +51,7 @@ export async function PATCH(
     const body = await request.json()
     const { title, comment, rating } = body
 
-    console.log('🔍 Review update request:', { reviewId, userId: user.id })
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Review update request:', { reviewId, userId: user.id })
 
     // 리뷰 소유권 확인
     const { data: review, error: fetchError } = await supabase
@@ -60,7 +60,7 @@ export async function PATCH(
       .eq('id', reviewId)
       .single()
 
-    console.log('🔍 Review ownership check:', { 
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Review ownership check:', { 
       review, 
       fetchError: fetchError?.message,
       matches: review?.customer_id === user.id
@@ -99,7 +99,7 @@ export async function PATCH(
       )
     }
 
-    console.log('✅ Review updated successfully')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Review updated successfully')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('❌ Unexpected error:', error)
@@ -116,11 +116,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('🔍 DELETE /api/reviews/[id] - Starting...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 DELETE /api/reviews/[id] - Starting...')
     
     // 쿠키 디버깅
     const allCookies = request.cookies.getAll()
-    console.log('🍪 All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
+    if (process.env.NODE_ENV === 'development') console.log('🍪 All cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
     
     // Request 객체에서 직접 쿠키 읽기
     const supabase = createServerClient(
@@ -142,7 +142,7 @@ export async function DELETE(
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    console.log('🔍 Auth result:', { 
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Auth result:', { 
       hasUser: !!user, 
       userId: user?.id, 
       authError: authError?.message 
@@ -192,7 +192,7 @@ export async function DELETE(
       )
     }
 
-    console.log('✅ Review deleted successfully')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Review deleted successfully')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('❌ Unexpected error:', error)

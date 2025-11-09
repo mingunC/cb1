@@ -24,8 +24,8 @@ async function createCommissionTracking(
   startTime: string
 ): Promise<{ success: boolean; commissionId?: string; error?: string }> {
   try {
-    console.log('💰 === COMMISSION CREATION START ===')
-    console.log('📋 Input data:', {
+    if (process.env.NODE_ENV === 'development') console.log('💰 === COMMISSION CREATION START ===')
+    if (process.env.NODE_ENV === 'development') console.log('📋 Input data:', {
       projectId,
       contractorId,
       contractorName,
@@ -48,7 +48,7 @@ async function createCommissionTracking(
     }
 
     // 2. 중복 체크
-    console.log('🔍 Checking for existing commission...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Checking for existing commission...')
     const { data: existingCommission, error: checkError } = await supabase
       .from('commission_tracking')
       .select('id')
@@ -61,7 +61,7 @@ async function createCommissionTracking(
     }
 
     if (existingCommission) {
-      console.log('ℹ️ Commission already exists:', existingCommission.id)
+      if (process.env.NODE_ENV === 'development') console.log('ℹ️ Commission already exists:', existingCommission.id)
       return { success: true, commissionId: existingCommission.id }
     }
 
@@ -69,7 +69,7 @@ async function createCommissionTracking(
     const commissionRate = calculateCommissionRate(quotePrice)
     const commissionAmount = quotePrice * (commissionRate / 100)
     
-    console.log('💵 Commission calculation:', {
+    if (process.env.NODE_ENV === 'development') console.log('💵 Commission calculation:', {
       quotePrice,
       commissionRate: `${commissionRate}%`,
       commissionAmount: `$${commissionAmount.toFixed(2)}`
@@ -89,7 +89,7 @@ async function createCommissionTracking(
       marked_manually: false
     }
 
-    console.log('💾 Inserting commission data...')
+    if (process.env.NODE_ENV === 'development') console.log('💾 Inserting commission data...')
     const { data: newCommission, error: insertError } = await supabase
       .from('commission_tracking')
       .insert(commissionData)
@@ -107,10 +107,10 @@ async function createCommissionTracking(
       return { success: false, error: 'No data returned after insert' }
     }
 
-    console.log('✅ ✅ ✅ Commission created successfully!')
-    console.log('💵 Commission ID:', newCommission.id)
-    console.log('💵 Commission Amount: $' + commissionAmount.toFixed(2))
-    console.log('💰 === COMMISSION CREATION END ===')
+    if (process.env.NODE_ENV === 'development') console.log('✅ ✅ ✅ Commission created successfully!')
+    if (process.env.NODE_ENV === 'development') console.log('💵 Commission ID:', newCommission.id)
+    if (process.env.NODE_ENV === 'development') console.log('💵 Commission Amount: $' + commissionAmount.toFixed(2))
+    if (process.env.NODE_ENV === 'development') console.log('💰 === COMMISSION CREATION END ===')
 
     return { success: true, commissionId: newCommission.id }
 
@@ -214,7 +214,7 @@ WHERE qr.id = '${projectId}';</code></pre>
         </html>
       `
     })
-    console.log('✅ Admin notification sent for commission failure')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Admin notification sent for commission failure')
   } catch (emailError: any) {
     console.error('⚠️ Failed to send admin notification:', emailError.message)
   }
@@ -225,8 +225,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { projectId } = body
 
-    console.log('=== START PROJECT API ===')
-    console.log('Project ID:', projectId)
+    if (process.env.NODE_ENV === 'development') console.log('=== START PROJECT API ===')
+    if (process.env.NODE_ENV === 'development') console.log('Project ID:', projectId)
 
     if (!projectId) {
       return NextResponse.json(
@@ -236,10 +236,10 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerClient()
-    console.log('✅ Supabase client created')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Supabase client created')
 
     // 1. 현재 프로젝트 상태 확인
-    console.log('🔍 Fetching project data...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Fetching project data...')
     const { data: currentProject, error: checkError } = await supabase
       .from('quote_requests')
       .select(`
@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Project found:', {
+    if (process.env.NODE_ENV === 'development') console.log('✅ Project found:', {
       id: currentProject.id,
       status: currentProject.status,
       selected_contractor_id: currentProject.selected_contractor_id,
@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
     // 3. 이미 진행 중이거나 완료된 경우
     if (currentProject.project_started_at) {
-      console.log('ℹ️ Project already started')
+      if (process.env.NODE_ENV === 'development') console.log('ℹ️ Project already started')
       return NextResponse.json(
         { 
           success: false,
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 프로젝트 상태를 'in-progress'로 변경
-    console.log('📝 Updating project status to in-progress...')
+    if (process.env.NODE_ENV === 'development') console.log('📝 Updating project status to in-progress...')
     const projectStartTime = new Date().toISOString()
     const { data: updatedProject, error: updateError } = await supabase
       .from('quote_requests')
@@ -346,12 +346,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Project started:', updatedProject.id)
-    console.log('✅ Status updated to: in-progress')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Project started:', updatedProject.id)
+    if (process.env.NODE_ENV === 'development') console.log('✅ Status updated to: in-progress')
 
     // 6. 업체 정보 조회
-    console.log('🔍 Fetching contractor info...')
-    console.log('📌 Contractor ID:', currentProject.selected_contractor_id)
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Fetching contractor info...')
+    if (process.env.NODE_ENV === 'development') console.log('📌 Contractor ID:', currentProject.selected_contractor_id)
     const { data: contractorInfo, error: contractorError } = await supabase
       .from('contractors')
       .select('company_name, contact_name, email')
@@ -364,15 +364,15 @@ export async function POST(request: NextRequest) {
     } else if (!contractorInfo) {
       console.error('❌ Contractor not found for ID:', currentProject.selected_contractor_id)
     } else {
-      console.log('✅ Contractor info loaded:', {
+      if (process.env.NODE_ENV === 'development') console.log('✅ Contractor info loaded:', {
         company_name: contractorInfo.company_name,
         email: contractorInfo.email
       })
     }
 
     // 7. 선정된 견적 정보 조회 - Admin client 사용
-    console.log('🔍 Fetching selected quote info...')
-    console.log('📌 Quote ID:', currentProject.selected_quote_id)
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Fetching selected quote info...')
+    if (process.env.NODE_ENV === 'development') console.log('📌 Quote ID:', currentProject.selected_quote_id)
     
     const adminClient = createAdminClient()
     let selectedQuote = null
@@ -385,10 +385,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
     if (!quoteError && quoteById) {
       selectedQuote = quoteById
-      console.log('✅ Quote found:', { price: quoteById.price, id: quoteById.id })
+      if (process.env.NODE_ENV === 'development') console.log('✅ Quote found:', { price: quoteById.price, id: quoteById.id })
     } else {
       // Fallback: project_id와 contractor_id로 조회
-      console.log('🔄 Trying fallback: project_id + contractor_id...')
+      if (process.env.NODE_ENV === 'development') console.log('🔄 Trying fallback: project_id + contractor_id...')
       const { data: fallbackQuote } = await adminClient
         .from('contractor_quotes')
         .select('price, id')
@@ -398,7 +398,7 @@ export async function POST(request: NextRequest) {
       
       if (fallbackQuote) {
         selectedQuote = fallbackQuote
-        console.log('✅ Quote found via fallback:', { price: fallbackQuote.price, id: fallbackQuote.id })
+        if (process.env.NODE_ENV === 'development') console.log('✅ Quote found via fallback:', { price: fallbackQuote.price, id: fallbackQuote.id })
       } else {
         console.error('❌ Quote not found')
       }
@@ -456,7 +456,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 9. 고객 정보 조회
-    console.log('🔍 Fetching customer info...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Fetching customer info...')
     const { data: customerInfo, error: customerError } = await supabase
       .from('users')
       .select('first_name, last_name, email')
@@ -466,7 +466,7 @@ export async function POST(request: NextRequest) {
     if (customerError) {
       console.error('⚠️ Customer query error (continuing):', customerError)
     } else {
-      console.log('✅ Customer info loaded:', customerInfo?.email)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Customer info loaded:', customerInfo?.email)
     }
 
     const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || 'Customer'
@@ -474,7 +474,7 @@ export async function POST(request: NextRequest) {
     // 10. 고객에게 프로젝트 시작 축하 이메일 발송
     if (customerInfo?.email) {
       try {
-        console.log('📧 Sending congratulations email to customer...')
+        if (process.env.NODE_ENV === 'development') console.log('📧 Sending congratulations email to customer...')
         await sendEmail({
           to: customerInfo.email,
           subject: '🎉 Congratulations! Your Project Has Started',
@@ -548,18 +548,18 @@ export async function POST(request: NextRequest) {
           `
         })
         
-        console.log('✅ Congratulations email sent to customer')
+        if (process.env.NODE_ENV === 'development') console.log('✅ Congratulations email sent to customer')
       } catch (emailError: any) {
         console.error('⚠️ Customer email failed (process continues):', emailError.message)
       }
     } else {
-      console.log('ℹ️ No customer email to send')
+      if (process.env.NODE_ENV === 'development') console.log('ℹ️ No customer email to send')
     }
 
     // 11. 업체에게 프로젝트 시작 알림 이메일 발송
     if (contractorInfo?.email) {
       try {
-        console.log('📧 Sending notification email to contractor...')
+        if (process.env.NODE_ENV === 'development') console.log('📧 Sending notification email to contractor...')
         await sendEmail({
           to: contractorInfo.email,
           subject: '🚀 Project Started',
@@ -620,15 +620,15 @@ export async function POST(request: NextRequest) {
           `
         })
         
-        console.log('✅ Notification email sent to contractor')
+        if (process.env.NODE_ENV === 'development') console.log('✅ Notification email sent to contractor')
       } catch (emailError: any) {
         console.error('⚠️ Contractor email failed (process continues):', emailError.message)
       }
     } else {
-      console.log('ℹ️ No contractor email to send')
+      if (process.env.NODE_ENV === 'development') console.log('ℹ️ No contractor email to send')
     }
 
-    console.log('=== PROJECT START COMPLETE ===')
+    if (process.env.NODE_ENV === 'development') console.log('=== PROJECT START COMPLETE ===')
 
     return NextResponse.json({ 
       success: true, 

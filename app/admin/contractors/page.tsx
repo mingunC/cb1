@@ -55,7 +55,7 @@ export default function ContractorManagementPage() {
   const safeQuery = async (queryBuilder: any) => {
     try {
       const result = await queryBuilder
-      console.log('Query result:', result)
+      if (process.env.NODE_ENV === 'development') console.log('Query result:', result)
       if (result.error) {
         throw new Error(result.error.message)
       }
@@ -97,11 +97,11 @@ export default function ContractorManagementPage() {
 
   const fetchData = async () => {
     try {
-      console.log('Starting fetchData...')
+      if (process.env.NODE_ENV === 'development') console.log('Starting fetchData...')
       const supabase = createBrowserClient()
       
       // 업체 목록 조회 - safeQuery 사용
-      console.log('Fetching contractors...')
+      if (process.env.NODE_ENV === 'development') console.log('Fetching contractors...')
       const contractorsData = await safeQuery(
         supabase
           .from('contractors')
@@ -125,11 +125,11 @@ export default function ContractorManagementPage() {
           `)
           .order('created_at', { ascending: false })
       )
-      console.log('Contractors data:', contractorsData)
+      if (process.env.NODE_ENV === 'development') console.log('Contractors data:', contractorsData)
       setContractors(contractorsData)
 
       // ✅ 수정: completion_date 제거, year 사용
-      console.log('Fetching portfolios...')
+      if (process.env.NODE_ENV === 'development') console.log('Fetching portfolios...')
       const portfoliosData = await safeQuery(
         supabase
           .from('portfolios')
@@ -146,7 +146,7 @@ export default function ContractorManagementPage() {
           `)
           .order('created_at', { ascending: false })
       )
-      console.log('Portfolios data:', portfoliosData)
+      if (process.env.NODE_ENV === 'development') console.log('Portfolios data:', portfoliosData)
       
       // ✅ 포트폴리오 데이터 변환 (타입에 맞게 조정)
       const transformedPortfolios = (portfoliosData || []).map((p: any) => ({
@@ -166,7 +166,7 @@ export default function ContractorManagementPage() {
       }))
       
       setPortfolios(transformedPortfolios)
-      console.log('FetchData completed successfully')
+      if (process.env.NODE_ENV === 'development') console.log('FetchData completed successfully')
     } catch (error) {
       console.error('Error in fetchData:', error)
       alert(`데이터 로딩 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)

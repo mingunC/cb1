@@ -78,7 +78,7 @@ export default function AdminReviewsPage() {
 
   const checkAuthorization = async () => {
     try {
-      console.log('🔍 Checking authorization...')
+      if (process.env.NODE_ENV === 'development') console.log('🔍 Checking authorization...')
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -88,8 +88,8 @@ export default function AdminReviewsPage() {
         return
       }
 
-      console.log('✅ Session found:', session.user.email)
-      console.log('🔑 Access token:', session.access_token ? 'present' : 'missing')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Session found:', session.user.email)
+      if (process.env.NODE_ENV === 'development') console.log('🔑 Access token:', session.access_token ? 'present' : 'missing')
 
       if (session.user.email !== 'cmgg919@gmail.com') {
         console.error('❌ Not admin:', session.user.email)
@@ -98,7 +98,7 @@ export default function AdminReviewsPage() {
         return
       }
 
-      console.log('✅ Admin authorized')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Admin authorized')
       setAccessToken(session.access_token)
       setIsAuthorized(true)
     } catch (error) {
@@ -111,8 +111,8 @@ export default function AdminReviewsPage() {
 
   const fetchReviews = async () => {
     try {
-      console.log('📥 Fetching reviews...')
-      console.log('🔑 Using access token:', accessToken ? 'yes' : 'no')
+      if (process.env.NODE_ENV === 'development') console.log('📥 Fetching reviews...')
+      if (process.env.NODE_ENV === 'development') console.log('🔑 Using access token:', accessToken ? 'yes' : 'no')
       setIsLoading(true)
       setError(null)
       
@@ -125,7 +125,7 @@ export default function AdminReviewsPage() {
         }
       })
       
-      console.log('📊 Response status:', response.status)
+      if (process.env.NODE_ENV === 'development') console.log('📊 Response status:', response.status)
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -134,10 +134,10 @@ export default function AdminReviewsPage() {
       }
 
       const data = await response.json()
-      console.log('📦 Received data:', data)
+      if (process.env.NODE_ENV === 'development') console.log('📦 Received data:', data)
 
       if (data.reviews) {
-        console.log(`✅ Loaded ${data.reviews.length} reviews`)
+        if (process.env.NODE_ENV === 'development') console.log(`✅ Loaded ${data.reviews.length} reviews`)
         setReviews(data.reviews)
       } else {
         console.warn('⚠️ No reviews in response')

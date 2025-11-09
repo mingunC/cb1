@@ -61,7 +61,7 @@ export default function PortfolioManagementPage() {
           .eq('user_id', user.id)
           .single()
 
-        console.log('Contractor lookup:', { contractorData, contractorError })
+        if (process.env.NODE_ENV === 'development') console.log('Contractor lookup:', { contractorData, contractorError })
 
         if (contractorError || !contractorData) {
           console.error('Not a contractor:', contractorError)
@@ -69,7 +69,7 @@ export default function PortfolioManagementPage() {
           return
         }
         
-        console.log('✅ Contractor ID:', contractorData.id)
+        if (process.env.NODE_ENV === 'development') console.log('✅ Contractor ID:', contractorData.id)
         setContractorId(contractorData.id)
         setIsAuthorized(true)
         await fetchPortfolios(contractorData.id)
@@ -95,7 +95,7 @@ export default function PortfolioManagementPage() {
       if (error) {
         console.error('Error fetching portfolios:', error)
       } else {
-        console.log('✅ Portfolios loaded:', data?.length)
+        if (process.env.NODE_ENV === 'development') console.log('✅ Portfolios loaded:', data?.length)
         setPortfolios(data || [])
       }
     } catch (error) {
@@ -113,7 +113,7 @@ export default function PortfolioManagementPage() {
       const fileExt = file.name.split('.').pop()
       const fileName = `${folder}_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`
       
-      console.log(`📤 Uploading ${file.name} as ${fileName}...`)
+      if (process.env.NODE_ENV === 'development') console.log(`📤 Uploading ${file.name} as ${fileName}...`)
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('portfolios')
@@ -128,7 +128,7 @@ export default function PortfolioManagementPage() {
         .from('portfolios')
         .getPublicUrl(fileName)
       
-      console.log('✅ Uploaded:', publicUrl)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Uploaded:', publicUrl)
       uploadedUrls.push(publicUrl)
     }
     
@@ -138,9 +138,9 @@ export default function PortfolioManagementPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('=== PORTFOLIO SUBMISSION START ===')
-    console.log('Form data:', formData)
-    console.log('Contractor ID:', contractorId)
+    if (process.env.NODE_ENV === 'development') console.log('=== PORTFOLIO SUBMISSION START ===')
+    if (process.env.NODE_ENV === 'development') console.log('Form data:', formData)
+    if (process.env.NODE_ENV === 'development') console.log('Contractor ID:', contractorId)
     
     if (!formData.title || !formData.description || !formData.project_type || !formData.budget_range || !formData.duration) {
       alert('모든 필수 필드를 입력해주세요.')
@@ -158,25 +158,25 @@ export default function PortfolioManagementPage() {
       const supabase = createBrowserClient()
 
       // 이미지 업로드
-      console.log('📤 Starting image uploads...')
+      if (process.env.NODE_ENV === 'development') console.log('📤 Starting image uploads...')
       let images: string[] = []
       let beforeImages: string[] = []
       let afterImages: string[] = []
 
       if (formData.images.length > 0) {
-        console.log(`Uploading ${formData.images.length} project images...`)
+        if (process.env.NODE_ENV === 'development') console.log(`Uploading ${formData.images.length} project images...`)
         images = await uploadImages(formData.images, 'project')
       }
       if (formData.before_images.length > 0) {
-        console.log(`Uploading ${formData.before_images.length} before images...`)
+        if (process.env.NODE_ENV === 'development') console.log(`Uploading ${formData.before_images.length} before images...`)
         beforeImages = await uploadImages(formData.before_images, 'before')
       }
       if (formData.after_images.length > 0) {
-        console.log(`Uploading ${formData.after_images.length} after images...`)
+        if (process.env.NODE_ENV === 'development') console.log(`Uploading ${formData.after_images.length} after images...`)
         afterImages = await uploadImages(formData.after_images, 'after')
       }
 
-      console.log('✅ All images uploaded')
+      if (process.env.NODE_ENV === 'development') console.log('✅ All images uploaded')
 
       // 포트폴리오 저장
       const portfolioData = {
@@ -193,7 +193,7 @@ export default function PortfolioManagementPage() {
         status: 'pending'
       }
 
-      console.log('💾 Saving portfolio to DB:', portfolioData)
+      if (process.env.NODE_ENV === 'development') console.log('💾 Saving portfolio to DB:', portfolioData)
 
       const { data: insertedData, error } = await supabase
         .from('portfolios')
@@ -207,7 +207,7 @@ export default function PortfolioManagementPage() {
         return
       }
 
-      console.log('✅ Portfolio created:', insertedData)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Portfolio created:', insertedData)
       alert('포트폴리오가 성공적으로 생성되었습니다!')
       
       setShowAddModal(false)
@@ -229,7 +229,7 @@ export default function PortfolioManagementPage() {
       alert(`포트폴리오 생성 중 오류가 발생했습니다.\n\n${error.message || '알 수 없는 오류'}`)
     } finally {
       setIsSubmitting(false)
-      console.log('=== PORTFOLIO SUBMISSION END ===')
+      if (process.env.NODE_ENV === 'development') console.log('=== PORTFOLIO SUBMISSION END ===')
     }
   }
 

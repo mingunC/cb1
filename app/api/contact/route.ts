@@ -18,12 +18,12 @@ export async function POST(request: NextRequest) {
     const TO_EMAIL = process.env.CONTACT_EMAIL || 'admin@canadabeaver.pro'
 
     // 🔍 디버깅 로그 추가
-    console.log('==========================================')
-    console.log('📧 환경 변수 확인:')
-    console.log('CONTACT_EMAIL:', process.env.CONTACT_EMAIL)
-    console.log('TO_EMAIL (실제 사용):', TO_EMAIL)
-    console.log('MAILGUN_DOMAIN:', MAILGUN_DOMAIN)
-    console.log('==========================================')
+    if (process.env.NODE_ENV === 'development') console.log('==========================================')
+    if (process.env.NODE_ENV === 'development') console.log('📧 환경 변수 확인:')
+    if (process.env.NODE_ENV === 'development') console.log('CONTACT_EMAIL:', process.env.CONTACT_EMAIL)
+    if (process.env.NODE_ENV === 'development') console.log('TO_EMAIL (실제 사용):', TO_EMAIL)
+    if (process.env.NODE_ENV === 'development') console.log('MAILGUN_DOMAIN:', MAILGUN_DOMAIN)
+    if (process.env.NODE_ENV === 'development') console.log('==========================================')
 
     if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
       console.error('Mailgun configuration missing')
@@ -79,7 +79,7 @@ ${message}
     }
 
     const result = await response.json()
-    console.log('Email sent successfully:', result)
+    if (process.env.NODE_ENV === 'development') console.log('Email sent successfully:', result)
 
     return NextResponse.json(
       { success: true, message: 'Email sent successfully' },

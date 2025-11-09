@@ -183,7 +183,7 @@ const UserAvatar = ({
       alt={displayName || 'User'}
       className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
       onError={() => {
-        console.log('⚠️ Image failed to load:', avatarUrl)
+        if (process.env.NODE_ENV === 'development') console.log('⚠️ Image failed to load:', avatarUrl)
         // ✅ Cache the failure globally
         if (avatarUrl) {
           imageLoadCache.set(avatarUrl, false)
@@ -191,7 +191,7 @@ const UserAvatar = ({
         setImageLoaded(false)
       }}
       onLoad={() => {
-        console.log('✅ Avatar image loaded successfully:', avatarUrl)
+        if (process.env.NODE_ENV === 'development') console.log('✅ Avatar image loaded successfully:', avatarUrl)
         // ✅ Cache the success globally
         if (avatarUrl) {
           imageLoadCache.set(avatarUrl, true)
@@ -274,7 +274,7 @@ export default function Header() {
         
         if (event === 'TOKEN_REFRESHED') {
           if (session?.user && isMounted.current) {
-            console.log('🔄 Token refreshed, updating user metadata')
+            if (process.env.NODE_ENV === 'development') console.log('🔄 Token refreshed, updating user metadata')
             setUser(session.user)
           }
           return
@@ -282,12 +282,12 @@ export default function Header() {
         
         if (event === 'SIGNED_IN' && session?.user) {
           if (currentUserId.current !== session.user.id) {
-            console.log('🔄 New user signed in, loading profile')
+            if (process.env.NODE_ENV === 'development') console.log('🔄 New user signed in, loading profile')
             setUser(session.user)
             currentUserId.current = null
             await loadUserProfile(session.user.id, session.user.email)
           } else {
-            console.log('✅ Same user, updating user object')
+            if (process.env.NODE_ENV === 'development') console.log('✅ Same user, updating user object')
             setUser(session.user)
           }
         } else if (event === 'SIGNED_OUT') {
@@ -308,14 +308,14 @@ export default function Header() {
 
   const loadUserProfile = async (userId: string, email?: string | null) => {
     if (currentUserId.current === userId) {
-      console.log('✅ Profile already loaded for user:', userId)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Profile already loaded for user:', userId)
       return
     }
     
     try {
       const supabase = createBrowserClient()
       
-      console.log('🔍 Loading user profile:', { userId, email })
+      if (process.env.NODE_ENV === 'development') console.log('🔍 Loading user profile:', { userId, email })
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
@@ -323,7 +323,7 @@ export default function Header() {
         .eq('user_id', userId)
         .maybeSingle()
 
-      console.log('🔍 Contractors table query result:', { contractorData, error: contractorError })
+      if (process.env.NODE_ENV === 'development') console.log('🔍 Contractors table query result:', { contractorData, error: contractorError })
 
       if (contractorData && isMounted.current) {
         setContractorProfile(contractorData)
@@ -334,7 +334,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'contractor')
         
-        console.log('✅ Identified as contractor:', { finalDisplayName, hasLogo: !!contractorData.company_logo })
+        if (process.env.NODE_ENV === 'development') console.log('✅ Identified as contractor:', { finalDisplayName, hasLogo: !!contractorData.company_logo })
         
         currentUserId.current = userId
         return
@@ -346,7 +346,7 @@ export default function Header() {
         .eq('id', userId)
         .maybeSingle()
 
-      console.log('🔍 Users table query result:', { userData, error: userError })
+      if (process.env.NODE_ENV === 'development') console.log('🔍 Users table query result:', { userData, error: userError })
 
       if (userData && isMounted.current) {
         setUserProfile(userData)
@@ -368,7 +368,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', userData.user_type)
         
-        console.log('✅ Identified as regular user:', { userData, finalDisplayName })
+        if (process.env.NODE_ENV === 'development') console.log('✅ Identified as regular user:', { userData, finalDisplayName })
         
         currentUserId.current = userId
       } else if (isMounted.current) {
@@ -380,7 +380,7 @@ export default function Header() {
         localStorage.setItem('cached_user_name', finalDisplayName)
         localStorage.setItem('cached_user_type', 'customer')
         
-        console.log('⚠️ Set to default (customer):', { finalDisplayName })
+        if (process.env.NODE_ENV === 'development') console.log('⚠️ Set to default (customer):', { finalDisplayName })
         
         currentUserId.current = userId
       }
@@ -413,12 +413,12 @@ export default function Header() {
 
   const handleSignOut = async () => {
     if (isLoggingOut) {
-      console.log('⚠️ Already logging out.')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Already logging out.')
       return
     }
     
     setIsLoggingOut(true)
-    console.log('🚪 Starting logout...')
+    if (process.env.NODE_ENV === 'development') console.log('🚪 Starting logout...')
     
     try {
       setUser(null)
@@ -427,7 +427,7 @@ export default function Header() {
       setDisplayName('')
       currentUserId.current = null
       setIsUserDropdownOpen(false)
-      console.log('✅ UI state reset complete')
+      if (process.env.NODE_ENV === 'development') console.log('✅ UI state reset complete')
       
       try {
         localStorage.removeItem('cached_user_name')
@@ -437,14 +437,14 @@ export default function Header() {
             localStorage.removeItem(key)
           }
         })
-        console.log('✅ localStorage completely cleared')
+        if (process.env.NODE_ENV === 'development') console.log('✅ localStorage completely cleared')
       } catch (e) {
         console.error('⚠️ localStorage clear error:', e)
       }
       
       try {
         sessionStorage.clear()
-        console.log('✅ sessionStorage cleared')
+        if (process.env.NODE_ENV === 'development') console.log('✅ sessionStorage cleared')
       } catch (e) {
         console.error('⚠️ sessionStorage clear error:', e)
       }
@@ -454,9 +454,9 @@ export default function Header() {
       
       const supabase = createBrowserClient()
       await supabase.auth.signOut({ scope: 'local' })
-      console.log('✅ Supabase logout complete')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Supabase logout complete')
       
-      console.log('✅ Force redirect to homepage')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Force redirect to homepage')
       window.location.replace('/')
       
     } catch (error) {
@@ -609,7 +609,7 @@ export default function Header() {
                         )}
                         <button
                           onClick={() => {
-                            console.log('✅ Logout button clicked (dropdown)')
+                            if (process.env.NODE_ENV === 'development') console.log('✅ Logout button clicked (dropdown)')
                             setIsUserDropdownOpen(false)
                             handleSignOut()
                           }}
@@ -773,7 +773,7 @@ export default function Header() {
                         </div>
                         <button
                           onClick={() => {
-                            console.log('✅ Logout button clicked (mobile)')
+                            if (process.env.NODE_ENV === 'development') console.log('✅ Logout button clicked (mobile)')
                             setIsMenuOpen(false)
                             handleSignOut()
                           }}

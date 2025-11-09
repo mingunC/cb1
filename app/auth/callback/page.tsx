@@ -26,7 +26,7 @@ function AuthCallbackContent() {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (!authCode && session) {
-          console.log('Already logged in, redirecting...')
+          if (process.env.NODE_ENV === 'development') console.log('Already logged in, redirecting...')
           hasProcessed.current = true
           
           const { data: contractorData } = await supabase
@@ -73,10 +73,10 @@ function AuthCallbackContent() {
           }
           
           if (newSession) {
-            console.log('Authentication successful:', newSession.user.email)
+            if (process.env.NODE_ENV === 'development') console.log('Authentication successful:', newSession.user.email)
             
             if (newSession.user.app_metadata?.provider === 'google') {
-              console.log('🔍 Google OAuth user detected')
+              if (process.env.NODE_ENV === 'development') console.log('🔍 Google OAuth user detected')
               
               const { data: existingUser } = await supabase
                 .from('users')
@@ -85,7 +85,7 @@ function AuthCallbackContent() {
                 .maybeSingle()
               
               if (!existingUser) {
-                console.log('✨ New Google user - creating user record')
+                if (process.env.NODE_ENV === 'development') console.log('✨ New Google user - creating user record')
                 const fullName = newSession.user.user_metadata?.full_name || ''
                 const nameParts = fullName.split(' ')
                 
@@ -105,9 +105,9 @@ function AuthCallbackContent() {
                   console.error('Error creating user record:', insertError)
                 }
               } else {
-                console.log('✅ Automatic Linking: Google identity linked to existing account')
-                console.log('   Existing user:', existingUser.email)
-                console.log('   Created at:', existingUser.created_at)
+                if (process.env.NODE_ENV === 'development') console.log('✅ Automatic Linking: Google identity linked to existing account')
+                if (process.env.NODE_ENV === 'development') console.log('   Existing user:', existingUser.email)
+                if (process.env.NODE_ENV === 'development') console.log('   Created at:', existingUser.created_at)
               }
             }
             
@@ -119,12 +119,12 @@ function AuthCallbackContent() {
                 .maybeSingle()
               
               if (contractorData) {
-                console.log('Contractor login successful:', contractorData.company_name)
+                if (process.env.NODE_ENV === 'development') console.log('Contractor login successful:', contractorData.company_name)
                 setVerificationStatus('success')
                 setTimeout(() => router.replace('/contractor'), 1500)
                 return
               } else {
-                console.log('Not a contractor, redirecting to contractor signup')
+                if (process.env.NODE_ENV === 'development') console.log('Not a contractor, redirecting to contractor signup')
                 setVerificationStatus('error')
                 setTimeout(() => router.push('/contractor-signup?message=not_contractor'), 3000)
                 return
@@ -139,7 +139,7 @@ function AuthCallbackContent() {
                 .maybeSingle()
               
               if (contractorData) {
-                console.log('Contractor user, redirecting to contractor dashboard')
+                if (process.env.NODE_ENV === 'development') console.log('Contractor user, redirecting to contractor dashboard')
                 setVerificationStatus('success')
                 setTimeout(() => router.replace('/contractor'), 1500)
                 return
@@ -152,11 +152,11 @@ function AuthCallbackContent() {
                 .maybeSingle()
               
               if (userData?.user_type === 'admin') {
-                console.log('Admin user, redirecting to admin dashboard')
+                if (process.env.NODE_ENV === 'development') console.log('Admin user, redirecting to admin dashboard')
                 setVerificationStatus('success')
                 setTimeout(() => router.replace('/admin'), 1500)
               } else {
-                console.log('Customer user, redirecting to home')
+                if (process.env.NODE_ENV === 'development') console.log('Customer user, redirecting to home')
                 setVerificationStatus('success')
                 setTimeout(() => router.replace('/'), 1500)
               }
@@ -171,7 +171,7 @@ function AuthCallbackContent() {
             setTimeout(() => router.push(redirectTo), 3000)
           }
         } else {
-          console.log('No auth code and no session, redirecting to login')
+          if (process.env.NODE_ENV === 'development') console.log('No auth code and no session, redirecting to login')
           hasProcessed.current = true
           const redirectTo = loginType === 'contractor' ? '/contractor-login' : '/login'
           router.replace(redirectTo)

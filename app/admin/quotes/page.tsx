@@ -138,12 +138,12 @@ export default function AdminQuotesPage() {
   }, [quotes, activeTab, searchTerm])
 
   const updateQuoteStatus = async (quoteId: string, newStatus: string) => {
-    console.log('🔄 Updating quote status:', { quoteId, newStatus })
+    if (process.env.NODE_ENV === 'development') console.log('🔄 Updating quote status:', { quoteId, newStatus })
     
     try {
       const supabase = createBrowserClient()
       
-      console.log('📡 Sending update request...')
+      if (process.env.NODE_ENV === 'development') console.log('📡 Sending update request...')
       
       const { data, error } = await supabase
         .from('quote_requests')
@@ -154,7 +154,7 @@ export default function AdminQuotesPage() {
         .eq('id', quoteId)
         .select()
       
-      console.log('📡 Update response:', { data, error })
+      if (process.env.NODE_ENV === 'development') console.log('📡 Update response:', { data, error })
       
       if (error) {
         console.error('❌ Update failed:', error)
@@ -168,7 +168,7 @@ export default function AdminQuotesPage() {
         return
       }
 
-      console.log('✅ Update successful:', data)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Update successful:', data)
 
       // 로컬 상태 업데이트
       setQuotes(quotes.map(quote => 
@@ -198,7 +198,7 @@ export default function AdminQuotesPage() {
 
   // ✅ 프로젝트 완료 처리 - API 라우트 사용
   const handleCompleteProject = async (projectId: string) => {
-    console.log('🔄 프로젝트 종료 API 호출 - 프로젝트 ID:', projectId)
+    if (process.env.NODE_ENV === 'development') console.log('🔄 프로젝트 종료 API 호출 - 프로젝트 ID:', projectId)
     
     try {
       const response = await fetch('/api/complete-project', {
@@ -217,7 +217,7 @@ export default function AdminQuotesPage() {
         return
       }
 
-      console.log('✅ 프로젝트 종료 성공:', result)
+      if (process.env.NODE_ENV === 'development') console.log('✅ 프로젝트 종료 성공:', result)
       
       // 로컬 상태 업데이트
       setQuotes(quotes.map(quote => 
@@ -247,7 +247,7 @@ export default function AdminQuotesPage() {
 
   // ✅ 현장방문 완료 → 자동으로 입찰 시작
   const handleSiteVisitCompleted = async (quoteId: string) => {
-    console.log('🏠 Completing site visit and starting bidding:', quoteId)
+    if (process.env.NODE_ENV === 'development') console.log('🏠 Completing site visit and starting bidding:', quoteId)
     
     try {
       const supabase = createBrowserClient()
@@ -267,7 +267,7 @@ export default function AdminQuotesPage() {
         return
       }
 
-      console.log('✅ Site visit completed and bidding started:', data)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Site visit completed and bidding started:', data)
 
       // 로컬 상태 업데이트
       setQuotes(quotes.map(quote => 
@@ -443,7 +443,7 @@ export default function AdminQuotesPage() {
         return (
           <button
             onClick={() => {
-              console.log('🔄 프로젝트 종료 버튼 클릭 - 상태:', quote.status, '프로젝트 ID:', quote.id)
+              if (process.env.NODE_ENV === 'development') console.log('🔄 프로젝트 종료 버튼 클릭 - 상태:', quote.status, '프로젝트 ID:', quote.id)
               if (confirm('프로젝트를 종료하시겠습니까?')) {
                 handleCompleteProject(quote.id)
               }
@@ -458,7 +458,7 @@ export default function AdminQuotesPage() {
         return (
           <button
             onClick={() => {
-              console.log('🔄 프로젝트 종료 버튼 클릭 - 진행중 상태, 프로젝트 ID:', quote.id)
+              if (process.env.NODE_ENV === 'development') console.log('🔄 프로젝트 종료 버튼 클릭 - 진행중 상태, 프로젝트 ID:', quote.id)
               if (confirm('프로젝트를 완료하시겠습니까?')) {
                 handleCompleteProject(quote.id)
               }
@@ -786,7 +786,7 @@ export default function AdminQuotesPage() {
                     selectedQuote.status === 'quote-submitted') && (
                     <button
                       onClick={() => {
-                        console.log('🔄 모달에서 프로젝트 종료 클릭 - 상태:', selectedQuote.status)
+                        if (process.env.NODE_ENV === 'development') console.log('🔄 모달에서 프로젝트 종료 클릭 - 상태:', selectedQuote.status)
                         handleCompleteProject(selectedQuote.id)
                         setSelectedQuote(null)
                       }}

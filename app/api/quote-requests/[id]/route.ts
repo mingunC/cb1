@@ -9,9 +9,9 @@ export async function PUT(
     const body = await request.json()
     const { id } = params
 
-    console.log('=== UPDATE QUOTE REQUEST ===')
-    console.log('Quote ID:', id)
-    console.log('Update data:', body)
+    if (process.env.NODE_ENV === 'development') console.log('=== UPDATE QUOTE REQUEST ===')
+    if (process.env.NODE_ENV === 'development') console.log('Quote ID:', id)
+    if (process.env.NODE_ENV === 'development') console.log('Update data:', body)
 
     const supabase = await createServerClient()
 
@@ -69,7 +69,7 @@ export async function PUT(
       updated_at: new Date().toISOString()
     }
 
-    console.log('Prepared update data:', updateData)
+    if (process.env.NODE_ENV === 'development') console.log('Prepared update data:', updateData)
 
     // 6. 업데이트 실행
     const { data: updatedQuote, error: updateError } = await supabase
@@ -87,7 +87,7 @@ export async function PUT(
       )
     }
 
-    console.log('✅ Quote request updated successfully:', updatedQuote)
+    if (process.env.NODE_ENV === 'development') console.log('✅ Quote request updated successfully:', updatedQuote)
 
     return NextResponse.json({
       success: true,

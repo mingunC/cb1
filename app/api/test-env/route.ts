@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
       supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? '설정됨' : '누락됨'
     }
     
-    console.log('환경 변수 상태:', envCheck)
+    if (process.env.NODE_ENV === 'development') console.log('환경 변수 상태:', envCheck)
     
     return NextResponse.json({
       success: true,

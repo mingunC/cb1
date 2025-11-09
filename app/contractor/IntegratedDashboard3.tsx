@@ -81,7 +81,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       
       const supabase = createBrowserClient()
       
-      console.log('🚀 Loading projects for contractor:', {
+      if (process.env.NODE_ENV === 'development') console.log('🚀 Loading projects for contractor:', {
         contractorId: contractorData.id,
         companyName: contractorData.company_name,
         registeredAt: contractorData.created_at
@@ -101,11 +101,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       registrationDate.setHours(0, 0, 0, 0)
       const registrationDateStr = registrationDate.toISOString()
       
-      console.log('📅 Contractor registration date:', contractorCreatedAt)
-      console.log('📅 Filter date (00:00:00 of registration day):', registrationDateStr)
+      if (process.env.NODE_ENV === 'development') console.log('📅 Contractor registration date:', contractorCreatedAt)
+      if (process.env.NODE_ENV === 'development') console.log('📅 Filter date (00:00:00 of registration day):', registrationDateStr)
       
       // ✅ 가입일 이후의 프로젝트만 가져오기
-      console.log('📝 Step 1: Fetching quote requests after registration date...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 1: Fetching quote requests after registration date...')
       const { data: allProjectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*')
@@ -118,10 +118,10 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         throw projectsError
       }
       
-      console.log('📊 Total projects loaded (after registration):', allProjectsData?.length || 0)
+      if (process.env.NODE_ENV === 'development') console.log('📊 Total projects loaded (after registration):', allProjectsData?.length || 0)
       
       // ✅ 2. 업체가 참여한 프로젝트 정보 가져오기
-      console.log('📝 Step 2: Fetching contractor participation data...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 2: Fetching contractor participation data...')
       const [siteVisitsResponse, quotesResponse] = await Promise.all([
         supabase
           .from('site_visit_applications')
@@ -144,14 +144,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         quotesMap.set(item.project_id, item)
       })
       
-      console.log('📊 Site visits:', siteVisitMap.size)
-      console.log('📊 Quotes submitted:', quotesMap.size)
+      if (process.env.NODE_ENV === 'development') console.log('📊 Site visits:', siteVisitMap.size)
+      if (process.env.NODE_ENV === 'development') console.log('📊 Quotes submitted:', quotesMap.size)
       
       // ✅ 3. 고객 정보는 로드하지 않음 (보안상 이유)
-      console.log('📝 Step 3: Skipping customer information for security...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 3: Skipping customer information for security...')
       
       // ✅ 4. 선택된 업체 이름들 로드
-      console.log('📝 Step 4: Fetching selected contractor names...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 4: Fetching selected contractor names...')
       const selectedContractorIds = new Set<string>()
       allProjectsData?.forEach(project => {
         if (project.selected_contractor_id) {
@@ -160,12 +160,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       })
       
       const contractorNames = await loadSelectedContractorNames(Array.from(selectedContractorIds))
-      console.log('✅ Loaded contractor names:', Object.keys(contractorNames).length)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Loaded contractor names:', Object.keys(contractorNames).length)
       
       // ✅ 5. 프로젝트 상태 계산 및 처리
-      console.log('📝 Step 5: Processing individual projects...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 5: Processing individual projects...')
       const processedProjects = allProjectsData?.map((project, index) => {
-        console.log(`🔄 Processing project ${index + 1}/${allProjectsData.length}: ${project.id.slice(0, 8)}`)
+        if (process.env.NODE_ENV === 'development') console.log(`🔄 Processing project ${index + 1}/${allProjectsData.length}: ${project.id.slice(0, 8)}`)
         
         const siteVisit = siteVisitMap.get(project.id)
         const quote = quotesMap.get(project.id)
@@ -177,7 +177,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         const hasSiteVisitCompleted = siteVisit?.status === 'completed'
         const hasQuote = !!quote
         
-        console.log(`🔍 Project ${project.id.slice(0, 8)} status:`, {
+        if (process.env.NODE_ENV === 'development') console.log(`🔍 Project ${project.id.slice(0, 8)} status:`, {
           dbStatus: project.status,
           isSelected,
           hasOtherSelected,
@@ -226,7 +226,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           projectStatus = 'approved'
         }
         
-        console.log(`✅ Project ${project.id.slice(0, 8)} final status: ${projectStatus}`)
+        if (process.env.NODE_ENV === 'development') console.log(`✅ Project ${project.id.slice(0, 8)} final status: ${projectStatus}`)
         
         return {
           ...project,
@@ -237,28 +237,28 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         }
       }) || []
       
-      console.log('✅ Final processed projects:', processedProjects.length)
-      console.log('📊 Project statuses:', processedProjects.map(p => ({ 
+      if (process.env.NODE_ENV === 'development') console.log('✅ Final processed projects:', processedProjects.length)
+      if (process.env.NODE_ENV === 'development') console.log('📊 Project statuses:', processedProjects.map(p => ({ 
         id: p.id.slice(0, 8), 
         status: p.projectStatus 
       })))
       
       setProjects(processedProjects)
       setSelectedContractorNames(contractorNames)
-      console.log('🎉 Projects state updated successfully!')
+      if (process.env.NODE_ENV === 'development') console.log('🎉 Projects state updated successfully!')
       
     } catch (error) {
       console.error('❌ Error loading projects:', error)
       setError('Error loading projects.')
     } finally {
       setIsLoading(false)
-      console.log('🏁 loadProjects finished')
+      if (process.env.NODE_ENV === 'development') console.log('🏁 loadProjects finished')
     }
   }, [contractorData?.id, contractorData?.created_at])
   
   // 초기 데이터 로드
   useEffect(() => {
-    console.log('🔄 useEffect triggered, contractorData:', contractorData?.id)
+    if (process.env.NODE_ENV === 'development') console.log('🔄 useEffect triggered, contractorData:', contractorData?.id)
     if (contractorData && contractorData.id) {
       loadProjects(true) // 초기 로드는 로딩 화면 표시
     }
@@ -266,12 +266,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // showQuoteModal 상태 변경 감지
   useEffect(() => {
-    console.log('📊 Modal State Changed:', { showQuoteModal, hasProject: !!selectedProject, contractorId: contractorData?.id })
+    if (process.env.NODE_ENV === 'development') console.log('📊 Modal State Changed:', { showQuoteModal, hasProject: !!selectedProject, contractorId: contractorData?.id })
   }, [showQuoteModal, selectedProject, contractorData])
   
   // projects 상태 변경 감지
   useEffect(() => {
-    console.log('📊 Projects state changed:', {
+    if (process.env.NODE_ENV === 'development') console.log('📊 Projects state changed:', {
       count: projects.length,
       statuses: projects.map(p => p.projectStatus)
     })
@@ -299,7 +299,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
   // ✅ 현장방문 신청/취소 토글 함수
   const handleToggleSiteVisit = async (project: Project) => {
-    console.log('🔄 Toggle Site Visit clicked!', {
+    if (process.env.NODE_ENV === 'development') console.log('🔄 Toggle Site Visit clicked!', {
       projectId: project.id,
       contractorId: contractorData?.id,
       hasSiteVisit: !!project.siteVisit,
@@ -314,7 +314,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
 
     // 이미 처리 중인 경우 중복 클릭 방지
     if (applyingProjectId === project.id) {
-      console.log('⚠️ Already processing this project')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Already processing this project')
       return
     }
 
@@ -431,14 +431,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
     }
 
     // 견적이 없는 경우 - 제출 모달 열기
-    console.log('🎯 Opening quote modal for bidding:', { projectId: project.id })
+    if (process.env.NODE_ENV === 'development') console.log('🎯 Opening quote modal for bidding:', { projectId: project.id })
     setSelectedProject(project)
     setShowQuoteModal(true)
   }
   
   // 견적서 제출 완료 핸들러
   const handleQuoteSubmitted = async () => {
-    console.log('✅ Quote submitted successfully')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Quote submitted successfully')
     setShowQuoteModal(false)
     setSelectedProject(null)
     
@@ -450,7 +450,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   
   // 필터링된 프로젝트
   const filteredProjects = useMemo(() => {
-    console.log('🔍 Filtering projects:', {
+    if (process.env.NODE_ENV === 'development') console.log('🔍 Filtering projects:', {
       total: projects.length,
       filter: projectFilter
     })
@@ -487,12 +487,12 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       }
     })
     
-    console.log('📊 Status counts:', counts)
+    if (process.env.NODE_ENV === 'development') console.log('📊 Status counts:', counts)
     
     return counts
   }, [projects])
   
-  console.log('🎨 Rendering dashboard:', {
+  if (process.env.NODE_ENV === 'development') console.log('🎨 Rendering dashboard:', {
     isLoading,
     projectsCount: projects.length,
     filteredCount: filteredProjects.length,
@@ -1070,10 +1070,14 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         {activeTab === 'portfolio' && contractorData && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-6">
-              <PortfolioManager 
-                contractorId={contractorData.id}
-                onPortfolioUpdate={() => console.log('Portfolio updated')}
-              />
+                <PortfolioManager 
+                  contractorId={contractorData.id}
+                  onPortfolioUpdate={() => {
+                    if (process.env.NODE_ENV === 'development') {
+                      console.log('Portfolio updated')
+                    }
+                  }}
+                />
             </div>
           </div>
         )}
@@ -1087,7 +1091,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           project={selectedProject}
           contractorId={contractorData.id}
           onClose={() => {
-            console.log('❌ Closing modal')
+            if (process.env.NODE_ENV === 'development') console.log('❌ Closing modal')
             setShowQuoteModal(false)
             setSelectedProject(null)
           }}

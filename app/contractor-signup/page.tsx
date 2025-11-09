@@ -109,7 +109,7 @@ export default function ContractorSignupPage() {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session?.user) {
-          console.log('✅ 이미 로그인된 사용자:', session.user.email)
+          if (process.env.NODE_ENV === 'development') console.log('✅ 이미 로그인된 사용자:', session.user.email)
           setCurrentUser(session.user)
           setIsExistingUser(true)
           
@@ -127,13 +127,13 @@ export default function ContractorSignupPage() {
             .maybeSingle()
           
           if (contractorData) {
-            console.log('⚠️ 이미 contractor로 등록되어 있음')
+            if (process.env.NODE_ENV === 'development') console.log('⚠️ 이미 contractor로 등록되어 있음')
             toast.error('You are already registered as a contractor')
             router.push('/contractor')
             return
           }
         } else {
-          console.log('ℹ️ 로그인되지 않은 사용자 - 전체 회원가입 필요')
+          if (process.env.NODE_ENV === 'development') console.log('ℹ️ 로그인되지 않은 사용자 - 전체 회원가입 필요')
           setIsExistingUser(false)
         }
       } catch (error) {
@@ -151,7 +151,7 @@ export default function ContractorSignupPage() {
     setIsLoading(true)
     setError('')
 
-    console.log('🚀 폼 제출 시작:', {
+    if (process.env.NODE_ENV === 'development') console.log('🚀 폼 제출 시작:', {
       businessName: formData.businessName,
       contactName: formData.contactName,
       specialties: formData.specialties,
@@ -193,7 +193,7 @@ export default function ContractorSignupPage() {
 
       // 신규 회원가입인 경우
       if (!isExistingUser) {
-        console.log('📝 신규 회원가입 진행 중...')
+        if (process.env.NODE_ENV === 'development') console.log('📝 신규 회원가입 진행 중...')
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -213,10 +213,10 @@ export default function ContractorSignupPage() {
         }
         
         userId = data.user.id
-        console.log('✅ 회원가입 완료, userId:', userId)
+        if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, userId:', userId)
       }
 
-      console.log('📝 users 테이블 업데이트 중...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 users 테이블 업데이트 중...')
       // users 테이블 업데이트 (upsert 사용)
       const { error: userError } = await supabase
         .from('users')
@@ -236,9 +236,9 @@ export default function ContractorSignupPage() {
         console.error('❌ users 테이블 upsert 오류:', userError)
         throw new Error('Failed to update user profile: ' + userError.message)
       }
-      console.log('✅ users 테이블 업데이트 완료')
+      if (process.env.NODE_ENV === 'development') console.log('✅ users 테이블 업데이트 완료')
 
-      console.log('📝 contractors 테이블에 저장 중...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 contractors 테이블에 저장 중...')
       // contractors 테이블에 업체 정보 저장
       const contractorData = {
         user_id: userId,
@@ -256,7 +256,7 @@ export default function ContractorSignupPage() {
         updated_at: new Date().toISOString()
       }
 
-      console.log('📤 contractors 테이블 데이터:', contractorData)
+      if (process.env.NODE_ENV === 'development') console.log('📤 contractors 테이블 데이터:', contractorData)
 
       const { error: contractorError } = await supabase
         .from('contractors')
@@ -267,7 +267,7 @@ export default function ContractorSignupPage() {
         throw new Error('Failed to save contractor profile: ' + contractorError.message)
       }
 
-      console.log('✅ Contractor 등록 완료!')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Contractor 등록 완료!')
       toast.success('Contractor registration completed!')
       
       // localStorage 캐시 업데이트

@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { projectId, status } = body
 
-    console.log('Admin status update API called:', { projectId, status })
+    if (process.env.NODE_ENV === 'development') console.log('Admin status update API called:', { projectId, status })
 
     // Supabase 서버 클라이언트 생성
     const supabase = createServerClient()
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Successfully updated project status:', data)
+    if (process.env.NODE_ENV === 'development') console.log('Successfully updated project status:', data)
 
     return NextResponse.json({ 
       success: true, 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('project_id', projectId)
 
-    console.log('Project status check:', {
+    if (process.env.NODE_ENV === 'development') console.log('Project status check:', {
       projectId,
       currentStatus: project.status,
       quotesCount: quotes?.length || 0,

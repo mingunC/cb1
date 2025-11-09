@@ -25,7 +25,7 @@ async function authenticateUser(request: NextRequest) {
     )
     
     const { data: { user }, error } = await supabase.auth.getUser(token)
-    console.log('🔐 Token 인증:', { user: user?.id, error: error?.message })
+    if (process.env.NODE_ENV === 'development') console.log('🔐 Token 인증:', { user: user?.id, error: error?.message })
     return { user, error }
   }
   
@@ -51,18 +51,18 @@ async function authenticateUser(request: NextRequest) {
   )
   
   const { data: { user }, error } = await supabase.auth.getUser()
-  console.log('🔐 Cookie 인증:', { user: user?.id, error: error?.message })
+  if (process.env.NODE_ENV === 'development') console.log('🔐 Cookie 인증:', { user: user?.id, error: error?.message })
   return { user, error }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 POST /api/reviews 시작')
+    if (process.env.NODE_ENV === 'development') console.log('🚀 POST /api/reviews 시작')
     
     // 인증된 사용자 확인
     const { user, error: authError } = await authenticateUser(request)
     
-    console.log('🔐 리뷰 POST API - 인증 확인:', {
+    if (process.env.NODE_ENV === 'development') console.log('🔐 리뷰 POST API - 인증 확인:', {
       user: user?.id,
       email: user?.email,
       authError: authError?.message
@@ -81,16 +81,16 @@ export async function POST(request: NextRequest) {
 
     // 요청 데이터 파싱 및 검증
     const body = await request.json()
-    console.log('📦 요청 바디:', JSON.stringify(body, null, 2))
+    if (process.env.NODE_ENV === 'development') console.log('📦 요청 바디:', JSON.stringify(body, null, 2))
     
     const validatedData = reviewSchema.parse(body)
-    console.log('✅ 검증 완료:', {
+    if (process.env.NODE_ENV === 'development') console.log('✅ 검증 완료:', {
       contractor_id: validatedData.contractor_id,
       title: validatedData.title.substring(0, 30) + '...'
     })
 
     // ✅ 고객이 한번이라도 견적요청을 한 적이 있는지 확인
-    console.log('🔍 견적요청 이용 경험 확인 중...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 견적요청 이용 경험 확인 중...')
     const { data: userQuoteRequests, error: quoteRequestError } = await supabaseAdmin
       .from('quote_requests')
       .select('id')
@@ -103,10 +103,10 @@ export async function POST(request: NextRequest) {
         error: '견적요청을 이용한 경험이 있는 경우에만 리뷰를 작성할 수 있습니다.' 
       }, { status: 403 })
     }
-    console.log('✅ 견적요청 이용 경험 확인 완료')
+    if (process.env.NODE_ENV === 'development') console.log('✅ 견적요청 이용 경험 확인 완료')
 
     // ✅ 해당 업체에 이미 리뷰를 남겼는지 확인
-    console.log('🔍 중복 리뷰 확인 중...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 중복 리뷰 확인 중...')
     const { data: existingReview, error: existingError } = await supabaseAdmin
       .from('reviews')
       .select('id')
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       .eq('customer_id', user.id)
       .maybeSingle()
 
-    console.log('🔍 중복 리뷰 확인 결과:', { 
+    if (process.env.NODE_ENV === 'development') console.log('🔍 중복 리뷰 확인 결과:', { 
       exists: !!existingReview,
       error: existingError?.message 
     })
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ✅ 리뷰 생성 (rating 제거)
-    console.log('💾 리뷰 생성 중...')
+    if (process.env.NODE_ENV === 'development') console.log('💾 리뷰 생성 중...')
     const reviewInsertData = {
       contractor_id: validatedData.contractor_id,
       customer_id: user.id,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       is_verified: true
     }
     
-    console.log('💾 리뷰 데이터:', JSON.stringify(reviewInsertData, null, 2))
+    if (process.env.NODE_ENV === 'development') console.log('💾 리뷰 데이터:', JSON.stringify(reviewInsertData, null, 2))
     
     const { data: reviewData, error: reviewError } = await supabaseAdmin
       .from('reviews')
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    console.log('✅ 리뷰 생성 성공:', reviewData?.id)
+    if (process.env.NODE_ENV === 'development') console.log('✅ 리뷰 생성 성공:', reviewData?.id)
 
     return NextResponse.json({ 
       success: true, 
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
     // 인증된 사용자 확인
     const { user, error: authError } = await authenticateUser(request)
     
-    console.log('🔐 리뷰 GET API - 인증 확인:', {
+    if (process.env.NODE_ENV === 'development') console.log('🔐 리뷰 GET API - 인증 확인:', {
       user: user?.id,
       email: user?.email,
       authError: authError?.message

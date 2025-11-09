@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     today.setHours(0, 0, 0, 0)
     const todayString = today.toISOString().split('T')[0]
 
-    console.log('Checking for site visits to complete on:', todayString)
+    if (process.env.NODE_ENV === 'development') console.log('Checking for site visits to complete on:', todayString)
 
     // 오늘 날짜에 해당하는 현장방문 대기 상태의 프로젝트들 찾기
     const { data: projectsToComplete, error: fetchError } = await supabase
@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!projectsToComplete || projectsToComplete.length === 0) {
-      console.log('No projects to complete today')
+      if (process.env.NODE_ENV === 'development') console.log('No projects to complete today')
       return NextResponse.json({ message: 'No projects to complete today', completed: 0 })
     }
 
-    console.log('Found projects to complete:', projectsToComplete.length)
+    if (process.env.NODE_ENV === 'development') console.log('Found projects to complete:', projectsToComplete.length)
 
     // 각 프로젝트를 현장방문 완료 상태로 변경
     const projectIds = projectsToComplete.map(p => p.id)
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update project status' }, { status: 500 })
     }
 
-    console.log(`Successfully completed ${projectIds.length} site visits`)
+    if (process.env.NODE_ENV === 'development') console.log(`Successfully completed ${projectIds.length} site visits`)
 
     return NextResponse.json({ 
       message: 'Site visits completed successfully', 

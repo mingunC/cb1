@@ -66,7 +66,7 @@ export const sendContractorSelectionEmails = async (data: ContractorSelectionDat
 
     results.customerEmail = customerEmailResult;
 
-    console.log('Contractor selection emails sent:', {
+    if (process.env.NODE_ENV === 'development') console.log('Contractor selection emails sent:', {
       contractor: results.contractorEmail.success,
       customer: results.customerEmail.success,
       contractorMessageId: results.contractorEmail.success ? (results.contractorEmail as any).messageId : null,

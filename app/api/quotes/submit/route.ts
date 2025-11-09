@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await request.json()
 
-    console.log('🎯 Quote submission received:', {
+    if (process.env.NODE_ENV === 'development') console.log('🎯 Quote submission received:', {
       projectId: projectId?.slice(0, 8),
       contractorId: contractorId?.slice(0, 8),
       price,
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 견적서 저장
-    console.log('💾 Saving quote to database...')
+    if (process.env.NODE_ENV === 'development') console.log('💾 Saving quote to database...')
     const { data: quote, error: quoteError } = await supabase
       .from('contractor_quotes')
       .insert({
@@ -97,14 +97,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Quote saved successfully:', quote.id)
+    if (process.env.NODE_ENV === 'development') console.log('✅ Quote saved successfully:', quote.id)
 
     // ⚠️ 프로젝트 상태는 'bidding'으로 유지 (여러 업체가 견적서 제출 가능)
-    console.log('✅ 견적서 저장 완료 - 프로젝트는 bidding 상태 유지')
+    if (process.env.NODE_ENV === 'development') console.log('✅ 견적서 저장 완료 - 프로젝트는 bidding 상태 유지')
 
     // ✅ 개선된 이메일 전송 로직
-    console.log('📧 ========== EMAIL SENDING PROCESS START ==========')
-    console.log('🔧 Environment check:', {
+    if (process.env.NODE_ENV === 'development') console.log('📧 ========== EMAIL SENDING PROCESS START ==========')
+    if (process.env.NODE_ENV === 'development') console.log('🔧 Environment check:', {
       hasApiKey: !!process.env.MAILGUN_API_KEY,
       apiKeyPrefix: process.env.MAILGUN_API_KEY?.slice(0, 10),
       domain: process.env.MAILGUN_DOMAIN,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // 1단계: 프로젝트 정보 가져오기
-      console.log('📝 Step 1: Fetching project info...', { projectId })
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 1: Fetching project info...', { projectId })
       const { data: projectWithCustomer, error: projectFetchError } = await supabase
         .from('quote_requests')
         .select('*, customer_id')
@@ -131,13 +131,13 @@ export async function POST(request: NextRequest) {
         throw new Error('프로젝트 정보를 찾을 수 없습니다.')
       }
 
-      console.log('✅ Step 1 Success:', {
+      if (process.env.NODE_ENV === 'development') console.log('✅ Step 1 Success:', {
         projectId: projectWithCustomer.id?.slice(0, 8),
         customerId: projectWithCustomer.customer_id?.slice(0, 8)
       })
 
       // 2단계: 고객 정보 가져오기
-      console.log('📝 Step 2: Fetching customer info...', { 
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 2: Fetching customer info...', { 
         customerId: projectWithCustomer.customer_id?.slice(0, 8)
       })
       const { data: customer, error: customerError } = await supabase
@@ -158,13 +158,13 @@ export async function POST(request: NextRequest) {
         throw new Error('고객 이메일 주소가 없습니다.')
       }
 
-      console.log('✅ Step 2 Success:', {
+      if (process.env.NODE_ENV === 'development') console.log('✅ Step 2 Success:', {
         email: customer.email,
         name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'No name'
       })
 
       // 3단계: 업체 정보 가져오기
-      console.log('📝 Step 3: Fetching contractor info...', { 
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 3: Fetching contractor info...', { 
         contractorId: contractorId?.slice(0, 8)
       })
       const { data: contractor, error: contractorError } = await supabase
@@ -181,13 +181,13 @@ export async function POST(request: NextRequest) {
         throw new Error('업체 정보를 찾을 수 없습니다.')
       }
 
-      console.log('✅ Step 3 Success:', {
+      if (process.env.NODE_ENV === 'development') console.log('✅ Step 3 Success:', {
         companyName: contractor.company_name,
         email: contractor.email
       })
 
       // 4단계: 이메일 템플릿 생성
-      console.log('📝 Step 4: Creating email template...')
+      if (process.env.NODE_ENV === 'development') console.log('📝 Step 4: Creating email template...')
       const customerName = customer.first_name && customer.last_name
         ? `${customer.first_name} ${customer.last_name}`
         : customer.email?.split('@')[0] || 'Customer'
@@ -210,10 +210,10 @@ export async function POST(request: NextRequest) {
         }
       )
 
-      console.log('✅ Step 4 Success: Email template created')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Step 4 Success: Email template created')
 
       // 5단계: 이메일 전송
-      console.log('📧 Step 5: Sending email...', {
+      if (process.env.NODE_ENV === 'development') console.log('📧 Step 5: Sending email...', {
         to: customer.email,
         subject: 'New Quote Received for Your Project'
       })
@@ -225,11 +225,11 @@ export async function POST(request: NextRequest) {
         replyTo: 'support@canadabeaver.pro'
       })
 
-      console.log('📧 Email result:', emailResult)
+      if (process.env.NODE_ENV === 'development') console.log('📧 Email result:', emailResult)
 
       if (emailResult.success) {
         emailSent = true
-        console.log('✅✅✅ EMAIL SENT SUCCESSFULLY!', {
+        if (process.env.NODE_ENV === 'development') console.log('✅✅✅ EMAIL SENT SUCCESSFULLY!', {
           to: customer.email,
           messageId: (emailResult as any).messageId,
           contractor: contractor.company_name,
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    console.log('📧 ========== EMAIL SENDING PROCESS END ==========')
+    if (process.env.NODE_ENV === 'development') console.log('📧 ========== EMAIL SENDING PROCESS END ==========')
 
     // ✅ 응답 구성
     const response = {
@@ -271,7 +271,7 @@ export async function POST(request: NextRequest) {
       response.message += ' (참고: 고객 이메일 알림 전송 실패)'
     }
 
-    console.log('🎉 Final response:', {
+    if (process.env.NODE_ENV === 'development') console.log('🎉 Final response:', {
       success: response.success,
       quoteId: quote.id,
       emailSent: response.emailSent,

@@ -75,7 +75,7 @@ export default function ContractorsListingPage() {
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      console.log('🔍 Starting contractors fetch...')
+      if (process.env.NODE_ENV === 'development') console.log('🔍 Starting contractors fetch...')
       const startTime = performance.now()
       
       const { data: contractorsData, error } = await supabase
@@ -101,7 +101,7 @@ export default function ContractorsListingPage() {
         .limit(50)
 
       const fetchTime = performance.now() - startTime
-      console.log(`✅ Contractors fetched in ${fetchTime.toFixed(2)}ms`)
+      if (process.env.NODE_ENV === 'development') console.log(`✅ Contractors fetched in ${fetchTime.toFixed(2)}ms`)
 
       if (error) {
         console.error('❌ Error fetching contractors:', error)
@@ -158,7 +158,7 @@ export default function ContractorsListingPage() {
         }
       })
 
-      console.log('✅ 업체 목록 로드 완료:', formattedContractors.length, '개')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 업체 목록 로드 완료:', formattedContractors.length, '개')
       
       setContractors(formattedContractors)
       setFilteredContractors(formattedContractors)
@@ -181,7 +181,7 @@ export default function ContractorsListingPage() {
       
       if (contractorIds.length === 0) return
 
-      console.log('🔄 Loading review counts in background...')
+      if (process.env.NODE_ENV === 'development') console.log('🔄 Loading review counts in background...')
       const startTime = performance.now()
 
       const { data: reviewsList, error } = await supabase
@@ -190,7 +190,7 @@ export default function ContractorsListingPage() {
         .in('contractor_id', contractorIds)
 
       const loadTime = performance.now() - startTime
-      console.log(`✅ Review counts loaded in ${loadTime.toFixed(2)}ms`)
+      if (process.env.NODE_ENV === 'development') console.log(`✅ Review counts loaded in ${loadTime.toFixed(2)}ms`)
 
       if (error) {
         console.error('❌ Error loading review counts:', error)

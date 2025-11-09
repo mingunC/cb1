@@ -125,7 +125,7 @@ export default function QuoteModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('🎯 Submit button clicked!')
+    if (process.env.NODE_ENV === 'development') console.log('🎯 Submit button clicked!')
     
     if (!project || !contractorId) {
       console.error('❌ Missing project or contractorId')
@@ -138,21 +138,21 @@ export default function QuoteModal({
     }
 
     if (isSubmitting) {
-      console.log('⚠️ Already submitting, ignoring duplicate click')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Already submitting, ignoring duplicate click')
       return
     }
 
-    console.log('✅ Starting quote submission...')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Starting quote submission...')
     setIsSubmitting(true)
     
     try {
       // 1단계: PDF 파일 업로드
-      console.log('📤 Step 1: Uploading PDF file...')
+      if (process.env.NODE_ENV === 'development') console.log('📤 Step 1: Uploading PDF file...')
       const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
-      console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
+      if (process.env.NODE_ENV === 'development') console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
       
       // 2단계: API를 통해 견적서 제출 (이메일 자동 전송)
-      console.log('📧 Step 2: Submitting quote via API...')
+      if (process.env.NODE_ENV === 'development') console.log('📧 Step 2: Submitting quote via API...')
       const response = await fetch('/api/quotes/submit', {
         method: 'POST',
         headers: {
@@ -168,7 +168,7 @@ export default function QuoteModal({
         })
       })
 
-      console.log('📡 API Response status:', response.status)
+      if (process.env.NODE_ENV === 'development') console.log('📡 API Response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
@@ -177,7 +177,7 @@ export default function QuoteModal({
       }
 
       const data = await response.json()
-      console.log('✅ Quote submitted successfully:', data)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Quote submitted successfully:', data)
       
       // 이메일 전송 결과 표시
       if (data.emailSent) {
@@ -199,7 +199,7 @@ export default function QuoteModal({
       toast.error(error.message || 'An error occurred while submitting the quote')
     } finally {
       // ✅ CRITICAL: 어떤 경우에도 로딩 상태 해제
-      console.log('🔄 Releasing loading state...')
+      if (process.env.NODE_ENV === 'development') console.log('🔄 Releasing loading state...')
       setIsSubmitting(false)
     }
   }
@@ -207,7 +207,7 @@ export default function QuoteModal({
   // 모달 닫기 핸들러
   const handleClose = () => {
     if (isSubmitting) {
-      console.log('⚠️ Cannot close while submitting')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Cannot close while submitting')
       return
     }
     

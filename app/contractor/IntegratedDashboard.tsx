@@ -61,7 +61,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
       setIsLoading(true)
       const supabase = createBrowserClient()
       
-      console.log('Loading projects for contractor:', {
+      if (process.env.NODE_ENV === 'development') console.log('Loading projects for contractor:', {
         contractorId: contractorData.id,
         companyName: contractorData.company_name
       })
@@ -77,7 +77,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         throw projectsError
       }
       
-      console.log('Projects data loaded:', projectsData?.length, 'projects')
+      if (process.env.NODE_ENV === 'development') console.log('Projects data loaded:', projectsData?.length, 'projects')
       
       // 고객 정보 일괄 조회
       const customerIds = [...new Set(projectsData?.map(p => p.customer_id).filter(Boolean) || [])]
@@ -188,7 +188,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         })
       )
       
-      console.log('Processed projects:', processedProjects.length)
+      if (process.env.NODE_ENV === 'development') console.log('Processed projects:', processedProjects.length)
       setProjects(processedProjects)
     } catch (err: any) {
       console.error('Failed to load projects:', err)
@@ -517,7 +517,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
           {/* 상태에 따른 액션 버튼 */}
           {project.projectStatus === 'approved' && !project.site_visit_application && (
             <button 
-              onClick={() => console.log('Apply for site visit')}
+              onClick={() => {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('Apply for site visit')
+                }
+              }}
               className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
             >
               현장방문 신청
@@ -719,7 +723,11 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
             <div className="p-6">
               <PortfolioManager 
                 contractorId={contractorData.id}
-                onPortfolioUpdate={() => console.log('Portfolio updated')}
+                onPortfolioUpdate={() => {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('Portfolio updated')
+                  }
+                }}
               />
             </div>
           </div>

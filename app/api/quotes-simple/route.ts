@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
     
-    console.log('Supabase 클라이언트 생성 완료')
-    console.log('환경 변수 확인:', {
+    if (process.env.NODE_ENV === 'development') console.log('Supabase 클라이언트 생성 완료')
+    if (process.env.NODE_ENV === 'development') console.log('환경 변수 확인:', {
       url: process.env.NEXT_PUBLIC_SUPABASE_URL ? '설정됨' : '누락됨',
       anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '설정됨' : '누락됨'
     })

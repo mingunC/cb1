@@ -151,14 +151,14 @@ export default function QuoteComparisonView() {
   // 연락하기 핸들러
   const handleContact = useCallback((quote: Quote) => {
     // 실제로는 연락 모달이나 페이지로 이동
-    console.log('Contacting:', quote.companyName)
+    if (process.env.NODE_ENV === 'development') console.log('Contacting:', quote.companyName)
   }, [])
 
   // PDF 다운로드 핸들러
   const handleDownloadPDF = useCallback((quote: Quote) => {
     if (quote.pdfUrl) {
       // 실제로는 PDF 다운로드 로직
-      console.log('Downloading PDF for:', quote.companyName)
+      if (process.env.NODE_ENV === 'development') console.log('Downloading PDF for:', quote.companyName)
     }
   }, [])
 

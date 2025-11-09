@@ -17,13 +17,13 @@ export default function QuoteRequestPage() {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!session || !session.user) {
-          console.log('No session found, redirecting to login')
+          if (process.env.NODE_ENV === 'development') console.log('No session found, redirecting to login')
           setIsLoading(false)  // ⚡ Immediately release loading
           router.push('/login')
           return
         }
         
-        console.log('Session found for user:', session.user.email)
+        if (process.env.NODE_ENV === 'development') console.log('Session found for user:', session.user.email)
         setIsAuthenticated(true)
         setIsLoading(false)  // ⚡ Immediately release loading
       } catch (error) {

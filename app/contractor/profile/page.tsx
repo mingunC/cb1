@@ -74,7 +74,7 @@ export default function ContractorProfile() {
         setProfile(contractor)
         
         // specialties 파싱
-        console.log('🔍 Raw specialties from DB:', contractor.specialties)
+        if (process.env.NODE_ENV === 'development') console.log('🔍 Raw specialties from DB:', contractor.specialties)
         
         let parsedSpecialties: string[] = []
         if (contractor.specialties) {
@@ -209,7 +209,7 @@ export default function ContractorProfile() {
     }
 
     setIsSaving(true)
-    console.log('💾 Profile save started...')
+    if (process.env.NODE_ENV === 'development') console.log('💾 Profile save started...')
     
     try {
       const supabase = createBrowserClient()
@@ -227,8 +227,8 @@ export default function ContractorProfile() {
         insurance: formData.insurance.trim() || null
       }
 
-      console.log('📝 Update data:', updateData)
-      console.log('🆔 Profile ID:', profile.id)
+      if (process.env.NODE_ENV === 'development') console.log('📝 Update data:', updateData)
+      if (process.env.NODE_ENV === 'development') console.log('🆔 Profile ID:', profile.id)
 
       // ✅ 수정: 타임아웃 처리를 더 명확하게
       const timeoutMs = 15000 // 15초
@@ -264,7 +264,7 @@ export default function ContractorProfile() {
           return
         }
 
-        console.log('✅ Save successful!')
+        if (process.env.NODE_ENV === 'development') console.log('✅ Save successful!')
         setProfile(prev => prev ? { ...prev, ...updateData } : null)
         toast.success('Profile updated successfully!')
         
@@ -284,7 +284,7 @@ export default function ContractorProfile() {
       toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
     } finally {
       setIsSaving(false)
-      console.log('💾 Profile save process ended')
+      if (process.env.NODE_ENV === 'development') console.log('💾 Profile save process ended')
     }
   }
 

@@ -181,7 +181,7 @@ export default function ContractorDetailPage() {
           }
         }
       }
-      console.log('✅ Parsed specialties:', parsedSpecialties) // 디버깅용
+      if (process.env.NODE_ENV === 'development') console.log('✅ Parsed specialties:', parsedSpecialties) // 디버깅용
 
       const formattedContractor: Contractor = {
         id: contractorData.id,
@@ -219,7 +219,7 @@ export default function ContractorDetailPage() {
 
   const fetchReviews = useCallback(async () => {
     try {
-      console.log('🔍 fetchReviews started for contractor:', contractorId)
+      if (process.env.NODE_ENV === 'development') console.log('🔍 fetchReviews started for contractor:', contractorId)
       const supabase = createBrowserClient()
       
       const { data: reviewsData, error } = await supabase
@@ -246,8 +246,8 @@ export default function ContractorDetailPage() {
         .eq('contractor_id', contractorId)
         .order('created_at', { ascending: false })
 
-      console.log('📊 Reviews query result:', { reviewsData, error })
-      console.log('📊 Number of reviews:', reviewsData?.length)
+      if (process.env.NODE_ENV === 'development') console.log('📊 Reviews query result:', { reviewsData, error })
+      if (process.env.NODE_ENV === 'development') console.log('📊 Number of reviews:', reviewsData?.length)
 
       if (error) {
         console.error('❌ Error fetching reviews:', error)
@@ -274,7 +274,7 @@ export default function ContractorDetailPage() {
         }
       }))
 
-      console.log('✅ Formatted reviews:', formattedReviews)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Formatted reviews:', formattedReviews)
       setReviews(formattedReviews)
     } catch (error) {
       console.error('❌ Unexpected error fetching reviews:', error)

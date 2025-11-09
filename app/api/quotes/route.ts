@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
       }
     )
     
-    console.log('Supabase 클라이언트 생성 완료')
-    console.log('환경 변수 확인:', {
+    if (process.env.NODE_ENV === 'development') console.log('Supabase 클라이언트 생성 완료')
+    if (process.env.NODE_ENV === 'development') console.log('환경 변수 확인:', {
       url: process.env.NEXT_PUBLIC_SUPABASE_URL ? '설정됨' : '누락됨',
       serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? '설정됨' : '누락됨'
     })
@@ -73,12 +73,12 @@ export async function POST(request: NextRequest) {
       
       if (!authError && user) {
         userId = user.id
-        console.log('인증된 사용자:', user.id, user.email)
+        if (process.env.NODE_ENV === 'development') console.log('인증된 사용자:', user.id, user.email)
       } else {
-        console.log('인증되지 않은 사용자, 임시 UUID 사용:', userId)
+        if (process.env.NODE_ENV === 'development') console.log('인증되지 않은 사용자, 임시 UUID 사용:', userId)
       }
     } catch (authError) {
-      console.log('인증 확인 실패, 임시 UUID 사용:', userId, authError)
+      if (process.env.NODE_ENV === 'development') console.log('인증 확인 실패, 임시 UUID 사용:', userId, authError)
     }
 
     // 데이터베이스 제약조건에 맞는 값들 사용 (변환 불필요)
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       status: 'pending'
     }
     
-    console.log('삽입할 데이터:', JSON.stringify(insertData, null, 2))
+    if (process.env.NODE_ENV === 'development') console.log('삽입할 데이터:', JSON.stringify(insertData, null, 2))
 
     // quote_requests 테이블에 데이터 저장 (실제 테이블 구조에 맞게)
     const { data, error } = await supabase

@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const { projectId } = await request.json()
 
-    console.log('Complete project API called with:', { projectId })
+    if (process.env.NODE_ENV === 'development') console.log('Complete project API called with:', { projectId })
 
     if (!projectId) {
       return NextResponse.json(
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    console.log('Updating project status to completed:', projectId)
+    if (process.env.NODE_ENV === 'development') console.log('Updating project status to completed:', projectId)
     
     // 프로젝트 상태만 업데이트 (가장 중요한 부분)
     const { data: projectData, error: projectError } = await supabase
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Successfully updated project to completed:', projectData)
+    if (process.env.NODE_ENV === 'development') console.log('Successfully updated project to completed:', projectData)
     return NextResponse.json({ 
       success: true, 
       message: 'Project marked as completed',

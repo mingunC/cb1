@@ -38,7 +38,7 @@ export const createBrowserClient = () => {
     if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
       return
     }
-    console.log('🔐 Auth state changed:', event, session?.user?.id)
+    if (process.env.NODE_ENV === 'development') console.log('🔐 Auth state changed:', event, session?.user?.id)
   })
 
   return browserClient

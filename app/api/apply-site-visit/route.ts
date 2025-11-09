@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { projectId, contractorId } = body
     
-    console.log('📝 Site visit application request:', { 
+    if (process.env.NODE_ENV === 'development') console.log('📝 Site visit application request:', { 
       projectId: projectId ? projectId.slice(0, 8) : 'missing', 
       contractorId: contractorId ? contractorId.slice(0, 8) : 'missing',
       bodyKeys: Object.keys(body)
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     
     const supabase = await createClient()
     
-    console.log('🚀 Site visit application started:', { projectId: projectId.slice(0, 8), contractorId: contractorId.slice(0, 8) })
+    if (process.env.NODE_ENV === 'development') console.log('🚀 Site visit application started:', { projectId: projectId.slice(0, 8), contractorId: contractorId.slice(0, 8) })
     
     // 1. Check if already applied
     const { data: existing, error: checkError } = await supabase
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     }
     
     if (existing) {
-      console.log('⚠️ Site visit already applied:', existing.id)
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Site visit already applied:', existing.id)
       return NextResponse.json(
         { 
           error: 'Site visit already applied',
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       applied_at: new Date().toISOString()
     }
     
-    console.log('📝 Inserting site visit application:', insertData)
+    if (process.env.NODE_ENV === 'development') console.log('📝 Inserting site visit application:', insertData)
     
     const { data: application, error: insertError } = await supabase
       .from('site_visit_applications')
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       throw new Error(`Insert failed: ${insertError.message}`)
     }
     
-    console.log('✅ Site visit application created:', application.id)
+    if (process.env.NODE_ENV === 'development') console.log('✅ Site visit application created:', application.id)
     
     // 3. Get project information
     const { data: project, error: projectError } = await supabase
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
         
         if (emailResult.success) {
           emailSent = true
-          console.log('✅ Site visit application email sent successfully:', {
+          if (process.env.NODE_ENV === 'development') console.log('✅ Site visit application email sent successfully:', {
             to: customer.email,
             messageId: (emailResult as any).messageId
           })

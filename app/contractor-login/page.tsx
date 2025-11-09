@@ -46,7 +46,7 @@ export default function ContractorLoginPage() {
       checkingRef.current = true
       
       try {
-        console.log('🔍 Checking session...')
+        if (process.env.NODE_ENV === 'development') console.log('🔍 Checking session...')
         
         // Timeout 추가 (5초)
         const timeoutPromise = new Promise((_, reject) => 
@@ -57,7 +57,7 @@ export default function ContractorLoginPage() {
         
         const userInfo = await Promise.race([userInfoPromise, timeoutPromise]) as any
         
-        console.log('✅ Session check result:', userInfo)
+        if (process.env.NODE_ENV === 'development') console.log('✅ Session check result:', userInfo)
         
         if (userInfo.user) {
           setCurrentUser({
@@ -72,7 +72,7 @@ export default function ContractorLoginPage() {
         console.error('❌ Session check error:', error)
         setCurrentUser(null)
       } finally {
-        console.log('✅ Session check complete, setting checkingSession to false')
+        if (process.env.NODE_ENV === 'development') console.log('✅ Session check complete, setting checkingSession to false')
         setCheckingSession(false)
         checkingRef.current = false
       }
@@ -142,7 +142,7 @@ export default function ContractorLoginPage() {
       }
 
       // 로그인 성공
-      console.log('Contractor login successful:', result.user?.email)
+      if (process.env.NODE_ENV === 'development') console.log('Contractor login successful:', result.user?.email)
       toast.success(`Logged in as ${result.contractorData?.company_name}`)
       router.push('/contractor')
       

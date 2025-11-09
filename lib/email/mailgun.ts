@@ -2,7 +2,7 @@ import formData from 'form-data';
 import Mailgun from 'mailgun.js';
 
 // 디버깅을 위한 로그 추가
-console.log('Mailgun Config:', {
+if (process.env.NODE_ENV === 'development') console.log('Mailgun Config:', {
   hasApiKey: !!process.env.MAILGUN_API_KEY,
   apiKeyLength: process.env.MAILGUN_API_KEY?.length,
   domain: process.env.MAILGUN_DOMAIN,
@@ -46,7 +46,7 @@ export const sendEmail = async (options: EmailOptions) => {
       'h:Reply-To': options.replyTo || 'support@canadabeaver.pro'
     };
 
-    console.log('Attempting to send email with:', {
+    if (process.env.NODE_ENV === 'development') console.log('Attempting to send email with:', {
       from: messageData.from,
       to: messageData.to,
       subject: messageData.subject,
@@ -55,7 +55,7 @@ export const sendEmail = async (options: EmailOptions) => {
 
     const response = await mg.messages.create(process.env.MAILGUN_DOMAIN!, messageData);
     
-    console.log('✅ Email sent successfully:', response.id);
+    if (process.env.NODE_ENV === 'development') console.log('✅ Email sent successfully:', response.id);
     return { success: true, messageId: response.id };
   } catch (error: any) {
     console.error('❌ Mailgun API Error Details:', {
@@ -657,12 +657,12 @@ export const createQuoteSubmissionTemplate = (
 // API 키 검증 함수 (테스트용)
 export const verifyMailgunConfig = async () => {
   try {
-    console.log('Verifying Mailgun configuration...');
+    if (process.env.NODE_ENV === 'development') console.log('Verifying Mailgun configuration...');
     
     // 도메인 정보 가져오기 테스트
     const domain = await mg.domains.get(process.env.MAILGUN_DOMAIN!);
     
-    console.log('Mailgun domain verified:', {
+    if (process.env.NODE_ENV === 'development') console.log('Mailgun domain verified:', {
       name: domain.name,
       state: domain.state,
       created_at: domain.created_at

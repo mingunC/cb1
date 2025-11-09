@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const { projectId, contractorId, quoteId } = await request.json()
     
-    console.log('🎯 API 요청 받음:', { projectId, contractorId, quoteId })
+    if (process.env.NODE_ENV === 'development') console.log('🎯 API 요청 받음:', { projectId, contractorId, quoteId })
     
     if (!projectId || !contractorId || !quoteId) {
       return NextResponse.json(
@@ -23,11 +23,11 @@ export async function POST(request: Request) {
       .eq('id', projectId)
       .single()
     
-    console.log('📊 현재 프로젝트 상태:', currentProject)
+    if (process.env.NODE_ENV === 'development') console.log('📊 현재 프로젝트 상태:', currentProject)
     
     // 이미 업체가 선택된 경우
     if (currentProject?.selected_contractor_id) {
-      console.log('⚠️ 이미 업체가 선택된 프로젝트입니다')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ 이미 업체가 선택된 프로젝트입니다')
       return NextResponse.json({
         success: false,
         message: '이미 다른 업체가 선택되었습니다'
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       throw updateError
     }
     
-    console.log('✅ 프로젝트 상태 업데이트 완료: bidding-closed')
+    if (process.env.NODE_ENV === 'development') console.log('✅ 프로젝트 상태 업데이트 완료: bidding-closed')
     
     // 2. 견적서 상태 업데이트 - 선택된 견적서는 accepted
     const { error: quoteError } = await supabase
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       throw quoteError
     }
     
-    console.log('✅ 선택된 견적서 상태: accepted')
+    if (process.env.NODE_ENV === 'development') console.log('✅ 선택된 견적서 상태: accepted')
     
     // 3. 선택되지 않은 견적서는 rejected로 변경
     const { error: rejectError } = await supabase
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       console.error('⚠️ 다른 견적서 rejected 처리 실패:', rejectError)
       // 이 부분은 실패해도 계속 진행
     } else {
-      console.log('✅ 미선택 견적서 상태: rejected')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 미선택 견적서 상태: rejected')
     }
     
     // 4. 이메일 발송 API 호출
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       
       if (emailResponse.ok) {
         emailSent = true
-        console.log('✅ 축하 이메일 발송 완료')
+        if (process.env.NODE_ENV === 'development') console.log('✅ 축하 이메일 발송 완료')
       } else {
         console.error('⚠️ 이메일 발송 실패, 하지만 업체 선택은 완료')
       }

@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 감사합니다.
     `.trim()
     
-    console.log('📧 Email prepared:', {
+    if (process.env.NODE_ENV === 'development') console.log('📧 Email prepared:', {
       to: contractorEmail,
       subject: emailSubject,
       customerName,
@@ -113,9 +113,9 @@ export async function POST(request: Request) {
     // 옵션 3: SendGrid, Mailgun 등
     
     // 현재는 로그만 출력 (개발 단계)
-    console.log('📧 Email would be sent to:', contractorEmail)
-    console.log('Subject:', emailSubject)
-    console.log('Body:', emailBody)
+    if (process.env.NODE_ENV === 'development') console.log('📧 Email would be sent to:', contractorEmail)
+    if (process.env.NODE_ENV === 'development') console.log('Subject:', emailSubject)
+    if (process.env.NODE_ENV === 'development') console.log('Body:', emailBody)
     
     return NextResponse.json({
       success: true,

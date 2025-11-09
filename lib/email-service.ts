@@ -37,7 +37,7 @@ export const sendEmail = async (options: EmailOptions) => {
 
     const response = await mg.messages.create(process.env.MAILGUN_DOMAIN!, messageData);
     
-    console.log('Email sent successfully:', response.id);
+    if (process.env.NODE_ENV === 'development') console.log('Email sent successfully:', response.id);
     return { success: true, messageId: response.id };
   } catch (error: any) {
     console.error('Failed to send email:', error);

@@ -31,7 +31,7 @@ export default function LoginPage() {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session) {
-          console.log('Existing session found:', session.user.email)
+          if (process.env.NODE_ENV === 'development') console.log('Existing session found:', session.user.email)
           
           const userInfo = await getCurrentUser()
           
@@ -49,7 +49,7 @@ export default function LoginPage() {
               toast.success('Signed in successfully.')
             }
             
-            console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
+            if (process.env.NODE_ENV === 'development') console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
             router.push(redirectTo)
           }
         }
@@ -97,7 +97,7 @@ export default function LoginPage() {
         return
       }
 
-      console.log('Login successful:', result.user?.email)
+      if (process.env.NODE_ENV === 'development') console.log('Login successful:', result.user?.email)
       
       if (result.userType === 'contractor' && result.contractorData) {
         toast.success(`Signed in as ${result.contractorData.company_name}.`)

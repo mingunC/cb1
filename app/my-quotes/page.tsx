@@ -100,7 +100,7 @@ export default function MyQuotesPage() {
           return
         }
 
-        console.log('Checking user type for user ID:', user.id, 'Email:', user.email)
+        if (process.env.NODE_ENV === 'development') console.log('Checking user type for user ID:', user.id, 'Email:', user.email)
         
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -108,26 +108,26 @@ export default function MyQuotesPage() {
           .eq('id', user.id)
           .maybeSingle()
 
-        console.log('User type check result:', { userData, userError })
+        if (process.env.NODE_ENV === 'development') console.log('User type check result:', { userData, userError })
 
         let userType = 'customer'
         if (userData && userData.user_type) {
           userType = userData.user_type
         } else if (userError && userError.code === 'PGRST116') {
-          console.log('User not found in users table, treating as customer')
+          if (process.env.NODE_ENV === 'development') console.log('User not found in users table, treating as customer')
           userType = 'customer'
         } else if (userError) {
-          console.log('Error checking user type:', userError)
+          if (process.env.NODE_ENV === 'development') console.log('Error checking user type:', userError)
           userType = 'customer'
         }
 
         if (userType === 'contractor') {
-          console.log('Contractor trying to access customer page, redirecting')
+          if (process.env.NODE_ENV === 'development') console.log('Contractor trying to access customer page, redirecting')
           router.push('/contractor')
           return
         }
 
-        console.log('User authorized as:', userType)
+        if (process.env.NODE_ENV === 'development') console.log('User authorized as:', userType)
 
         setUser(user)
         setIsAuthorized(true)
@@ -146,8 +146,8 @@ export default function MyQuotesPage() {
 
   const fetchQuotes = async (customerId: string) => {
     try {
-      console.log('=== FETCHING QUOTES ===')
-      console.log('Customer ID:', customerId)
+      if (process.env.NODE_ENV === 'development') console.log('=== FETCHING QUOTES ===')
+      if (process.env.NODE_ENV === 'development') console.log('Customer ID:', customerId)
       
       const supabase = createBrowserClient()
       
@@ -194,7 +194,7 @@ export default function MyQuotesPage() {
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false })
       
-      console.log('Quotes query result:', { quotesData, quotesError })
+      if (process.env.NODE_ENV === 'development') console.log('Quotes query result:', { quotesData, quotesError })
 
       if (quotesError) {
         console.error('Error fetching quotes:', quotesError)
@@ -202,7 +202,7 @@ export default function MyQuotesPage() {
         return
       }
 
-      console.log('Successfully fetched quotes:', quotesData?.length || 0)
+      if (process.env.NODE_ENV === 'development') console.log('Successfully fetched quotes:', quotesData?.length || 0)
       setQuotes(quotesData || [])
       setContractorQuotes([])
       // Collapse all quote sections by default
@@ -376,7 +376,7 @@ export default function MyQuotesPage() {
 
   const handleSelectContractor = async (contractorQuoteId: string, projectId: string, contractorId: string) => {
     if (selectingContractor) {
-      console.log('Already processing contractor selection')
+      if (process.env.NODE_ENV === 'development') console.log('Already processing contractor selection')
       return
     }
     
@@ -386,7 +386,7 @@ export default function MyQuotesPage() {
       }
 
       setSelectingContractor(projectId)
-      console.log('Selecting contractor:', { contractorQuoteId, projectId, contractorId })
+      if (process.env.NODE_ENV === 'development') console.log('Selecting contractor:', { contractorQuoteId, projectId, contractorId })
 
       const selectedQuote = quotes.find(q => q.id === projectId)
       const selectedContractorQuote = selectedQuote?.contractor_quotes?.find(cq => cq.id === contractorQuoteId)
@@ -431,7 +431,7 @@ export default function MyQuotesPage() {
         return
       }
 
-      console.log('✅ Contractor selection confirmed by server')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Contractor selection confirmed by server')
       
     } catch (error) {
       console.error('Error selecting contractor:', error)
@@ -446,7 +446,7 @@ export default function MyQuotesPage() {
 
   const handleStartProject = async (projectId: string) => {
     if (startingProject) {
-      console.log('Already starting a project')
+      if (process.env.NODE_ENV === 'development') console.log('Already starting a project')
       return
     }
 
@@ -456,7 +456,7 @@ export default function MyQuotesPage() {
       }
 
       setStartingProject(projectId)
-      console.log('Starting project:', projectId)
+      if (process.env.NODE_ENV === 'development') console.log('Starting project:', projectId)
 
       const response = await fetch('/api/start-project', {
         method: 'POST',
@@ -472,7 +472,7 @@ export default function MyQuotesPage() {
         return
       }
 
-      console.log('API response:', result)
+      if (process.env.NODE_ENV === 'development') console.log('API response:', result)
       toast.success('Project started! 🚀')
       
     } catch (error) {
@@ -491,11 +491,11 @@ export default function MyQuotesPage() {
 
   const downloadQuote = async (quoteId: string) => {
     if (downloadingQuotes.has(quoteId)) {
-      console.log('⚠️ Already downloading:', quoteId)
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Already downloading:', quoteId)
       return
     }
 
-    console.log('🔽 Starting PDF download, quote ID:', quoteId)
+    if (process.env.NODE_ENV === 'development') console.log('🔽 Starting PDF download, quote ID:', quoteId)
     setDownloadingQuotes(prev => new Set(prev).add(quoteId))
     
     try {
@@ -524,7 +524,7 @@ export default function MyQuotesPage() {
       }
 
       const originalUrl = quoteData.pdf_url
-      console.log('📄 Original URL:', originalUrl)
+      if (process.env.NODE_ENV === 'development') console.log('📄 Original URL:', originalUrl)
 
       if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
         window.open(originalUrl, '_blank')

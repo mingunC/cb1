@@ -28,7 +28,7 @@ export default function AdminPage() {
     
     const checkUser = async () => {
       try {
-        console.log('🔍 Admin: 사용자 확인 시작')
+        if (process.env.NODE_ENV === 'development') console.log('🔍 Admin: 사용자 확인 시작')
         
         // Supabase의 getSession을 사용하여 세션 확인
         const supabase = createBrowserClient()
@@ -44,7 +44,7 @@ export default function AdminPage() {
         }
         
         if (!session) {
-          console.log('❌ 세션 없음 - 로그인 페이지로 이동')
+          if (process.env.NODE_ENV === 'development') console.log('❌ 세션 없음 - 로그인 페이지로 이동')
           if (isMounted) {
             setIsLoading(false)
             router.push('/login')
@@ -54,10 +54,10 @@ export default function AdminPage() {
         
         const userEmail = session.user.email
         
-        console.log('👤 사용자 이메일:', userEmail)
+        if (process.env.NODE_ENV === 'development') console.log('👤 사용자 이메일:', userEmail)
         
         if (!userEmail) {
-          console.log('❌ 사용자 정보 없음')
+          if (process.env.NODE_ENV === 'development') console.log('❌ 사용자 정보 없음')
           if (isMounted) {
             setIsLoading(false)
             router.push('/login')
@@ -69,12 +69,12 @@ export default function AdminPage() {
           setUser(session.user)
           
           if (userEmail === 'cmgg919@gmail.com') {
-            console.log('✅ 관리자 권한 확인됨')
+            if (process.env.NODE_ENV === 'development') console.log('✅ 관리자 권한 확인됨')
             setIsAuthorized(true)
             setIsLoading(false)
             fetchStats()
           } else {
-            console.log('❌ 관리자 권한 없음')
+            if (process.env.NODE_ENV === 'development') console.log('❌ 관리자 권한 없음')
             setIsAuthorized(false)
             setIsLoading(false)
             router.push('/')
@@ -98,7 +98,7 @@ export default function AdminPage() {
 
   const fetchStats = async () => {
     try {
-      console.log('📊 통계 가져오기 시작')
+      if (process.env.NODE_ENV === 'development') console.log('📊 통계 가져오기 시작')
       const supabase = createBrowserClient()
       
       const [
@@ -141,7 +141,7 @@ export default function AdminPage() {
         totalCommissionAmount
       }
       
-      console.log('✅ 통계 로드 완료:', newStats)
+      if (process.env.NODE_ENV === 'development') console.log('✅ 통계 로드 완료:', newStats)
       setStats(newStats)
     } catch (error) {
       console.error('❌ 통계 가져오기 실패:', error)
@@ -150,11 +150,11 @@ export default function AdminPage() {
 
   const handleSignOut = async () => {
     try {
-      console.log('🚪 로그아웃 시작')
+      if (process.env.NODE_ENV === 'development') console.log('🚪 로그아웃 시작')
       const supabase = createBrowserClient()
       await supabase.auth.signOut()
       
-      console.log('✅ 로그아웃 완료')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 로그아웃 완료')
       router.push('/')
     } catch (error) {
       console.error('❌ 로그아웃 실패:', error)

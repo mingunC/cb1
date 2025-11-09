@@ -40,7 +40,7 @@ function PortfolioContent() {
   const fetchPortfolios = async () => {
     try {
       setIsLoading(true)
-      console.log('🔍 Loading portfolios...')
+      if (process.env.NODE_ENV === 'development') console.log('🔍 Loading portfolios...')
       
       const supabase = createBrowserClient()
       
@@ -66,7 +66,7 @@ function PortfolioContent() {
         console.error('❌ Error:', error)
         setPortfolios([])
       } else {
-        console.log('✅ Loaded portfolios:', data?.length, 'items')
+        if (process.env.NODE_ENV === 'development') console.log('✅ Loaded portfolios:', data?.length, 'items')
         
         const transformed: Portfolio[] = (data || []).map(p => ({
           id: p.id,

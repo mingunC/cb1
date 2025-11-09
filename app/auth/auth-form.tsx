@@ -41,7 +41,7 @@ export default function AuthForm({ authType }: AuthFormProps) {
         }
 
         // ✅ 로그인 성공 처리
-        console.log('Login successful, redirecting...')
+        if (process.env.NODE_ENV === 'development') console.log('Login successful, redirecting...')
         
         // ✅ 사용자 타입별 맞춤 토스트 메시지
         if (result.userType === 'contractor' && result.contractorData) {

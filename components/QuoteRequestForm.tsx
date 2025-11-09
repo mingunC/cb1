@@ -81,19 +81,19 @@ export default function QuoteRequestForm() {
     
     // Prevent duplicate submission
     if (isSubmitting) {
-      console.log('Already submitting, ignoring duplicate call')
+      if (process.env.NODE_ENV === 'development') console.log('Already submitting, ignoring duplicate call')
       return
     }
     
     setIsSubmitting(true)
-    console.log('=== STARTING QUOTE SUBMISSION ===')
+    if (process.env.NODE_ENV === 'development') console.log('=== STARTING QUOTE SUBMISSION ===')
     
     try {
       const supabase = createBrowserClient()
       
       // 1. Check user authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('User check:', { user, authError })
+      if (process.env.NODE_ENV === 'development') console.log('User check:', { user, authError })
       
       if (authError || !user) {
         alert('Please log in to submit a quote request.')
@@ -103,8 +103,8 @@ export default function QuoteRequestForm() {
       }
 
       // 2. Prepare data
-      console.log('Step 2: Preparing data...')
-      console.log('Form data:', formData)
+      if (process.env.NODE_ENV === 'development') console.log('Step 2: Preparing data...')
+      if (process.env.NODE_ENV === 'development') console.log('Form data:', formData)
 
       const insertData = {
         customer_id: user.id,
@@ -121,8 +121,8 @@ export default function QuoteRequestForm() {
         status: 'pending'
       }
 
-      console.log('Insert data prepared:', insertData)
-      console.log('Data types:', {
+      if (process.env.NODE_ENV === 'development') console.log('Insert data prepared:', insertData)
+      if (process.env.NODE_ENV === 'development') console.log('Data types:', {
         customer_id: typeof insertData.customer_id,
         space_type: typeof insertData.space_type,
         project_types: Array.isArray(insertData.project_types),
@@ -138,14 +138,14 @@ export default function QuoteRequestForm() {
       })
 
       // 3. Insert into database
-      console.log('Step 3: Inserting to database...')
+      if (process.env.NODE_ENV === 'development') console.log('Step 3: Inserting to database...')
       const { data: result, error: insertError } = await supabase
         .from('quote_requests')
         .insert(insertData)
         .select()
         .single()
 
-      console.log('Insert result:', { result, insertError })
+      if (process.env.NODE_ENV === 'development') console.log('Insert result:', { result, insertError })
 
       if (insertError) {
         console.error('Insert failed:', insertError)
@@ -154,7 +154,7 @@ export default function QuoteRequestForm() {
       }
 
       if (result) {
-        console.log('SUCCESS! Quote saved:', result)
+        if (process.env.NODE_ENV === 'development') console.log('SUCCESS! Quote saved:', result)
         toast.success('Quote request submitted successfully!')
         setIsCompleted(true)
       } else {
@@ -168,7 +168,7 @@ export default function QuoteRequestForm() {
     } finally {
       // ✅ Fixed: Always set isSubmitting to false in finally block
       setIsSubmitting(false)
-      console.log('=== SUBMISSION COMPLETE ===')
+      if (process.env.NODE_ENV === 'development') console.log('=== SUBMISSION COMPLETE ===')
     }
   }
 

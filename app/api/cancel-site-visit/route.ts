@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('🗑️ Cancel Site Visit Request:', { projectId, contractorId })
+    if (process.env.NODE_ENV === 'development') console.log('🗑️ Cancel Site Visit Request:', { projectId, contractorId })
 
     const supabase = createRouteHandlerClient({ cookies })
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (checkError || !existingVisit) {
-      console.log('⚠️ No site visit application found')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ No site visit application found')
       return NextResponse.json(
         { error: 'No site visit application found' },
         { status: 404 }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // ✅ 2. 이미 승인된 경우 취소 불가
     if (existingVisit.status === 'completed') {
-      console.log('⚠️ Cannot cancel completed site visit')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Cannot cancel completed site visit')
       return NextResponse.json(
         { error: 'Cannot cancel completed site visit' },
         { status: 400 }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       throw deleteError
     }
 
-    console.log('✅ Site visit application cancelled successfully')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Site visit application cancelled successfully')
 
     return NextResponse.json({
       success: true,

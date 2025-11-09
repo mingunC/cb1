@@ -13,7 +13,7 @@ export default function ContractorPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🚀 Contractor page auth check starting...')
+      if (process.env.NODE_ENV === 'development') console.log('🚀 Contractor page auth check starting...')
       
       try {
         const supabase = createBrowserClient()
@@ -21,7 +21,7 @@ export default function ContractorPage() {
         // 세션 체크
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        console.log('📋 Session status:', {
+        if (process.env.NODE_ENV === 'development') console.log('📋 Session status:', {
           hasSession: !!session,
           userId: session?.user?.id,
           email: session?.user?.email,
@@ -29,7 +29,7 @@ export default function ContractorPage() {
         })
         
         if (!session) {
-          console.log('❌ No session found, redirecting to login')
+          if (process.env.NODE_ENV === 'development') console.log('❌ No session found, redirecting to login')
           router.push('/contractor-login')
           return
         }
@@ -41,25 +41,25 @@ export default function ContractorPage() {
           .eq('user_id', session.user.id)
           .single()
         
-        console.log('🏢 Contractor lookup:', {
+        if (process.env.NODE_ENV === 'development') console.log('🏢 Contractor lookup:', {
           found: !!contractor,
           data: contractor,
           error: contractorError
         })
         
         if (!contractor) {
-          console.log('❌ Not a contractor, redirecting to signup')
+          if (process.env.NODE_ENV === 'development') console.log('❌ Not a contractor, redirecting to signup')
           router.push('/contractor-signup')
           return
         }
         
         if (contractor.status !== 'active') {
-          console.log('⚠️ Contractor not active')
+          if (process.env.NODE_ENV === 'development') console.log('⚠️ Contractor not active')
           router.push('/')
           return
         }
         
-        console.log('✅ Authentication successful, rendering dashboard')
+        if (process.env.NODE_ENV === 'development') console.log('✅ Authentication successful, rendering dashboard')
         setContractorData(contractor)
         setIsAuthenticated(true)
         

@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { contractorQuoteId, projectId, contractorId } = body
 
-    console.log('=== CONTRACTOR SELECTION API ===')
-    console.log('Input:', { contractorQuoteId, projectId, contractorId })
+    if (process.env.NODE_ENV === 'development') console.log('=== CONTRACTOR SELECTION API ===')
+    if (process.env.NODE_ENV === 'development') console.log('Input:', { contractorQuoteId, projectId, contractorId })
 
     // 입력값 검증
     if (!contractorQuoteId || !projectId) {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // ✅ Admin 클라이언트 사용 (RLS 우회)
     const supabase = createAdminClient()
-    console.log('✅ Using admin client to bypass RLS')
+    if (process.env.NODE_ENV === 'development') console.log('✅ Using admin client to bypass RLS')
 
     // 트랜잭션처럼 작동하도록 모든 작업을 순차적으로 실행하고
     // 하나라도 실패하면 롤백 시뮬레이션
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         .select('*')
         .eq('id', projectId)
 
-      console.log('프로젝트 조회 결과:', {
+      if (process.env.NODE_ENV === 'development') console.log('프로젝트 조회 결과:', {
         resultCount: projectResults?.length || 0,
         error: checkError?.message || 'none'
       })
@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
       }
 
       const currentProject = projectResults[0]
-      console.log('Current project status:', currentProject.status)
+      if (process.env.NODE_ENV === 'development') console.log('Current project status:', currentProject.status)
 
       // 이미 업체가 선정되었거나 진행 중인지 확인
       if (['contractor-selected', 'in-progress', 'completed'].includes(currentProject.status)) {
-        console.log('Project already has a selected contractor')
+        if (process.env.NODE_ENV === 'development') console.log('Project already has a selected contractor')
         return NextResponse.json({
           success: false,
           message: '이미 업체가 선정된 프로젝트입니다',
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. 선택된 견적이 해당 프로젝트의 것인지 확인
-      console.log('🔍 견적서 조회 시작:', { contractorQuoteId, projectId })
+      if (process.env.NODE_ENV === 'development') console.log('🔍 견적서 조회 시작:', { contractorQuoteId, projectId })
       
       const { data: quoteResults, error: quoteCheckError } = await supabase
         .from('contractor_quotes')
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         .eq('id', contractorQuoteId)
         .eq('project_id', projectId)
 
-      console.log('견적서 조회 결과:', {
+      if (process.env.NODE_ENV === 'development') console.log('견적서 조회 결과:', {
         resultCount: quoteResults?.length || 0,
         error: quoteCheckError?.message || 'none',
         quotes: quoteResults
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
           .select('id, project_id')
           .eq('id', contractorQuoteId)
 
-        console.log('조건 없이 해당 ID 조회:', allQuotes)
+        if (process.env.NODE_ENV === 'development') console.log('조건 없이 해당 ID 조회:', allQuotes)
 
         throw new Error(`해당 견적서를 찾을 수 없습니다 (ID: ${contractorQuoteId}, Project: ${projectId})`)
       }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       }
 
       const selectedQuote = quoteResults[0]
-      console.log('✅ 견적서 확인 완료:', {
+      if (process.env.NODE_ENV === 'development') console.log('✅ 견적서 확인 완료:', {
         id: selectedQuote.id,
         contractor_id: selectedQuote.contractor_id,
         status: selectedQuote.status
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
       const acceptedQuote = acceptedQuoteResults[0]
       updateResults.acceptedQuote = acceptedQuote
-      console.log('✅ Contractor quote accepted:', acceptedQuote?.id)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Contractor quote accepted:', acceptedQuote?.id)
 
       // 4. 같은 프로젝트의 다른 업체들을 'rejected'로 변경
       const { data: rejectedQuotes, error: rejectError } = await supabase
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         // 다른 견적 거절 실패는 치명적이지 않으므로 경고만 표시
       } else {
         updateResults.rejectedQuotes = rejectedQuotes
-        console.log(`✅ Rejected ${rejectedQuotes?.length || 0} other quotes`)
+        if (process.env.NODE_ENV === 'development') console.log(`✅ Rejected ${rejectedQuotes?.length || 0} other quotes`)
       }
 
       // 5. ✅ 프로젝트 상태를 'contractor-selected'로 변경 (completed 아님!)
@@ -186,10 +186,10 @@ export async function POST(request: NextRequest) {
 
       const updatedProject = updatedProjectResults[0]
       updateResults.updatedProject = updatedProject
-      console.log('✅ Project status updated to:', updatedProject?.status)
+      if (process.env.NODE_ENV === 'development') console.log('✅ Project status updated to:', updatedProject?.status)
 
       // 6. ✅ 업체 정보 조회 (이메일 발송용) - 개선된 로직
-      console.log('🔍 업체 정보 조회 시작, contractor_id:', acceptedQuote?.contractor_id)
+      if (process.env.NODE_ENV === 'development') console.log('🔍 업체 정보 조회 시작, contractor_id:', acceptedQuote?.contractor_id)
       
       const { data: contractorResults, error: contractorError } = await supabase
         .from('contractors')
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
         console.error('❌ 업체 정보를 찾을 수 없습니다')
       } else {
         contractorInfo = contractorResults[0]
-        console.log('✅ contractors 테이블 조회 성공:', {
+        if (process.env.NODE_ENV === 'development') console.log('✅ contractors 테이블 조회 성공:', {
           id: contractorInfo?.id,
           company_name: contractorInfo?.company_name,
           email: contractorInfo?.email || '(비어있음)',
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
       let emailSource = 'contractors'
 
       if (!contractorEmail && contractorInfo?.user_id) {
-        console.log('📧 contractors.email이 비어있음. users 테이블에서 조회 시도...')
+        if (process.env.NODE_ENV === 'development') console.log('📧 contractors.email이 비어있음. users 테이블에서 조회 시도...')
         
         const { data: userResults, error: userError } = await supabase
           .from('users')
@@ -226,15 +226,15 @@ export async function POST(request: NextRequest) {
         if (!userError && userResults && userResults.length > 0 && userResults[0]?.email) {
           contractorEmail = userResults[0].email
           emailSource = 'users'
-          console.log('✅ users 테이블에서 이메일 찾음:', contractorEmail)
+          if (process.env.NODE_ENV === 'development') console.log('✅ users 테이블에서 이메일 찾음:', contractorEmail)
         } else {
-          console.log('❌ users 테이블에도 이메일 없음:', userError?.message)
+          if (process.env.NODE_ENV === 'development') console.log('❌ users 테이블에도 이메일 없음:', userError?.message)
         }
       }
 
       // ✅ users 테이블에도 없으면 auth.users에서 조회
       if (!contractorEmail && contractorInfo?.user_id) {
-        console.log('📧 users 테이블에도 없음. auth.users에서 조회 시도...')
+        if (process.env.NODE_ENV === 'development') console.log('📧 users 테이블에도 없음. auth.users에서 조회 시도...')
         
         const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(
           contractorInfo.user_id
@@ -243,13 +243,13 @@ export async function POST(request: NextRequest) {
         if (!authError && authUser?.user?.email) {
           contractorEmail = authUser.user.email
           emailSource = 'auth.users'
-          console.log('✅ auth.users에서 이메일 찾음:', contractorEmail)
+          if (process.env.NODE_ENV === 'development') console.log('✅ auth.users에서 이메일 찾음:', contractorEmail)
         } else {
-          console.log('❌ auth.users에도 이메일 없음:', authError?.message)
+          if (process.env.NODE_ENV === 'development') console.log('❌ auth.users에도 이메일 없음:', authError?.message)
         }
       }
 
-      console.log('📧 최종 이메일 주소:', contractorEmail || '(없음)', '출처:', emailSource)
+      if (process.env.NODE_ENV === 'development') console.log('📧 최종 이메일 주소:', contractorEmail || '(없음)', '출처:', emailSource)
 
       // 7. ✅ 고객 정보 조회 (users 테이블 + quote_requests 테이블)
       const { data: customerResults, error: customerError } = await supabase
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
       if (customerError) {
         console.error('고객 정보 조회 실패:', customerError)
       } else {
-        console.log('✅ Customer info loaded:', {
+        if (process.env.NODE_ENV === 'development') console.log('✅ Customer info loaded:', {
           email: customerInfo?.email,
           phone: customerPhone,
           name: customerName || '고객'
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
       // 8. ✅ 이메일 발송 (실패해도 전체 프로세스는 계속 진행)
       if (contractorEmail) {
         try {
-          console.log('📧 이메일 발송 시작:', contractorEmail)
+          if (process.env.NODE_ENV === 'development') console.log('📧 이메일 발송 시작:', contractorEmail)
           
           // ✅ 업체에게 선정 알림 이메일 발송 (고객 정보 포함)
           const contractorEmailHtml = createSelectionEmailTemplate(
@@ -300,7 +300,7 @@ export async function POST(request: NextRequest) {
             html: contractorEmailHtml
           })
 
-          console.log('✅ Selection notification email sent to contractor:', contractorEmail, `(출처: ${emailSource})`)
+          if (process.env.NODE_ENV === 'development') console.log('✅ Selection notification email sent to contractor:', contractorEmail, `(출처: ${emailSource})`)
 
           // 고객에게도 알림 이메일 발송 (옵션)
           if (customerInfo?.email) {
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
               html: customerEmailHtml
             })
 
-            console.log('✅ Notification email sent to customer')
+            if (process.env.NODE_ENV === 'development') console.log('✅ Notification email sent to customer')
           }
         } catch (emailError: any) {
           // 이메일 발송 실패는 전체 프로세스를 중단시키지 않음
@@ -342,8 +342,8 @@ export async function POST(request: NextRequest) {
         throw new Error(`프로젝트 상태가 예상과 다릅니다: ${finalCheck?.status}`)
       }
 
-      console.log('✅ Final verification successful:', finalCheck.status)
-      console.log('=== UPDATE COMPLETE ===')
+      if (process.env.NODE_ENV === 'development') console.log('✅ Final verification successful:', finalCheck.status)
+      if (process.env.NODE_ENV === 'development') console.log('=== UPDATE COMPLETE ===')
 
       // 성공 응답
       return NextResponse.json({ 

@@ -112,7 +112,7 @@ export default function QuoteDetailPage() {
       })) || []
 
       setSiteVisitApplications(applications)
-      console.log('Site visit applications:', applications)
+      if (process.env.NODE_ENV === 'development') console.log('Site visit applications:', applications)
     } catch (error) {
       console.error('Unexpected error fetching site visit applications:', error)
     }
@@ -133,10 +133,10 @@ export default function QuoteDetailPage() {
       }
 
       setQuote(data)
-      console.log('Quote fetched:', data)
-      console.log('Quote status:', data?.status)
-      console.log('Visit date:', data?.visit_date)
-      console.log('Visit dates:', data?.visit_dates)
+      if (process.env.NODE_ENV === 'development') console.log('Quote fetched:', data)
+      if (process.env.NODE_ENV === 'development') console.log('Quote status:', data?.status)
+      if (process.env.NODE_ENV === 'development') console.log('Visit date:', data?.visit_date)
+      if (process.env.NODE_ENV === 'development') console.log('Visit dates:', data?.visit_dates)
     } catch (error) {
       console.error('Unexpected error fetching quote:', error)
     }
@@ -164,7 +164,7 @@ export default function QuoteDetailPage() {
         setQuote({ ...quote, status: finalStatus })
       }
       
-      console.log(`견적 요청 상태 변경: ${newStatus} → ${finalStatus}`)
+      if (process.env.NODE_ENV === 'development') console.log(`견적 요청 상태 변경: ${newStatus} → ${finalStatus}`)
     } catch (error) {
       console.error('Unexpected error updating quote status:', error)
     }

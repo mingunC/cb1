@@ -79,7 +79,7 @@ export default function AdminEventsPage() {
   // 인증 헤더 가져오기 헬퍼 함수 - 개선된 버전
   const getAuthHeaders = async () => {
     try {
-      console.log('🔑 인증 헤더 가져오기 시작')
+      if (process.env.NODE_ENV === 'development') console.log('🔑 인증 헤더 가져오기 시작')
       
       // localStorage에서 직접 세션 읽기 (더 빠르고 안정적)
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -91,10 +91,10 @@ export default function AdminEventsPage() {
       
       // localStorage 키 패턴: sb-{project-ref}-auth-token
       const storageKey = `sb-${projectRef}-auth-token`
-      console.log('📦 localStorage 키:', storageKey)
+      if (process.env.NODE_ENV === 'development') console.log('📦 localStorage 키:', storageKey)
       
       const sessionData = localStorage.getItem(storageKey)
-      console.log('📋 세션 데이터 존재:', !!sessionData)
+      if (process.env.NODE_ENV === 'development') console.log('📋 세션 데이터 존재:', !!sessionData)
       
       if (!sessionData) {
         throw new Error('로그인 세션을 찾을 수 없습니다. 다시 로그인해주세요.')
@@ -103,13 +103,13 @@ export default function AdminEventsPage() {
       const session = JSON.parse(sessionData)
       const accessToken = session?.access_token
       
-      console.log('🎫 액세스 토큰 존재:', !!accessToken)
+      if (process.env.NODE_ENV === 'development') console.log('🎫 액세스 토큰 존재:', !!accessToken)
       
       if (!accessToken) {
         throw new Error('액세스 토큰이 없습니다. 다시 로그인해주세요.')
       }
       
-      console.log('✅ 인증 헤더 준비 완료')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 인증 헤더 준비 완료')
       
       return {
         'Content-Type': 'application/json',
@@ -158,12 +158,12 @@ export default function AdminEventsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('📝 폼 제출 시작')
-    console.log('폼 데이터:', formData)
+    if (process.env.NODE_ENV === 'development') console.log('📝 폼 제출 시작')
+    if (process.env.NODE_ENV === 'development') console.log('폼 데이터:', formData)
 
     // 이미 제출 중이면 중복 제출 방지
     if (isSubmitting) {
-      console.log('⚠️ 이미 제출 중입니다')
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ 이미 제출 중입니다')
       return
     }
 
@@ -171,12 +171,12 @@ export default function AdminEventsPage() {
 
     try {
       // 인증 헤더 가져오기
-      console.log('1️⃣ 인증 헤더 가져오기...')
+      if (process.env.NODE_ENV === 'development') console.log('1️⃣ 인증 헤더 가져오기...')
       const headers = await getAuthHeaders()
-      console.log('✅ 인증 헤더 준비 완료')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 인증 헤더 준비 완료')
 
       // 데이터 변환
-      console.log('2️⃣ 데이터 변환 중...')
+      if (process.env.NODE_ENV === 'development') console.log('2️⃣ 데이터 변환 중...')
       const eventData = {
         ...formData,
         subtitle: formData.subtitle || '', // 빈 문자열로 기본값 설정
@@ -195,11 +195,11 @@ export default function AdminEventsPage() {
           ? formData.tags.split(',').map(t => t.trim()).filter(t => t) 
           : []
       }
-      console.log('변환된 데이터:', eventData)
+      if (process.env.NODE_ENV === 'development') console.log('변환된 데이터:', eventData)
 
       if (editingEvent) {
         // 수정
-        console.log('3️⃣ 이벤트 수정 API 호출...')
+        if (process.env.NODE_ENV === 'development') console.log('3️⃣ 이벤트 수정 API 호출...')
         const response = await fetch('/api/events', {
           method: 'PUT',
           headers,
@@ -207,9 +207,9 @@ export default function AdminEventsPage() {
           body: JSON.stringify({ id: editingEvent.id, ...eventData })
         })
 
-        console.log('응답 상태:', response.status)
+        if (process.env.NODE_ENV === 'development') console.log('응답 상태:', response.status)
         const result = await response.json()
-        console.log('응답 데이터:', result)
+        if (process.env.NODE_ENV === 'development') console.log('응답 데이터:', result)
 
         if (!response.ok) {
           throw new Error(result.error || 'Failed to update event')
@@ -217,7 +217,7 @@ export default function AdminEventsPage() {
         showNotification('success', '이벤트가 수정되었습니다.')
       } else {
         // 생성
-        console.log('3️⃣ 이벤트 생성 API 호출...')
+        if (process.env.NODE_ENV === 'development') console.log('3️⃣ 이벤트 생성 API 호출...')
         const response = await fetch('/api/events', {
           method: 'POST',
           headers,
@@ -225,9 +225,9 @@ export default function AdminEventsPage() {
           body: JSON.stringify(eventData)
         })
 
-        console.log('응답 상태:', response.status)
+        if (process.env.NODE_ENV === 'development') console.log('응답 상태:', response.status)
         const result = await response.json()
-        console.log('응답 데이터:', result)
+        if (process.env.NODE_ENV === 'development') console.log('응답 데이터:', result)
 
         if (!response.ok) {
           throw new Error(result.error || 'Failed to create event')
@@ -235,9 +235,9 @@ export default function AdminEventsPage() {
         showNotification('success', '이벤트가 생성되었습니다.')
       }
 
-      console.log('4️⃣ 이벤트 목록 새로고침...')
+      if (process.env.NODE_ENV === 'development') console.log('4️⃣ 이벤트 목록 새로고침...')
       await fetchEvents()
-      console.log('✅ 완료!')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 완료!')
       handleCloseModal()
     } catch (error) {
       console.error('❌ Error saving event:', error)

@@ -148,7 +148,7 @@ export default function SignupPage() {
     }
 
     try {
-      console.log('🚀 Starting signup process...')
+      if (process.env.NODE_ENV === 'development') console.log('🚀 Starting signup process...')
       
       // 회원가입 시도 (user metadata에 추가 정보 저장)
       const { data, error } = await supabase.auth.signUp({
@@ -165,7 +165,7 @@ export default function SignupPage() {
         }
       })
       
-      console.log('✅ Signup response:', { 
+      if (process.env.NODE_ENV === 'development') console.log('✅ Signup response:', { 
         userId: data.user?.id, 
         email: data.user?.email,
         emailConfirmed: data.user?.email_confirmed_at,
@@ -182,8 +182,8 @@ export default function SignupPage() {
         // Database trigger가 자동으로 users 테이블에 레코드를 생성합니다
         // 추가 정보는 이메일 확인 후 업데이트됩니다
         
-        console.log('✅ User created successfully - database trigger will handle users table')
-        console.log('📧 Email confirmation required - showing confirmation screen')
+        if (process.env.NODE_ENV === 'development') console.log('✅ User created successfully - database trigger will handle users table')
+        if (process.env.NODE_ENV === 'development') console.log('📧 Email confirmation required - showing confirmation screen')
         
         setUserEmail(formData.email)
         setEmailSent(true)

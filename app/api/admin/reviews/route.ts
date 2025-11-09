@@ -11,7 +11,7 @@ async function createServerClient(request: Request) {
   
   // 모든 쿠키 로깅
   const allCookies = cookieStore.getAll()
-  console.log('🍪 [API] All cookies:', allCookies.map(c => ({
+  if (process.env.NODE_ENV === 'development') console.log('🍪 [API] All cookies:', allCookies.map(c => ({
     name: c.name,
     hasValue: !!c.value,
     valueLength: c.value?.length || 0
@@ -21,7 +21,7 @@ async function createServerClient(request: Request) {
   const authHeader = request.headers.get('Authorization')
   const token = authHeader?.replace('Bearer ', '')
   
-  console.log('🔐 [API] Authorization 헤더 확인:', {
+  if (process.env.NODE_ENV === 'development') console.log('🔐 [API] Authorization 헤더 확인:', {
     hasAuthHeader: !!authHeader,
     hasToken: !!token,
     tokenPrefix: token ? token.substring(0, 20) + '...' : 'none'
@@ -63,17 +63,17 @@ async function createServerClient(request: Request) {
 
 // GET /api/admin/reviews - 모든 리뷰 조회
 export async function GET(request: Request) {
-  console.log('\n🔍 [API] ==================== GET /api/admin/reviews ====================')
-  console.log('⏰ [API] Timestamp:', new Date().toISOString())
+  if (process.env.NODE_ENV === 'development') console.log('\n🔍 [API] ==================== GET /api/admin/reviews ====================')
+  if (process.env.NODE_ENV === 'development') console.log('⏰ [API] Timestamp:', new Date().toISOString())
   
   try {
     const supabase = await createServerClient(request)
     
     // ✅ getUser()로 Authorization 헤더 토큰 검증
-    console.log('🔍 [API] Checking user from token...')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 [API] Checking user from token...')
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    console.log('📧 [API] User result:', {
+    if (process.env.NODE_ENV === 'development') console.log('📧 [API] User result:', {
       hasUser: !!user,
       email: user?.email || 'no-email',
       userId: user?.id || 'no-id',
@@ -98,14 +98,14 @@ export async function GET(request: Request) {
     }
 
     const userEmail = user.email
-    console.log('📧 [API] User email from token:', userEmail)
+    if (process.env.NODE_ENV === 'development') console.log('📧 [API] User email from token:', userEmail)
 
     if (userEmail !== ADMIN_EMAIL) {
       console.error('❌ [API] User is not admin:', userEmail, 'Expected:', ADMIN_EMAIL)
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    console.log('✅ [API] Admin authorization successful:', userEmail)
+    if (process.env.NODE_ENV === 'development') console.log('✅ [API] Admin authorization successful:', userEmail)
 
     // URL에서 쿼리 파라미터 추출
     const { searchParams } = new URL(request.url)
@@ -113,10 +113,10 @@ export async function GET(request: Request) {
     const customerId = searchParams.get('customer_id')
     const hasReply = searchParams.get('has_reply')
 
-    console.log('🔍 [API] Query parameters:', { contractorId, customerId, hasReply })
+    if (process.env.NODE_ENV === 'development') console.log('🔍 [API] Query parameters:', { contractorId, customerId, hasReply })
 
     // 리뷰 조회
-    console.log('📊 [API] Building query...')
+    if (process.env.NODE_ENV === 'development') console.log('📊 [API] Building query...')
     let query = supabase
       .from('reviews')
       .select(`
@@ -147,22 +147,22 @@ export async function GET(request: Request) {
 
     // 필터 적용
     if (contractorId) {
-      console.log('🔍 [API] Filtering by contractor:', contractorId)
+      if (process.env.NODE_ENV === 'development') console.log('🔍 [API] Filtering by contractor:', contractorId)
       query = query.eq('contractor_id', contractorId)
     }
     if (customerId) {
-      console.log('🔍 [API] Filtering by customer:', customerId)
+      if (process.env.NODE_ENV === 'development') console.log('🔍 [API] Filtering by customer:', customerId)
       query = query.eq('customer_id', customerId)
     }
     if (hasReply === 'true') {
-      console.log('🔍 [API] Filtering: has reply')
+      if (process.env.NODE_ENV === 'development') console.log('🔍 [API] Filtering: has reply')
       query = query.not('contractor_reply', 'is', null)
     } else if (hasReply === 'false') {
-      console.log('🔍 [API] Filtering: no reply')
+      if (process.env.NODE_ENV === 'development') console.log('🔍 [API] Filtering: no reply')
       query = query.is('contractor_reply', null)
     }
 
-    console.log('📊 [API] Executing query...')
+    if (process.env.NODE_ENV === 'development') console.log('📊 [API] Executing query...')
     const { data: reviews, error } = await query
 
     if (error) {
@@ -173,8 +173,8 @@ export async function GET(request: Request) {
       }, { status: 500 })
     }
 
-    console.log(`✅ [API] Successfully fetched ${reviews?.length || 0} reviews`)
-    console.log('🔍 [API] ==================== END ====================\n')
+    if (process.env.NODE_ENV === 'development') console.log(`✅ [API] Successfully fetched ${reviews?.length || 0} reviews`)
+    if (process.env.NODE_ENV === 'development') console.log('🔍 [API] ==================== END ====================\n')
     return NextResponse.json({ reviews: reviews || [] })
   } catch (error: any) {
     console.error('❌ [API] Unexpected error:', error)
@@ -188,7 +188,7 @@ export async function GET(request: Request) {
 
 // DELETE /api/admin/reviews?id=xxx - 리뷰 삭제
 export async function DELETE(request: Request) {
-  console.log('\n🗑️ [API] ==================== DELETE /api/admin/reviews ====================')
+  if (process.env.NODE_ENV === 'development') console.log('\n🗑️ [API] ==================== DELETE /api/admin/reviews ====================')
   
   try {
     const supabase = await createServerClient(request)
@@ -213,7 +213,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Review ID required' }, { status: 400 })
     }
 
-    console.log('🗑️ [API] Deleting review:', reviewId)
+    if (process.env.NODE_ENV === 'development') console.log('🗑️ [API] Deleting review:', reviewId)
 
     // 리뷰 삭제
     const { error } = await supabase
@@ -226,8 +226,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('✅ [API] Review deleted successfully')
-    console.log('🗑️ [API] ==================== END ====================\n')
+    if (process.env.NODE_ENV === 'development') console.log('✅ [API] Review deleted successfully')
+    if (process.env.NODE_ENV === 'development') console.log('🗑️ [API] ==================== END ====================\n')
     return NextResponse.json({ success: true, message: 'Review deleted successfully' })
   } catch (error: any) {
     console.error('❌ [API] Unexpected error:', error)
@@ -237,7 +237,7 @@ export async function DELETE(request: Request) {
 
 // PATCH /api/admin/reviews - 리뷰 수정
 export async function PATCH(request: Request) {
-  console.log('\n✏️ [API] ==================== PATCH /api/admin/reviews ====================')
+  if (process.env.NODE_ENV === 'development') console.log('\n✏️ [API] ==================== PATCH /api/admin/reviews ====================')
   
   try {
     const supabase = await createServerClient(request)
@@ -262,7 +262,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Review ID required' }, { status: 400 })
     }
 
-    console.log('✏️ [API] Updating review:', id, 'with data:', { 
+    if (process.env.NODE_ENV === 'development') console.log('✏️ [API] Updating review:', id, 'with data:', { 
       hasTitle: !!title, 
       hasComment: !!comment, 
       hasReply: !!contractor_reply, 
@@ -296,8 +296,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('✅ [API] Review updated successfully')
-    console.log('✏️ [API] ==================== END ====================\n')
+    if (process.env.NODE_ENV === 'development') console.log('✅ [API] Review updated successfully')
+    if (process.env.NODE_ENV === 'development') console.log('✏️ [API] ==================== END ====================\n')
     return NextResponse.json({ success: true, review: data })
   } catch (error: any) {
     console.error('❌ [API] Unexpected error:', error)

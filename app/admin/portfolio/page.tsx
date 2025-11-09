@@ -66,47 +66,47 @@ export default function AdminPortfolioPage() {
 
   const checkUser = async () => {
     try {
-      console.log('🔍 포트폴리오 페이지: 사용자 확인 시작')
+      if (process.env.NODE_ENV === 'development') console.log('🔍 포트폴리오 페이지: 사용자 확인 시작')
       const supabase = createBrowserClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error || !user) {
-        console.log('❌ 사용자 없음, 로그인 페이지로 이동')
+        if (process.env.NODE_ENV === 'development') console.log('❌ 사용자 없음, 로그인 페이지로 이동')
         router.push('/login')
         return
       }
 
-      console.log('👤 사용자 확인:', user.email)
+      if (process.env.NODE_ENV === 'development') console.log('👤 사용자 확인:', user.email)
 
       if (user.email !== 'cmgg919@gmail.com') {
-        console.log('❌ 관리자 권한 없음')
+        if (process.env.NODE_ENV === 'development') console.log('❌ 관리자 권한 없음')
         router.push('/')
         return
       }
 
-      console.log('✅ 관리자 권한 확인됨')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 관리자 권한 확인됨')
       setUser(user)
       setIsAuthorized(true)
       
-      console.log('📊 데이터 로딩 시작...')
+      if (process.env.NODE_ENV === 'development') console.log('📊 데이터 로딩 시작...')
       await Promise.all([
         fetchProjects(),
         fetchContractors()
       ])
-      console.log('✅ 데이터 로딩 완료')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 데이터 로딩 완료')
       
     } catch (error) {
       console.error('❌ 에러 발생:', error)
       router.push('/login')
     } finally {
-      console.log('🏁 로딩 상태 해제')
+      if (process.env.NODE_ENV === 'development') console.log('🏁 로딩 상태 해제')
       setIsLoading(false)
     }
   }
 
   const fetchProjects = async () => {
     try {
-      console.log('📂 포트폴리오 가져오기 시작')
+      if (process.env.NODE_ENV === 'development') console.log('📂 포트폴리오 가져오기 시작')
       const supabase = createBrowserClient()
       
       // 포트폴리오와 업체 정보를 별도로 조회
@@ -121,7 +121,7 @@ export default function AdminPortfolioPage() {
         return
       }
 
-      console.log('✅ 포트폴리오 조회 성공:', portfolios?.length, '개')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 포트폴리오 조회 성공:', portfolios?.length, '개')
 
       // 업체 정보 조회
       const { data: contractors, error: contractorsError } = await supabase
@@ -134,7 +134,7 @@ export default function AdminPortfolioPage() {
         return
       }
 
-      console.log('✅ 업체 정보 조회 성공:', contractors?.length, '개')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 업체 정보 조회 성공:', contractors?.length, '개')
 
       // 포트폴리오와 업체 정보 결합
       const projectsWithContractors = portfolios?.map(portfolio => ({
@@ -142,7 +142,7 @@ export default function AdminPortfolioPage() {
         contractors: contractors?.find(c => c.id === portfolio.contractor_id) || null
       })) || []
 
-      console.log('✅ 데이터 결합 완료:', projectsWithContractors.length, '개')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 데이터 결합 완료:', projectsWithContractors.length, '개')
       setProjects(projectsWithContractors)
     } catch (error) {
       console.error('❌ fetchProjects 에러:', error)
@@ -152,7 +152,7 @@ export default function AdminPortfolioPage() {
 
   const fetchContractors = async () => {
     try {
-      console.log('🏢 업체 목록 가져오기 시작')
+      if (process.env.NODE_ENV === 'development') console.log('🏢 업체 목록 가져오기 시작')
       const supabase = createBrowserClient()
       
       const { data, error } = await supabase
@@ -165,7 +165,7 @@ export default function AdminPortfolioPage() {
         return
       }
 
-      console.log('✅ 업체 목록 조회 성공:', data?.length, '개')
+      if (process.env.NODE_ENV === 'development') console.log('✅ 업체 목록 조회 성공:', data?.length, '개')
       setContractors(data || [])
     } catch (error) {
       console.error('❌ fetchContractors 에러:', error)

@@ -10,7 +10,7 @@ const createServerClient = async (request: NextRequest) => {
   const authHeader = request.headers.get('authorization')
   const token = authHeader?.replace('Bearer ', '')
   
-  console.log('🔐 API: Authorization 헤더 확인:', {
+  if (process.env.NODE_ENV === 'development') console.log('🔐 API: Authorization 헤더 확인:', {
     hasAuthHeader: !!authHeader,
     hasToken: !!token,
     tokenPrefix: token ? token.substring(0, 20) + '...' : 'none'
@@ -141,12 +141,12 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient(request)
     
-    console.log('🔍 사용자 인증 확인 시작')
+    if (process.env.NODE_ENV === 'development') console.log('🔍 사용자 인증 확인 시작')
     
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    console.log('👤 인증 결과:', {
+    if (process.env.NODE_ENV === 'development') console.log('👤 인증 결과:', {
       hasUser: !!user,
       userId: user?.id,
       email: user?.email,
@@ -161,11 +161,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ 인증 성공:', { userId: user.id, email: user.email })
+    if (process.env.NODE_ENV === 'development') console.log('✅ 인증 성공:', { userId: user.id, email: user.email })
 
     // 관리자 또는 업체 확인
     const isAdmin = user.email === 'cmgg919@gmail.com'
-    console.log('🔍 관리자 확인:', { email: user.email, isAdmin })
+    if (process.env.NODE_ENV === 'development') console.log('🔍 관리자 확인:', { email: user.email, isAdmin })
 
     // 업체 정보 확인 (관리자가 아닌 경우)
     let contractorId = null
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
         )
       }
       contractorId = contractorData.id
-      console.log('🏢 업체 ID:', contractorId)
+      if (process.env.NODE_ENV === 'development') console.log('🏢 업체 ID:', contractorId)
     }
 
     const body = await request.json()
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('📝 이벤트 생성 데이터:', eventData)
+    if (process.env.NODE_ENV === 'development') console.log('📝 이벤트 생성 데이터:', eventData)
 
     const { data: event, error } = await supabase
       .from('events')
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ 이벤트 생성 성공:', event.id)
+    if (process.env.NODE_ENV === 'development') console.log('✅ 이벤트 생성 성공:', event.id)
 
     return NextResponse.json({ event }, { status: 201 })
   } catch (error) {

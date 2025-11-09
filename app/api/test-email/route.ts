@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail, verifyMailgunConfig } from '@/lib/email/mailgun'
 
 export async function GET(request: NextRequest) {
-  console.log('=== TEST EMAIL API CALLED ===');
+  if (process.env.NODE_ENV === 'development') console.log('=== TEST EMAIL API CALLED ===');
   
   try {
     // 먼저 Mailgun 설정 검증
-    console.log('Checking Mailgun configuration...');
+    if (process.env.NODE_ENV === 'development') console.log('Checking Mailgun configuration...');
     const configCheck = await verifyMailgunConfig();
     
     if (!configCheck.success) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
     
     // 테스트 이메일 발송
-    console.log('Sending test email...');
+    if (process.env.NODE_ENV === 'development') console.log('Sending test email...');
     const testEmail = {
       to: 'mingun.ryan.choi@gmail.com', // 여기에 테스트할 이메일 주소 입력
       subject: '🧪 Canada Beaver - Mailgun 테스트 이메일',
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     };
 
     const result = await sendEmail(testEmail);
-    console.log('Email send result:', result);
+    if (process.env.NODE_ENV === 'development') console.log('Email send result:', result);
     
     if (result.success) {
       return NextResponse.json({
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 
 // POST 메서드로 특정 이메일 주소로 테스트
 export async function POST(request: NextRequest) {
-  console.log('=== TEST EMAIL POST API CALLED ===');
+  if (process.env.NODE_ENV === 'development') console.log('=== TEST EMAIL POST API CALLED ===');
   
   try {
     const body = await request.json();
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    console.log('Sending test email to:', email);
+    if (process.env.NODE_ENV === 'development') console.log('Sending test email to:', email);
     
     const testEmail = {
       to: email,
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     };
     
     const result = await sendEmail(testEmail);
-    console.log('Email send result:', result);
+    if (process.env.NODE_ENV === 'development') console.log('Email send result:', result);
     
     return NextResponse.json({
       success: result.success,
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
 
 // 설정 확인용 엔드포인트
 export async function PUT(request: NextRequest) {
-  console.log('=== MAILGUN CONFIG CHECK ===');
+  if (process.env.NODE_ENV === 'development') console.log('=== MAILGUN CONFIG CHECK ===');
   
   return NextResponse.json({
     config: {

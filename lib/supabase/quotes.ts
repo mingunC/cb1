@@ -25,7 +25,7 @@ export async function getQuoteRequests(userId: string) {
   
   // 2차: quotes 테이블 폴백 (테이블 없음 오류 시)
   if (error?.code === '42P01') { // 테이블 없음
-    console.log('Falling back to quotes table')
+    if (process.env.NODE_ENV === 'development') console.log('Falling back to quotes table')
     const quotesResult = await supabase
       .from('quotes')
       .select('*')
@@ -54,7 +54,7 @@ export async function createQuoteRequest(quoteData: any) {
   
   // 2차: quotes 테이블 폴백
   if (error?.code === '42P01') { // 테이블 없음
-    console.log('Falling back to quotes table for insert')
+    if (process.env.NODE_ENV === 'development') console.log('Falling back to quotes table for insert')
     
     // quote_requests 형식을 quotes 형식으로 변환
     const transformedData = {

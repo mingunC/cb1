@@ -87,7 +87,7 @@ export const canApplySiteVisit = (project: Project): boolean => {
  */
 export const debugLog = (message: string, data?: any) => {
   if (process.env.NODE_ENV === 'development') {
-    console.log(message, data)
+    if (process.env.NODE_ENV === 'development') console.log(message, data)
   }
 }
 
