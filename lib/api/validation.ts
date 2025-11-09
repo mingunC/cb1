@@ -12,3 +12,17 @@ export async function parseJsonBody<T>(req: Request, schema: ZodSchema<T>): Prom
   return result.data
 }
 
+export function parseSearchParams<T>(
+  url: string,
+  schema: ZodSchema<T>
+): T {
+  const searchParams = Object.fromEntries(new URL(url).searchParams.entries())
+  const result = schema.safeParse(searchParams)
+
+  if (!result.success) {
+    throw ApiErrors.badRequest('쿼리 파라미터가 올바르지 않습니다.')
+  }
+
+  return result.data
+}
+
