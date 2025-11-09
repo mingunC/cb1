@@ -1,56 +1,31 @@
-// ============================================
-// 9. API 라우트 - 견적서 제출 (이메일 전송 개선)
-// ============================================
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { sendEmail } from '@/lib/email/mailgun'
-import { createQuoteSubmissionTemplate } from '@/lib/email/mailgun'
+import { createApiHandler } from '@/lib/api/handler'
+import { successResponse } from '@/lib/api/response'
+import { ApiErrors } from '@/lib/api/error'
+import { requireRole } from '@/lib/api/auth'
+import { createAdminClient } from '@/lib/supabase/server-clients'
+import { sendEmail, createQuoteSubmissionTemplate } from '@/lib/email/mailgun'
 
-export async function POST(request: NextRequest) {
-  try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Server Component에서 호출된 경우 무시
-            }
-          },
-        },
-      }
-    )
+const handler = createApiHandler({
+  POST: async (req) => {
+    const { user } = await requireRole(['contractor'])
+    const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await req.json()
 
-    const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await request.json()
-
-    if (process.env.NODE_ENV === 'development') console.log('🎯 Quote submission received:', {
-      projectId: projectId?.slice(0, 8),
-      contractorId: contractorId?.slice(0, 8),
-      price,
-      hasPdf: !!pdfUrl,
-      hasDescription: !!description
-    })
-
-    // ✅ 필수 필드 검증 (description은 선택 사항)
     if (!projectId || !contractorId || !price) {
-      console.error('❌ Missing required fields:', { projectId, contractorId, price })
-      return NextResponse.json(
-        { error: '필수 필드가 누락되었습니다.' },
-        { status: 400 }
-      )
+      throw ApiErrors.badRequest('필수 필드가 누락되었습니다.')
     }
 
-    // 프로젝트가 비딩 상태인지 확인
+    const supabase = createAdminClient()
+
+    if (process.env.NODE_ENV === 'development')
+      console.log('🎯 Quote submission received:', {
+        projectId: projectId?.slice(0, 8),
+        contractorId: contractorId?.slice(0, 8),
+        price,
+        hasPdf: !!pdfUrl,
+        hasDescription: !!description,
+        userId: user.id.slice(0, 8),
+      })
+
     const { data: project, error: projectError } = await supabase
       .from('quote_requests')
       .select('status')
@@ -58,236 +33,117 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (projectError || !project) {
-      console.error('❌ Project not found:', projectError)
-      return NextResponse.json(
-        { error: '프로젝트를 찾을 수 없습니다.' },
-        { status: 404 }
-      )
+      throw ApiErrors.notFound('프로젝트')
     }
 
     if (project.status !== 'bidding') {
-      console.warn('⚠️ Project not in bidding status:', project.status)
-      return NextResponse.json(
-        { error: '현재 프로젝트는 견적서 제출 단계가 아닙니다.' },
-        { status: 400 }
-      )
+      throw ApiErrors.badRequest('현재 프로젝트는 견적서 제출 단계가 아닙니다.')
     }
 
-    // 견적서 저장
-    if (process.env.NODE_ENV === 'development') console.log('💾 Saving quote to database...')
     const { data: quote, error: quoteError } = await supabase
       .from('contractor_quotes')
       .insert({
         project_id: projectId,
         contractor_id: contractorId,
         price: parseFloat(price),
-        description: description || null, // ✅ description이 없으면 null
+        description: description || null,
         pdf_url: pdfUrl,
         pdf_filename: pdfFilename,
-        status: 'submitted'
+        status: 'submitted',
       })
       .select()
       .single()
 
     if (quoteError) {
       console.error('❌ Quote save error:', quoteError)
-      return NextResponse.json(
-        { error: '견적서 저장에 실패했습니다.' },
-        { status: 500 }
-      )
+      throw ApiErrors.internal('견적서 저장에 실패했습니다.')
     }
 
-    if (process.env.NODE_ENV === 'development') console.log('✅ Quote saved successfully:', quote.id)
-
-    // ⚠️ 프로젝트 상태는 'bidding'으로 유지 (여러 업체가 견적서 제출 가능)
-    if (process.env.NODE_ENV === 'development') console.log('✅ 견적서 저장 완료 - 프로젝트는 bidding 상태 유지')
-
-    // ✅ 개선된 이메일 전송 로직
-    if (process.env.NODE_ENV === 'development') console.log('📧 ========== EMAIL SENDING PROCESS START ==========')
-    if (process.env.NODE_ENV === 'development') console.log('🔧 Environment check:', {
-      hasApiKey: !!process.env.MAILGUN_API_KEY,
-      apiKeyPrefix: process.env.MAILGUN_API_KEY?.slice(0, 10),
-      domain: process.env.MAILGUN_DOMAIN,
-      url: process.env.MAILGUN_DOMAIN_URL
-    })
-    
     let emailSent = false
     let emailError: string | null = null
 
     try {
-      // 1단계: 프로젝트 정보 가져오기
-      if (process.env.NODE_ENV === 'development') console.log('📝 Step 1: Fetching project info...', { projectId })
       const { data: projectWithCustomer, error: projectFetchError } = await supabase
         .from('quote_requests')
-        .select('*, customer_id')
+        .select('*, customer_id, full_address, space_type, budget')
         .eq('id', projectId)
         .single()
 
-      if (projectFetchError) {
-        throw new Error(`프로젝트 조회 실패: ${projectFetchError.message}`)
+      if (projectFetchError || !projectWithCustomer) {
+        throw new Error(projectFetchError?.message || '프로젝트 정보를 찾을 수 없습니다.')
       }
 
-      if (!projectWithCustomer) {
-        throw new Error('프로젝트 정보를 찾을 수 없습니다.')
-      }
-
-      if (process.env.NODE_ENV === 'development') console.log('✅ Step 1 Success:', {
-        projectId: projectWithCustomer.id?.slice(0, 8),
-        customerId: projectWithCustomer.customer_id?.slice(0, 8)
-      })
-
-      // 2단계: 고객 정보 가져오기
-      if (process.env.NODE_ENV === 'development') console.log('📝 Step 2: Fetching customer info...', { 
-        customerId: projectWithCustomer.customer_id?.slice(0, 8)
-      })
       const { data: customer, error: customerError } = await supabase
         .from('users')
         .select('first_name, last_name, email, phone')
         .eq('id', projectWithCustomer.customer_id)
         .single()
 
-      if (customerError) {
-        throw new Error(`고객 정보 조회 실패: ${customerError.message}`)
+      if (customerError || !customer || !customer.email) {
+        throw new Error(customerError?.message || '고객 이메일 주소가 없습니다.')
       }
 
-      if (!customer) {
-        throw new Error('고객 정보를 찾을 수 없습니다.')
-      }
-
-      if (!customer.email) {
-        throw new Error('고객 이메일 주소가 없습니다.')
-      }
-
-      if (process.env.NODE_ENV === 'development') console.log('✅ Step 2 Success:', {
-        email: customer.email,
-        name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'No name'
-      })
-
-      // 3단계: 업체 정보 가져오기
-      if (process.env.NODE_ENV === 'development') console.log('📝 Step 3: Fetching contractor info...', { 
-        contractorId: contractorId?.slice(0, 8)
-      })
       const { data: contractor, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, email, phone')
         .eq('id', contractorId)
         .single()
 
-      if (contractorError) {
-        throw new Error(`업체 정보 조회 실패: ${contractorError.message}`)
+      if (contractorError || !contractor) {
+        throw new Error(contractorError?.message || '업체 정보를 찾을 수 없습니다.')
       }
 
-      if (!contractor) {
-        throw new Error('업체 정보를 찾을 수 없습니다.')
-      }
-
-      if (process.env.NODE_ENV === 'development') console.log('✅ Step 3 Success:', {
-        companyName: contractor.company_name,
-        email: contractor.email
-      })
-
-      // 4단계: 이메일 템플릿 생성
-      if (process.env.NODE_ENV === 'development') console.log('📝 Step 4: Creating email template...')
-      const customerName = customer.first_name && customer.last_name
-        ? `${customer.first_name} ${customer.last_name}`
-        : customer.email?.split('@')[0] || 'Customer'
+      const customerName =
+        customer.first_name && customer.last_name
+          ? `${customer.first_name} ${customer.last_name}`
+          : customer.email.split('@')[0] || 'Customer'
 
       const emailHTML = createQuoteSubmissionTemplate(
         customerName,
         {
           company_name: contractor.company_name,
           email: contractor.email,
-          phone: contractor.phone
+          phone: contractor.phone,
         },
         {
           full_address: projectWithCustomer.full_address,
           space_type: projectWithCustomer.space_type,
-          budget: projectWithCustomer.budget
+          budget: projectWithCustomer.budget,
         },
         {
           price: parseFloat(price),
-          description: description || 'No additional details provided' // ✅ description이 없으면 기본 메시지
+          description: description || 'No additional details provided',
         }
       )
-
-      if (process.env.NODE_ENV === 'development') console.log('✅ Step 4 Success: Email template created')
-
-      // 5단계: 이메일 전송
-      if (process.env.NODE_ENV === 'development') console.log('📧 Step 5: Sending email...', {
-        to: customer.email,
-        subject: 'New Quote Received for Your Project'
-      })
 
       const emailResult = await sendEmail({
         to: customer.email,
         subject: 'New Quote Received for Your Project',
         html: emailHTML,
-        replyTo: 'support@canadabeaver.pro'
       })
-
-      if (process.env.NODE_ENV === 'development') console.log('📧 Email result:', emailResult)
 
       if (emailResult.success) {
         emailSent = true
-        if (process.env.NODE_ENV === 'development') console.log('✅✅✅ EMAIL SENT SUCCESSFULLY!', {
-          to: customer.email,
-          messageId: (emailResult as any).messageId,
-          contractor: contractor.company_name,
-          price: parseFloat(price)
-        })
       } else {
         emailError = emailResult.error || '이메일 전송 실패 (원인 불명)'
-        console.error('❌❌❌ EMAIL SEND FAILED:', {
-          error: emailResult.error,
-          to: customer.email,
-          contractor: contractor.company_name
-        })
       }
-
-    } catch (error: any) {
-      emailError = error.message || '이메일 전송 중 오류 발생'
-      console.error('❌❌❌ EMAIL PROCESS ERROR:', {
-        error: error.message,
-        stack: error.stack,
-        projectId: projectId?.slice(0, 8),
-        contractorId: contractorId?.slice(0, 8)
-      })
+    } catch (error) {
+      emailError = error instanceof Error ? error.message : '이메일 전송 중 오류 발생'
+      console.error('❌ EMAIL PROCESS ERROR:', error)
     }
 
-    if (process.env.NODE_ENV === 'development') console.log('📧 ========== EMAIL SENDING PROCESS END ==========')
-
-    // ✅ 응답 구성
-    const response = {
-      success: true,
-      data: quote,
-      message: '견적서가 성공적으로 제출되었습니다.',
-      emailSent: emailSent,
-      emailError: emailError
+    const payload = {
+      quote,
+      emailSent,
+      emailError,
     }
 
-    // 이메일 전송 실패 시에도 사용자에게 알림
-    if (!emailSent && emailError) {
-      console.warn('⚠️ 견적서는 제출되었으나 고객 이메일 전송에 실패했습니다:', emailError)
-      response.message += ' (참고: 고객 이메일 알림 전송 실패)'
-    }
+    const message = emailSent
+      ? '견적서가 성공적으로 제출되었습니다.'
+      : '견적서가 제출되었습니다. (참고: 고객 이메일 알림 전송 실패)'
 
-    if (process.env.NODE_ENV === 'development') console.log('🎉 Final response:', {
-      success: response.success,
-      quoteId: quote.id,
-      emailSent: response.emailSent,
-      emailError: response.emailError
-    })
+    return successResponse(payload, message)
+  },
+})
 
-    return NextResponse.json(response)
-
-  } catch (error: any) {
-    console.error('❌ API ERROR:', {
-      error: error.message,
-      stack: error.stack
-    })
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    )
-  }
-}
+export const POST = handler

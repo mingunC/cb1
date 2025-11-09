@@ -11,10 +11,17 @@ if (process.env.NODE_ENV === 'development') console.log('Mailgun Config:', {
 
 // Mailgun 초기화
 const mailgun = new Mailgun(formData);
+
+const mailgunDomainUrl = process.env.MAILGUN_DOMAIN_URL;
+
+if (!mailgunDomainUrl && process.env.NODE_ENV === 'development') {
+  console.warn('MAILGUN_DOMAIN_URL is not set. Mailgun client will fail to send requests.');
+}
+
 const mg = mailgun.client({
   username: 'api',
   key: process.env.MAILGUN_API_KEY || '',
-  url: process.env.MAILGUN_DOMAIN_URL || 'https://api.mailgun.net'
+  url: mailgunDomainUrl || ''
 });
 
 export interface EmailOptions {
@@ -37,13 +44,18 @@ export const sendEmail = async (options: EmailOptions) => {
   }
 
   try {
+    if (!process.env.EMAIL_FROM_NAME || !process.env.EMAIL_FROM_ADDRESS) {
+      console.error('Email sender identity is not configured');
+      return { success: false, error: 'Email sender not configured' };
+    }
+
     const messageData = {
-      from: options.from || `Canada Beaver <noreply@${process.env.MAILGUN_DOMAIN}>`,
+      from: options.from || `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_ADDRESS}>`,
       to: Array.isArray(options.to) ? options.to : [options.to],
       subject: options.subject,
       html: options.html,
       text: options.text || '',
-      'h:Reply-To': options.replyTo || 'support@canadabeaver.pro'
+      'h:Reply-To': options.replyTo || process.env.EMAIL_REPLY_TO
     };
 
     if (process.env.NODE_ENV === 'development') console.log('Attempting to send email with:', {

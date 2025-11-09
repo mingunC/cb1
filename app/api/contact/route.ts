@@ -59,7 +59,7 @@ ${message}
 
     // Send email via Mailgun
     const response = await fetch(
-      `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`,
+      `${process.env.MAILGUN_DOMAIN_URL}/v3/${MAILGUN_DOMAIN}/messages`,
       {
         method: 'POST',
         headers: {

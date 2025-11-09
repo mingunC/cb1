@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, LogOut } from 'lucide-react'
-import { signIn, getCurrentUser, signOut } from '@/lib/auth'
+import { signIn, getCurrentUser, signOut } from '@/lib/auth/client'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 

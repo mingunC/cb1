@@ -27,12 +27,12 @@ export const sendEmail = async (options: EmailOptions) => {
 
   try {
     const messageData = {
-      from: options.from || `Canada Beaver <noreply@${process.env.MAILGUN_DOMAIN}>`,
+      from: options.from || `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_ADDRESS}>`,
       to: Array.isArray(options.to) ? options.to : [options.to],
       subject: options.subject,
       html: options.html,
       text: options.text || '',
-      'h:Reply-To': options.replyTo || 'support@canadabeaver.pro'
+      'h:Reply-To': options.replyTo || process.env.EMAIL_REPLY_TO
     };
 
     const response = await mg.messages.create(process.env.MAILGUN_DOMAIN!, messageData);
@@ -168,7 +168,7 @@ export const createSelectionEmailTemplate = (
           </ol>
           
           <center>
-            <a href="https://canadabeaver.pro/contractor" class="button">
+            <a href="https://${process.env.APP_DOMAIN}/contractor" class="button">
               Check in the dashboard
             </a>
           </center>
@@ -185,7 +185,7 @@ export const createSelectionEmailTemplate = (
         
         <div class="footer">
           <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>Contact: support@canadabeaver.pro</p>
+          <p>Contact: ${process.env.EMAIL_REPLY_TO}</p>
           <p>© 2025 Canada Beaver. All rights reserved.</p>
         </div>
       </div>
