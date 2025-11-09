@@ -1,4 +1,4 @@
-# Renovation Platform - Supabase Backend Setup
+# Canada Beaver - Renovation Platform
 
 A comprehensive renovation platform connecting customers with contractors, built with Next.js 14, TypeScript, Supabase, and multi-language support.
 
@@ -16,7 +16,8 @@ A comprehensive renovation platform connecting customers with contractors, built
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18.17.0 or higher
+- npm 9.0.0 or higher
 - Supabase account
 - Mailgun account (for email notifications)
 - Google OAuth credentials (optional)
@@ -25,34 +26,24 @@ A comprehensive renovation platform connecting customers with contractors, built
 
 1. **Clone and install dependencies:**
 ```bash
+git clone https://github.com/mingunC/cb1.git
+cd cb1
 npm install
 ```
 
 2. **Set up environment variables:**
 ```bash
-cp env.local.example .env.local
+cp .env.example .env.local
 ```
 
-Edit `.env.local` with your actual values:
-```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+Edit `.env.local` with your actual values (see [Environment Variables](#environment-variables))
 
-# Mailgun Configuration
-MAILGUN_API_KEY=your_mailgun_api_key
-MAILGUN_DOMAIN=your_mailgun_domain
-MAILGUN_DOMAIN_URL=https://api.mailgun.net
-
-# Next.js Configuration
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
-
-# Optional: Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+3. **Start development server:**
+```bash
+npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🗄️ Supabase Setup
 
@@ -90,7 +81,7 @@ SET role = 'admin'
 WHERE email = 'your-admin-email@domain.com';
 ```
 
-## 🏗️ Project Structure
+## 📁 Project Structure
 
 ```
 ├── app/                    # Next.js 14 App Router
@@ -110,67 +101,116 @@ WHERE email = 'your-admin-email@domain.com';
 │   ├── en.json          # English translations
 │   └── ko.json          # Korean translations
 ├── supabase-setup.sql    # Complete database setup
-└── env.local.example     # Environment variables template
+├── next.config.js        # Next.js configuration
+├── vercel.json          # Vercel deployment config
+└── .env.example         # Environment variables template
 ```
 
-## 🔧 Key Components
+## 🔐 Environment Variables
 
-### Database Schema
-- **quotes**: Approved quote requests
-- **temp_quotes**: Draft quote requests (5-step process)
-- **pros**: Contractor profiles
-- **portfolios**: Project showcases
-- **reviews**: Customer reviews
-- **events**: Admin-managed events
+Create a `.env.local` file with the following variables:
 
-### Authentication & Authorization
-- Role-based access control (Customer, Contractor, Admin)
-- Row Level Security (RLS) policies
-- Google OAuth integration
-- Password reset functionality
+```env
+# Supabase Configuration (Required)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-### Image Processing
-- Automatic compression with Sharp
-- Thumbnail generation
-- 5MB file size limit
-- Support for JPEG, PNG, WebP
+# Mailgun Configuration (Required for email)
+MAILGUN_API_KEY=your_mailgun_api_key
+MAILGUN_DOMAIN=your_mailgun_domain
+MAILGUN_FROM_EMAIL=noreply@yourdomain.com
 
-### API Endpoints
-- `POST /api/images` - Upload and compress images
-- `GET /api/images` - Get image information
-- `DELETE /api/images` - Delete images
+# Application Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
 
-## 🚀 Usage
+# Database (Optional - for direct connection)
+DATABASE_URL=your_database_connection_string
 
-### Starting the Development Server
+# Analytics (Optional)
+# NEXT_PUBLIC_GA_TRACKING_ID=your_google_analytics_id
+# SENTRY_DSN=your_sentry_dsn
+```
+
+## 📜 Available Scripts
+
 ```bash
-npm run dev
+# Development
+npm run dev              # Start development server
+npm run build           # Build for production
+npm run start           # Start production server
+
+# Code Quality
+npm run lint            # Run ESLint
+npm run lint:fix        # Fix ESLint errors
+npm run type-check      # Check TypeScript types
+npm run format          # Format code with Prettier
+
+# Analysis
+npm run build:analyze   # Build with bundle analyzer
+npm run clean           # Clean build artifacts
 ```
 
-### Using Supabase Client
-```typescript
-import { supabase, useAuth } from '@/lib/supabase'
+## 🚀 Deployment to Vercel
 
-// Get current user and role
-const { user, role } = await useAuth()
+### Quick Deploy (Recommended)
 
-// Upload image
-const { data, error } = await uploadImage(file, 'project-photos', 'portfolios')
+1. **Push your code to GitHub**
+```bash
+git add .
+git commit -m "Ready for deployment"
+git push origin main
 ```
 
-### Database Operations
-```typescript
-import { db } from '@/lib/supabase/database'
+2. **Connect to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Vercel will auto-detect Next.js
 
-// Create a quote
-const { data, error } = await db.createQuote({
-  customer_id: userId,
-  space_type: 'detached_house',
-  project_types: ['kitchen', 'bathroom'],
-  budget: '50k_100k',
-  // ... other fields
-})
+3. **Configure Environment Variables**
+   
+   Add these in Vercel Dashboard → Settings → Environment Variables:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY
+   MAILGUN_API_KEY
+   MAILGUN_DOMAIN
+   MAILGUN_FROM_EMAIL
+   NEXT_PUBLIC_APP_URL  (set to your Vercel domain)
+   ```
+
+4. **Deploy**
+   - Click "Deploy"
+   - Vercel will build and deploy automatically
+   - Your app will be live at `your-project.vercel.app`
+
+### Manual Deploy with Vercel CLI
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy to production
+vercel --prod
 ```
+
+### Post-Deployment Checklist
+
+- [ ] Update `NEXT_PUBLIC_APP_URL` to your production domain
+- [ ] Configure custom domain in Vercel settings
+- [ ] Update Supabase Auth site URL to your domain
+- [ ] Update Mailgun sender domain
+- [ ] Test all authentication flows
+- [ ] Test image uploads
+- [ ] Verify email notifications work
+- [ ] Check all API routes
+- [ ] Monitor error logs in Vercel dashboard
 
 ## 🔒 Security Features
 
@@ -178,6 +218,8 @@ const { data, error } = await db.createQuote({
 - **Role-based Access**: Users can only access data appropriate to their role
 - **File Upload Security**: Type and size validation
 - **Environment Variables**: Sensitive data stored securely
+- **Security Headers**: XSS, clickjacking, and MIME-type sniffing protection
+- **HTTPS Only**: Enforced in production
 
 ## 🌐 Internationalization
 
@@ -201,51 +243,100 @@ The project uses:
 - Shadcn/ui components
 - Custom CSS variables for theming
 
-## 🚀 Deployment
+## 🔧 Performance Optimization
 
-1. **Build the project:**
+### Build Analysis
+Analyze your bundle size:
 ```bash
-npm run build
+npm run build:analyze
 ```
 
-2. **Deploy to your preferred platform:**
-- Vercel (recommended for Next.js)
-- Netlify
-- AWS
-- DigitalOcean
+This will:
+1. Build your production bundle
+2. Generate an interactive bundle analysis
+3. Open the results in your browser
 
-3. **Update environment variables** in your deployment platform
+### Image Optimization
+- Images are automatically optimized with Next.js Image component
+- Sharp is used for server-side image processing
+- Multiple format support (AVIF, WebP, JPEG)
+- Automatic responsive image generation
 
-## 📝 API Documentation
-
-### Image Upload API
-```typescript
-// POST /api/images
-const formData = new FormData()
-formData.append('file', imageFile)
-formData.append('folder', 'portfolios')
-formData.append('generateThumbnail', 'true')
-
-const response = await fetch('/api/images', {
-  method: 'POST',
-  body: formData
-})
-```
+### Caching Strategy
+- Static assets: 1 year cache
+- API routes: No cache
+- Images: CDN cached with automatic invalidation
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
 
-1. **Supabase connection errors**: Check your environment variables
-2. **RLS policy errors**: Ensure policies are correctly set up
-3. **Image upload failures**: Check file size and type restrictions
-4. **Authentication issues**: Verify OAuth configuration
+1. **Supabase connection errors**
+   - Check your environment variables
+   - Verify Supabase project is active
+   - Check API keys are correct
+
+2. **RLS policy errors**
+   - Ensure policies are correctly set up
+   - Check user role assignments
+   - Verify auth.users table has correct roles
+
+3. **Image upload failures**
+   - Check file size (max 5MB)
+   - Verify supported formats (JPEG, PNG, WebP)
+   - Check Supabase storage bucket permissions
+
+4. **Authentication issues**
+   - Verify OAuth configuration
+   - Check redirect URLs in Supabase
+   - Ensure site URL matches your domain
+
+5. **Build errors**
+   - Run `npm run type-check` to find TypeScript errors
+   - Run `npm run lint:fix` to fix linting issues
+   - Clear `.next` folder and rebuild
 
 ### Debug Mode
-Enable debug logging by setting:
+Enable debug logging:
 ```env
 NEXT_PUBLIC_DEBUG=true
 ```
+
+## 📊 Monitoring & Analytics
+
+### Vercel Analytics
+Built-in analytics available in Vercel dashboard:
+- Page views
+- Performance metrics
+- Error tracking
+- Geographic distribution
+
+### Error Tracking
+Recommended tools:
+- Sentry (error monitoring)
+- LogRocket (session replay)
+- Vercel Logs (built-in)
+
+## 🔄 Updates & Maintenance
+
+### Keep Dependencies Updated
+```bash
+# Check for outdated packages
+npm outdated
+
+# Update packages
+npm update
+
+# Update Next.js specifically
+npm install next@latest
+```
+
+### Database Migrations
+When updating the database schema:
+1. Test in development first
+2. Backup production database
+3. Run migrations during low-traffic hours
+4. Monitor for errors
 
 ## 📄 License
 
@@ -254,17 +345,35 @@ This project is licensed under the MIT License.
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow the existing code style
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
 
 ## 📞 Support
 
 For support and questions:
 - Create an issue in the repository
-- Check the Supabase documentation
-- Review the Next.js documentation
+- Check the [Supabase documentation](https://supabase.com/docs)
+- Review the [Next.js documentation](https://nextjs.org/docs)
+- Check [Vercel documentation](https://vercel.com/docs)
+
+## 🎯 Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Real-time chat between customers and contractors
+- [ ] AI-powered project cost estimation
+- [ ] Advanced analytics dashboard
+- [ ] Payment integration (Stripe)
+- [ ] Video consultations
+- [ ] Project management tools
 
 ---
 
-**Note**: This is a backend setup. Frontend components and pages are not included in this setup. You'll need to create the UI components separately.
+**Built with ❤️ using Next.js 14, Supabase, and Tailwind CSS**
