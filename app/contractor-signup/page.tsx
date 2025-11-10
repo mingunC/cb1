@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, Phone, MapPin, Check } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import toast from 'react-hot-toast'
@@ -27,7 +27,6 @@ export default function ContractorSignupPage() {
   })
   
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createBrowserClient()
   const phoneInputRef = useRef<HTMLInputElement>(null)
 
