@@ -55,7 +55,7 @@ export default function PortfolioSection() {
 
           {/* Subtitle */}
           <p className="text-sm text-gray-600 font-normal">
-            완성된 프로젝트들을 통해 가능성을 확인하세요
+            See the possibilities through our completed projects
           </p>
         </div>
 
