@@ -99,16 +99,7 @@ const nextConfig = {
   },
 
   // ==========================================
-  // 7. 환경변수 검증 (선택사항)
-  // ==========================================
-  // 빌드 시 필수 환경변수 체크
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  },
-
-  // ==========================================
-  // 8. 실험적 기능 (선택사항)
+  // 7. 실험적 기능 (선택사항)
   // ==========================================
   experimental: {
     optimizePackageImports: ['lucide-react'], // 번들 크기 최적화
