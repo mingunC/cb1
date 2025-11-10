@@ -4,14 +4,6 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
-    "MAILGUN_API_KEY": "@mailgun-api-key",
-    "MAILGUN_DOMAIN": "@mailgun-domain",
-    "MAILGUN_FROM_EMAIL": "@mailgun-from-email"
-  },
   "build": {
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1"
