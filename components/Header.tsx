@@ -607,6 +607,15 @@ export default function Header() {
                             MyPage
                           </Link>
                         )}
+                        {!isContractor && (
+                          <Link
+                            href="/quote-request"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserDropdownOpen(false)}
+                          >
+                            Get a Quote
+                          </Link>
+                        )}
                         <button
                           onClick={() => {
                             if (process.env.NODE_ENV === 'development') console.log('✅ Logout button clicked (dropdown)')
@@ -652,20 +661,16 @@ export default function Header() {
                 >
                   Partners Login
                 </Link>
+                <Link
+                  href="/quote-request"
+                  className="text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                  style={{ backgroundColor: '#bf9b30' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#bf9b30'}
+                >
+                  Get a Quote
+                </Link>
               </div>
-            )}
-            
-            {/* Get Quote button - only show if not contractor */}
-            {!isContractor && (
-              <Link
-                href="/quote-request"
-                className="text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-                style={{ backgroundColor: '#bf9b30' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#bf9b30'}
-              >
-                Get a Quote
-              </Link>
             )}
           </div>
 
