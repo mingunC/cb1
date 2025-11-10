@@ -38,7 +38,19 @@ const nextConfig = {
   },
 
   // ==========================================
-  // 4. ESLint 설정
+  // 4. Output File Tracing (스택 오버플로우 방지)
+  // ==========================================
+  outputFileTracingRoot: undefined,
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/@swc/core-linux-x64-gnu',
+      'node_modules/@swc/core-linux-x64-musl',
+      'node_modules/@esbuild/linux-x64',
+    ],
+  },
+
+  // ==========================================
+  // 5. ESLint 설정
   // ==========================================
   eslint: {
     // 빌드 시 ESLint 에러를 무시하고 진행
@@ -51,7 +63,7 @@ const nextConfig = {
   },
 
   // ==========================================
-  // 5. 보안 헤더
+  // 6. 보안 헤더
   // ==========================================
   async headers() {
     return [
@@ -84,7 +96,7 @@ const nextConfig = {
   },
 
   // ==========================================
-  // 6. 리다이렉트 (필요시 추가)
+  // 7. 리다이렉트 (필요시 추가)
   // ==========================================
   async redirects() {
     return [
@@ -99,7 +111,7 @@ const nextConfig = {
   },
 
   // ==========================================
-  // 7. 실험적 기능 (선택사항)
+  // 8. 실험적 기능 (선택사항)
   // ==========================================
   experimental: {
     optimizePackageImports: ['lucide-react'], // 번들 크기 최적화
