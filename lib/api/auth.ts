@@ -26,7 +26,7 @@ function createApiClient(request: NextRequest) {
         setAll(cookiesToSet) {
           // API Routes don't support setting cookies directly
           // Cookies should be set in the response
-          cookiesToSet.forEach(({ name, value, options }) => {
+          cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value)
           })
         },
@@ -51,7 +51,16 @@ export async function requireAuth(request: NextRequest) {
 
   if (error || !user) {
     console.error('❌ Auth error:', error?.message || 'No user found')
-    throw ApiErrors.unauthorized()
+    
+    // ✅ 더 구체적인 에러 메시지
+    if (error?.message?.includes('session_not_found')) {
+      throw ApiErrors.unauthorized('Session expired. Please log in again.')
+    }
+    if (error?.message?.includes('invalid_token')) {
+      throw ApiErrors.unauthorized('Invalid authentication token. Please log in again.')
+    }
+    
+    throw ApiErrors.unauthorized('Please log in to continue.')
   }
 
   if (process.env.NODE_ENV === 'development') {
@@ -87,7 +96,7 @@ export async function requireRole(allowedRoles: string[], request: NextRequest) 
 
   if (!profile) {
     console.error('❌ No profile found for user:', user.id)
-    throw ApiErrors.forbidden('User profile not found')
+    throw ApiErrors.forbidden('User profile not found. Please contact support.')
   }
 
   if (!allowedRoles.includes(profile.user_type)) {
@@ -95,7 +104,7 @@ export async function requireRole(allowedRoles: string[], request: NextRequest) 
       required: allowedRoles,
       actual: profile.user_type
     })
-    throw ApiErrors.forbidden(`Access denied. Required role: ${allowedRoles.join(' or ')}`)
+    throw ApiErrors.forbidden(`Access denied. This feature requires ${allowedRoles.join(' or ')} role. Your current role: ${profile.user_type}`)
   }
 
   return { user, supabase, userType: profile.user_type }
