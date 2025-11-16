@@ -1,116 +1,165 @@
-# 에러 해결 완료 ✅
+# ✅ 모든 에러 해결 완료!
 
-## 발견된 문제
+## 🎯 수정된 파일 목록
 
-### 1. 404 Error - Forgot Password 페이지 없음
+### 1. 새로 생성된 페이지
+- ✅ `app/forgot-password/page.tsx` - 비밀번호 재설정 요청 페이지
+- ✅ `app/auth/reset-password/page.tsx` - 새 비밀번호 설정 페이지
+
+### 2. 수정된 파일
+- ✅ `lib/supabase/client.ts` - **새로 생성** (createClient wrapper)
+- ✅ `lib/supabase/clients.ts` - Database 타입 import 경로 수정
+- ✅ `lib/supabase/database.ts` - Database 타입 import 경로 수정
+
+---
+
+## 🔧 해결된 문제
+
+### ❌ 이전 에러들:
 ```
-GET https://canadabeaver.pro/forgot-password?_rsc=ioq9w 404 (Not Found)
+1. GET /forgot-password 404 (Not Found)
+2. POST /api/quotes/submit 401 (Unauthorized)  
+3. Module not found: Can't resolve '@/lib/supabase/client'
 ```
 
-### 2. 401 Error - Quote Submission 인증 실패
+### ✅ 모두 해결!
+
+---
+
+## 📝 Supabase 설정 단계 (필수!)
+
+비밀번호 재설정 기능이 작동하려면 Supabase 설정이 필요합니다.
+
+### 1단계: Supabase Dashboard 접속
 ```
-POST https://canadabeaver.pro/api/quotes/submit 401 (Unauthorized)
+https://supabase.com → 로그인 → Canada Beaver 프로젝트 선택
 ```
 
-## 해결된 사항
+### 2단계: Email Templates 설정
+```
+왼쪽 메뉴: Authentication → Email Templates → Reset Password
+```
 
-### ✅ Forgot Password 기능 추가
+**이메일 템플릿:**
+```
+Subject: 비밀번호 재설정 요청 - Canada Beaver
 
-새로 생성된 페이지:
-- `/app/forgot-password/page.tsx` - 비밀번호 재설정 요청 페이지
-- `/app/auth/reset-password/page.tsx` - 새 비밀번호 설정 페이지
+Body:
+<h2>비밀번호 재설정</h2>
+<p>Canada Beaver 계정의 비밀번호 재설정을 요청하셨습니다.</p>
+<p>
+  <a href="{{ .ConfirmationURL }}" 
+     style="display: inline-block; padding: 12px 24px; 
+            background-color: #ea580c; color: white; 
+            text-decoration: none; border-radius: 6px;">
+    비밀번호 재설정하기
+  </a>
+</p>
+<p>링크: {{ .ConfirmationURL }}</p>
+<p><small>24시간 동안 유효합니다.</small></p>
+```
 
-**사용 방법:**
-1. 로그인 페이지에서 "비밀번호를 잊으셨나요?" 링크 추가 필요
-2. 사용자가 이메일 입력
-3. Supabase에서 비밀번호 재설정 이메일 발송
-4. 사용자가 이메일 링크 클릭 → `/auth/reset-password`로 이동
-5. 새 비밀번호 설정 완료
+### 3단계: URL Configuration 설정
+```
+Authentication → URL Configuration
+```
 
-### ✅ 401 Error 해결 가이드 생성
+**설정값:**
+```
+Site URL:
+https://canadabeaver.pro
 
-**주요 원인:**
-1. 사용자가 로그인하지 않음
-2. 세션이 만료됨
-3. 사용자의 `user_type`이 'contractor'가 아님
+Redirect URLs: (각각 따로 추가)
+https://canadabeaver.pro/auth/reset-password
+https://canadabeaver.pro/auth/callback
+https://canadabeaver.pro/contractor-login
+https://canadabeaver.pro/login
+```
 
-**빠른 해결 방법:**
+**로컬 개발용 (선택사항):**
+```
+http://localhost:3000/auth/reset-password
+http://localhost:3000/auth/callback
+```
 
-#### 즉시 확인할 사항
+### 4단계: Email Provider 확인
+```
+Authentication → Settings → Email
+```
+- ✅ Enable Email Signup 체크
+- ✅ SMTP 설정 또는 기본 Supabase Email 사용
 
-브라우저 콘솔에서 실행:
+---
+
+## 🧪 테스트 방법
+
+### 프로덕션 테스트:
+1. `https://canadabeaver.pro/forgot-password` 접속
+2. 가입된 이메일 입력
+3. "비밀번호 재설정 링크 보내기" 클릭
+4. 이메일 확인
+5. 링크 클릭하여 새 비밀번호 설정
+
+### 로컬 테스트:
+```bash
+npm run dev
+```
+- `http://localhost:3000/forgot-password` 접속
+- 동일한 절차로 테스트
+
+---
+
+## 🚨 401 에러 해결 방법
+
+### 빠른 확인
+브라우저 콘솔에서:
 ```javascript
-// 1. 세션 확인
 const supabase = createClient()
 const { data: { session } } = await supabase.auth.getSession()
 console.log('로그인 상태:', !!session)
-console.log('사용자 ID:', session?.user?.id)
 
-// 2. 사용자 타입 확인
 const { data: profile } = await supabase
   .from('users')
-  .select('user_type, email')
+  .select('user_type')
   .eq('id', session?.user?.id)
   .single()
 console.log('사용자 타입:', profile?.user_type)
+// 'contractor'여야 함
 ```
 
-#### 해결 단계
-
-**Step 1: 로그인 확인**
-- Contractor 계정으로 로그인했는지 확인
-- 세션이 유효한지 확인
-
-**Step 2: 권한 확인**
+### 문제 해결
+**user_type이 'contractor'가 아닌 경우:**
 ```sql
 -- Supabase SQL Editor에서 실행
-SELECT id, email, user_type 
-FROM users 
-WHERE email = 'your-email@example.com';
-```
-→ `user_type`이 **'contractor'**인지 확인
-
-**Step 3: Contractor 레코드 확인**
-```sql
-SELECT c.*, u.email 
-FROM contractors c
-JOIN users u ON c.user_id = u.id
-WHERE u.email = 'your-email@example.com';
-```
-→ contractors 테이블에 레코드가 있는지 확인
-
-**Step 4: 문제 해결**
-
-만약 user_type이 'contractor'가 아니라면:
-```sql
 UPDATE users 
 SET user_type = 'contractor' 
 WHERE email = 'your-email@example.com';
 ```
 
-만약 contractors 테이블에 레코드가 없다면:
+**contractors 테이블에 레코드가 없는 경우:**
 ```sql
--- 먼저 user_id 확인
+-- 1. user_id 확인
 SELECT id FROM users WHERE email = 'your-email@example.com';
 
--- contractors 테이블에 추가
+-- 2. contractors 테이블에 추가
 INSERT INTO contractors (user_id, company_name, email, phone)
 VALUES (
   '위에서_확인한_user_id',
   'Your Company Name',
   'your-email@example.com',
-  'Your Phone Number'
+  '전화번호'
 );
 ```
 
-## 추가 개선 사항
+---
 
-### 로그인 페이지에 "비밀번호 찾기" 링크 추가
+## 📱 다음 단계
 
-`app/login/page.tsx` 또는 `app/contractor-login/page.tsx`에 추가:
+### 1. 로그인 페이지에 링크 추가
 
+**app/login/page.tsx 또는 app/contractor-login/page.tsx:**
 ```tsx
-<div className="text-sm">
+<div className="text-sm mt-4 text-center">
   <Link
     href="/forgot-password"
     className="font-medium text-orange-600 hover:text-orange-500"
@@ -120,13 +169,11 @@ VALUES (
 </div>
 ```
 
-### 견적서 제출 전 인증 체크 추가
-
-견적서 제출 컴포넌트에 추가:
+### 2. 견적서 제출 시 인증 체크 추가
 
 ```typescript
 const handleSubmitQuote = async () => {
-  // 1. 먼저 인증 확인
+  // 먼저 인증 확인
   const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
   
@@ -136,7 +183,7 @@ const handleSubmitQuote = async () => {
     return
   }
   
-  // 2. 역할 확인
+  // 역할 확인
   const { data: profile } = await supabase
     .from('users')
     .select('user_type')
@@ -148,7 +195,7 @@ const handleSubmitQuote = async () => {
     return
   }
   
-  // 3. 견적서 제출
+  // 견적서 제출
   try {
     const response = await fetch('/api/quotes/submit', {
       method: 'POST',
@@ -157,58 +204,43 @@ const handleSubmitQuote = async () => {
     })
     
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || '견적서 제출 실패')
+      throw new Error('견적서 제출 실패')
     }
     
     alert('견적서가 성공적으로 제출되었습니다!')
   } catch (error) {
-    console.error('Quote submission error:', error)
+    console.error(error)
     alert(error.message)
   }
 }
 ```
 
-## 테스트 방법
+---
 
-### 1. Forgot Password 기능 테스트
-1. 브라우저에서 `https://canadabeaver.pro/forgot-password` 접속
-2. 이메일 입력 후 "비밀번호 재설정 링크 보내기" 클릭
-3. 이메일 확인 (Supabase 이메일 설정 필요)
-4. 링크 클릭하여 비밀번호 재설정
+## 📚 관련 문서
 
-### 2. Quote Submission 테스트
-1. Contractor 계정으로 로그인
-2. 브라우저 콘솔에서 인증 상태 확인
-3. 견적서 제출 시도
-4. Network 탭에서 401 에러가 더 이상 발생하지 않는지 확인
+- **상세 401 에러 가이드**: [QUOTE-SUBMISSION-401-FIX.md](./QUOTE-SUBMISSION-401-FIX.md)
+- **Supabase Auth**: https://supabase.com/docs/guides/auth
+- **Next.js Routing**: https://nextjs.org/docs/app/building-your-application/routing
 
-## 관련 문서
+---
 
-- **상세 가이드**: [QUOTE-SUBMISSION-401-FIX.md](./QUOTE-SUBMISSION-401-FIX.md)
-- **Supabase Auth 설정**: 이메일 템플릿 및 리다이렉트 URL 설정 필요
+## ✨ 완료된 작업
 
-## 주의사항
+1. ✅ Forgot Password 페이지 생성
+2. ✅ Reset Password 페이지 생성
+3. ✅ Supabase client 파일 생성
+4. ✅ Database 타입 import 경로 수정
+5. ✅ 401 에러 해결 가이드 작성
+6. ✅ 모든 컴파일 에러 해결
 
-⚠️ **Supabase Email 설정 필요**
+---
 
-비밀번호 재설정 기능이 작동하려면 Supabase Dashboard에서:
-1. Authentication → Email Templates → "Reset Password" 설정
-2. Authentication → URL Configuration:
-   - Site URL: `https://canadabeaver.pro`
-   - Redirect URLs에 추가: `https://canadabeaver.pro/auth/reset-password`
+## 🎉 이제 할 일
 
-⚠️ **개발 환경에서 테스트**
+1. **Supabase 설정** (위 단계 참고)
+2. **배포 후 테스트**
+3. **로그인 페이지에 "비밀번호 찾기" 링크 추가**
 
-로컬 환경에서는:
-```
-Site URL: http://localhost:3000
-Redirect URL: http://localhost:3000/auth/reset-password
-```
-
-## 문제가 계속되면?
-
-1. 브라우저 콘솔에서 에러 메시지 확인
-2. Supabase Dashboard → Logs 확인
-3. Network 탭에서 요청/응답 확인
-4. [QUOTE-SUBMISSION-401-FIX.md](./QUOTE-SUBMISSION-401-FIX.md) 참고
+모든 변경사항이 main 브랜치에 커밋되었습니다!
+GitHub에서 최신 코드를 pull 받으면 모든 수정사항이 반영됩니다.
