@@ -31,27 +31,73 @@ export const createBrowserClient = () => {
       cookies: {
         get(name: string) {
           if (typeof document === 'undefined') return undefined
-          const cookie = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${name}=`))
-          return cookie ? cookie.split('=')[1] : undefined
+          
+          // 🔧 개선된 쿠키 파싱
+          const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+            const [key, value] = cookie.trim().split('=')
+            if (key && value) {
+              acc[key] = decodeURIComponent(value)
+            }
+            return acc
+          }, {} as Record<string, string>)
+          
+          return cookies[name]
         },
         set(name: string, value: string, options: any) {
           if (typeof document === 'undefined') return
-          let cookie = `${name}=${value}`
-          if (options?.maxAge) cookie += `; max-age=${options.maxAge}`
-          if (options?.path) cookie += `; path=${options.path}`
-          if (options?.domain) cookie += `; domain=${options.domain}`
-          if (options?.secure) cookie += '; secure'
-          if (options?.sameSite) cookie += `; samesite=${options.sameSite}`
+          
+          // 🔧 프로덕션 환경에 맞는 쿠키 설정
+          const cookieOptions: string[] = []
+          
+          // 기본값: path는 항상 /
+          cookieOptions.push(`path=${options?.path || '/'}`)
+          
+          // maxAge 설정
+          if (options?.maxAge !== undefined) {
+            cookieOptions.push(`max-age=${options.maxAge}`)
+          }
+          
+          // 프로덕션 환경에서는 Secure와 SameSite 설정
+          if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+            cookieOptions.push('secure')
+            cookieOptions.push(`samesite=${options?.sameSite || 'lax'}`)
+          } else {
+            // 로컬 개발 환경
+            cookieOptions.push(`samesite=${options?.sameSite || 'lax'}`)
+          }
+          
+          // 도메인 설정 (options에 있는 경우에만)
+          if (options?.domain) {
+            cookieOptions.push(`domain=${options.domain}`)
+          }
+          
+          const cookie = `${name}=${encodeURIComponent(value)}; ${cookieOptions.join('; ')}`
           document.cookie = cookie
+          
+          // 디버깅 로그 (개발 환경에서만)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🍪 Setting cookie:', { name, hasValue: !!value, options: cookieOptions })
+          }
         },
         remove(name: string, options: any) {
           if (typeof document === 'undefined') return
-          let cookie = `${name}=; max-age=0`
-          if (options?.path) cookie += `; path=${options.path}`
-          if (options?.domain) cookie += `; domain=${options.domain}`
+          
+          // 쿠키 삭제: maxAge를 0으로 설정
+          const cookieOptions: string[] = [
+            `max-age=0`,
+            `path=${options?.path || '/'}`,
+          ]
+          
+          if (options?.domain) {
+            cookieOptions.push(`domain=${options.domain}`)
+          }
+          
+          const cookie = `${name}=; ${cookieOptions.join('; ')}`
           document.cookie = cookie
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🗑️ Removing cookie:', name)
+          }
         },
       },
     }
@@ -63,7 +109,16 @@ export const createBrowserClient = () => {
     if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
       return
     }
-    if (process.env.NODE_ENV === 'development') console.log('🔐 Auth state changed:', event, session?.user?.id)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 Auth state changed:', event, session?.user?.id)
+      
+      // 로그인 성공 시 쿠키 확인
+      if (event === 'SIGNED_IN' && session) {
+        console.log('✅ Login successful, checking cookies...')
+        const cookies = document.cookie.split(';').filter(c => c.trim().startsWith('sb-'))
+        console.log(`🍪 Supabase cookies found: ${cookies.length}`)
+      }
+    }
   })
 
   return browserClient
