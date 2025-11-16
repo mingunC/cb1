@@ -1,5 +1,5 @@
 import { createServerClient } from './clients'
-import { Database } from '../types/database'
+import { Database } from '@/types/database'
 
 // Server-side database operations
 export class DatabaseService {
