@@ -9,11 +9,17 @@ export const createBrowserClient = () => {
     return browserClient
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
+  // During build time, env vars might not be available - return a dummy client
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables')
+    // Only throw in browser context, not during build
+    if (typeof window !== 'undefined') {
+      throw new Error('Missing Supabase environment variables')
+    }
+    // Return a dummy client during build that will never be used
+    return createClient<Database>('https://placeholder.supabase.co', 'placeholder-key')
   }
 
   browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -46,8 +52,8 @@ export const createBrowserClient = () => {
 
 // Server-side Supabase client for API routes
 export const createServerClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing Supabase environment variables')
@@ -63,8 +69,8 @@ export const createServerClient = () => {
 
 // Admin client for administrative operations
 export const createAdminClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing Supabase environment variables')
