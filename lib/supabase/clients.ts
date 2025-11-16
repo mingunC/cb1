@@ -1,8 +1,9 @@
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
 
 // Client-side Supabase client for browser usage (싱글톤 패턴)
-let browserClient: ReturnType<typeof createClient<Database>> | null = null
+let browserClient: ReturnType<typeof createSSRBrowserClient<Database>> | null = null
 
 export const createBrowserClient = () => {
   if (browserClient) {
@@ -22,21 +23,39 @@ export const createBrowserClient = () => {
     return createClient<Database>('https://placeholder.supabase.co', 'placeholder-key')
   }
 
-  browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce',
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      storageKey: 'supabase.auth.token',
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'supabase-js-web'
-      }
+  // ✅ Use @supabase/ssr's createBrowserClient for cookie-based auth
+  browserClient = createSSRBrowserClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      cookies: {
+        get(name: string) {
+          if (typeof document === 'undefined') return undefined
+          const cookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${name}=`))
+          return cookie ? cookie.split('=')[1] : undefined
+        },
+        set(name: string, value: string, options: any) {
+          if (typeof document === 'undefined') return
+          let cookie = `${name}=${value}`
+          if (options?.maxAge) cookie += `; max-age=${options.maxAge}`
+          if (options?.path) cookie += `; path=${options.path}`
+          if (options?.domain) cookie += `; domain=${options.domain}`
+          if (options?.secure) cookie += '; secure'
+          if (options?.sameSite) cookie += `; samesite=${options.sameSite}`
+          document.cookie = cookie
+        },
+        remove(name: string, options: any) {
+          if (typeof document === 'undefined') return
+          let cookie = `${name}=; max-age=0`
+          if (options?.path) cookie += `; path=${options.path}`
+          if (options?.domain) cookie += `; domain=${options.domain}`
+          document.cookie = cookie
+        },
+      },
     }
-  })
+  )
 
   // 세션 상태 변경 리스너 추가 (중요한 이벤트만 로그)
   browserClient.auth.onAuthStateChange((event, session) => {
