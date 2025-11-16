@@ -32,6 +32,8 @@ export default function ContractorPage() {
           userId: session?.user?.id,
           email: session?.user?.email
         })
+        // 추가 체크 로그
+        if (process.env.NODE_ENV === 'development') console.log('Session exists:', !!session)
         
         if (sessionError) {
           console.error('❌ Session error:', sessionError)
