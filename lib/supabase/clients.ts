@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database } from './types/database'
+import { Database } from '@/types/database'
 
 // Client-side Supabase client for browser usage (싱글톤 패턴)
 let browserClient: ReturnType<typeof createClient<Database>> | null = null
