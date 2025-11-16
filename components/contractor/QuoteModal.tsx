@@ -123,34 +123,62 @@ export default function QuoteModal({
     window.open(data.signedUrl, '_blank')
   }
 
-  // ✅ 개선된 폼 제출 핸들러 - finally 블록 추가
+  // ✅ 개선된 폼 제출 핸들러 - 가이드 적용
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (process.env.NODE_ENV === 'development') console.log('🎯 Submit button clicked!')
     
-    // 견적서 제출 전에 먼저 인증 확인
+    // ✅ 1단계: 프론트엔드에서 인증 확인
     try {
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
+      
       if (!session) {
         toast.error('Please log in as a contractor to submit a quote.')
+        router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
+        return
+      }
+
+      // ✅ 사용자 역할 확인
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', session.user.id)
+        .single()
+
+      if (profileError || !profile) {
+        console.error('❌ Profile fetch error:', profileError)
+        toast.error('Failed to verify user profile. Please try again.')
+        return
+      }
+
+      if (profile.user_type !== 'contractor') {
+        toast.error('Only contractors can submit quotes. Please log in with a contractor account.')
         router.push('/contractor-login')
         return
       }
-    } catch (_) {
-      // 인증 체크 실패 시에도 보수적으로 로그인 페이지로 이동
-      router.push('/contractor-login')
+    } catch (error) {
+      console.error('❌ Auth check error:', error)
+      toast.error('Authentication check failed. Please log in again.')
+      router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
       return
     }
 
+    // ✅ 2단계: 입력 검증
     if (!project || !contractorId) {
       console.error('❌ Missing project or contractorId')
+      toast.error('Missing required information')
       return
     }
 
     if (!pdfFile) {
       toast.error('Please upload a detailed quote PDF file.')
+      return
+    }
+
+    if (!price || parseFloat(price) <= 0) {
+      toast.error('Please enter a valid quote amount.')
       return
     }
 
@@ -163,24 +191,24 @@ export default function QuoteModal({
     setIsSubmitting(true)
     
     try {
-      // 1단계: PDF 파일 업로드
+      // ✅ 3단계: PDF 파일 업로드
       if (process.env.NODE_ENV === 'development') console.log('📤 Step 1: Uploading PDF file...')
       const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
       if (process.env.NODE_ENV === 'development') console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
       
-      // 2단계: API를 통해 견적서 제출 (이메일 자동 전송)
+      // ✅ 4단계: API를 통해 견적서 제출 (이메일 자동 전송)
       if (process.env.NODE_ENV === 'development') console.log('📧 Step 2: Submitting quote via API...')
       const response = await fetch('/api/quotes/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'include', // ✅ 쿠키 포함
         body: JSON.stringify({
           projectId: project.id,
           contractorId: contractorId,
           price: price,
-          description: detailedDescription || '', // ✅ 빈 문자열로 전송
+          description: detailedDescription || '', 
           pdfUrl: uploadResult.pdfUrl,
           pdfFilename: uploadResult.pdfFilename
         })
@@ -188,16 +216,36 @@ export default function QuoteModal({
 
       if (process.env.NODE_ENV === 'development') console.log('📡 API Response status:', response.status)
 
+      // ✅ 에러 응답 처리
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }))
+        const errorData = await response.json().catch(() => ({ 
+          error: 'Failed to parse error response',
+          code: 'UNKNOWN_ERROR' 
+        }))
+        
         console.error('❌ API Error:', errorData)
+
+        // ✅ 401 Unauthorized - 세션 만료
+        if (response.status === 401) {
+          toast.error('Session expired. Please log in again.')
+          router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
+          return
+        }
+
+        // ✅ 403 Forbidden - 권한 없음
+        if (response.status === 403) {
+          toast.error('Access denied. Please log in as a contractor.')
+          router.push('/contractor-login')
+          return
+        }
+
         throw new Error(errorData.error || 'Failed to submit quote')
       }
 
       const data = await response.json()
       if (process.env.NODE_ENV === 'development') console.log('✅ Quote submitted successfully:', data)
       
-      // 이메일 전송 결과 표시
+      // ✅ 이메일 전송 결과 표시
       if (data.emailSent) {
         toast.success('Quote submitted and customer notified!')
       } else {
@@ -216,7 +264,7 @@ export default function QuoteModal({
       console.error('❌ Quote submission error:', error)
       toast.error(error.message || 'An error occurred while submitting the quote')
     } finally {
-      // ✅ CRITICAL: 어떤 경우에도 로딩 상태 해제
+      // ✅ 어떤 경우에도 로딩 상태 해제
       if (process.env.NODE_ENV === 'development') console.log('🔄 Releasing loading state...')
       setIsSubmitting(false)
     }
