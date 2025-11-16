@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
+import { Database } from '@/types/database'
 import { ApiErrors } from './error'
 
 /**
  * API Route용 Supabase 클라이언트 생성
- * Request 객체의 쿠키를 사용
+ * Authorization 헤더에서 토큰을 가져옴 (localStorage 기반 인증)
  */
 function createApiClient(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -15,24 +16,21 @@ function createApiClient(request: NextRequest) {
     throw ApiErrors.internal('Server configuration error')
   }
 
-  return createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          // API Routes don't support setting cookies directly
-          // Cookies should be set in the response
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-          })
-        },
-      },
-    }
-  )
+  // Authorization 헤더에서 토큰 추출
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+
+  const client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    },
+  })
+
+  return client
 }
 
 export async function requireAuth(request: NextRequest) {
@@ -40,24 +38,8 @@ export async function requireAuth(request: NextRequest) {
   
   // 🔍 강화된 디버깅 로그
   if (process.env.NODE_ENV === 'development') {
-    const allCookies = request.cookies.getAll()
-    console.log('🍪 All cookies:', allCookies.length)
-    
-    // Supabase 관련 쿠키만 출력
-    const supabaseCookies = allCookies.filter(c => 
-      c.name.includes('sb-') || c.name.includes('supabase')
-    )
-    
-    if (supabaseCookies.length > 0) {
-      console.log('✅ Found Supabase cookies:', supabaseCookies.map(c => ({
-        name: c.name,
-        hasValue: !!c.value,
-        valueLength: c.value?.length || 0
-      })))
-    } else {
-      console.log('❌ No Supabase cookies found!')
-      console.log('📋 Available cookies:', allCookies.map(c => c.name))
-    }
+    const authHeader = request.headers.get('authorization')
+    console.log('🔑 Authorization header:', authHeader ? 'Present' : 'Missing')
   }
 
   const {
