@@ -8,6 +8,9 @@ import { signIn, getCurrentUser } from '@/lib/auth/client'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
+// ✅ 동적 렌더링 강제 - 빌드 시점 pre-render 방지
+export const dynamic = 'force-dynamic'
+
 interface FormData {
   email: string
   password: string
