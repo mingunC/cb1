@@ -7,17 +7,28 @@ import { ApiErrors } from './error'
  * Request 객체의 쿠키를 사용
  */
 function createApiClient(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ Missing Supabase environment variables')
+    throw ApiErrors.internal('Server configuration error')
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          // API Route에서는 쿠키 설정이 제한적
-          // Response에서 처리해야 함
+          // API Routes don't support setting cookies directly
+          // Cookies should be set in the response
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+          })
         },
       },
     }
@@ -26,6 +37,13 @@ function createApiClient(request: NextRequest) {
 
 export async function requireAuth(request: NextRequest) {
   const supabase = createApiClient(request)
+  
+  // Log available cookies for debugging
+  if (process.env.NODE_ENV === 'development') {
+    const allCookies = request.cookies.getAll()
+    console.log('🍪 Request cookies:', allCookies.map(c => c.name))
+  }
+
   const {
     data: { user },
     error,
