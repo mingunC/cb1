@@ -175,6 +175,7 @@ export default function QuoteModal({
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           projectId: project.id,
           contractorId: contractorId,
