@@ -7,6 +7,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { Project } from '@/types/contractor'
 import { formatPrice } from '@/lib/contractor/projectHelpers'
 import { useRouter } from 'next/navigation'
+import { apiPost, ApiClientError } from '@/lib/api/client'
 
 interface QuoteModalProps {
   isOpen: boolean
@@ -198,51 +199,33 @@ export default function QuoteModal({
       
       // ✅ 4단계: API를 통해 견적서 제출 (이메일 자동 전송)
       if (process.env.NODE_ENV === 'development') console.log('📧 Step 2: Submitting quote via API...')
-      const response = await fetch('/api/quotes/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // ✅ 쿠키 포함
-        body: JSON.stringify({
+      let data: any
+      try {
+        data = await apiPost('/api/quotes/submit', {
           projectId: project.id,
           contractorId: contractorId,
           price: price,
-          description: detailedDescription || '', 
+          description: detailedDescription || '',
           pdfUrl: uploadResult.pdfUrl,
           pdfFilename: uploadResult.pdfFilename
         })
-      })
-
-      if (process.env.NODE_ENV === 'development') console.log('📡 API Response status:', response.status)
-
-      // ✅ 에러 응답 처리
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ 
-          error: 'Failed to parse error response',
-          code: 'UNKNOWN_ERROR' 
-        }))
-        
-        console.error('❌ API Error:', errorData)
-
-        // ✅ 401 Unauthorized - 세션 만료
-        if (response.status === 401) {
-          toast.error('Session expired. Please log in again.')
-          router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
-          return
+      } catch (err: any) {
+        if (process.env.NODE_ENV === 'development') console.error('❌ API Error:', err)
+        if (err instanceof ApiClientError) {
+          if (err.status === 401) {
+            toast.error('Session expired. Please log in again.')
+            router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
+            return
+          }
+          if (err.status === 403) {
+            toast.error('Access denied. Please log in as a contractor.')
+            router.push('/contractor-login')
+            return
+          }
+          throw err
         }
-
-        // ✅ 403 Forbidden - 권한 없음
-        if (response.status === 403) {
-          toast.error('Access denied. Please log in as a contractor.')
-          router.push('/contractor-login')
-          return
-        }
-
-        throw new Error(errorData.error || 'Failed to submit quote')
+        throw err
       }
-
-      const data = await response.json()
       if (process.env.NODE_ENV === 'development') console.log('✅ Quote submitted successfully:', data)
       
       // ✅ 이메일 전송 결과 표시
