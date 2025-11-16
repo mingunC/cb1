@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { Project } from '@/types/contractor'
 import { formatPrice } from '@/lib/contractor/projectHelpers'
+import { useRouter } from 'next/navigation'
 
 interface QuoteModalProps {
   isOpen: boolean
@@ -27,6 +28,7 @@ export default function QuoteModal({
   contractorId, 
   onSuccess 
 }: QuoteModalProps) {
+  const router = useRouter()
   const [price, setPrice] = useState('')
   const [priceDisplay, setPriceDisplay] = useState('')
   const [detailedDescription, setDetailedDescription] = useState('')
@@ -127,6 +129,21 @@ export default function QuoteModal({
     
     if (process.env.NODE_ENV === 'development') console.log('🎯 Submit button clicked!')
     
+    // 견적서 제출 전에 먼저 인증 확인
+    try {
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        toast.error('Please log in as a contractor to submit a quote.')
+        router.push('/contractor-login')
+        return
+      }
+    } catch (_) {
+      // 인증 체크 실패 시에도 보수적으로 로그인 페이지로 이동
+      router.push('/contractor-login')
+      return
+    }
+
     if (!project || !contractorId) {
       console.error('❌ Missing project or contractorId')
       return
