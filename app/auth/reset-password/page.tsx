@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@/lib/supabase/clients'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -15,7 +15,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
       return
     }
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     try {
       const { error } = await supabase.auth.updateUser({
