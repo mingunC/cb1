@@ -352,8 +352,8 @@ export default function QuoteModal({
                   /* 파일이 선택되었을 때 - 명확한 시각적 피드백 */
                   <div className="border-2 border-green-500 bg-green-50 rounded-lg p-6 transition-all">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className="bg-green-100 rounded-lg p-3">
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div className="bg-green-100 rounded-lg p-3 flex-shrink-0">
                           <File className="h-8 w-8 text-green-600" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -361,7 +361,7 @@ export default function QuoteModal({
                             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                             <span className="text-sm font-semibold text-green-700">File Selected</span>
                           </div>
-                          <p className="text-gray-900 font-semibold text-lg break-words mb-1">
+                          <p className="text-gray-900 font-semibold text-lg break-all mb-1" style={{ overflowWrap: 'anywhere' }}>
                             {pdfFile.name}
                           </p>
                           <p className="text-sm text-gray-600">
