@@ -38,10 +38,26 @@ function createApiClient(request: NextRequest) {
 export async function requireAuth(request: NextRequest) {
   const supabase = createApiClient(request)
   
-  // Log available cookies for debugging
+  // 🔍 강화된 디버깅 로그
   if (process.env.NODE_ENV === 'development') {
     const allCookies = request.cookies.getAll()
-    console.log('🍪 Request cookies:', allCookies.map(c => c.name))
+    console.log('🍪 All cookies:', allCookies.length)
+    
+    // Supabase 관련 쿠키만 출력
+    const supabaseCookies = allCookies.filter(c => 
+      c.name.includes('sb-') || c.name.includes('supabase')
+    )
+    
+    if (supabaseCookies.length > 0) {
+      console.log('✅ Found Supabase cookies:', supabaseCookies.map(c => ({
+        name: c.name,
+        hasValue: !!c.value,
+        valueLength: c.value?.length || 0
+      })))
+    } else {
+      console.log('❌ No Supabase cookies found!')
+      console.log('📋 Available cookies:', allCookies.map(c => c.name))
+    }
   }
 
   const {
@@ -51,11 +67,16 @@ export async function requireAuth(request: NextRequest) {
 
   if (error || !user) {
     console.error('❌ Auth error:', error?.message || 'No user found')
+    console.error('📍 Request URL:', request.url)
+    console.error('📍 Request method:', request.method)
     throw ApiErrors.unauthorized()
   }
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('✅ User authenticated:', user.email)
+    console.log('✅ User authenticated:', {
+      id: user.id.slice(0, 8),
+      email: user.email,
+    })
   }
 
   return { user, supabase }
