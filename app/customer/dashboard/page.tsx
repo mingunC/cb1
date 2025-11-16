@@ -697,7 +697,58 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
               )
-            })}</div>
+            })}
+          </div>
+
+          {/* Account Settings - Delete Account Section */}
+          <div className="mt-12 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-2 border-red-200 overflow-hidden">
+            <div className="p-8">
+              <h2 className="text-2xl font-serif font-light text-red-600 mb-2 flex items-center gap-2">
+                <X className="w-6 h-6" />
+                Danger Zone
+              </h2>
+              <p className="text-gray-600 mb-6 text-sm">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+
+              <button
+                onClick={async () => {
+                  const password = prompt('Enter your password to confirm account deletion:')
+                  if (!password) return
+
+                  if (
+                    !confirm(
+                      'Are you absolutely sure? This action cannot be undone. All your data will be permanently deleted.'
+                    )
+                  )
+                    return
+
+                  try {
+                    const response = await fetch('/api/delete-account', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ password }),
+                    })
+
+                    const data = await response.json()
+
+                    if (data.success) {
+                      alert('Your account has been successfully deleted.')
+                      window.location.href = '/'
+                    } else {
+                      alert(data.error || 'Failed to delete account. Please try again.')
+                    }
+                  } catch (err: any) {
+                    alert('An error occurred: ' + err.message)
+                  }
+                }}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Delete My Account
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
