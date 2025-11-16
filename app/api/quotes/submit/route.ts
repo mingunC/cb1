@@ -4,10 +4,12 @@ import { ApiErrors } from '@/lib/api/error'
 import { requireRole } from '@/lib/api/auth'
 import { createAdminClient } from '@/lib/supabase/server-clients'
 import { sendEmail, createQuoteSubmissionTemplate } from '@/lib/email/mailgun'
+import { NextRequest } from 'next/server'
 
 const handler = createApiHandler({
-  POST: async (req) => {
-    const { user } = await requireRole(['contractor'])
+  POST: async (req: NextRequest) => {
+    // ✅ request 파라미터 전달
+    const { user } = await requireRole(['contractor'], req)
     const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await req.json()
 
     if (!projectId || !contractorId || !price) {
