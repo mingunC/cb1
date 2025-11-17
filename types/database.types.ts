@@ -156,10 +156,10 @@ export interface Database {
           project_id: string
           contractor_id: string
           price: number
-          timeline: string
           description: string | null
           status: string
           pdf_url: string | null
+          pdf_filename: string | null
           created_at: string
           updated_at: string
         }
@@ -168,10 +168,10 @@ export interface Database {
           project_id: string
           contractor_id: string
           price: number
-          timeline: string
           description?: string | null
           status?: string
           pdf_url?: string | null
+          pdf_filename?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -180,10 +180,10 @@ export interface Database {
           project_id?: string
           contractor_id?: string
           price?: number
-          timeline?: string
           description?: string | null
           status?: string
           pdf_url?: string | null
+          pdf_filename?: string | null
           created_at?: string
           updated_at?: string
         }
