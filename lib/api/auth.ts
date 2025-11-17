@@ -103,3 +103,35 @@ export async function requireRole(allowedRoles: string[], request: NextRequest) 
 
   return { user, supabase, userType: profile.user_type }
 }
+
+/**
+ * Contractor 전용 인증 함수
+ * contractors 테이블에서 검증
+ */
+export async function requireContractor(request: NextRequest) {
+  const { user, supabase } = await requireAuth(request)
+
+  // contractors 테이블에서 확인
+  const { data: contractor, error } = await supabase
+    .from('contractors')
+    .select('id, company_name, user_id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Contractor check:', {
+      userId: user.id.slice(0, 8),
+      email: user.email,
+      contractorId: contractor?.id?.slice(0, 8),
+      companyName: contractor?.company_name,
+      error: error?.message
+    })
+  }
+
+  if (error || !contractor) {
+    console.error('❌ Contractor not found:', error?.message)
+    throw ApiErrors.forbidden('Not a registered contractor')
+  }
+
+  return { user, supabase, contractor }
+}
