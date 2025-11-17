@@ -61,10 +61,18 @@ const handler = createApiHandler({
       throw ApiErrors.internal('견적서 저장에 실패했습니다.')
     }
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Quote saved successfully:', quote.id)
+    }
+
     let emailSent = false
     let emailError: string | null = null
 
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Starting email notification process...')
+      }
+
       const { data: projectWithCustomer, error: projectFetchError } = await supabase
         .from('quote_requests')
         .select('*, customer_id, full_address, space_type, budget')
@@ -73,6 +81,13 @@ const handler = createApiHandler({
 
       if (projectFetchError || !projectWithCustomer) {
         throw new Error(projectFetchError?.message || '프로젝트 정보를 찾을 수 없습니다.')
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📋 Project info retrieved:', {
+          hasCustomerId: !!projectWithCustomer.customer_id,
+          address: projectWithCustomer.full_address?.slice(0, 20) + '...'
+        })
       }
 
       const { data: customer, error: customerError } = await supabase
@@ -85,6 +100,14 @@ const handler = createApiHandler({
         throw new Error(customerError?.message || '고객 이메일 주소가 없습니다.')
       }
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('👤 Customer info retrieved:', {
+          hasEmail: !!customer.email,
+          email: customer.email,
+          name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+        })
+      }
+
       const { data: contractor, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, email, phone')
@@ -95,10 +118,21 @@ const handler = createApiHandler({
         throw new Error(contractorError?.message || '업체 정보를 찾을 수 없습니다.')
       }
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🏢 Contractor info retrieved:', {
+          companyName: contractor.company_name,
+          hasEmail: !!contractor.email
+        })
+      }
+
       const customerName =
         customer.first_name && customer.last_name
           ? `${customer.first_name} ${customer.last_name}`
           : customer.email.split('@')[0] || 'Customer'
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📝 Creating email template...')
+      }
 
       const emailHTML = createQuoteSubmissionTemplate(
         customerName,
@@ -118,6 +152,13 @@ const handler = createApiHandler({
         }
       )
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Sending email to customer:', {
+          to: customer.email,
+          subject: 'New Quote Received for Your Project'
+        })
+      }
+
       const emailResult = await sendEmail({
         to: customer.email,
         subject: 'New Quote Received for Your Project',
@@ -126,8 +167,14 @@ const handler = createApiHandler({
 
       if (emailResult.success) {
         emailSent = true
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Email sent successfully!', {
+            messageId: (emailResult as any).messageId
+          })
+        }
       } else {
         emailError = emailResult.error || '이메일 전송 실패 (원인 불명)'
+        console.error('❌ Email failed:', emailError)
       }
     } catch (error) {
       emailError = error instanceof Error ? error.message : '이메일 전송 중 오류 발생'
@@ -143,6 +190,14 @@ const handler = createApiHandler({
     const message = emailSent
       ? '견적서가 성공적으로 제출되었습니다.'
       : '견적서가 제출되었습니다. (참고: 고객 이메일 알림 전송 실패)'
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Quote submission completed:', {
+        quoteId: quote.id,
+        emailSent,
+        emailError
+      })
+    }
 
     return successResponse(payload, message)
   },
