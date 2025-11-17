@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { sendEmail } from '@/lib/email-service'
-import { createSiteVisitApplicationTemplate } from '@/lib/email/mailgun'
+import { sendEmail, createSiteVisitApplicationTemplate } from '@/lib/email/mailgun'
 
 export async function POST(request: Request) {
   try {
@@ -106,6 +105,14 @@ export async function POST(request: Request) {
         .single()
       
       customer = customerData
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Customer data retrieved:', {
+          hasCustomer: !!customer,
+          hasEmail: !!customer?.email,
+          email: customer?.email
+        })
+      }
     }
     
     // 5. Get contractor information
@@ -115,6 +122,13 @@ export async function POST(request: Request) {
       .eq('id', contractorId)
       .single()
     
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🏢 Contractor data retrieved:', {
+        hasContractor: !!contractor,
+        companyName: contractor?.company_name
+      })
+    }
+    
     // 6. Send email notification to customer
     let emailSent = false
     if (customer && contractor && project && customer.email) {
@@ -122,6 +136,14 @@ export async function POST(request: Request) {
         const customerName = customer.first_name && customer.last_name
           ? `${customer.first_name} ${customer.last_name}`
           : customer.email?.split('@')[0] || 'Customer'
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📧 Preparing to send email:', {
+            to: customer.email,
+            customerName: customerName,
+            contractorName: contractor.company_name
+          })
+        }
         
         const emailHTML = createSiteVisitApplicationTemplate(
           customerName,
@@ -157,6 +179,13 @@ export async function POST(request: Request) {
         console.error('❌ Error sending site visit application email:', emailError)
         // Don't fail the request if email fails
       }
+    } else {
+      console.warn('⚠️ Cannot send email - missing data:', {
+        hasCustomer: !!customer,
+        hasCustomerEmail: !!customer?.email,
+        hasContractor: !!contractor,
+        hasProject: !!project
+      })
     }
     
     return NextResponse.json({
