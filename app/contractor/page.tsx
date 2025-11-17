@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import IntegratedContractorDashboard from './IntegratedDashboard'
+import ImprovedContractorDashboard from './ImprovedDashboard'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -112,21 +112,21 @@ export default function ContractorPage() {
   // 에러 상태
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md px-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+        <div className="text-center max-w-md px-4 bg-white rounded-xl shadow-lg p-8">
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">문제가 발생했습니다</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
               onClick={() => window.location.reload()}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
             >
               페이지 새로고침
             </button>
             <button
               onClick={() => router.push('/contractor-login')}
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium"
             >
               로그인 페이지로 이동
             </button>
@@ -139,16 +139,16 @@ export default function ContractorPage() {
   // 로딩 상태
   if (isLoading || !contractorData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">대시보드 로딩 중...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-700 font-semibold text-lg">대시보드 로딩 중...</p>
           <p className="mt-2 text-sm text-gray-500">잠시만 기다려주세요</p>
         </div>
       </div>
     )
   }
   
-  // 정상 렌더링
-  return <IntegratedContractorDashboard initialContractorData={contractorData} />
+  // 정상 렌더링 - 새로운 ImprovedDashboard 사용
+  return <ImprovedContractorDashboard initialContractorData={contractorData} />
 }
