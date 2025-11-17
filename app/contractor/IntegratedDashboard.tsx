@@ -734,18 +734,18 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
         )}
       </div>
       
-      {/* 견적서 작성 모달 */}
-      {showQuoteModal && selectedProject && (
-        <QuoteModal
-          project={selectedProject}
-          contractorId={contractorData?.id || ''}
-          onClose={() => {
-            setShowQuoteModal(false)
-            setSelectedProject(null)
-          }}
-          onSubmit={handleQuoteSubmitted}
-        />
-      )}
+      {/* 견적서 작성 모달 - ✅ 올바른 props 전달 */}
+      <QuoteModal
+        isOpen={showQuoteModal}
+        mode="create"
+        project={selectedProject}
+        contractorId={contractorData?.id || ''}
+        onClose={() => {
+          setShowQuoteModal(false)
+          setSelectedProject(null)
+        }}
+        onSuccess={handleQuoteSubmitted}
+      />
     </div>
   )
 }
