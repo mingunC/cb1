@@ -123,149 +123,136 @@ export default function QuoteModal({
     window.open(data.signedUrl, '_blank')
   }
 
-  // ✅ 개선된 폼 제출 핸들러 - 가이드 적용
-// ✅ 개선된 폼 제출 핸들러 - Authorization 헤더 직접 추가
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  
-  if (process.env.NODE_ENV === 'development') console.log('🎯 Submit button clicked!')
-  
-  // ✅ 1단계: 프론트엔드에서 인증 확인
-  const supabase = createBrowserClient()
-  let session: any
-  
-  try {
-    const { data: { session: authSession } } = await supabase.auth.getSession()
-    session = authSession
+  // ✅ 개선된 폼 제출 핸들러 - users 테이블 체크 제거
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     
-    if (!session) {
-      toast.error('Please log in as a contractor to submit a quote.')
+    if (process.env.NODE_ENV === 'development') console.log('🎯 Submit button clicked!')
+    
+    // ✅ 1단계: 세션 확인만 (users 테이블 체크 제거)
+    const supabase = createBrowserClient()
+    let session: any
+    
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession()
+      session = authSession
+      
+      if (!session) {
+        toast.error('Please log in as a contractor to submit a quote.')
+        router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
+        return
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Session verified:', {
+          userId: session.user.id,
+          email: session.user.email
+        })
+      }
+    } catch (error) {
+      console.error('❌ Auth check error:', error)
+      toast.error('Authentication check failed. Please log in again.')
       router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
       return
     }
 
-    // ✅ 사용자 역할 확인
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !profile) {
-      console.error('❌ Profile fetch error:', profileError)
-      toast.error('Failed to verify user profile. Please try again.')
+    // ✅ 2단계: 입력 검증
+    if (!project || !contractorId) {
+      console.error('❌ Missing project or contractorId')
+      toast.error('Missing required information')
       return
     }
 
-    if (profile.user_type !== 'contractor') {
-      toast.error('Only contractors can submit quotes. Please log in with a contractor account.')
-      router.push('/contractor-login')
+    if (!pdfFile) {
+      toast.error('Please upload a detailed quote PDF file.')
       return
     }
-  } catch (error) {
-    console.error('❌ Auth check error:', error)
-    toast.error('Authentication check failed. Please log in again.')
-    router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
-    return
-  }
 
-  // ✅ 2단계: 입력 검증
-  if (!project || !contractorId) {
-    console.error('❌ Missing project or contractorId')
-    toast.error('Missing required information')
-    return
-  }
-
-  if (!pdfFile) {
-    toast.error('Please upload a detailed quote PDF file.')
-    return
-  }
-
-  if (!price || parseFloat(price) <= 0) {
-    toast.error('Please enter a valid quote amount.')
-    return
-  }
-
-  if (isSubmitting) {
-    if (process.env.NODE_ENV === 'development') console.log('⚠️ Already submitting, ignoring duplicate click')
-    return
-  }
-
-  if (process.env.NODE_ENV === 'development') console.log('✅ Starting quote submission...')
-  setIsSubmitting(true)
-  
-  try {
-    // ✅ 3단계: PDF 파일 업로드
-    if (process.env.NODE_ENV === 'development') console.log('📤 Step 1: Uploading PDF file...')
-    const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
-    if (process.env.NODE_ENV === 'development') console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
-    
-    // ✅ 4단계: Authorization 헤더와 함께 API 호출
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📧 Step 2: Submitting quote via API...')
-      console.log('🔑 Using access token:', session.access_token.substring(0, 30) + '...')
+    if (!price || parseFloat(price) <= 0) {
+      toast.error('Please enter a valid quote amount.')
+      return
     }
+
+    if (isSubmitting) {
+      if (process.env.NODE_ENV === 'development') console.log('⚠️ Already submitting, ignoring duplicate click')
+      return
+    }
+
+    if (process.env.NODE_ENV === 'development') console.log('✅ Starting quote submission...')
+    setIsSubmitting(true)
     
-    const response = await fetch('/api/quotes/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({
-        projectId: project.id,
-        contractorId: contractorId,
-        price: price,
-        description: detailedDescription || '',
-        pdfUrl: uploadResult.pdfUrl,
-        pdfFilename: uploadResult.pdfFilename
+    try {
+      // ✅ 3단계: PDF 파일 업로드
+      if (process.env.NODE_ENV === 'development') console.log('📤 Step 1: Uploading PDF file...')
+      const uploadResult = await uploadQuote(pdfFile, project.id, contractorId)
+      if (process.env.NODE_ENV === 'development') console.log('✅ PDF uploaded:', uploadResult.pdfUrl)
+      
+      // ✅ 4단계: Authorization 헤더와 함께 API 호출
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Step 2: Submitting quote via API...')
+        console.log('🔑 Using access token:', session.access_token.substring(0, 30) + '...')
+      }
+      
+      const response = await fetch('/api/quotes/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          projectId: project.id,
+          contractorId: contractorId,
+          price: price,
+          description: detailedDescription || '',
+          pdfUrl: uploadResult.pdfUrl,
+          pdfFilename: uploadResult.pdfFilename
+        })
       })
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Request failed' }))
       
-      if (response.status === 401) {
-        toast.error('Session expired. Please log in again.')
-        router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
-        return
-      }
-      if (response.status === 403) {
-        toast.error('Access denied. Please log in as a contractor.')
-        router.push('/contractor-login')
-        return
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed' }))
+        
+        if (response.status === 401) {
+          toast.error('Session expired. Please log in again.')
+          router.push('/contractor-login?redirect=' + encodeURIComponent(window.location.pathname))
+          return
+        }
+        if (response.status === 403) {
+          toast.error('Access denied. Please log in as a contractor.')
+          router.push('/contractor-login')
+          return
+        }
+        
+        throw new Error(errorData.error || `HTTP ${response.status}`)
       }
       
-      throw new Error(errorData.error || `HTTP ${response.status}`)
-    }
-    
-    const data = await response.json()
-    if (process.env.NODE_ENV === 'development') console.log('✅ Quote submitted successfully:', data)
-    
-    // ✅ 이메일 전송 결과 표시
-    if (data.emailSent) {
-      toast.success('Quote submitted and customer notified!')
-    } else {
-      toast.success('Quote submitted successfully!')
-      if (data.emailError) {
-        console.warn('⚠️ Email notification failed:', data.emailError)
+      const data = await response.json()
+      if (process.env.NODE_ENV === 'development') console.log('✅ Quote submitted successfully:', data)
+      
+      // ✅ 이메일 전송 결과 표시
+      if (data.emailSent) {
+        toast.success('Quote submitted and customer notified!')
+      } else {
+        toast.success('Quote submitted successfully!')
+        if (data.emailError) {
+          console.warn('⚠️ Email notification failed:', data.emailError)
+        }
       }
+      
+      // 성공 후 콜백 호출
+      setTimeout(() => {
+        onSuccess()
+      }, 100)
+      
+    } catch (error: any) {
+      console.error('❌ Quote submission error:', error)
+      toast.error(error.message || 'An error occurred while submitting the quote')
+    } finally {
+      // ✅ 어떤 경우에도 로딩 상태 해제
+      if (process.env.NODE_ENV === 'development') console.log('🔄 Releasing loading state...')
+      setIsSubmitting(false)
     }
-    
-    // 성공 후 콜백 호출
-    setTimeout(() => {
-      onSuccess()
-    }, 100)
-    
-  } catch (error: any) {
-    console.error('❌ Quote submission error:', error)
-    toast.error(error.message || 'An error occurred while submitting the quote')
-  } finally {
-    // ✅ 어떤 경우에도 로딩 상태 해제
-    if (process.env.NODE_ENV === 'development') console.log('🔄 Releasing loading state...')
-    setIsSubmitting(false)
   }
-}
 
   // 모달 닫기 핸들러
   const handleClose = () => {
