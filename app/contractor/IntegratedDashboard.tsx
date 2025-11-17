@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, TrendingUp, FileText, Ban } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, TrendingUp, FileText, Ban, Settings } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
@@ -27,7 +27,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
   const [contractorData, setContractorData] = useState<ContractorData | null>(initialContractorData)
   const [projectFilter, setProjectFilter] = useState<ProjectStatus | 'all' | 'bidding'>('all')
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'projects' | 'portfolio'>('projects')
+  const [activeTab, setActiveTab] = useState<'projects' | 'portfolio' | 'profile'>('projects')
   const [selectedContractorNames, setSelectedContractorNames] = useState<Record<string, string>>({})
   const [showQuoteModal, setShowQuoteModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
@@ -636,6 +636,17 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
               >
                 포트폴리오 관리
               </button>
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                  activeTab === 'profile'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                프로필 관리
+              </button>
             </nav>
           </div>
         </div>
@@ -729,6 +740,24 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                   }
                 }}
               />
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">프로필 관리</h2>
+              <p className="text-gray-600 mb-6">
+                프로필 정보를 업데이트하려면 아래 버튼을 클릭하세요.
+              </p>
+              <button
+                onClick={() => router.push('/contractor/profile')}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+              >
+                <Settings className="w-5 h-5" />
+                프로필 편집하기
+              </button>
             </div>
           </div>
         )}
