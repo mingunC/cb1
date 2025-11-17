@@ -34,9 +34,10 @@ const handler = createApiHandler({
         contractorCompany: contractor.company_name
       })
 
+    // ✅ 프로젝트 정보 가져오기 (timeline 포함)
     const { data: project, error: projectError } = await supabase
       .from('quote_requests')
-      .select('status')
+      .select('status, timeline')
       .eq('id', projectId)
       .single()
 
@@ -48,15 +49,16 @@ const handler = createApiHandler({
       throw ApiErrors.badRequest('현재 프로젝트는 견적서 제출 단계가 아닙니다.')
     }
 
+    // ✅ timeline 필드 포함하여 insert
     const { data: quote, error: quoteError } = await supabase
       .from('contractor_quotes')
       .insert({
         project_id: projectId,
         contractor_id: contractorId,
         price: parseFloat(price),
+        timeline: project.timeline || 'TBD', // ✅ 프로젝트의 timeline 사용
         description: description || null,
         pdf_url: pdfUrl,
-        pdf_filename: pdfFilename,
         status: 'submitted',
       })
       .select()
@@ -191,6 +193,8 @@ const handler = createApiHandler({
       quote,
       emailSent,
       emailError,
+      // ✅ 파일명 정보도 함께 반환 (클라이언트에서 사용할 수 있도록)
+      pdfFilename,
     }
 
     const message = emailSent
