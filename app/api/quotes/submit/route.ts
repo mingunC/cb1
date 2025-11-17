@@ -1,19 +1,24 @@
 import { createApiHandler } from '@/lib/api/handler'
 import { successResponse } from '@/lib/api/response'
 import { ApiErrors } from '@/lib/api/error'
-import { requireRole } from '@/lib/api/auth'
+import { requireContractor } from '@/lib/api/auth'
 import { createAdminClient } from '@/lib/supabase/server-clients'
 import { sendEmail, createQuoteSubmissionTemplate } from '@/lib/email/mailgun'
 import { NextRequest } from 'next/server'
 
 const handler = createApiHandler({
   POST: async (req: NextRequest) => {
-    // ✅ request 파라미터 전달
-    const { user } = await requireRole(['contractor'], req)
+    // ✅ requireContractor 사용 - contractors 테이블에서 검증
+    const { user, contractor } = await requireContractor(req)
     const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await req.json()
 
     if (!projectId || !contractorId || !price) {
       throw ApiErrors.badRequest('필수 필드가 누락되었습니다.')
+    }
+
+    // ✅ contractor ID 검증
+    if (contractor.id !== contractorId) {
+      throw ApiErrors.forbidden('본인의 견적서만 제출할 수 있습니다.')
     }
 
     const supabase = createAdminClient()
@@ -26,6 +31,7 @@ const handler = createApiHandler({
         hasPdf: !!pdfUrl,
         hasDescription: !!description,
         userId: user.id.slice(0, 8),
+        contractorCompany: contractor.company_name
       })
 
     const { data: project, error: projectError } = await supabase
@@ -108,20 +114,20 @@ const handler = createApiHandler({
         })
       }
 
-      const { data: contractor, error: contractorError } = await supabase
+      const { data: contractorInfo, error: contractorError } = await supabase
         .from('contractors')
         .select('company_name, email, phone')
         .eq('id', contractorId)
         .single()
 
-      if (contractorError || !contractor) {
+      if (contractorError || !contractorInfo) {
         throw new Error(contractorError?.message || '업체 정보를 찾을 수 없습니다.')
       }
 
       if (process.env.NODE_ENV === 'development') {
         console.log('🏢 Contractor info retrieved:', {
-          companyName: contractor.company_name,
-          hasEmail: !!contractor.email
+          companyName: contractorInfo.company_name,
+          hasEmail: !!contractorInfo.email
         })
       }
 
@@ -137,9 +143,9 @@ const handler = createApiHandler({
       const emailHTML = createQuoteSubmissionTemplate(
         customerName,
         {
-          company_name: contractor.company_name,
-          email: contractor.email,
-          phone: contractor.phone,
+          company_name: contractorInfo.company_name,
+          email: contractorInfo.email,
+          phone: contractorInfo.phone,
         },
         {
           full_address: projectWithCustomer.full_address,
