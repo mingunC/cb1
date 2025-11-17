@@ -31,11 +31,11 @@ const handler = createApiHandler({
 
     const supabase = createAdminClient()
 
-    // ✅ 프로젝트 정보 가져오기 (timeline 포함)
+    // ✅ 프로젝트 상태 확인
     console.log('🔍 Fetching project info...')
     const { data: project, error: projectError } = await supabase
       .from('quote_requests')
-      .select('status, timeline')
+      .select('status')
       .eq('id', projectId)
       .single()
 
@@ -49,26 +49,26 @@ const handler = createApiHandler({
       throw ApiErrors.notFound('프로젝트')
     }
 
-    console.log('✅ Project found:', { status: project.status, timeline: project.timeline })
+    console.log('✅ Project found:', { status: project.status })
 
     if (project.status !== 'bidding') {
       throw ApiErrors.badRequest('현재 프로젝트는 견적서 제출 단계가 아닙니다.')
     }
 
-    // ✅ Insert할 데이터 준비
+    // ✅ Insert할 데이터 준비 (timeline 제거!)
     const quoteData = {
       project_id: projectId,
       contractor_id: contractorId,
       price: parseFloat(price),
-      timeline: project.timeline || 'TBD',
       description: description || null,
       pdf_url: pdfUrl,
+      pdf_filename: pdfFilename || null,
       status: 'submitted',
     }
 
     console.log('📝 Inserting quote with data:', quoteData)
 
-    // ✅ timeline 필드 포함하여 insert
+    // ✅ contractor_quotes에 insert
     const { data: quote, error: quoteError } = await supabase
       .from('contractor_quotes')
       .insert(quoteData)
