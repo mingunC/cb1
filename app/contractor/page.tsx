@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import IntegratedContractorDashboard from './IntegratedDashboard3'
+import IntegratedContractorDashboard from './IntegratedDashboard'
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
