@@ -8,13 +8,23 @@ import { NextRequest } from 'next/server'
 
 const handler = createApiHandler({
   POST: async (req: NextRequest) => {
+    // ⚠️ CRITICAL: Check if service role key is configured
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not configured!')
+      console.error('Please add this environment variable to your .env.local file')
+      throw ApiErrors.internal(
+        'Server configuration error. Please contact support.'
+      )
+    }
+
     // ✅ requireContractor 사용 - contractors 테이블에서 검증
     const { user, contractor } = await requireContractor(req)
     const { projectId, contractorId, price, description, pdfUrl, pdfFilename } = await req.json()
 
     console.log('📥 Quote submission request:', {
-      projectId,
+      userId: user.id,
       contractorId,
+      projectId,
       price,
       hasPdfUrl: !!pdfUrl,
       hasDescription: !!description,
@@ -26,6 +36,10 @@ const handler = createApiHandler({
 
     // ✅ contractor ID 검증
     if (contractor.id !== contractorId) {
+      console.error('❌ Contractor ID mismatch:', {
+        authenticated: contractor.id,
+        requested: contractorId,
+      })
       throw ApiErrors.forbidden('본인의 견적서만 제출할 수 있습니다.')
     }
 
@@ -55,7 +69,21 @@ const handler = createApiHandler({
       throw ApiErrors.badRequest('현재 프로젝트는 견적서 제출 단계가 아닙니다.')
     }
 
-    // ✅ Insert할 데이터 준비 (timeline 제거!)
+    // ✅ 중복 견적서 확인
+    console.log('🔍 Checking for existing quotes...')
+    const { data: existingQuote } = await supabase
+      .from('contractor_quotes')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('contractor_id', contractorId)
+      .single()
+
+    if (existingQuote) {
+      console.warn('⚠️ Duplicate quote attempt detected')
+      throw ApiErrors.badRequest('이미 이 프로젝트에 견적서를 제출했습니다.')
+    }
+
+    // ✅ Insert할 데이터 준비
     const quoteData = {
       project_id: projectId,
       contractor_id: contractorId,
@@ -66,7 +94,10 @@ const handler = createApiHandler({
       status: 'submitted',
     }
 
-    console.log('📝 Inserting quote with data:', quoteData)
+    console.log('📝 Inserting quote with data:', {
+      ...quoteData,
+      pdf_url: pdfUrl ? '(URL provided)' : null,
+    })
 
     // ✅ contractor_quotes에 insert
     const { data: quote, error: quoteError } = await supabase
@@ -81,8 +112,19 @@ const handler = createApiHandler({
         message: quoteError.message,
         details: quoteError.details,
         hint: quoteError.hint,
-        code: quoteError.code
+        code: quoteError.code,
       })
+
+      // 특정 에러에 대한 더 나은 메시지 제공
+      if (quoteError.code === '23503') {
+        throw ApiErrors.badRequest('유효하지 않은 프로젝트 또는 업체 ID입니다.')
+      }
+      if (quoteError.code === '42501') {
+        throw ApiErrors.internal(
+          'RLS 정책 오류. 관리자에게 문의하세요. (RLS policy violation)'
+        )
+      }
+
       throw ApiErrors.internal(`견적서 저장에 실패했습니다: ${quoteError.message}`)
     }
 
@@ -185,7 +227,7 @@ const handler = createApiHandler({
     console.log('✅ Quote submission completed:', {
       quoteId: quote.id,
       emailSent,
-      hasEmailError: !!emailError
+      hasEmailError: !!emailError,
     })
 
     return successResponse(payload, message)
