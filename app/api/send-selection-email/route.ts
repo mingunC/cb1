@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { 
+  sendEmail, 
+  createSelectionEmailTemplate, 
+  createCustomerNotificationTemplate 
+} from '@/lib/email/mailgun'
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +44,7 @@ export async function POST(request: Request) {
     // 3. 업체 정보 가져오기
     const { data: contractor, error: contractorError } = await supabase
       .from('contractors')
-      .select('company_name, email, user_id')
+      .select('company_name, email, user_id, phone, contact_name')
       .eq('id', contractorId)
       .single()
     
@@ -60,81 +65,92 @@ export async function POST(request: Request) {
       throw new Error('Contractor email not found')
     }
     
-    // 5. 이메일 내용 준비
+    // 5. 선택된 견적서 정보 가져오기
+    const { data: quote, error: quoteError } = await supabase
+      .from('contractor_quotes')
+      .select('price, description')
+      .eq('project_id', projectId)
+      .eq('contractor_id', contractorId)
+      .eq('status', 'accepted')
+      .single()
+    
+    if (quoteError || !quote) {
+      console.error('Quote not found:', quoteError)
+      throw new Error('Quote information not found')
+    }
+    
+    // 6. 고객 이름 생성
     const customerName = customer.first_name && customer.last_name
       ? `${customer.first_name} ${customer.last_name}`
-      : customer.email?.split('@')[0] || '고객'
+      : customer.email?.split('@')[0] || 'Customer'
     
-    const emailSubject = `🎉 축하합니다! ${customerName}님이 귀사를 선택했습니다`
-    
-    const emailBody = `
-안녕하세요, ${contractor.company_name}님!
-
-축하합니다! 고객께서 귀사를 프로젝트 업체로 선택하셨습니다.
-
-📋 프로젝트 정보:
-- 주소: ${project.full_address || '정보 없음'}
-- 공간 타입: ${project.space_type || '정보 없음'}
-- 예산: ${project.budget || '정보 없음'}
-
-👤 고객 정보:
-- 이름: ${customerName}
-- 이메일: ${customer.email || '정보 없음'}
-- 연락처: ${customer.phone || '정보 없음'}
-- 주소: ${project.full_address || '정보 없음'}
-
-고객님께 연락하여 프로젝트를 진행해주세요!
-
-감사합니다.
-    `.trim()
-    
-    if (process.env.NODE_ENV === 'development') console.log('📧 Email prepared:', {
-      to: contractorEmail,
-      subject: emailSubject,
-      customerName,
-      companyName: contractor.company_name
+    console.log('📧 Sending emails:', {
+      contractorEmail,
+      customerEmail: customer.email,
+      projectId,
+      contractorId
     })
     
-    // TODO: 실제 이메일 발송 서비스 통합
-    // 옵션 1: Resend
-    // const resend = new Resend(process.env.RESEND_API_KEY)
-    // await resend.emails.send({
-    //   from: 'noreply@yourcompany.com',
-    //   to: contractorEmail,
-    //   subject: emailSubject,
-    //   html: emailBody.replace(/\n/g, '<br>')
-    // })
+    // 7. 업체에게 이메일 발송 (고객 정보 포함)
+    const contractorEmailResult = await sendEmail({
+      to: contractorEmail,
+      subject: `🎉 Congratulations! ${customerName} has selected your company`,
+      html: createSelectionEmailTemplate(
+        contractor.company_name,
+        project,
+        quote,
+        customer // 고객 정보 전달
+      )
+    })
     
-    // 옵션 2: Supabase Edge Function
-    // await supabase.functions.invoke('send-email', {
-    //   body: { to: contractorEmail, subject: emailSubject, body: emailBody }
-    // })
+    if (!contractorEmailResult.success) {
+      console.error('❌ Failed to send email to contractor:', contractorEmailResult.error)
+    } else {
+      console.log('✅ Email sent to contractor:', contractorEmail)
+    }
     
-    // 옵션 3: SendGrid, Mailgun 등
+    // 8. 고객에게 이메일 발송
+    const customerEmailResult = await sendEmail({
+      to: customer.email,
+      subject: `✅ Contractor Selected for Your Renovation Project`,
+      html: createCustomerNotificationTemplate(
+        customerName,
+        contractor,
+        project,
+        quote
+      )
+    })
     
-    // 현재는 로그만 출력 (개발 단계)
-    if (process.env.NODE_ENV === 'development') console.log('📧 Email would be sent to:', contractorEmail)
-    if (process.env.NODE_ENV === 'development') console.log('Subject:', emailSubject)
-    if (process.env.NODE_ENV === 'development') console.log('Body:', emailBody)
+    if (!customerEmailResult.success) {
+      console.error('❌ Failed to send email to customer:', customerEmailResult.error)
+    } else {
+      console.log('✅ Email sent to customer:', customer.email)
+    }
+    
+    // 9. 결과 반환
+    const allEmailsSent = contractorEmailResult.success && customerEmailResult.success
     
     return NextResponse.json({
-      success: true,
-      message: 'Email notification prepared',
-      preview: {
-        to: contractorEmail,
-        subject: emailSubject,
-        customerInfo: {
-          name: customerName,
-          email: customer.email,
-          phone: customer.phone
+      success: allEmailsSent,
+      message: allEmailsSent 
+        ? 'Selection emails sent successfully to both contractor and customer'
+        : 'Selection confirmed but some emails failed to send',
+      details: {
+        contractorEmailSent: contractorEmailResult.success,
+        customerEmailSent: customerEmailResult.success,
+        contractorEmail: contractorEmailResult.success ? contractorEmail : undefined,
+        customerEmail: customerEmailResult.success ? customer.email : undefined,
+        errors: {
+          contractor: contractorEmailResult.error,
+          customer: customerEmailResult.error
         }
       }
     })
     
   } catch (error: any) {
-    console.error('Error sending selection email:', error)
+    console.error('❌ Error in send-selection-email:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to send email' },
+      { error: error.message || 'Failed to send selection emails' },
       { status: 500 }
     )
   }
