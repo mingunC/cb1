@@ -377,4 +377,5 @@ For support and questions:
 ---
 
 **Built with ❤️ using Next.js 14, Supabase, and Tailwind CSS**
-# Force deploy
+
+<!-- Deployment trigger: 2025-11-18 21:10 -->
