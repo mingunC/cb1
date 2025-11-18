@@ -215,7 +215,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     toast.success('데이터를 새로고침했습니다')
   }
   
-  // 현장방문 신청 함수
+  // 현장방문 신청 함수 (API 호출)
   const handleApplySiteVisit = async (project: Project) => {
     if (!contractorData?.id) {
       toast.error('업체 정보를 찾을 수 없습니다')
@@ -223,38 +223,71 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     }
 
     try {
-      const supabase = createBrowserClient()
+      const loadingToast = toast.loading('현장방문 신청 중...')
       
-      // 이미 신청했는지 확인
-      const { data: existingApplications } = await supabase
-        .from('site_visit_applications')
-        .select('*')
-        .eq('project_id', project.id)
-        .eq('contractor_id', contractorData.id)
-        .eq('is_cancelled', false)
+      const response = await fetch('/api/apply-site-visit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: project.id,
+          contractorId: contractorData.id
+        })
+      })
 
-      if (existingApplications && existingApplications.length > 0) {
-        toast.error('이미 현장방문을 신청했습니다')
+      const result = await response.json()
+
+      toast.dismiss(loadingToast)
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          toast.error('이미 현장방문을 신청했습니다')
+        } else {
+          toast.error(result.error || '현장방문 신청에 실패했습니다')
+        }
         return
       }
 
-      // 현장방문 신청 생성
-      const { error } = await supabase
-        .from('site_visit_applications')
-        .insert({
-          project_id: project.id,
-          contractor_id: contractorData.id,
-          status: 'pending',
-          is_cancelled: false
-        })
-
-      if (error) throw error
-
-      toast.success('현장방문 신청이 완료되었습니다')
+      if (result.data?.emailSent) {
+        toast.success('현장방문 신청이 완료되었습니다! 고객에게 알림 이메일이 발송되었습니다.')
+      } else {
+        toast.success('현장방문 신청이 완료되었습니다!')
+      }
+      
       await loadProjects() // 프로젝트 목록 새로고침
     } catch (error: any) {
       console.error('Site visit application error:', error)
-      toast.error(error.message || '현장방문 신청에 실패했습니다')
+      toast.error('현장방문 신청에 실패했습니다')
+    }
+  }
+  
+  // 현장방문 취소 함수
+  const handleCancelSiteVisit = async (project: Project) => {
+    if (!project.site_visit_application) {
+      toast.error('현장방문 신청 정보를 찾을 수 없습니다')
+      return
+    }
+
+    const confirmed = window.confirm('현장방문 신청을 취소하시겠습니까?')
+    if (!confirmed) return
+
+    try {
+      const supabase = createBrowserClient()
+      
+      // is_cancelled를 true로 설정
+      const { error } = await supabase
+        .from('site_visit_applications')
+        .update({ is_cancelled: true })
+        .eq('id', project.site_visit_application.id)
+
+      if (error) throw error
+
+      toast.success('현장방문 신청이 취소되었습니다')
+      await loadProjects() // 프로젝트 목록 새로고침
+    } catch (error: any) {
+      console.error('Cancel site visit error:', error)
+      toast.error('현장방문 취소에 실패했습니다')
     }
   }
   
@@ -597,15 +630,45 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               
               {/* 액션 버튼 */}
               <div className="flex gap-2 flex-wrap pt-2">
-                {project.projectStatus === 'approved' && !project.site_visit_application && (
+                {/* 승인된 프로젝트: 현장방문 신청/취소 버튼 */}
+                {project.projectStatus === 'approved' && (
+                  <>
+                    {!project.site_visit_application ? (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleApplySiteVisit(project)
+                        }}
+                        className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        현장방문 신청
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCancelSiteVisit(project)
+                        }}
+                        className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
+                      >
+                        <Ban className="w-4 h-4" />
+                        현장방문 취소
+                      </button>
+                    )}
+                  </>
+                )}
+                
+                {/* 현장방문 신청 상태: 취소 버튼 */}
+                {project.projectStatus === 'site-visit-applied' && (
                   <button 
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleApplySiteVisit(project)
+                      handleCancelSiteVisit(project)
                     }}
-                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
                   >
-                    현장방문 신청
+                    <Ban className="w-4 h-4" />
+                    현장방문 취소
                   </button>
                 )}
                 
