@@ -128,12 +128,13 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
         (projectsData || []).map(async (project) => {
           const customerInfo = customersMap[project.customer_id] || null
           
-          // 현장방문 신청 조회
+          // 현장방문 신청 조회 - 취소되지 않은 신청만 가져오기
           const { data: siteVisits } = await supabase
             .from('site_visit_applications')
             .select('*')
             .eq('project_id', project.id)
             .eq('contractor_id', contractorData.id)
+            .eq('is_cancelled', false)  // 명시적으로 취소되지 않은 것만
           
           // 내 견적서 조회
           const { data: quotes } = await supabase
@@ -142,9 +143,19 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
             .eq('project_id', project.id)
             .eq('contractor_id', contractorData.id)
           
-          const mySiteVisit = siteVisits?.find((app: any) => !app.is_cancelled)
+          // 활성 신청만 가져옴 (취소되지 않은 것)
+          const mySiteVisit = siteVisits && siteVisits.length > 0 ? siteVisits[0] : undefined
           const myQuote = quotes?.[0]
           const selectedContractorId = project.selected_contractor_id
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Project ${project.id.slice(0, 8)} site visit check:`, {
+              hasSiteVisit: !!mySiteVisit,
+              siteVisitStatus: mySiteVisit?.status,
+              isCancelled: mySiteVisit?.is_cancelled,
+              projectStatus: project.status
+            })
+          }
           
           // 프로젝트 상태 결정
           let projectStatus: ProjectStatus | 'bidding' = 'pending'
@@ -223,6 +234,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     }
 
     try {
+      console.log('🔄 Starting site visit application...')
       const loadingToast = toast.loading('현장방문 신청 중...')
       
       const response = await fetch('/api/apply-site-visit', {
@@ -237,6 +249,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       })
 
       const result = await response.json()
+      console.log('📬 Site visit application response:', result)
 
       toast.dismiss(loadingToast)
 
@@ -250,14 +263,22 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       }
 
       if (result.data?.emailSent) {
-        toast.success('현장방문 신청이 완료되었습니다! 고객에게 알림 이메일이 발송되었습니다.')
+        toast.success('현장방문 신청이 완료되었습니다! 고객에게 알림 이메일이 발송되었습니다.', {
+          duration: 5000,
+          icon: '✅'
+        })
       } else {
-        toast.success('현장방문 신청이 완료되었습니다!')
+        toast('현장방문 신청이 완료되었습니다!', {
+          duration: 4000,
+          icon: '📝'
+        })
+        console.warn('⚠️ Email was not sent:', result.data?.debug)
       }
       
+      console.log('🔄 Refreshing projects after application...')
       await loadProjects() // 프로젝트 목록 새로고침
     } catch (error: any) {
-      console.error('Site visit application error:', error)
+      console.error('❌ Site visit application error:', error)
       toast.error('현장방문 신청에 실패했습니다')
     }
   }
@@ -273,6 +294,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     if (!confirmed) return
 
     try {
+      console.log('🔄 Cancelling site visit application:', project.site_visit_application.id)
       const supabase = createBrowserClient()
       
       // is_cancelled를 true로 설정
@@ -283,10 +305,13 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
 
       if (error) throw error
 
+      console.log('✅ Site visit cancelled successfully')
       toast.success('현장방문 신청이 취소되었습니다')
+      
+      console.log('🔄 Refreshing projects after cancellation...')
       await loadProjects() // 프로젝트 목록 새로고침
     } catch (error: any) {
-      console.error('Cancel site visit error:', error)
+      console.error('❌ Cancel site visit error:', error)
       toast.error('현장방문 취소에 실패했습니다')
     }
   }
@@ -630,7 +655,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               
               {/* 액션 버튼 */}
               <div className="flex gap-2 flex-wrap pt-2">
-                {/* 승인된 프로젝트: 현장방문 신청/취소 버튼 */}
+                {/* 승인된 프로젝트: 현장방문 신청/취소 버튼 토글 */}
                 {project.projectStatus === 'approved' && (
                   <>
                     {!project.site_visit_application ? (
@@ -652,7 +677,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                         className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
                       >
                         <Ban className="w-4 h-4" />
-                        현장방문 취소
+                        현장방문 신청 취소
                       </button>
                     )}
                   </>
@@ -668,7 +693,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
                   >
                     <Ban className="w-4 h-4" />
-                    현장방문 취소
+                    현장방문 신청 취소
                   </button>
                 )}
                 
