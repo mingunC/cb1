@@ -215,6 +215,49 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     toast.success('데이터를 새로고침했습니다')
   }
   
+  // 현장방문 신청 함수
+  const handleApplySiteVisit = async (project: Project) => {
+    if (!contractorData?.id) {
+      toast.error('업체 정보를 찾을 수 없습니다')
+      return
+    }
+
+    try {
+      const supabase = createBrowserClient()
+      
+      // 이미 신청했는지 확인
+      const { data: existingApplications } = await supabase
+        .from('site_visit_applications')
+        .select('*')
+        .eq('project_id', project.id)
+        .eq('contractor_id', contractorData.id)
+        .eq('is_cancelled', false)
+
+      if (existingApplications && existingApplications.length > 0) {
+        toast.error('이미 현장방문을 신청했습니다')
+        return
+      }
+
+      // 현장방문 신청 생성
+      const { error } = await supabase
+        .from('site_visit_applications')
+        .insert({
+          project_id: project.id,
+          contractor_id: contractorData.id,
+          status: 'pending',
+          is_cancelled: false
+        })
+
+      if (error) throw error
+
+      toast.success('현장방문 신청이 완료되었습니다')
+      await loadProjects() // 프로젝트 목록 새로고침
+    } catch (error: any) {
+      console.error('Site visit application error:', error)
+      toast.error(error.message || '현장방문 신청에 실패했습니다')
+    }
+  }
+  
   // 입찰 참여 함수
   const handleJoinBidding = (project: Project) => {
     setSelectedProject(project)
@@ -556,10 +599,9 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               <div className="flex gap-2 flex-wrap pt-2">
                 {project.projectStatus === 'approved' && !project.site_visit_application && (
                   <button 
-                    onClick={() => {
-                      if (process.env.NODE_ENV === 'development') {
-                        console.log('Apply for site visit')
-                      }
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleApplySiteVisit(project)
                     }}
                     className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                   >
