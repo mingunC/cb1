@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { sendEmail } from '@/lib/email/mailgun'
 import { 
-  sendEmail, 
-  createSelectionEmailTemplate, 
-  createCustomerNotificationTemplate 
-} from '@/lib/email/mailgun'
+  createSelectionEmailTemplateKo, 
+  createCustomerNotificationTemplateKo 
+} from '@/lib/email/mailgun-korean'
 
 export async function POST(request: Request) {
   try {
@@ -82,24 +82,24 @@ export async function POST(request: Request) {
     // 6. 고객 이름 생성
     const customerName = customer.first_name && customer.last_name
       ? `${customer.first_name} ${customer.last_name}`
-      : customer.email?.split('@')[0] || 'Customer'
+      : customer.email?.split('@')[0] || '고객'
     
-    console.log('📧 Sending emails:', {
+    console.log('📧 Sending Korean emails:', {
       contractorEmail,
       customerEmail: customer.email,
       projectId,
       contractorId
     })
     
-    // 7. 업체에게 이메일 발송 (고객 정보 포함)
+    // 7. 업체에게 한글 이메일 발송 (고객 정보 포함)
     const contractorEmailResult = await sendEmail({
       to: contractorEmail,
-      subject: `🎉 Congratulations! ${customerName} has selected your company`,
-      html: createSelectionEmailTemplate(
+      subject: `🎉 축하합니다! ${customerName}님이 귀사를 선택했습니다`,
+      html: createSelectionEmailTemplateKo(
         contractor.company_name,
         project,
         quote,
-        customer // 고객 정보 전달
+        customer
       )
     })
     
@@ -109,11 +109,11 @@ export async function POST(request: Request) {
       console.log('✅ Email sent to contractor:', contractorEmail)
     }
     
-    // 8. 고객에게 이메일 발송
+    // 8. 고객에게 한글 이메일 발송
     const customerEmailResult = await sendEmail({
       to: customer.email,
-      subject: `✅ Contractor Selected for Your Renovation Project`,
-      html: createCustomerNotificationTemplate(
+      subject: `✅ 리노베이션 프로젝트 업체 선정 완료`,
+      html: createCustomerNotificationTemplateKo(
         customerName,
         contractor,
         project,
@@ -133,8 +133,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: allEmailsSent,
       message: allEmailsSent 
-        ? 'Selection emails sent successfully to both contractor and customer'
-        : 'Selection confirmed but some emails failed to send',
+        ? '업체와 고객에게 선택 알림 이메일이 성공적으로 발송되었습니다'
+        : '업체 선택은 확정되었으나 일부 이메일 발송에 실패했습니다',
       details: {
         contractorEmailSent: contractorEmailResult.success,
         customerEmailSent: customerEmailResult.success,
