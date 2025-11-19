@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     console.log('🚀 Site visit application started:', { projectId: projectId.slice(0, 8), contractorId: contractorId.slice(0, 8) })
     
     // 1. Check if already applied (excluding cancelled applications)
-    const { data: existing, error: checkError } = await supabase
+    const { data: activeApplication, error: checkActiveError } = await supabase
       .from('site_visit_applications')
       .select('*')
       .eq('project_id', projectId)
@@ -40,50 +40,91 @@ export async function POST(request: Request) {
       .eq('is_cancelled', false)
       .maybeSingle()
     
-    if (checkError) {
-      console.error('❌ Check error:', checkError)
-      throw new Error(`Check failed: ${checkError.message}`)
+    if (checkActiveError) {
+      console.error('❌ Active check error:', checkActiveError)
+      throw new Error(`Active check failed: ${checkActiveError.message}`)
     }
     
-    if (existing) {
-      console.log('⚠️ Active site visit already exists:', existing.id)
+    if (activeApplication) {
+      console.log('⚠️ Active site visit already exists:', activeApplication.id)
       return NextResponse.json(
         { 
           error: 'Site visit already applied',
           message: 'You have already applied for a site visit for this project',
           existingApplication: {
-            id: existing.id,
-            status: existing.status,
-            appliedAt: existing.applied_at
+            id: activeApplication.id,
+            status: activeApplication.status,
+            appliedAt: activeApplication.applied_at
           }
         },
         { status: 409 }
       )
     }
     
-    // 2. Insert site visit application
-    const insertData = {
-      project_id: projectId,
-      contractor_id: contractorId,
-      status: 'pending',
-      applied_at: new Date().toISOString(),
-      is_cancelled: false
-    }
-    
-    console.log('📝 Inserting site visit application:', insertData)
-    
-    const { data: application, error: insertError } = await supabase
+    // 2. Check for cancelled application to reactivate
+    const { data: cancelledApplication, error: checkCancelledError } = await supabase
       .from('site_visit_applications')
-      .insert(insertData)
-      .select()
-      .single()
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('contractor_id', contractorId)
+      .eq('is_cancelled', true)
+      .maybeSingle()
     
-    if (insertError) {
-      console.error('❌ Insert error:', insertError)
-      throw new Error(`Insert failed: ${insertError.message}`)
+    if (checkCancelledError) {
+      console.error('❌ Cancelled check error:', checkCancelledError)
+      // Continue anyway - we'll try to insert
     }
     
-    console.log('✅ Site visit application created:', application.id)
+    let application
+    
+    if (cancelledApplication) {
+      // Reactivate the cancelled application
+      console.log('🔄 Reactivating cancelled application:', cancelledApplication.id)
+      
+      const { data: reactivated, error: updateError } = await supabase
+        .from('site_visit_applications')
+        .update({
+          is_cancelled: false,
+          status: 'pending',
+          applied_at: new Date().toISOString()
+        })
+        .eq('id', cancelledApplication.id)
+        .select()
+        .single()
+      
+      if (updateError) {
+        console.error('❌ Reactivation error:', updateError)
+        throw new Error(`Reactivation failed: ${updateError.message}`)
+      }
+      
+      application = reactivated
+      console.log('✅ Site visit application reactivated:', application.id)
+    } else {
+      // Create new application
+      const insertData = {
+        project_id: projectId,
+        contractor_id: contractorId,
+        status: 'pending',
+        applied_at: new Date().toISOString(),
+        is_cancelled: false
+      }
+      
+      console.log('📝 Inserting new site visit application:', insertData)
+      
+      const { data: inserted, error: insertError } = await supabase
+        .from('site_visit_applications')
+        .insert(insertData)
+        .select()
+        .single()
+      
+      if (insertError) {
+        console.error('❌ Insert error:', insertError)
+        throw new Error(`Insert failed: ${insertError.message}`)
+      }
+      
+      application = inserted
+      console.log('✅ Site visit application created:', application.id)
+    }
     
     // 3. Get project information
     const { data: project, error: projectError } = await supabase
@@ -225,6 +266,7 @@ export async function POST(request: Request) {
       data: {
         applicationId: application.id,
         emailSent: emailSent,
+        wasReactivated: !!cancelledApplication,
         debug: process.env.NODE_ENV === 'development' ? emailChecks : undefined
       }
     })
