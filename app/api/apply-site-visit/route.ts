@@ -31,19 +31,21 @@ export async function POST(request: Request) {
     
     if (process.env.NODE_ENV === 'development') console.log('🚀 Site visit application started:', { projectId: projectId.slice(0, 8), contractorId: contractorId.slice(0, 8) })
     
-    // 1. Check if there's an ACTIVE (not cancelled) application
-    const { data: activeApplication, error: activeCheckError } = await supabase
+    // 1. Check if there's an ACTIVE application (is_cancelled = false OR NULL)
+    const { data: allApplications, error: checkError } = await supabase
       .from('site_visit_applications')
       .select('*')
       .eq('project_id', projectId)
       .eq('contractor_id', contractorId)
-      .eq('is_cancelled', false)
-      .maybeSingle()
     
-    if (activeCheckError) {
-      console.error('❌ Active check error:', activeCheckError)
-      throw new Error(`Active check failed: ${activeCheckError.message}`)
+    if (checkError) {
+      console.error('❌ Check error:', checkError)
+      throw new Error(`Check failed: ${checkError.message}`)
     }
+    
+    // Separate active and cancelled applications
+    const activeApplication = allApplications?.find(app => app.is_cancelled !== true)
+    const cancelledApplication = allApplications?.find(app => app.is_cancelled === true)
     
     if (activeApplication) {
       if (process.env.NODE_ENV === 'development') console.log('⚠️ Active site visit already exists:', activeApplication.id)
@@ -59,20 +61,6 @@ export async function POST(request: Request) {
         },
         { status: 409 }
       )
-    }
-    
-    // 2. Check if there's a CANCELLED application that we can reactivate
-    const { data: cancelledApplication, error: cancelledCheckError } = await supabase
-      .from('site_visit_applications')
-      .select('*')
-      .eq('project_id', projectId)
-      .eq('contractor_id', contractorId)
-      .eq('is_cancelled', true)
-      .maybeSingle()
-    
-    if (cancelledCheckError) {
-      console.error('❌ Cancelled check error:', cancelledCheckError)
-      throw new Error(`Cancelled check failed: ${cancelledCheckError.message}`)
     }
     
     let application: any
@@ -100,12 +88,13 @@ export async function POST(request: Request) {
       application = reactivated
       if (process.env.NODE_ENV === 'development') console.log('✅ Site visit application reactivated:', application.id)
     } else {
-      // 3. Create a new site visit application
+      // 2. Create a new site visit application
       const insertData = {
         project_id: projectId,
         contractor_id: contractorId,
         status: 'pending',
-        applied_at: new Date().toISOString()
+        applied_at: new Date().toISOString(),
+        is_cancelled: false  // Explicitly set to false
       }
       
       if (process.env.NODE_ENV === 'development') console.log('📝 Inserting new site visit application:', insertData)
@@ -125,7 +114,7 @@ export async function POST(request: Request) {
       if (process.env.NODE_ENV === 'development') console.log('✅ New site visit application created:', application.id)
     }
     
-    // 4. Get project information
+    // 3. Get project information
     const { data: project, error: projectError } = await supabase
       .from('quote_requests')
       .select('*, customer_id')
@@ -137,7 +126,7 @@ export async function POST(request: Request) {
       // Site visit is already created, so we continue
     }
     
-    // 5. Get customer information
+    // 4. Get customer information
     let customer = null
     if (project) {
       const { data: customerData, error: customerError } = await supabase
@@ -157,7 +146,7 @@ export async function POST(request: Request) {
       }
     }
     
-    // 6. Get contractor information
+    // 5. Get contractor information
     const { data: contractor, error: contractorError } = await supabase
       .from('contractors')
       .select('company_name, email, phone, user_id')
@@ -171,7 +160,7 @@ export async function POST(request: Request) {
       })
     }
     
-    // 7. Send email notification to customer
+    // 6. Send email notification to customer
     let emailSent = false
     if (customer && contractor && project && customer.email) {
       try {
