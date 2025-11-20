@@ -1,14 +1,17 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
 
-export async function middleware(req: NextRequest) {
-  // 임시로 모든 미들웨어 로직 비활성화
-  console.log(`[Middleware DISABLED] Path: ${req.nextUrl.pathname}`);
-  return NextResponse.next();
-}
+export default createMiddleware({
+  // A list of all locales that are supported
+  locales: ['zh', 'en', 'ko'],
+  
+  // Used when no locale matches
+  defaultLocale: 'en',
+  
+  // Always use locale prefix
+  localePrefix: 'always'
+});
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  // Match only internationalized pathnames
+  matcher: ['/', '/(zh|en|ko)/:path*']
 };

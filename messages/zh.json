@@ -1,0 +1,56 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "submit": "提交",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "close": "关闭"
+  },
+  "auth": {
+    "signIn": "登录",
+    "signUp": "注册",
+    "signOut": "退出",
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "forgotPassword": "忘记密码？",
+    "resetPassword": "重置密码",
+    "signInWithGoogle": "使用Google登录"
+  },
+  "navigation": {
+    "home": "首页",
+    "pros": "合作伙伴",
+    "portfolio": "作品集",
+    "events": "活动",
+    "myQuotes": "我的报价",
+    "quoteRequest": "请求报价"
+  },
+  "quote": {
+    "title": "报价请求",
+    "step1": "项目详情",
+    "step2": "预算",
+    "step3": "时间表",
+    "step4": "位置",
+    "step5": "附加详情",
+    "spaceType": "空间类型",
+    "projectTypes": "项目类型",
+    "budget": "预算",
+    "timeline": "时间表",
+    "location": "位置",
+    "description": "描述",
+    "photos": "照片"
+  },
+  "roles": {
+    "customer": "客户",
+    "contractor": "承包商",
+    "admin": "管理员"
+  }
+}
