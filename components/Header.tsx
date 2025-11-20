@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Menu, X, User, LogIn, LogOut } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import LanguageSwitcher from './LanguageSwitcher'
 import toast from 'react-hot-toast'
 
 interface UserProfile {
@@ -541,6 +542,9 @@ export default function Header() {
 
           {/* Buttons based on login status */}
           <div className="hidden md:flex items-center space-x-3">
+            {/* Language Switcher - Always visible */}
+            <LanguageSwitcher />
+            
             {user ? (
               <div className="flex items-center space-x-3">
                 {/* User profile button with avatar only */}
@@ -675,7 +679,10 @@ export default function Header() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Language Switcher for Mobile */}
+            <LanguageSwitcher />
+            
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-600 hover:text-gray-900 p-2"
