@@ -1,17 +1,18 @@
 import createMiddleware from 'next-intl/middleware';
 
 export default createMiddleware({
-  // A list of all locales that are supported
-  locales: ['zh', 'en', 'ko'],
+  // 지원하는 언어 목록
+  locales: ['en', 'ko', 'zh'],
   
-  // Used when no locale matches
+  // 기본 언어
   defaultLocale: 'en',
   
-  // Always use locale prefix
+  // URL 경로에 항상 locale prefix 표시
+  // /en/quote, /ko/quote, /zh/quote
   localePrefix: 'always'
 });
 
 export const config = {
-  // Match only internationalized pathnames
-  matcher: ['/', '/(zh|en|ko)/:path*']
+  // 모든 경로에 middleware 적용 (API 제외)
+  matcher: ['/', '/(ko|en|zh)/:path*']
 };

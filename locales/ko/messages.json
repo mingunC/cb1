@@ -1,0 +1,351 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "success": "성공",
+    "cancel": "취소",
+    "save": "저장",
+    "delete": "삭제",
+    "edit": "수정",
+    "view": "보기",
+    "submit": "제출",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "이전",
+    "close": "닫기",
+    "confirm": "확인",
+    "home": "홈"
+  },
+  "quote": {
+    "header": {
+      "title": "견적 요청",
+      "subtitle": "6단계로 간단하게 완료하세요"
+    },
+    "progress": {
+      "step": "{current}/6 단계"
+    },
+    "step1": {
+      "title": "자산 유형",
+      "description": "리모델링할 공간 유형을 선택하세요",
+      "detached_house": "단독 주택",
+      "town_house": "타운하우스",
+      "condo": "콘도 & 아파트",
+      "commercial": "상업 공간",
+      "validation": "자산 유형을 선택하세요."
+    },
+    "step2": {
+      "title": "프로젝트 영역",
+      "description": "리모델링할 영역을 선택하세요",
+      "note": "참고: ‘전체 리모델링’을 선택하면 다른 옵션을 선택할 수 없습니다. 나머지 항목은 여러 개 선택 가능합니다.",
+      "kitchen": "주방",
+      "bathroom": "욕실",
+      "basement": "지하실",
+      "flooring": "바닥재",
+      "painting": "페인팅",
+      "full_renovation": "전체 리모델링",
+      "other_residential": "기타",
+      "office": "사무실",
+      "retail": "소매점",
+      "restaurant": "레스토랑",
+      "education": "교육 시설",
+      "hospitality": "숙박 시설",
+      "other_commercial": "기타",
+      "validation": "하나 이상의 프로젝트 영역을 선택하세요."
+    },
+    "step3": {
+      "title": "예산 범위",
+      "description": "예상 예산 범위를 선택하세요",
+      "under_50k": "$50,000 미만",
+      "under_50k_subtitle": "소규모 리모델링",
+      "50k_100k": "$50,000 - $100,000",
+      "50k_100k_subtitle": "중규모 리모델링",
+      "over_100k": "$100,000 이상",
+      "over_100k_subtitle": "대규모 리모델링",
+      "validation": "예산 범위를 선택하세요."
+    },
+    "step4": {
+      "title": "시작 시기",
+      "description": "선호하는 프로젝트 시작 시기를 선택하세요",
+      "immediate": "즉시",
+      "immediate_subtitle": "가능한 한 빨리",
+      "1_month": "1개월 이내",
+      "1_month_subtitle": "1개월 이내",
+      "3_months": "3개월 이내",
+      "3_months_subtitle": "3개월 이내",
+      "planning": "계획 단계",
+      "planning_subtitle": "아직 계획 중",
+      "validation": "시작 시기를 선택하세요."
+    },
+    "step5": {
+      "title": "위치 및 현장 방문",
+      "description": "프로젝트 위치와 필요한 현장 방문 일정을 입력하세요",
+      "postal_code": "우편번호 *",
+      "postal_code_placeholder": "예: A0A 0A0",
+      "full_address": "전체 주소 *",
+      "full_address_placeholder": "예: 123 Main Street",
+      "visit_date": "현장 방문 날짜 *",
+      "visit_date_selected": "{date}에 현장 방문 예약됨",
+      "visit_date_why": "왜 필요한가요? 계약업체는 작업 범위를 파악하고 가장 정확한 견적을 제공하기 위해 귀하의 자산을 직접 방문하여 확인해야 합니",
+      "validation_address": "우편번호와 전체 주소를 모두 입력하세요.",
+      "validation_postal": "유효한 우편번호 형식을 입력하세요. (예: A0A 0A0)",
+      "validation_visit_date": "⚠️ 현장 방문 날짜는 필수입니다! 계약업체는 정확한 견적을 제공하기 위해 현장을 방문해야 합니다."
+    },
+    "step6": {
+      "title": "프로젝트 요구사항",
+      "description": "프로젝트에 대한 자세한 요구사항을 작성하세요",
+      "project_description": "프로젝트 설명 *",
+      "project_description_placeholder": "프로젝트에 대한 자세한 정보를 작성하세요. 예: 원하는 스타일, 특별 요구사항, 현재 상태 등.",
+      "phone": "전화번호 *",
+      "phone_placeholder": "예: (416) 555-0100",
+      "phone_note": "계약업체가 직접 연락할 수 있도록",
+      "validation_description": "프로젝트 설명을 입력하세요.",
+      "validation_phone": "전화번호를 입력하세요."
+    },
+    "complete": {
+      "title": "견적 요청이 제출되었습니다!",
+      "message": "견적 요청이 성공적으로 제출되었습니다. 관리자 승인 후 계약업체가 방문할 예정입니다.",
+      "button": "내 견적 보기"
+    },
+    "button": {
+      "next": "다음 →",
+      "previous": "← 이전",
+      "submit": "견적 요청 제출",
+      "submitting": "제출 중..."
+    }
+  },
+  "dashboard": {
+    "customer": {
+      "title": "내 견적",
+      "subtitle": "내 견적 관리",
+      "description": "견적 요청 내역과 받은 견적을 비교하세요.",
+      "home": "홈으로 돌아가기",
+      "no_quotes": {
+        "title": "아직 견적이 없습니다",
+        "message": "아직 제출한 견적 요청이 없습니다",
+        "button": "견적 요청하기"
+      },
+      "project": {
+        "type": "프로젝트",
+        "budget": "예산",
+        "timeline": "시작 시기",
+        "requirements": "요구사항",
+        "edit": "수정"
+      },
+      "quotes": {
+        "title": "받은 견적 ({count}개)",
+        "company": "회사명",
+        "contact": "담당자",
+        "amount": "견적 금액",
+        "description": "상세 작업 설명",
+        "view_pdf": "견적 보기",
+        "select": "선택",
+        "selected": "선택됨",
+        "selecting": "처리 중..."
+      },
+      "start": {
+        "title": "프로젝트 시작하기!",
+        "message": "계약업체에 연락하여 공사 일정을 확정하세요",
+        "note": "프로젝트를 시작할 준비가 되면 시작 버튼을 클릭하세요.",
+        "button": "프로젝트 시작",
+        "confirm": "공사 날짜가 확정되었나요? 확정되었다면 이 버튼을 클릭하세요."
+      },
+      "edit": {
+        "title": "견적 요청 수정",
+        "note": "관리자 승인 전에만 수정할 수 있습니다",
+        "save": "저장",
+        "saving": "저장 중...",
+        "cancel": "취소"
+      },
+      "danger": {
+        "title": "위험 구역",
+        "description": "계정을 삭제하면 되돌릴 수 없습니다.",
+        "button": "내 계정 삭제",
+        "confirm": "정말 삭제하시겠습니까? 이 작업은 취소할 수 없습니다. 모든 데이터가 영구적으로 삭제됩니다.",
+        "password": "계정 삭제를 확인하려면 비밀번호를 입력하세요:",
+        "success": "계정이 성공적으로 삭제되었습니다.",
+        "error": "계정 삭제에 실패했습니다. 다시 시도하세요."
+      },
+      "message": {
+        "select_success": "✅ 계약업체가 선정되었습니다!",
+        "select_error": "계약업체 선정 실패: {error}",
+        "start_success": "🎉 프로젝트가 시작되었습니다!",
+        "start_error": "프로젝트 시작 실패: {error}",
+        "edit_success": "✅ 견적 요청이 업데이트되었습니다!",
+        "edit_error": "업데이트 실패: {error}"
+      }
+    },
+    "contractor": {
+      "title": "계약업체 대시보드",
+      "welcome": "환영합니다",
+      "tabs": {
+        "projects": "이용 가능한 프로젝트",
+        "my_projects": "내 프로젝트",
+        "profile": "프로필"
+      },
+      "available": {
+        "title": "이용 가능한 프로젝트",
+        "description": "현장 방문 신청 및 견적 제출",
+        "no_projects": "현재 이용 가능한 프로젝트가 없습니다",
+        "apply": "현장 방문 신청",
+        "applied": "신청됨",
+        "submit_quote": "견적 제출"
+      },
+      "my_projects": {
+        "title": "내 프로젝트",
+        "active": "진행 중인 프로젝트",
+        "completed": "완료된 프로젝트",
+        "no_projects": "아직 프로젝트가 없습니다"
+      },
+      "quote": {
+        "title": "견적 제출",
+        "price": "견적 금액 ($)",
+        "description": "작업 설명",
+        "pdf": "상세 견적서 업로드 (PDF)",
+        "submit": "견적 제출",
+        "submitting": "제출 중...",
+        "success": "견적이 성공적으로 제출되었습니다!",
+        "error": "견적 제출 실패: {error}"
+      }
+    }
+  },
+  "status": {
+    "pending": "승인 대기 중",
+    "approved": "승인됨",
+    "site_visit_pending": "현장 방문 예약됨",
+    "bidding": "입찰 진행 중",
+    "bidding_closed": "입찰 마감",
+    "contractor_selected": "계약업체 선정됨",
+    "in_progress": "진행 중",
+    "completed": "완료됨",
+    "cancelled": "취소됨"
+  },
+  "email": {
+    "contractor_selected": {
+      "subject": "축하합니다! 프로젝트에 선정되셨습니다",
+      "title": "🎉 축하합니다!",
+      "subtitle": "프로젝트에 선정되셨습니다",
+      "greeting": "안녕하세요,  {contractorName}님",
+      "intro": "귀하가 제출한 견적이 선정되었음을 기쁜 마음으로 알려드립니다. 고객님께서 귀사의 견적을 최종 선택하셨습니다.",
+      "customer_info": {
+        "title": "📞 고객 연락처 정보",
+        "name": "고객명",
+        "email": "이메일",
+        "phone": "전화번호",
+        "no_phone": "고객이 전화번호를 제공하지 않았습니다.",
+        "notice": "⚠️ 참고: 고객이 전화번호를 입력하지 않았습니다. 먼저 이메일로 연락하시거나, 현장 방문 시 연락처를 확인해 주세요."
+      },
+      "warning": {
+        "text": "가능한 한 빨리 고객에게 연락하여 프로젝트 일정을 조율해 주세요. 신속한 응대는 고객 만족도를 높입니다."
+      },
+      "project_info": {
+        "title": "📋 프로젝트 정보",
+        "type": "프로젝트 유형",
+        "property": "자산 유형",
+        "address": "주소",
+        "amount": "견적 금액"
+      },
+      "commission": {
+        "title": "💰 플랫폼 수수료 정보",
+        "amount": "플랫폼 수수료",
+        "rate": "수수료율",
+        "rate_text": "견적 금액의 1%: $100,000 이상\n견적 금액의 2%: $50,000 - $100,000\n견적 금액의 3%: $50,000 미만",
+        "due": "납부 기한",
+        "due_text": "정책을 참조하세요",
+        "policy": "📌 수수료 정책:",
+        "policy_1": "프로젝트 계약 체결 후 3일 이내에 수수료를 지급해 주십시오.",
+        "policy_2": "최종 프로젝트 금액이 변경될 경우, 수수료는 변경된 금액을 기준으로 재산정됩니다.",
+        "policy_3": "입금 계좌 정보는 별도로 안내됩니다."
+      },
+      "next_steps": {
+        "title": "📌 다음 단계",
+        "1": "고객에게 연락: {contactMethod}로 일정 조율",
+        "2": "현장 방문: 방문 일정을 잡고 상세 견적 확정",
+        "3": "계약 체결: 계약서 작성 및 서명",
+        "4": "진행 상황 업데이트: 프로젝트 착수일을 Canada Beaver에게 이메일로 보내주세요.",
+        "5": "수수료 지급: 계약 체결 후 3일 이내에 플랫폼 수수료를 지급해 주세요."
+      },
+      "button": "대시보드에서 확인",
+      "footer": "프로젝트 진행 중 궁금한 점이 있으면 언제든지 문의하세요",
+      "signature": "감사합니다. Canada Beaver 팀 드림"
+    },
+    "customer_notification": {
+      "subject": "계약업체 선정 - 프로젝트 시작 준비 완료",
+      "title": "계약업체 선정됨",
+      "subtitle": "프로젝트가 시작될 준비가 되었습니다",
+      "greeting": "안녕하세요,  {customerName}님",
+      "success_badge": "🎉 선택하신 계약업체가 확정되었습니다!",
+      "intro": "선택하신 계약업체가 확정되었음을 알려드립니다.",
+      "contractor_info": {
+        "title": "🏢 선정된 계약업체 정보",
+        "name": "계약업체명",
+        "contact": "담당자명",
+        "phone": "전화번호",
+        "email": "이메일",
+        "amount": "견적 금액"
+      },
+      "next_steps": {
+        "title": "📞 다음 단계:",
+        "text": "선택된 계약자가 곧 연락드려 프로젝트 일정과 세부 사항을 조율할 예정입니다."
+      },
+      "closing": "프로젝트가 성공적으로 진행되기를 바랍니다!",
+      "button": "내 견적 확인하기",
+      "footer": "프로젝트 진행 중 궁금한 점이 있으시면 언제든지 support@canadabeaver.pro로 연락 주세요."
+    },
+    "site_visit": {
+      "subject": "새 현장 방문 신청",
+      "title": "새 현장 방문 신청",
+      "subtitle": "계약업체가 귀하의 자산 방문을 원합니다",
+      "greeting": "안녕하세요,  {customerName}님",
+      "intro": "좋은 소식입니다! 계약자가 귀하의 리모델링 프로젝트 현장 방문을 신청했습니다.",
+      "contractor_info": "계약업체 정보",
+      "next_steps": {
+        "title": "다음 단계:",
+        "text": ""
+      },
+      "closing": "저희 서비스를 이용해 주셔서 감사합니다!",
+      "button": "내 프로젝트 보기"
+    },
+    "quote_submitted": {
+      "subject": "새 견적 도착",
+      "title": "새 견적 도착",
+      "subtitle": "계약업체가 귀하의 프로젝트에 대한 견적을 제출했습니다",
+      "greeting": "안녕하세요 {customerName}님",
+      "intro": "좋은 소식입니다! 계약자가 귀하의 리모델링 프로젝트에 대한 견적을 제출했습니다.",
+      "contractor_info": "🏢 계약업체 정보",
+      "quote_details": "💰 견적 세부정보",
+      "quote_amount": "견적 금액",
+      "quote_description": "설명",
+      "pdf_notice": {
+        "title": "📄 상세 견적서 (PDF)",
+        "text": "상세 견적서는 PDF 형식으로 웹사이트에서 직접 다운로드 가능합니다. 계정에 로그인해서 확인해 주세요."
+      },
+      "project_details": "📋 프로젝트 세부정보",
+      "project_address": "주소",
+      "project_space": "공간 유형",
+      "project_budget": "예산",
+      "next_steps": {
+        "title": "📅 다음 단계:",
+        "text": "대시보드에서 모든 견적을 확인하고 귀하의 필요에 가장 잘 맞는 계약자를 선택하실 수 있습니다. 선택 후 계약자가 곧 연락드릴 예정입니다."
+      },
+      "closing": "Canada Beaver를 이용해 주셔서 감사합니다!",
+      "button": "모든 견적 보기"
+    },
+    "footer": {
+      "auto_sent": "이 이메일은 Canada Beaver 플랫폼에서 자동으로 발송되었습니다.",
+      "contact": "문의: admin@canadabeaver.pro | 웹사이트: www.canadabeaver.pro",
+      "copyright": "© 2025 Canada Beaver. 모든 권리 보유."
+    }
+  },
+  "nav": {
+    "home": "홈",
+    "pros": "계약업체",
+    "portfolio": "포트폴리오",
+    "events": "이벤트",
+    "my_quotes": "내 견적",
+    "quote_request": "견적 요청",
+    "login": "로그인",
+    "signup": "회원가입",
+    "logout": "로그아웃",
+    "dashboard": "대시보드"
+  }
+}

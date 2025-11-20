@@ -1,4 +1,8 @@
-const withNextIntl = require('next-intl/plugin')();
+// next-intl 설정을 위한 플러그인
+const withNextIntl = require('next-intl/plugin')(
+  // i18n.ts 파일 경로
+  './i18n.ts'
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -93,6 +97,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
-}
+};
 
 module.exports = withNextIntl(nextConfig)

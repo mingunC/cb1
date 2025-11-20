@@ -1,0 +1,57 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "signInWithGoogle": "Sign in with Google"
+  },
+  "navigation": {
+    "home": "Home",
+    "pros": "Contractors",
+    "portfolio": "Portfolio",
+    "events": "Events",
+    "myQuotes": "My Quotes",
+    "quoteRequest": "Request Quote"
+  },
+  "quote": {
+    "title": "Quote Request",
+    "step1": "Project Details",
+    "step2": "Budget",
+    "step3": "Timeline",
+    "step4": "Location",
+    "step5": "Additional Details",
+    "spaceType": "Space Type",
+    "projectTypes": "Project Types",
+    "budget": "Budget",
+    "timeline": "Timeline",
+    "location": "Location",
+    "description": "Description",
+    "photos": "Photos"
+  },
+  "roles": {
+    "customer": "Customer",
+    "contractor": "Contractor",
+    "admin": "Administrator"
+  }
+}
+
