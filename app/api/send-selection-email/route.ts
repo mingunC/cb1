@@ -57,10 +57,10 @@ export async function POST(request: Request) {
       throw new Error('Contractor not found')
     }
     
-    // 4. 업체의 이메일 주소 가져오기 (users 테이블에서)
+    // 4. 업체 사용자 정보 가져오기 (이메일 + preferred_locale)
     const { data: contractorUser, error: contractorUserError } = await supabase
       .from('users')
-      .select('email')
+      .select('email, preferred_locale')
       .eq('id', contractor.user_id)
       .single()
     
@@ -69,6 +69,10 @@ export async function POST(request: Request) {
     if (!contractorEmail) {
       throw new Error('Contractor email not found')
     }
+    
+    // 업체 언어 설정 (기본값: 'en')
+    const contractorLocale = (contractorUser?.preferred_locale || 'en') as 'en' | 'ko' | 'zh'
+    const contractorTranslations = emailTranslations[contractorLocale]
     
     // 5. 선택된 견적서 정보 가져오기
     const { data: quote, error: quoteError } = await supabase
@@ -91,29 +95,30 @@ export async function POST(request: Request) {
     
     console.log('📧 Sending emails:', {
       contractorEmail,
+      contractorLocale,
       customerEmail: customer.email,
       customerLocale,
       projectId,
       contractorId
     })
     
-    // 7. 업체에게 영어 이메일 발송 (고객 정보 포함)
-    // 업체는 항상 영어로 받음
+    // 7. 업체에게 해당 언어로 이메일 발송 (고객 정보 포함)
     const contractorEmailResult = await sendEmail({
       to: contractorEmail,
-      subject: emailTranslations.en.contractor.subject(customerName),
+      subject: contractorTranslations.contractor.subject(customerName),
       html: createSelectionEmailTemplate(
         contractor.company_name,
         project,
         quote,
-        customer // 고객 정보 전달
+        customer, // 고객 정보 전달
+        contractorLocale // 언어 설정 전달
       )
     })
     
     if (!contractorEmailResult.success) {
       console.error('❌ Failed to send email to contractor:', contractorEmailResult.error)
     } else {
-      console.log('✅ Email sent to contractor:', contractorEmail)
+      console.log('✅ Email sent to contractor:', contractorEmail, 'in', contractorLocale)
     }
     
     // 8. 고객에게 해당 언어로 이메일 발송
@@ -124,7 +129,8 @@ export async function POST(request: Request) {
         customerName,
         contractor,
         project,
-        quote
+        quote,
+        customerLocale // 언어 설정 전달
       )
     })
     
@@ -145,6 +151,7 @@ export async function POST(request: Request) {
       details: {
         contractorEmailSent: contractorEmailResult.success,
         customerEmailSent: customerEmailResult.success,
+        contractorLocale,
         customerLocale,
         contractorEmail: contractorEmailResult.success ? contractorEmail : undefined,
         customerEmail: customerEmailResult.success ? customer.email : undefined,
