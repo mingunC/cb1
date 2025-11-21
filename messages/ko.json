@@ -75,6 +75,30 @@
     "cancelled": "취소됨",
     "unknown": "알 수 없음"
   },
+  "quote": {
+    "title": "견적 요청",
+    "step1": "프로젝트 세부사항",
+    "step2": "예산",
+    "step3": "일정",
+    "step4": "위치",
+    "step5": "추가 세부사항",
+    "spaceType": "공간 유형",
+    "projectTypes": "프로젝트 유형",
+    "budget": "예산",
+    "timeline": "일정",
+    "location": "위치",
+    "description": "설명",
+    "photos": "사진",
+    "projectDescription": "프로젝트 설명 *",
+    "phoneNumber": "전화번호 *",
+    "postalCode": "우편번호 *",
+    "fullAddress": "전체 주소 *",
+    "preferredVisitDate": "희망 방문 날짜",
+    "descriptionPlaceholder": "프로젝트 요구사항을 설명해주세요...",
+    "phonePlaceholder": "(416) 555-0100",
+    "postalCodePlaceholder": "A0A 0A0",
+    "addressPlaceholder": "123 Main Street, Toronto, ON"
+  },
   "quoteRequest": {
     "title": "견적 요청",
     "subtitle": "6단계로 간편하게 완료",
@@ -166,26 +190,18 @@
     "over100kSubtitle": "대규모 리노베이션"
   },
   "timeline": {
+    "asap": "최대한 빨리",
     "immediate": "즉시",
     "immediateSubtitle": "최대한 빨리",
     "1month": "1개월 이내",
     "1monthSubtitle": "한 달 안에",
+    "within1Month": "1개월 이내",
     "3months": "3개월 이내",
     "3monthSubtitle": "3개월 안에",
+    "within3Months": "3개월 이내",
     "planning": "계획 단계",
-    "planningSubtitle": "아직 계획 중"
-  },
-  "projectTypes": {
-    "fullRenovation": "전체 리노베이션",
-    "bathroom": "욕실 리노베이션",
-    "kitchen": "주방 리노베이션",
-    "basement": "지하실 리노베이션"
-  },
-  "spaceTypes": {
-    "townHouse": "타운하우스",
-    "detachedHouse": "단독주택",
-    "condo": "콘도",
-    "apartment": "아파트"
+    "planningSubtitle": "아직 계획 중",
+    "flexible": "유연함"
   },
   "roles": {
     "customer": "고객",
