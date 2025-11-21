@@ -75,6 +75,30 @@
     "cancelled": "Cancelled",
     "unknown": "Unknown"
   },
+  "quote": {
+    "title": "Quote Request",
+    "step1": "Project Details",
+    "step2": "Budget",
+    "step3": "Timeline",
+    "step4": "Location",
+    "step5": "Additional Details",
+    "spaceType": "Space Type",
+    "projectTypes": "Project Types",
+    "budget": "Budget",
+    "timeline": "Timeline",
+    "location": "Location",
+    "description": "Description",
+    "photos": "Photos",
+    "projectDescription": "Project Description *",
+    "phoneNumber": "Phone Number *",
+    "postalCode": "Postal Code *",
+    "fullAddress": "Full Address *",
+    "preferredVisitDate": "Preferred Visit Date",
+    "descriptionPlaceholder": "Describe your project requirements...",
+    "phonePlaceholder": "(416) 555-0100",
+    "postalCodePlaceholder": "A0A 0A0",
+    "addressPlaceholder": "123 Main Street, Toronto, ON"
+  },
   "quoteRequest": {
     "title": "Quote Request",
     "subtitle": "Complete in 6 simple steps",
@@ -166,26 +190,18 @@
     "over100kSubtitle": "Large renovation"
   },
   "timeline": {
+    "asap": "As soon as possible",
     "immediate": "Immediate",
     "immediateSubtitle": "As soon as possible",
     "1month": "Within 1 month",
     "1monthSubtitle": "Within a month",
+    "within1Month": "Within 1 month",
     "3months": "Within 3 months",
     "3monthSubtitle": "Within 3 months",
+    "within3Months": "Within 3 months",
     "planning": "Planning stage",
-    "planningSubtitle": "Still planning"
-  },
-  "projectTypes": {
-    "fullRenovation": "Full Renovation",
-    "bathroom": "Bathroom Renovation",
-    "kitchen": "Kitchen Renovation",
-    "basement": "Basement Renovation"
-  },
-  "spaceTypes": {
-    "townHouse": "Town House",
-    "detachedHouse": "Detached House",
-    "condo": "Condo",
-    "apartment": "Apartment"
+    "planningSubtitle": "Still planning",
+    "flexible": "Flexible"
   },
   "roles": {
     "customer": "Customer",
