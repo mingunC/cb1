@@ -12,7 +12,12 @@
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
-    "close": "Close"
+    "close": "Close",
+    "select": "Select",
+    "selected": "Selected",
+    "selecting": "Selecting...",
+    "update": "Update",
+    "updating": "Updating..."
   },
   "auth": {
     "signIn": "Sign In",
@@ -31,7 +36,43 @@
     "portfolio": "Portfolio",
     "events": "Events",
     "myQuotes": "My Quotes",
-    "quoteRequest": "Request Quote"
+    "quoteRequest": "Request Quote",
+    "myPage": "My Page"
+  },
+  "myPage": {
+    "title": "My Page",
+    "subtitle": "Compare your quote requests with contractor quotes.",
+    "noQuotes": "No quote requests yet",
+    "createNew": "Create a new quote request.",
+    "requestQuote": "Request a Quote",
+    "siteVisitApplications": "Site Visit Applications",
+    "contractorQuotes": "Contractor Quotes",
+    "startProject": "Start Project",
+    "starting": "Starting...",
+    "pleasePress": "Please press this button after finalizing the detailed schedule and signing the contract with your professional partner.",
+    "viewQuote": "View Quote",
+    "editQuoteRequest": "Edit Quote Request",
+    "accessDenied": "Access Denied",
+    "loginRequired": "Please log in with a customer account.",
+    "goToLogin": "Go to Login",
+    "applied": "Applied",
+    "company": "Company",
+    "notAvailable": "N/A"
+  },
+  "status": {
+    "pending": "Under Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "siteVisitPending": "Site Visit Pending",
+    "siteVisitCompleted": "Site Visit Completed",
+    "bidding": "Bidding",
+    "quoteSubmitted": "Quote Submitted",
+    "contractorSelected": "Contractor Selected",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "biddingClosed": "Completed",
+    "cancelled": "Cancelled",
+    "unknown": "Unknown"
   },
   "quote": {
     "title": "Quote Request",
@@ -46,7 +87,52 @@
     "timeline": "Timeline",
     "location": "Location",
     "description": "Description",
-    "photos": "Photos"
+    "photos": "Photos",
+    "projectDescription": "Project Description *",
+    "phoneNumber": "Phone Number *",
+    "postalCode": "Postal Code *",
+    "fullAddress": "Full Address *",
+    "preferredVisitDate": "Preferred Visit Date",
+    "descriptionPlaceholder": "Describe your project requirements...",
+    "phonePlaceholder": "(416) 555-0100",
+    "postalCodePlaceholder": "A0A 0A0",
+    "addressPlaceholder": "123 Main Street, Toronto, ON"
+  },
+  "projectTypes": {
+    "kitchen": "Kitchen",
+    "bathroom": "Bathroom",
+    "basement": "Basement",
+    "painting": "Painting",
+    "flooring": "Flooring",
+    "fullRenovation": "Full Renovation",
+    "restaurant": "Restaurant",
+    "retail": "Retail",
+    "office": "Office",
+    "education": "Education",
+    "other": "Other"
+  },
+  "spaceTypes": {
+    "detachedHouse": "Detached House",
+    "condo": "Condo",
+    "townhouse": "Town House",
+    "commercial": "Commercial",
+    "beecroft": "Beecroft",
+    "apartment": "Apartment",
+    "house": "House"
+  },
+  "budget": {
+    "under50k": "Under $50,000",
+    "50kTo100k": "$50,000 - $100,000",
+    "over100k": "$100,000+"
+  },
+  "timeline": {
+    "asap": "As soon as possible",
+    "immediate": "Immediate",
+    "1month": "1 month",
+    "within1Month": "Within 1 month",
+    "within3Months": "Within 3 months",
+    "3months": "Within 3 months",
+    "flexible": "Flexible"
   },
   "roles": {
     "customer": "Customer",

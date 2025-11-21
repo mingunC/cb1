@@ -12,7 +12,12 @@
     "back": "返回",
     "next": "下一步",
     "previous": "上一步",
-    "close": "关闭"
+    "close": "关闭",
+    "select": "选择",
+    "selected": "已选",
+    "selecting": "选择中...",
+    "update": "更新",
+    "updating": "更新中..."
   },
   "auth": {
     "signIn": "登录",
@@ -31,7 +36,43 @@
     "portfolio": "作品集",
     "events": "活动",
     "myQuotes": "我的报价",
-    "quoteRequest": "请求报价"
+    "quoteRequest": "请求报价",
+    "myPage": "我的页面"
+  },
+  "myPage": {
+    "title": "我的页面",
+    "subtitle": "将您的报价请求与承包商报价进行比较。",
+    "noQuotes": "暂无报价请求",
+    "createNew": "创建新的报价请求。",
+    "requestQuote": "请求报价",
+    "siteVisitApplications": "现场访问申请",
+    "contractorQuotes": "承包商报价",
+    "startProject": "开始项目",
+    "starting": "启动中...",
+    "pleasePress": "请在确定详细日程并与专业伙伴签订合同后按此按钮。",
+    "viewQuote": "查看报价",
+    "editQuoteRequest": "编辑报价请求",
+    "accessDenied": "访问被拒绝",
+    "loginRequired": "请使用客户账户登录。",
+    "goToLogin": "前往登录",
+    "applied": "申请日期",
+    "company": "公司",
+    "notAvailable": "不可用"
+  },
+  "status": {
+    "pending": "审核中",
+    "approved": "已批准",
+    "rejected": "已拒绝",
+    "siteVisitPending": "现场访问待定",
+    "siteVisitCompleted": "现场访问完成",
+    "bidding": "投标中",
+    "quoteSubmitted": "报价已提交",
+    "contractorSelected": "已选承包商",
+    "inProgress": "进行中",
+    "completed": "已完成",
+    "biddingClosed": "已完成",
+    "cancelled": "已取消",
+    "unknown": "未知"
   },
   "quote": {
     "title": "报价请求",
@@ -46,7 +87,52 @@
     "timeline": "时间表",
     "location": "位置",
     "description": "描述",
-    "photos": "照片"
+    "photos": "照片",
+    "projectDescription": "项目描述 *",
+    "phoneNumber": "电话号码 *",
+    "postalCode": "邮政编码 *",
+    "fullAddress": "完整地址 *",
+    "preferredVisitDate": "首选访问日期",
+    "descriptionPlaceholder": "描述您的项目要求...",
+    "phonePlaceholder": "(416) 555-0100",
+    "postalCodePlaceholder": "A0A 0A0",
+    "addressPlaceholder": "123 Main Street, Toronto, ON"
+  },
+  "projectTypes": {
+    "kitchen": "厨房",
+    "bathroom": "浴室",
+    "basement": "地下室",
+    "painting": "油漆",
+    "flooring": "地板",
+    "fullRenovation": "全面翻新",
+    "restaurant": "餐厅",
+    "retail": "零售店",
+    "office": "办公室",
+    "education": "教育设施",
+    "other": "其他"
+  },
+  "spaceTypes": {
+    "detachedHouse": "独立屋",
+    "condo": "公寓",
+    "townhouse": "联排别墅",
+    "commercial": "商业",
+    "beecroft": "比克罗夫特",
+    "apartment": "公寓",
+    "house": "房屋"
+  },
+  "budget": {
+    "under50k": "低于 $50,000",
+    "50kTo100k": "$50,000 - $100,000",
+    "over100k": "$100,000 以上"
+  },
+  "timeline": {
+    "asap": "尽快",
+    "immediate": "立即",
+    "1month": "1个月",
+    "within1Month": "1个月内",
+    "within3Months": "3个月内",
+    "3months": "3个月内",
+    "flexible": "灵活"
   },
   "roles": {
     "customer": "客户",
