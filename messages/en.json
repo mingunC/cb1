@@ -175,6 +175,18 @@
     "planning": "Planning stage",
     "planningSubtitle": "Still planning"
   },
+  "projectTypes": {
+    "fullRenovation": "Full Renovation",
+    "bathroom": "Bathroom Renovation",
+    "kitchen": "Kitchen Renovation",
+    "basement": "Basement Renovation"
+  },
+  "spaceTypes": {
+    "townHouse": "Town House",
+    "detachedHouse": "Detached House",
+    "condo": "Condo",
+    "apartment": "Apartment"
+  },
   "roles": {
     "customer": "Customer",
     "contractor": "Contractor",

@@ -175,6 +175,18 @@
     "planning": "계획 단계",
     "planningSubtitle": "아직 계획 중"
   },
+  "projectTypes": {
+    "fullRenovation": "전체 리노베이션",
+    "bathroom": "욕실 리노베이션",
+    "kitchen": "주방 리노베이션",
+    "basement": "지하실 리노베이션"
+  },
+  "spaceTypes": {
+    "townHouse": "타운하우스",
+    "detachedHouse": "단독주택",
+    "condo": "콘도",
+    "apartment": "아파트"
+  },
   "roles": {
     "customer": "고객",
     "contractor": "업체",

@@ -175,6 +175,18 @@
     "planning": "规划阶段",
     "planningSubtitle": "仍在规划中"
   },
+  "projectTypes": {
+    "fullRenovation": "全面翻新",
+    "bathroom": "浴室翻新",
+    "kitchen": "厨房翻新",
+    "basement": "地下室翻新"
+  },
+  "spaceTypes": {
+    "townHouse": "联排别墅",
+    "detachedHouse": "独立屋",
+    "condo": "公寓",
+    "apartment": "公寓"
+  },
   "roles": {
     "customer": "客户",
     "contractor": "承包商",
