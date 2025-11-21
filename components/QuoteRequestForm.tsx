@@ -103,7 +103,21 @@ export default function QuoteRequestForm() {
         return
       }
 
-      if (process.env.NODE_ENV === 'development') console.log('Step 2: Preparing data...')
+      if (process.env.NODE_ENV === 'development') console.log('Step 2: Updating user preferred_locale...')
+      // 사용자의 preferred_locale 업데이트
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ preferred_locale: locale })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('Failed to update preferred_locale:', updateError)
+        // 에러가 발생해도 계속 진행 (치명적이지 않음)
+      } else {
+        if (process.env.NODE_ENV === 'development') console.log('✅ User preferred_locale updated:', locale)
+      }
+
+      if (process.env.NODE_ENV === 'development') console.log('Step 3: Preparing quote data...')
       if (process.env.NODE_ENV === 'development') console.log('Form data:', formData)
 
       const insertData = {
@@ -123,7 +137,7 @@ export default function QuoteRequestForm() {
 
       if (process.env.NODE_ENV === 'development') console.log('Insert data prepared:', insertData)
 
-      if (process.env.NODE_ENV === 'development') console.log('Step 3: Inserting to database...')
+      if (process.env.NODE_ENV === 'development') console.log('Step 4: Inserting to database...')
       const { data: result, error: insertError } = await supabase
         .from('quote_requests')
         .insert(insertData)
