@@ -17,7 +17,8 @@
     "selected": "已选",
     "selecting": "选择中...",
     "update": "更新",
-    "updating": "更新中..."
+    "updating": "更新中...",
+    "submitting": "提交中..."
   },
   "auth": {
     "signIn": "登录",
@@ -74,29 +75,64 @@
     "cancelled": "已取消",
     "unknown": "未知"
   },
-  "quote": {
+  "quoteRequest": {
     "title": "报价请求",
-    "step1": "项目详情",
-    "step2": "预算",
-    "step3": "时间表",
-    "step4": "位置",
-    "step5": "附加详情",
-    "spaceType": "空间类型",
-    "projectTypes": "项目类型",
-    "budget": "预算",
-    "timeline": "时间表",
-    "location": "位置",
-    "description": "描述",
-    "photos": "照片",
+    "subtitle": "通过6个简单步骤完成",
+    "step": "步骤",
+    "of": "/",
+    "step1": {
+      "title": "物业类型",
+      "subtitle": "选择您想要翻新的空间类型"
+    },
+    "step2": {
+      "title": "项目区域",
+      "subtitle": "选择您想要翻新的区域",
+      "note": "注意：如果您选择'全面翻新'，则无法选择其他选项。其余选项可以多选。"
+    },
+    "step3": {
+      "title": "预算范围",
+      "subtitle": "选择您的预计预算范围"
+    },
+    "step4": {
+      "title": "开始时间",
+      "subtitle": "选择您的首选项目开始时间"
+    },
+    "step5": {
+      "title": "位置和现场访问",
+      "subtitle": "输入项目位置和必需的现场访问日程"
+    },
+    "step6": {
+      "title": "项目要求",
+      "subtitle": "写下您项目的详细要求"
+    },
+    "siteVisitDate": "现场访问日期 *",
+    "siteVisitRequired": "⚠️ 现场访问日期为必填！\n\n承包商需要访问您的现场以提供准确的估价。请使用日历选择首选日期。",
+    "siteVisitScheduled": "现场访问安排在",
+    "siteVisitWhy": "💡 为什么需要这个？承包商必须实地检查您的房产，以了解工作范围并为您提供最准确的报价。",
     "projectDescription": "项目描述 *",
+    "projectDescriptionPlaceholder": "写下有关您项目的详细信息。例如：期望的风格、特殊要求、当前状况等。",
     "phoneNumber": "电话号码 *",
+    "phoneNumberPlaceholder": "例如：(416) 555-0100",
+    "phoneNumberNote": "供承包商直接联系您",
     "postalCode": "邮政编码 *",
+    "postalCodePlaceholder": "例如：A0A 0A0",
     "fullAddress": "完整地址 *",
-    "preferredVisitDate": "首选访问日期",
-    "descriptionPlaceholder": "描述您的项目要求...",
-    "phonePlaceholder": "(416) 555-0100",
-    "postalCodePlaceholder": "A0A 0A0",
-    "addressPlaceholder": "123 Main Street, Toronto, ON"
+    "fullAddressPlaceholder": "例如：123 Main Street, Toronto, ON",
+    "submitButton": "提交报价请求",
+    "completedTitle": "报价请求已提交！",
+    "completedMessage": "您的报价请求已成功提交。\n承包商将在管理员批准后进行访问。",
+    "viewMyQuotes": "查看我的报价",
+    "validation": {
+      "selectSpaceType": "请选择物业类型。",
+      "selectProjectType": "请至少选择一个项目区域。",
+      "selectBudget": "请选择预算范围。",
+      "selectTimeline": "请选择开始时间。",
+      "enterPostalAndAddress": "请输入邮政编码和完整地址。",
+      "invalidPostalCode": "请输入有效的邮政编码格式。（例如：A0A 0A0）",
+      "enterDescription": "请输入项目描述。",
+      "enterPhoneNumber": "请输入您的电话号码。",
+      "loginRequired": "请登录以提交报价请求。"
+    }
   },
   "projectTypes": {
     "kitchen": "厨房",
@@ -109,30 +145,35 @@
     "retail": "零售店",
     "office": "办公室",
     "education": "教育设施",
+    "hospitality": "酒店业",
     "other": "其他"
   },
   "spaceTypes": {
     "detachedHouse": "独立屋",
+    "townHouse": "联排别墅",
     "condo": "公寓",
-    "townhouse": "联排别墅",
+    "condoApartment": "公寓",
     "commercial": "商业",
-    "beecroft": "比克罗夫特",
     "apartment": "公寓",
     "house": "房屋"
   },
   "budget": {
     "under50k": "低于 $50,000",
+    "under50kSubtitle": "小型翻新",
     "50kTo100k": "$50,000 - $100,000",
-    "over100k": "$100,000 以上"
+    "50kTo100kSubtitle": "中型翻新",
+    "over100k": "$100,000以上",
+    "over100kSubtitle": "大型翻新"
   },
   "timeline": {
-    "asap": "尽快",
     "immediate": "立即",
-    "1month": "1个月",
-    "within1Month": "1个月内",
-    "within3Months": "3个月内",
+    "immediateSubtitle": "尽快",
+    "1month": "1个月内",
+    "1monthSubtitle": "一个月内",
     "3months": "3个月内",
-    "flexible": "灵活"
+    "3monthSubtitle": "三个月内",
+    "planning": "规划阶段",
+    "planningSubtitle": "仍在规划中"
   },
   "roles": {
     "customer": "客户",
