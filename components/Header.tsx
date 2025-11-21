@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Menu, X, User, LogIn, LogOut } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -204,6 +204,8 @@ const UserAvatar = ({
 
 export default function Header() {
   const router = useRouter()
+  const params = useParams()
+  const locale = (params?.locale as string) || 'en'
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -458,7 +460,7 @@ export default function Header() {
       if (process.env.NODE_ENV === 'development') console.log('✅ Supabase logout complete')
       
       if (process.env.NODE_ENV === 'development') console.log('✅ Force redirect to homepage')
-      window.location.replace('/')
+      window.location.replace(`/${locale}`)
       
     } catch (error) {
       console.error('❌ Logout error:', error)
@@ -470,7 +472,7 @@ export default function Header() {
         console.error('⚠️ Storage clear error:', e)
       }
       
-      window.location.replace('/')
+      window.location.replace(`/${locale}`)
     }
   }
 
@@ -479,9 +481,9 @@ export default function Header() {
 
   const getNavigation = () => {
     const baseNavigation = [
-      { name: 'Partners', href: '/pros' },
-      { name: 'Portfolio', href: '/portfolio' },
-      { name: 'Events', href: '/events' },
+      { name: 'Partners', href: `/${locale}/pros` },
+      { name: 'Portfolio', href: `/${locale}/portfolio` },
+      { name: 'Events', href: `/${locale}/events` },
     ]
 
     if (!user) {
@@ -491,7 +493,7 @@ export default function Header() {
     if (isAdmin) {
       return [
         ...baseNavigation,
-        { name: 'Admin Dashboard', href: '/admin' },
+        { name: 'Admin Dashboard', href: `/${locale}/admin` },
       ]
     } else {
       return baseNavigation
@@ -517,7 +519,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center">
+            <Link href={`/${locale}`} className="flex items-center">
               <img
                 src="/logo.png"
                 alt="Canada Beaver"
@@ -586,7 +588,7 @@ export default function Header() {
                         </div>
                         {isAdmin && (
                           <Link
-                            href="/admin"
+                            href={`/${locale}/admin`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
@@ -595,7 +597,7 @@ export default function Header() {
                         )}
                         {isContractor && (
                           <Link
-                            href="/contractor"
+                            href={`/${locale}/contractor`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
@@ -604,7 +606,7 @@ export default function Header() {
                         )}
                         {!isAdmin && !isContractor && (
                           <Link
-                            href="/my-quotes"
+                            href={`/${locale}/my-quotes`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
@@ -613,7 +615,7 @@ export default function Header() {
                         )}
                         {!isContractor && (
                           <Link
-                            href="/quote-request"
+                            href={`/${locale}/quote-request`}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
@@ -644,7 +646,7 @@ export default function Header() {
                 {/* Admin badge only */}
                 {isAdmin && (
                   <Link
-                    href="/admin"
+                    href={`/${locale}/admin`}
                     className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full hover:bg-red-200 transition-colors"
                   >
                     Admin
@@ -654,19 +656,19 @@ export default function Header() {
             ) : (
               <div className="flex space-x-2">
                 <Link
-                  href="/login"
+                  href={`/${locale}/login`}
                   className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium transition-colors duration-200 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Login
                 </Link>
                 <Link
-                  href="/contractor-login"
+                  href={`/${locale}/contractor-login`}
                   className="text-green-600 hover:text-green-700 px-4 py-2 text-sm font-medium transition-colors duration-200 border border-green-300 rounded-lg hover:bg-green-50"
                 >
                   Partners Login
                 </Link>
                 <Link
-                  href="/quote-request"
+                  href={`/${locale}/quote-request`}
                   className="text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                   style={{ backgroundColor: '#bf9b30' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
@@ -714,7 +716,7 @@ export default function Header() {
               {!isContractor && (
                 <div className="pt-4 space-y-2">
                   <Link
-                    href="/quote-request"
+                    href={`/${locale}/quote-request`}
                     className="text-white block px-3 py-2 rounded-lg text-base font-medium text-center"
                     style={{ backgroundColor: '#bf9b30' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a08527'}
@@ -757,7 +759,7 @@ export default function Header() {
                           )}
                           {isAdmin && (
                             <Link
-                              href="/admin"
+                              href={`/${locale}/admin`}
                               className="block mt-3 bg-red-100 text-red-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
@@ -766,7 +768,7 @@ export default function Header() {
                           )}
                           {isContractor && (
                             <Link
-                              href="/contractor"
+                              href={`/${locale}/contractor`}
                               className="block mt-3 bg-green-100 text-green-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-green-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
@@ -775,7 +777,7 @@ export default function Header() {
                           )}
                           {!isAdmin && !isContractor && (
                             <Link
-                              href="/my-quotes"
+                              href={`/${locale}/my-quotes`}
                               className="block mt-3 bg-blue-100 text-blue-800 text-sm font-medium px-3 py-2 rounded-lg hover:bg-blue-200"
                               onClick={() => setIsMenuOpen(false)}
                             >
@@ -803,14 +805,14 @@ export default function Header() {
                     ) : (
                       <div className="space-y-2">
                         <Link
-                          href="/login"
+                          href={`/${locale}/login`}
                           className="block text-center text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium border border-gray-300 rounded-lg hover:bg-gray-50"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           Login
                         </Link>
                         <Link
-                          href="/contractor-login"
+                          href={`/${locale}/contractor-login`}
                           className="block text-center text-green-600 hover:text-green-700 px-3 py-2 text-base font-medium border border-green-300 rounded-lg hover:bg-green-50"
                           onClick={() => setIsMenuOpen(false)}
                         >

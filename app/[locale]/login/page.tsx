@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { signIn, getCurrentUser } from '@/lib/auth/client'
 import { createBrowserClient } from '@/lib/supabase/clients'
@@ -18,6 +18,8 @@ interface FormData {
 
 export default function LoginPage() {
   const router = useRouter()
+  const params = useParams()
+  const locale = (params?.locale as string) || 'en'
   const supabase = createBrowserClient()
   
   const [showPassword, setShowPassword] = useState(false)
@@ -39,16 +41,16 @@ export default function LoginPage() {
           const userInfo = await getCurrentUser()
           
           if (userInfo.user && userInfo.userType) {
-            let redirectTo = '/'
+            let redirectTo = `/${locale}`
             
             if (userInfo.userType === 'admin') {
-              redirectTo = '/admin'
+              redirectTo = `/${locale}/admin`
               toast.success('Signed in as admin.')
             } else if (userInfo.userType === 'contractor' && userInfo.contractorData) {
-              redirectTo = '/contractor'
+              redirectTo = `/${locale}/contractor`
               toast.success(`Signed in as ${userInfo.contractorData.company_name}.`)
             } else {
-              redirectTo = '/'
+              redirectTo = `/${locale}`
               toast.success('Signed in successfully.')
             }
             
@@ -80,11 +82,23 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
+    
+    console.log('🔐 로그인 시도 시작:', {
+      email: formData.email,
+      locale,
+      timestamp: new Date().toISOString()
+    })
 
     try {
       const result = await signIn({
         email: formData.email,
         password: formData.password
+      })
+      
+      console.log('📥 로그인 API 응답:', {
+        success: result.success,
+        userType: result.userType,
+        hasError: !!result.error
       })
 
       if (!result.success) {
@@ -102,13 +116,27 @@ export default function LoginPage() {
 
       if (process.env.NODE_ENV === 'development') console.log('Login successful:', result.user?.email)
       
+      // 리다이렉트 경로에 로케일 prefix 추가
+      const baseRedirect = result.redirectTo || '/'
+      const redirectTo = baseRedirect.startsWith('/') && !baseRedirect.startsWith(`/${locale}`)
+        ? `/${locale}${baseRedirect}`
+        : baseRedirect.startsWith(`/${locale}`)
+        ? baseRedirect
+        : `/${locale}${baseRedirect}`
+      
+      console.log('🔄 리다이렉트 URL:', {
+        original: result.redirectTo || '/',
+        final: redirectTo,
+        locale
+      })
+      
       if (result.userType === 'contractor' && result.contractorData) {
         toast.success(`Signed in as ${result.contractorData.company_name}.`)
       } else {
         toast.success('Signed in successfully.')
       }
       
-      router.push(result.redirectTo || '/')
+      router.push(redirectTo)
 
     } catch (error: any) {
       console.error('Unexpected error during login:', error)
@@ -123,15 +151,28 @@ export default function LoginPage() {
     let hasError = false
 
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback?locale=${locale}`
+      console.log('🔐 Google 로그인 시도:', {
+        redirectUrl,
+        locale,
+        timestamp: new Date().toISOString()
+      })
+      
       const { data, error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           }
         }
+      })
+      
+      console.log('📥 Google OAuth 응답:', {
+        hasUrl: !!data?.url,
+        hasError: !!googleError,
+        error: googleError?.message
       })
 
       if (googleError) {
@@ -150,7 +191,7 @@ export default function LoginPage() {
         setIsLoading(false)
       }
     }
-  }, [supabase])
+  }, [supabase, locale])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -171,7 +212,7 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="mb-6">
           <Link 
-            href="/" 
+            href={`/${locale}`}
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
@@ -185,7 +226,7 @@ export default function LoginPage() {
         <p className="mt-2 text-center text-sm text-gray-600">
           Not a member yet?{' '}
           <Link 
-            href="/signup" 
+            href={`/${locale}/signup`}
             className="font-medium text-emerald-600 hover:text-emerald-500 transition-colors"
           >
             Sign Up
@@ -277,7 +318,7 @@ export default function LoginPage() {
               </div>
 
               <Link 
-                href="/forgot-password" 
+                href={`/${locale}/forgot-password`}
                 className="text-sm font-medium text-orange-600 hover:text-orange-500 transition-colors"
               >
                 Forgot password?
