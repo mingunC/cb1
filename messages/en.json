@@ -172,6 +172,20 @@
     "hospitality": "Hospitality",
     "other": "Other"
   },
+  "actionTypes": {
+    "kitchen": "Kitchen",
+    "bathroom": "Bathroom",
+    "basement": "Basement",
+    "painting": "Painting",
+    "flooring": "Flooring",
+    "fullRenovation": "Full Renovation",
+    "restaurant": "Restaurant",
+    "retail": "Retail",
+    "office": "Office",
+    "education": "Education",
+    "hospitality": "Hospitality",
+    "other": "Other"
+  },
   "spaceTypes": {
     "detachedHouse": "Detached House",
     "townHouse": "Town House",

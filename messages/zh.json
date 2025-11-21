@@ -172,6 +172,20 @@
     "hospitality": "酒店业",
     "other": "其他"
   },
+  "actionTypes": {
+    "kitchen": "厨房",
+    "bathroom": "浴室",
+    "basement": "地下室",
+    "painting": "油漆",
+    "flooring": "地板",
+    "fullRenovation": "全面翻新",
+    "restaurant": "餐厅",
+    "retail": "零售店",
+    "office": "办公室",
+    "education": "教育设施",
+    "hospitality": "酒店业",
+    "other": "其他"
+  },
   "spaceTypes": {
     "detachedHouse": "独立屋",
     "townHouse": "联排别墅",

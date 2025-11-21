@@ -172,6 +172,20 @@
     "hospitality": "숙박업",
     "other": "기타"
   },
+  "actionTypes": {
+    "kitchen": "주방",
+    "bathroom": "욕실",
+    "basement": "지하실",
+    "painting": "페인팅",
+    "flooring": "바닥재",
+    "fullRenovation": "전체 리노베이션",
+    "restaurant": "레스토랑",
+    "retail": "소매점",
+    "office": "사무실",
+    "education": "교육시설",
+    "hospitality": "숙박업",
+    "other": "기타"
+  },
   "spaceTypes": {
     "detachedHouse": "단독주택",
     "townHouse": "타운하우스",
