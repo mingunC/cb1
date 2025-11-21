@@ -75,6 +75,30 @@
     "cancelled": "已取消",
     "unknown": "未知"
   },
+  "quote": {
+    "title": "报价请求",
+    "step1": "项目详情",
+    "step2": "预算",
+    "step3": "时间表",
+    "step4": "位置",
+    "step5": "附加详情",
+    "spaceType": "空间类型",
+    "projectTypes": "项目类型",
+    "budget": "预算",
+    "timeline": "时间表",
+    "location": "位置",
+    "description": "描述",
+    "photos": "照片",
+    "projectDescription": "项目描述 *",
+    "phoneNumber": "电话号码 *",
+    "postalCode": "邮政编码 *",
+    "fullAddress": "完整地址 *",
+    "preferredVisitDate": "首选访问日期",
+    "descriptionPlaceholder": "描述您的项目要求...",
+    "phonePlaceholder": "(416) 555-0100",
+    "postalCodePlaceholder": "A0A 0A0",
+    "addressPlaceholder": "123 Main Street, Toronto, ON"
+  },
   "quoteRequest": {
     "title": "报价请求",
     "subtitle": "通过6个简单步骤完成",
@@ -166,26 +190,18 @@
     "over100kSubtitle": "大型翻新"
   },
   "timeline": {
+    "asap": "尽快",
     "immediate": "立即",
     "immediateSubtitle": "尽快",
     "1month": "1个月内",
     "1monthSubtitle": "一个月内",
+    "within1Month": "1个月内",
     "3months": "3个月内",
     "3monthSubtitle": "三个月内",
+    "within3Months": "3个月内",
     "planning": "规划阶段",
-    "planningSubtitle": "仍在规划中"
-  },
-  "projectTypes": {
-    "fullRenovation": "全面翻新",
-    "bathroom": "浴室翻新",
-    "kitchen": "厨房翻新",
-    "basement": "地下室翻新"
-  },
-  "spaceTypes": {
-    "townHouse": "联排别墅",
-    "detachedHouse": "独立屋",
-    "condo": "公寓",
-    "apartment": "公寓"
+    "planningSubtitle": "仍在规划中",
+    "flexible": "灵活"
   },
   "roles": {
     "customer": "客户",
