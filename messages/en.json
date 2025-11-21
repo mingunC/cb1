@@ -17,7 +17,8 @@
     "selected": "Selected",
     "selecting": "Selecting...",
     "update": "Update",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "submitting": "Submitting..."
   },
   "auth": {
     "signIn": "Sign In",
@@ -74,29 +75,64 @@
     "cancelled": "Cancelled",
     "unknown": "Unknown"
   },
-  "quote": {
+  "quoteRequest": {
     "title": "Quote Request",
-    "step1": "Project Details",
-    "step2": "Budget",
-    "step3": "Timeline",
-    "step4": "Location",
-    "step5": "Additional Details",
-    "spaceType": "Space Type",
-    "projectTypes": "Project Types",
-    "budget": "Budget",
-    "timeline": "Timeline",
-    "location": "Location",
-    "description": "Description",
-    "photos": "Photos",
+    "subtitle": "Complete in 6 simple steps",
+    "step": "Step",
+    "of": "/",
+    "step1": {
+      "title": "Property Type",
+      "subtitle": "Select the type of space you want to renovate"
+    },
+    "step2": {
+      "title": "Project Area",
+      "subtitle": "Select the area you want to renovate",
+      "note": "Note: If you select 'Full Renovation', you cannot select other options. You can select multiple options for the rest."
+    },
+    "step3": {
+      "title": "Budget Range",
+      "subtitle": "Select your estimated budget range"
+    },
+    "step4": {
+      "title": "Start Time",
+      "subtitle": "Select your preferred project start time"
+    },
+    "step5": {
+      "title": "Location & Site Visit",
+      "subtitle": "Enter project location and required site visit schedule"
+    },
+    "step6": {
+      "title": "Project Requirements",
+      "subtitle": "Write detailed requirements for your project"
+    },
+    "siteVisitDate": "Site Visit Date *",
+    "siteVisitRequired": "⚠️ Site visit date is REQUIRED!\n\nContractors need to visit your site to provide accurate estimates. Please select a preferred date using the calendar.",
+    "siteVisitScheduled": "Site visit scheduled for",
+    "siteVisitWhy": "💡 Why is this required? Contractors must physically inspect your property to understand the scope of work and provide you with the most accurate quote possible.",
     "projectDescription": "Project Description *",
+    "projectDescriptionPlaceholder": "Write detailed information about your project. e.g. desired style, special requirements, current condition, etc.",
     "phoneNumber": "Phone Number *",
+    "phoneNumberPlaceholder": "e.g. (416) 555-0100",
+    "phoneNumberNote": "For contractors to contact you directly",
     "postalCode": "Postal Code *",
+    "postalCodePlaceholder": "e.g. A0A 0A0",
     "fullAddress": "Full Address *",
-    "preferredVisitDate": "Preferred Visit Date",
-    "descriptionPlaceholder": "Describe your project requirements...",
-    "phonePlaceholder": "(416) 555-0100",
-    "postalCodePlaceholder": "A0A 0A0",
-    "addressPlaceholder": "123 Main Street, Toronto, ON"
+    "fullAddressPlaceholder": "e.g. 123 Main Street, Toronto, ON",
+    "submitButton": "Submit Quote Request",
+    "completedTitle": "Quote Request Submitted!",
+    "completedMessage": "Your quote request has been successfully submitted.\nContractors will visit after admin approval.",
+    "viewMyQuotes": "View My Quotes",
+    "validation": {
+      "selectSpaceType": "Please select a property type.",
+      "selectProjectType": "Please select at least one project area.",
+      "selectBudget": "Please select a budget range.",
+      "selectTimeline": "Please select a start time.",
+      "enterPostalAndAddress": "Please enter both postal code and full address.",
+      "invalidPostalCode": "Please enter a valid postal code format. (e.g., A0A 0A0)",
+      "enterDescription": "Please enter a project description.",
+      "enterPhoneNumber": "Please enter your phone number.",
+      "loginRequired": "Please log in to submit a quote request."
+    }
   },
   "projectTypes": {
     "kitchen": "Kitchen",
@@ -109,30 +145,35 @@
     "retail": "Retail",
     "office": "Office",
     "education": "Education",
+    "hospitality": "Hospitality",
     "other": "Other"
   },
   "spaceTypes": {
     "detachedHouse": "Detached House",
+    "townHouse": "Town House",
     "condo": "Condo",
-    "townhouse": "Town House",
+    "condoApartment": "Condo & Apartment",
     "commercial": "Commercial",
-    "beecroft": "Beecroft",
     "apartment": "Apartment",
     "house": "House"
   },
   "budget": {
     "under50k": "Under $50,000",
+    "under50kSubtitle": "Small renovation",
     "50kTo100k": "$50,000 - $100,000",
-    "over100k": "$100,000+"
+    "50kTo100kSubtitle": "Medium renovation",
+    "over100k": "$100,000+",
+    "over100kSubtitle": "Large renovation"
   },
   "timeline": {
-    "asap": "As soon as possible",
     "immediate": "Immediate",
-    "1month": "1 month",
-    "within1Month": "Within 1 month",
-    "within3Months": "Within 3 months",
+    "immediateSubtitle": "As soon as possible",
+    "1month": "Within 1 month",
+    "1monthSubtitle": "Within a month",
     "3months": "Within 3 months",
-    "flexible": "Flexible"
+    "3monthSubtitle": "Within 3 months",
+    "planning": "Planning stage",
+    "planningSubtitle": "Still planning"
   },
   "roles": {
     "customer": "Customer",
