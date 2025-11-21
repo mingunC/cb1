@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 
@@ -16,46 +17,10 @@ interface QuoteFormData {
   phone: string
 }
 
-const spaceTypes = [
-  { value: 'detached_house', label: 'Detached House' },
-  { value: 'town_house', label: 'Town House' },
-  { value: 'condo', label: 'Condo & Apartment' },
-  { value: 'commercial', label: 'Commercial' }
-]
-
-const residentialProjectTypes = [
-  { value: 'kitchen', label: 'Kitchen' },
-  { value: 'bathroom', label: 'Bathroom' },
-  { value: 'basement', label: 'Basement' },
-  { value: 'flooring', label: 'Flooring' },
-  { value: 'painting', label: 'Painting' },
-  { value: 'full_renovation', label: 'Full Renovation', exclusive: true },
-  { value: 'other', label: 'Other', exclusive: true }
-]
-
-const commercialProjectTypes = [
-  { value: 'office', label: 'Office' },
-  { value: 'retail', label: 'Retail' },
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'education', label: 'Education' },
-  { value: 'hospitality', label: 'Hospitality' },
-  { value: 'other', label: 'Other' }
-]
-
-const budgetRanges = [
-  { value: 'under_50k', label: 'Under $50,000', subtitle: 'Small renovation' },
-  { value: '50k_100k', label: '$50,000 - $100,000', subtitle: 'Medium renovation' },
-  { value: 'over_100k', label: '$100,000+', subtitle: 'Large renovation' }
-]
-
-const timelines = [
-  { value: 'immediate', label: 'Immediate', subtitle: 'As soon as possible' },
-  { value: '1_month', label: 'Within 1 month', subtitle: 'Within a month' },
-  { value: '3_months', label: 'Within 3 months', subtitle: 'Within 3 months' },
-  { value: 'planning', label: 'Planning stage', subtitle: 'Still planning' }
-]
-
 export default function QuoteRequestForm() {
+  const t = useTranslations()
+  const locale = useLocale()
+  
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
@@ -73,13 +38,50 @@ export default function QuoteRequestForm() {
     phone: ''
   })
 
+  const spaceTypes = [
+    { value: 'detached_house', label: t('spaceTypes.detachedHouse') },
+    { value: 'town_house', label: t('spaceTypes.townHouse') },
+    { value: 'condo', label: t('spaceTypes.condoApartment') },
+    { value: 'commercial', label: t('spaceTypes.commercial') }
+  ]
+
+  const residentialProjectTypes = [
+    { value: 'kitchen', label: t('projectTypes.kitchen') },
+    { value: 'bathroom', label: t('projectTypes.bathroom') },
+    { value: 'basement', label: t('projectTypes.basement') },
+    { value: 'flooring', label: t('projectTypes.flooring') },
+    { value: 'painting', label: t('projectTypes.painting') },
+    { value: 'full_renovation', label: t('projectTypes.fullRenovation'), exclusive: true },
+    { value: 'other', label: t('projectTypes.other'), exclusive: true }
+  ]
+
+  const commercialProjectTypes = [
+    { value: 'office', label: t('projectTypes.office') },
+    { value: 'retail', label: t('projectTypes.retail') },
+    { value: 'restaurant', label: t('projectTypes.restaurant') },
+    { value: 'education', label: t('projectTypes.education') },
+    { value: 'hospitality', label: t('projectTypes.hospitality') },
+    { value: 'other', label: t('projectTypes.other') }
+  ]
+
+  const budgetRanges = [
+    { value: 'under_50k', label: t('budget.under50k'), subtitle: t('budget.under50kSubtitle') },
+    { value: '50k_100k', label: t('budget.50kTo100k'), subtitle: t('budget.50kTo100kSubtitle') },
+    { value: 'over_100k', label: t('budget.over100k'), subtitle: t('budget.over100kSubtitle') }
+  ]
+
+  const timelines = [
+    { value: 'immediate', label: t('timeline.immediate'), subtitle: t('timeline.immediateSubtitle') },
+    { value: '1_month', label: t('timeline.1month'), subtitle: t('timeline.1monthSubtitle') },
+    { value: '3_months', label: t('timeline.3months'), subtitle: t('timeline.3monthSubtitle') },
+    { value: 'planning', label: t('timeline.planning'), subtitle: t('timeline.planningSubtitle') }
+  ]
+
   const onSubmit = async (e?: React.FormEvent) => {
-    // Prevent default form submission
     if (e) {
       e.preventDefault()
     }
     
-    // Prevent duplicate submission
     if (isSubmitting) {
       if (process.env.NODE_ENV === 'development') console.log('Already submitting, ignoring duplicate call')
       return
@@ -91,18 +93,16 @@ export default function QuoteRequestForm() {
     try {
       const supabase = createBrowserClient()
       
-      // 1. Check user authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (process.env.NODE_ENV === 'development') console.log('User check:', { user, authError })
       
       if (authError || !user) {
-        alert('Please log in to submit a quote request.')
-        setIsSubmitting(false) // ✅ Fixed: Set isSubmitting to false before redirect
-        window.location.href = '/login'
+        alert(t('quoteRequest.validation.loginRequired'))
+        setIsSubmitting(false)
+        window.location.href = `/${locale}/login`
         return
       }
 
-      // 2. Prepare data
       if (process.env.NODE_ENV === 'development') console.log('Step 2: Preparing data...')
       if (process.env.NODE_ENV === 'development') console.log('Form data:', formData)
 
@@ -122,22 +122,7 @@ export default function QuoteRequestForm() {
       }
 
       if (process.env.NODE_ENV === 'development') console.log('Insert data prepared:', insertData)
-      if (process.env.NODE_ENV === 'development') console.log('Data types:', {
-        customer_id: typeof insertData.customer_id,
-        space_type: typeof insertData.space_type,
-        project_types: Array.isArray(insertData.project_types),
-        budget: typeof insertData.budget,
-        timeline: typeof insertData.timeline,
-        postal_code: typeof insertData.postal_code,
-        full_address: typeof insertData.full_address,
-        visit_date: insertData.visit_date,
-        description: typeof insertData.description,
-        phone: typeof insertData.phone,
-        photos: Array.isArray(insertData.photos),
-        status: typeof insertData.status
-      })
 
-      // 3. Insert into database
       if (process.env.NODE_ENV === 'development') console.log('Step 3: Inserting to database...')
       const { data: result, error: insertError } = await supabase
         .from('quote_requests')
@@ -150,12 +135,12 @@ export default function QuoteRequestForm() {
       if (insertError) {
         console.error('Insert failed:', insertError)
         toast.error(`Save failed: ${insertError.message}`)
-        return // Will be caught by finally block
+        return
       }
 
       if (result) {
         if (process.env.NODE_ENV === 'development') console.log('SUCCESS! Quote saved:', result)
-        toast.success('Quote request submitted successfully!')
+        toast.success(t('common.success'))
         setIsCompleted(true)
       } else {
         console.error('No data returned after insert')
@@ -166,7 +151,6 @@ export default function QuoteRequestForm() {
       console.error('Unexpected error:', error)
       toast.error(`Unexpected error: ${error.message}`)
     } finally {
-      // ✅ Fixed: Always set isSubmitting to false in finally block
       setIsSubmitting(false)
       if (process.env.NODE_ENV === 'development') console.log('=== SUBMISSION COMPLETE ===')
     }
@@ -186,7 +170,6 @@ export default function QuoteRequestForm() {
     }
   }
 
-  // ✅ Step 5의 Next 버튼 활성화 여부를 체크하는 함수
   const isStep5Complete = (): boolean => {
     if (!formData.postalCode || !formData.fullAddress) {
       return false
@@ -195,7 +178,6 @@ export default function QuoteRequestForm() {
     if (!postalPattern.test(formData.postalCode)) {
       return false
     }
-    // ✅ 현장방문 날짜가 반드시 입력되어야 함
     if (!formData.visitDate || formData.visitDate.trim() === '') {
       return false
     }
@@ -206,51 +188,50 @@ export default function QuoteRequestForm() {
     switch(step) {
       case 1:
         if (!formData.spaceType) {
-          alert('Please select a property type.')
+          alert(t('quoteRequest.validation.selectSpaceType'))
           return false
         }
         break
       case 2:
         if (formData.projectTypes.length === 0) {
-          alert('Please select at least one project area.')
+          alert(t('quoteRequest.validation.selectProjectType'))
           return false
         }
         break
       case 3:
         if (!formData.budget) {
-          alert('Please select a budget range.')
+          alert(t('quoteRequest.validation.selectBudget'))
           return false
         }
         break
       case 4:
         if (!formData.timeline) {
-          alert('Please select a start time.')
+          alert(t('quoteRequest.validation.selectTimeline'))
           return false
         }
         break
       case 5:
         if (!formData.postalCode || !formData.fullAddress) {
-          alert('Please enter both postal code and full address.')
+          alert(t('quoteRequest.validation.enterPostalAndAddress'))
           return false
         }
         const postalPattern = /^[A-Z]\d[A-Z] \d[A-Z]\d$/
         if (!postalPattern.test(formData.postalCode)) {
-          alert('Please enter a valid postal code format. (e.g., A0A 0A0)')
+          alert(t('quoteRequest.validation.invalidPostalCode'))
           return false
         }
-        // ✅ 현장방문 날짜 필수 검증 강화
         if (!formData.visitDate || formData.visitDate.trim() === '') {
-          alert('⚠️ Site visit date is REQUIRED!\n\nContractors need to visit your site to provide accurate estimates. Please select a preferred date using the calendar.')
+          alert(t('quoteRequest.siteVisitRequired'))
           return false
         }
         break
       case 6:
         if (!formData.description) {
-          alert('Please enter a project description.')
+          alert(t('quoteRequest.validation.enterDescription'))
           return false
         }
         if (!formData.phone || formData.phone.trim() === '') {
-          alert('Please enter your phone number.')
+          alert(t('quoteRequest.validation.enterPhoneNumber'))
           return false
         }
         break
@@ -267,20 +248,14 @@ export default function QuoteRequestForm() {
       let newTypes = [...prev.projectTypes]
       
       if (isExclusive) {
-        // When selecting exclusive option (full renovation or other)
         if (newTypes.includes(value)) {
-          // Deselect if already selected
           newTypes = []
         } else {
-          // Remove all other options and select only this one
           newTypes = [value]
         }
       } else {
-        // When selecting regular option
-        // First remove all exclusive options (full_renovation, other)
         newTypes = newTypes.filter(type => type !== 'full_renovation' && type !== 'other')
         
-        // Toggle current option
         if (newTypes.includes(value)) {
           newTypes = newTypes.filter(type => type !== value)
         } else {
@@ -292,16 +267,13 @@ export default function QuoteRequestForm() {
     })
   }
 
-  // Single selection handler for commercial type
   const handleCommercialProjectTypeChange = (value: string) => {
     setFormData(prev => ({ ...prev, projectTypes: [value] }))
   }
 
   const formatPostalCode = (value: string) => {
-    // Extract only letters and numbers
     const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
     
-    // Format as Canadian postal code (A0A 0A0)
     if (cleaned.length <= 3) {
       return cleaned
     } else if (cleaned.length <= 6) {
@@ -312,13 +284,9 @@ export default function QuoteRequestForm() {
   }
 
   const formatPhoneNumber = (value: string) => {
-    // Extract only numbers
     const cleaned = value.replace(/\D/g, '')
-    
-    // Limit to 10 digits
     const limited = cleaned.slice(0, 10)
     
-    // Format as Canadian phone number (123) 123-1234
     if (limited.length === 0) {
       return ''
     } else if (limited.length <= 3) {
@@ -341,17 +309,13 @@ export default function QuoteRequestForm() {
     const inputValue = input.value
     const cursorPosition = input.selectionStart || 0
     
-    // Extract only numbers
     const cleaned = inputValue.replace(/\D/g, '')
     const previousCleaned = previousValue.replace(/\D/g, '')
     
-    // Apply formatting
     const formatted = formatPhoneNumber(inputValue)
     
-    // Calculate cursor position: based on number of digits before cursor
     const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
     
-    // Find same digit position in formatted string
     let newCursorPosition = formatted.length
     let count = 0
     for (let i = 0; i < formatted.length; i++) {
@@ -366,7 +330,6 @@ export default function QuoteRequestForm() {
     
     setFormData(prev => ({ ...prev, phone: formatted }))
     
-    // Restore cursor position (after next render)
     setTimeout(() => {
       if (phoneInputRef.current) {
         phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
@@ -374,10 +337,8 @@ export default function QuoteRequestForm() {
     }, 0)
   }
 
-  // 날짜 입력 핸들러 추가
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    // 유효한 날짜 형식인지 확인 (YYYY-MM-DD)
     const datePattern = /^\d{4}-\d{2}-\d{2}$/
     
     if (value === '' || datePattern.test(value)) {
@@ -385,9 +346,7 @@ export default function QuoteRequestForm() {
     }
   }
 
-  // 날짜 입력 필드에 키보드 입력 방지 (달력만 사용하도록)
   const handleDateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // 특정 키(Tab, Delete, Backspace, Arrow keys)만 허용
     const allowedKeys = ['Tab', 'Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
     if (!allowedKeys.includes(e.key)) {
       e.preventDefault()
@@ -399,16 +358,15 @@ export default function QuoteRequestForm() {
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Quote Request Submitted!</h2>
-          <p className="text-gray-600 mb-6">
-            Your quote request has been successfully submitted.<br />
-            Contractors will visit after admin approval.
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('quoteRequest.completedTitle')}</h2>
+          <p className="text-gray-600 mb-6 whitespace-pre-line">
+            {t('quoteRequest.completedMessage')}
           </p>
           <button
-            onClick={() => window.location.href = '/my-quotes'}
+            onClick={() => window.location.href = `/${locale}/my-quotes`}
             className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-3 px-6 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
           >
-            View My Quotes
+            {t('quoteRequest.viewMyQuotes')}
           </button>
         </div>
       </div>
@@ -421,8 +379,8 @@ export default function QuoteRequestForm() {
         <div className="bg-white rounded-2xl shadow-2xl border-4 border-emerald-500 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 sm:p-8 text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Quote Request</h1>
-            <p className="text-base sm:text-lg opacity-90">Complete in 6 simple steps</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">{t('quoteRequest.title')}</h1>
+            <p className="text-base sm:text-lg opacity-90">{t('quoteRequest.subtitle')}</p>
             
             {/* Progress Bar */}
             <div className="bg-white bg-opacity-20 h-2 rounded-full mt-6 overflow-hidden">
@@ -431,7 +389,7 @@ export default function QuoteRequestForm() {
                 style={{ width: `${(currentStep / 6) * 100}%` }}
               />
             </div>
-            <p className="text-sm mt-2 opacity-80">Step {currentStep}/6</p>
+            <p className="text-sm mt-2 opacity-80">{t('quoteRequest.step')} {currentStep}{t('quoteRequest.of')}6</p>
           </div>
 
           <div className="p-4 sm:p-8">
@@ -441,9 +399,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">1</span>
-                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Property Type</h2>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">{t('quoteRequest.step1.title')}</h2>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600 ml-11">Select the type of space you want to renovate</p>
+                  <p className="text-sm sm:text-base text-gray-600 ml-11">{t('quoteRequest.step1.subtitle')}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -476,9 +434,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">2</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Project Area</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('quoteRequest.step2.title')}</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Select the area you want to renovate</p>
+                  <p className="text-gray-600 ml-11">{t('quoteRequest.step2.subtitle')}</p>
                 </div>
                 
                 {formData.spaceType === 'commercial' ? (
@@ -507,7 +465,7 @@ export default function QuoteRequestForm() {
                   <div className="mb-4">
                     <div className="bg-emerald-50 p-4 rounded-lg mb-6">
                       <p className="text-sm text-emerald-800">
-                        <strong>Note:</strong> If you select 'Full Renovation', you cannot select other options. You can select multiple options for the rest.
+                        <strong>{t('quoteRequest.step2.note').split(':')[0]}:</strong> {t('quoteRequest.step2.note').split(':')[1]}
                       </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -542,9 +500,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">3</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Budget Range</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('quoteRequest.step3.title')}</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Select your estimated budget range</p>
+                  <p className="text-gray-600 ml-11">{t('quoteRequest.step3.subtitle')}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 mb-8">
@@ -578,9 +536,9 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">4</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Start Time</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('quoteRequest.step4.title')}</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Select your preferred project start time</p>
+                  <p className="text-gray-600 ml-11">{t('quoteRequest.step4.subtitle')}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -608,45 +566,44 @@ export default function QuoteRequestForm() {
               </div>
             )}
 
-            {/* Step 5: Location - 현장방문 필수로 강화 */}
+            {/* Step 5: Location */}
             {currentStep === 5 && (
               <div className="animate-fadeIn">
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">5</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Location & Site Visit</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('quoteRequest.step5.title')}</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Enter project location and required site visit schedule</p>
+                  <p className="text-gray-600 ml-11">{t('quoteRequest.step5.subtitle')}</p>
                 </div>
                 
                 <div className="space-y-6 mb-8">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('quoteRequest.postalCode')}</label>
                     <input
                       type="text"
                       value={formData.postalCode}
                       onChange={handlePostalCodeChange}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
-                      placeholder="e.g. A0A 0A0"
+                      placeholder={t('quoteRequest.postalCodePlaceholder')}
                       maxLength={7}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Address *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('quoteRequest.fullAddress')}</label>
                     <input
                       type="text"
                       value={formData.fullAddress}
                       onChange={(e) => setFormData(prev => ({ ...prev, fullAddress: e.target.value }))}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
-                      placeholder="e.g. 123 Main Street, Toronto, ON"
+                      placeholder={t('quoteRequest.fullAddressPlaceholder')}
                     />
                   </div>
                   
-                  {/* ✅ 현장방문 날짜 - 필수 강화 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Site Visit Date *
+                      {t('quoteRequest.siteVisitDate')}
                     </label>
                     <input
                       ref={dateInputRef}
@@ -668,19 +625,18 @@ export default function QuoteRequestForm() {
                       }}
                     />
                     
-                    {/* ✅ 선택 여부에 따른 메시지 */}
                     {formData.visitDate && (
                       <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-3 mt-3">
                         <p className="text-sm text-emerald-800 font-medium flex items-center gap-2">
                           <span className="text-lg">✅</span>
-                          <span>Site visit scheduled for <strong>{new Date(formData.visitDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                          <span>{t('quoteRequest.siteVisitScheduled')} <strong>{new Date(formData.visitDate).toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
                         </p>
                       </div>
                     )}
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
                       <p className="text-xs text-blue-800">
-                        💡 <strong>Why is this required?</strong> Contractors must physically inspect your property to understand the scope of work and provide you with the most accurate quote possible.
+                        {t('quoteRequest.siteVisitWhy')}
                       </p>
                     </div>
                   </div>
@@ -694,25 +650,25 @@ export default function QuoteRequestForm() {
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
                     <span className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-full text-center leading-8 font-bold mr-3">6</span>
-                    <h2 className="text-2xl font-semibold text-gray-900">Project Requirements</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('quoteRequest.step6.title')}</h2>
                   </div>
-                  <p className="text-gray-600 ml-11">Write detailed requirements for your project</p>
+                  <p className="text-gray-600 ml-11">{t('quoteRequest.step6.subtitle')}</p>
                 </div>
                 
                 <div className="space-y-6 mb-8">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Project Description *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('quoteRequest.projectDescription')}</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       rows={6}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg resize-vertical"
-                      placeholder="Write detailed information about your project. e.g. desired style, special requirements, current condition, etc."
+                      placeholder={t('quoteRequest.projectDescriptionPlaceholder')}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('quoteRequest.phoneNumber')}</label>
                     <input
                       ref={phoneInputRef}
                       type="tel"
@@ -720,9 +676,9 @@ export default function QuoteRequestForm() {
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
-                      placeholder="e.g. (416) 555-0100"
+                      placeholder={t('quoteRequest.phoneNumberPlaceholder')}
                     />
-                    <p className="text-sm text-gray-600 mt-2">For contractors to contact you directly</p>
+                    <p className="text-sm text-gray-600 mt-2">{t('quoteRequest.phoneNumberNote')}</p>
                   </div>
                 </div>
               </div>
@@ -736,7 +692,7 @@ export default function QuoteRequestForm() {
                   onClick={prevStep}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200"
                 >
-                  ← Previous
+                  ← {t('common.previous')}
                 </button>
               )}
               
@@ -744,7 +700,6 @@ export default function QuoteRequestForm() {
 
               {currentStep < 6 ? (
                 <>
-                  {/* ✅ Step 5에서만 조건부 비활성화 */}
                   {currentStep === 5 ? (
                     <button
                       type="button"
@@ -755,9 +710,9 @@ export default function QuoteRequestForm() {
                           ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 cursor-pointer'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
                       }`}
-                      title={!isStep5Complete() ? 'Please complete all required fields including site visit date' : 'Continue to next step'}
+                      title={!isStep5Complete() ? t('quoteRequest.siteVisitRequired') : t('common.next')}
                     >
-                      Next →
+                      {t('common.next')} →
                     </button>
                   ) : (
                     <button
@@ -765,7 +720,7 @@ export default function QuoteRequestForm() {
                       onClick={nextStep}
                       className="px-10 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300"
                     >
-                      Next →
+                      {t('common.next')} →
                     </button>
                   )}
                 </>
@@ -780,7 +735,7 @@ export default function QuoteRequestForm() {
                       : 'bg-emerald-600 text-white hover:bg-emerald-700'
                   }`}
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
+                  {isSubmitting ? t('common.submitting') : t('quoteRequest.submitButton')}
                 </button>
               )}
             </div>
