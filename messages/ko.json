@@ -17,7 +17,8 @@
     "selected": "선택됨",
     "selecting": "선택 중...",
     "update": "업데이트",
-    "updating": "업데이트 중..."
+    "updating": "업데이트 중...",
+    "submitting": "제출 중..."
   },
   "auth": {
     "signIn": "로그인",
@@ -74,29 +75,64 @@
     "cancelled": "취소됨",
     "unknown": "알 수 없음"
   },
-  "quote": {
+  "quoteRequest": {
     "title": "견적 요청",
-    "step1": "프로젝트 세부사항",
-    "step2": "예산",
-    "step3": "일정",
-    "step4": "위치",
-    "step5": "추가 세부사항",
-    "spaceType": "공간 유형",
-    "projectTypes": "프로젝트 유형",
-    "budget": "예산",
-    "timeline": "일정",
-    "location": "위치",
-    "description": "설명",
-    "photos": "사진",
+    "subtitle": "6단계로 간편하게 완료",
+    "step": "단계",
+    "of": "/",
+    "step1": {
+      "title": "물건 유형",
+      "subtitle": "리노베이션 하고 싶은 공간 유형을 선택하세요"
+    },
+    "step2": {
+      "title": "프로젝트 영역",
+      "subtitle": "리노베이션 하고 싶은 영역을 선택하세요",
+      "note": "참고: '전체 리노베이션'을 선택하면 다른 옵션을 선택할 수 없습니다. 나머지는 복수 선택 가능합니다."
+    },
+    "step3": {
+      "title": "예산 범위",
+      "subtitle": "예상 예산 범위를 선택하세요"
+    },
+    "step4": {
+      "title": "시작 시기",
+      "subtitle": "원하시는 프로젝트 시작 시기를 선택하세요"
+    },
+    "step5": {
+      "title": "위치 및 현장 방문",
+      "subtitle": "프로젝트 위치와 필수 현장 방문 일정을 입력하세요"
+    },
+    "step6": {
+      "title": "프로젝트 요구사항",
+      "subtitle": "프로젝트에 대한 상세 요구사항을 작성하세요"
+    },
+    "siteVisitDate": "현장 방문 날짜 *",
+    "siteVisitRequired": "⚠️ 현장 방문 날짜는 필수입니다!\n\n업체들이 정확한 견적을 제공하기 위해 현장을 방문해야 합니다. 캘린더를 사용하여 원하시는 날짜를 선택해주세요.",
+    "siteVisitScheduled": "현장 방문 예정일",
+    "siteVisitWhy": "💡 왜 필수인가요? 업체들이 작업 범위를 파악하고 가장 정확한 견적을 제공하기 위해서는 직접 물건을 방문해야 합니다.",
     "projectDescription": "프로젝트 설명 *",
+    "projectDescriptionPlaceholder": "프로젝트에 대한 자세한 정보를 작성하세요. 예: 원하는 스타일, 특별 요구사항, 현재 상태 등.",
     "phoneNumber": "전화번호 *",
+    "phoneNumberPlaceholder": "예: (416) 555-0100",
+    "phoneNumberNote": "업체들이 직접 연락하기 위한 번호입니다",
     "postalCode": "우편번호 *",
+    "postalCodePlaceholder": "예: A0A 0A0",
     "fullAddress": "전체 주소 *",
-    "preferredVisitDate": "희망 방문 날짜",
-    "descriptionPlaceholder": "프로젝트 요구사항을 설명해주세요...",
-    "phonePlaceholder": "(416) 555-0100",
-    "postalCodePlaceholder": "A0A 0A0",
-    "addressPlaceholder": "123 Main Street, Toronto, ON"
+    "fullAddressPlaceholder": "예: 123 Main Street, Toronto, ON",
+    "submitButton": "견적 요청 제출",
+    "completedTitle": "견적 요청이 제출되었습니다!",
+    "completedMessage": "견적 요청이 성공적으로 제출되었습니다.\n업체들은 관리자 승인 후 방문할 예정입니다.",
+    "viewMyQuotes": "내 견적 보기",
+    "validation": {
+      "selectSpaceType": "물건 유형을 선택해주세요.",
+      "selectProjectType": "프로젝트 영역을 최소 1개 선택해주세요.",
+      "selectBudget": "예산 범위를 선택해주세요.",
+      "selectTimeline": "시작 시기를 선택해주세요.",
+      "enterPostalAndAddress": "우편번호와 전체 주소를 모두 입력해주세요.",
+      "invalidPostalCode": "올바른 우편번호 형식을 입력해주세요. (예: A0A 0A0)",
+      "enterDescription": "프로젝트 설명을 입력해주세요.",
+      "enterPhoneNumber": "전화번호를 입력해주세요.",
+      "loginRequired": "견적 요청을 제출하려면 로그인해주세요."
+    }
   },
   "projectTypes": {
     "kitchen": "주방",
@@ -109,30 +145,35 @@
     "retail": "소매점",
     "office": "사무실",
     "education": "교육시설",
+    "hospitality": "숙박업",
     "other": "기타"
   },
   "spaceTypes": {
     "detachedHouse": "단독주택",
+    "townHouse": "타운하우스",
     "condo": "콘도",
-    "townhouse": "타운하우스",
+    "condoApartment": "콘도 & 아파트",
     "commercial": "상업용",
-    "beecroft": "비크로프트",
     "apartment": "아파트",
     "house": "주택"
   },
   "budget": {
     "under50k": "$50,000 미만",
+    "under50kSubtitle": "소규모 리노베이션",
     "50kTo100k": "$50,000 - $100,000",
-    "over100k": "$100,000 이상"
+    "50kTo100kSubtitle": "중규모 리노베이션",
+    "over100k": "$100,000 이상",
+    "over100kSubtitle": "대규모 리노베이션"
   },
   "timeline": {
-    "asap": "최대한 빨리",
     "immediate": "즉시",
-    "1month": "1개월",
-    "within1Month": "1개월 이내",
-    "within3Months": "3개월 이내",
+    "immediateSubtitle": "최대한 빨리",
+    "1month": "1개월 이내",
+    "1monthSubtitle": "한 달 안에",
     "3months": "3개월 이내",
-    "flexible": "유연함"
+    "3monthSubtitle": "3개월 안에",
+    "planning": "계획 단계",
+    "planningSubtitle": "아직 계획 중"
   },
   "roles": {
     "customer": "고객",
