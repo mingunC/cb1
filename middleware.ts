@@ -13,6 +13,10 @@ export default createMiddleware({
 });
 
 export const config = {
-  // 모든 경로에 middleware 적용 (API 제외)
-  matcher: ['/', '/(ko|en|zh)/:path*']
+  // API, _next/static, _next/image, favicon 등은 제외
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/',
+    '/(ko|en|zh)/:path*'
+  ]
 };
