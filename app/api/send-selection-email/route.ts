@@ -5,6 +5,7 @@ import {
   createSelectionEmailTemplate, 
   createCustomerNotificationTemplate 
 } from '@/lib/email/mailgun'
+import { emailTranslations } from '@/lib/email/email-translations'
 
 export async function POST(request: Request) {
   try {
@@ -30,16 +31,20 @@ export async function POST(request: Request) {
       throw new Error('Project not found')
     }
     
-    // 2. 고객 정보 가져오기
+    // 2. 고객 정보 가져오기 (preferred_locale 포함)
     const { data: customer, error: customerError } = await supabase
       .from('users')
-      .select('first_name, last_name, email, phone')
+      .select('first_name, last_name, email, phone, preferred_locale')
       .eq('id', project.customer_id)
       .single()
     
     if (customerError || !customer) {
       throw new Error('Customer not found')
     }
+    
+    // 고객 언어 설정 (기본값: 'en')
+    const customerLocale = (customer.preferred_locale || 'en') as 'en' | 'ko' | 'zh'
+    const customerTranslations = emailTranslations[customerLocale]
     
     // 3. 업체 정보 가져오기
     const { data: contractor, error: contractorError } = await supabase
@@ -87,14 +92,16 @@ export async function POST(request: Request) {
     console.log('📧 Sending emails:', {
       contractorEmail,
       customerEmail: customer.email,
+      customerLocale,
       projectId,
       contractorId
     })
     
     // 7. 업체에게 영어 이메일 발송 (고객 정보 포함)
+    // 업체는 항상 영어로 받음
     const contractorEmailResult = await sendEmail({
       to: contractorEmail,
-      subject: `🎉 Congratulations! ${customerName} has selected your company`,
+      subject: emailTranslations.en.contractor.subject(customerName),
       html: createSelectionEmailTemplate(
         contractor.company_name,
         project,
@@ -109,10 +116,10 @@ export async function POST(request: Request) {
       console.log('✅ Email sent to contractor:', contractorEmail)
     }
     
-    // 8. 고객에게 영어 이메일 발송
+    // 8. 고객에게 해당 언어로 이메일 발송
     const customerEmailResult = await sendEmail({
       to: customer.email,
-      subject: `✅ Contractor Selected for Your Renovation Project`,
+      subject: customerTranslations.customer.subject,
       html: createCustomerNotificationTemplate(
         customerName,
         contractor,
@@ -124,7 +131,7 @@ export async function POST(request: Request) {
     if (!customerEmailResult.success) {
       console.error('❌ Failed to send email to customer:', customerEmailResult.error)
     } else {
-      console.log('✅ Email sent to customer:', customer.email)
+      console.log('✅ Email sent to customer:', customer.email, 'in', customerLocale)
     }
     
     // 9. 결과 반환
@@ -138,6 +145,7 @@ export async function POST(request: Request) {
       details: {
         contractorEmailSent: contractorEmailResult.success,
         customerEmailSent: customerEmailResult.success,
+        customerLocale,
         contractorEmail: contractorEmailResult.success ? contractorEmail : undefined,
         customerEmail: customerEmailResult.success ? customer.email : undefined,
         errors: {
