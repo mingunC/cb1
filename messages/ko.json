@@ -197,5 +197,104 @@
     "customer": "고객",
     "contractor": "업체",
     "admin": "관리자"
+  },
+  "contractor": {
+    "dashboard": {
+      "title": "업체 대시보드",
+      "backToHome": "홈으로",
+      "refresh": "새로고침",
+      "loading": "대시보드 로딩 중...",
+      "pleaseWait": "잠시만 기다려주세요",
+      "refreshed": "데이터를 새로고침했습니다",
+      "problemOccurred": "문제가 발생했습니다",
+      "refreshPage": "페이지 새로고침",
+      "goToLogin": "로그인 페이지로 이동"
+    },
+    "tabs": {
+      "projects": "프로젝트 관리",
+      "portfolio": "포트폴리오 관리",
+      "profile": "프로필 관리"
+    },
+    "filters": {
+      "all": "전체",
+      "bidding": "입찰 중",
+      "selected": "선정됨",
+      "quoted": "견적서 제출",
+      "notSelected": "미선정"
+    },
+    "projectStatus": {
+      "pending": "대기중",
+      "approved": "승인됨",
+      "siteVisitApplied": "현장방문 신청",
+      "siteVisitCompleted": "현장방문 완료",
+      "bidding": "입찰 중",
+      "biddingSubmitted": "입찰 중 (제출완료)",
+      "quoted": "견적서 제출",
+      "selected": "선정됨",
+      "notSelected": "다른 업체 선정",
+      "selectedBy": "선정",
+      "completed": "완료",
+      "cancelled": "취소됨"
+    },
+    "projectCard": {
+      "budget": "예산",
+      "location": "장소",
+      "spaceType": "공간 타입",
+      "customer": "고객",
+      "visitDate": "방문일",
+      "projectType": "프로젝트 타입",
+      "requirements": "요구사항",
+      "myQuote": "제출 견적",
+      "noAddress": "주소 미입력",
+      "noCustomer": "고객 정보 없음",
+      "noName": "이름 미입력",
+      "tbd": "미정",
+      "under": "미만",
+      "over": "이상"
+    },
+    "projectList": {
+      "title": "프로젝트 목록",
+      "count": "개",
+      "clickForDetails": "카드를 클릭하여 상세 정보를 확인하세요",
+      "noProjects": "해당하는 프로젝트가 없습니다"
+    },
+    "actions": {
+      "applySiteVisit": "현장방문 신청",
+      "cancelSiteVisit": "현장방문 취소",
+      "joinBidding": "입찰 참여하기",
+      "cancelBidding": "입찰 취소하기",
+      "submitQuote": "견적서 작성",
+      "customerInfoSent": "고객의 정보가 입력하신 메일로 전송됩니다"
+    },
+    "messages": {
+      "biddingActive": "🔥 입찰이 시작되었습니다! 지금 견적서를 제출하세요.",
+      "biddingSubmitted": "🔥 입찰이 진행 중입니다. 견적서가 제출되었습니다.",
+      "congratulations": "🎉 축하합니다! 고객이 귀사를 선택했습니다.",
+      "notSelectedMessage": "고객이",
+      "applying": "현장방문 신청 중...",
+      "applied": "현장방문 신청이 완료되었습니다!",
+      "appliedWithEmail": "현장방문 신청이 완료되었습니다! 고객에게 알림 이메일이 발송되었습니다.",
+      "cancelled": "현장방문 신청이 취소되었습니다",
+      "quoteSubmitted": "견적서가 제출되었습니다",
+      "biddingCancelled": "입찰이 취소되었습니다"
+    },
+    "profile": {
+      "title": "프로필 관리",
+      "description": "프로필 정보를 업데이트하려면 아래 버튼을 클릭하세요.",
+      "editProfile": "프로필 편집하기"
+    },
+    "errors": {
+      "loadFailed": "프로젝트를 불러오는데 실패했습니다",
+      "applySiteVisitFailed": "현장방문 신청에 실패했습니다",
+      "alreadyApplied": "이미 현장방문을 신청했습니다",
+      "cancelSiteVisitFailed": "현장방문 취소에 실패했습니다",
+      "cancelBiddingFailed": "입찰 취소에 실패했습니다",
+      "noContractorInfo": "업체 정보를 찾을 수 없습니다",
+      "authError": "세션 확인 중 오류가 발생했습니다"
+    },
+    "confirmations": {
+      "cancelSiteVisit": "현장방문 신청을 취소하시겠습니까?",
+      "cancelBidding": "입찰을 취소하시겠습니까? 제출한 견적서가 삭제됩니다."
+    }
   }
 }

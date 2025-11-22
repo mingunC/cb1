@@ -197,5 +197,104 @@
     "customer": "Customer",
     "contractor": "Contractor",
     "admin": "Administrator"
+  },
+  "contractor": {
+    "dashboard": {
+      "title": "Contractor Dashboard",
+      "backToHome": "Back to Home",
+      "refresh": "Refresh",
+      "loading": "Loading dashboard...",
+      "pleaseWait": "Please wait",
+      "refreshed": "Data refreshed",
+      "problemOccurred": "A problem occurred",
+      "refreshPage": "Refresh Page",
+      "goToLogin": "Go to Login Page"
+    },
+    "tabs": {
+      "projects": "Project Management",
+      "portfolio": "Portfolio Management",
+      "profile": "Profile Management"
+    },
+    "filters": {
+      "all": "All",
+      "bidding": "Bidding",
+      "selected": "Selected",
+      "quoted": "Quote Submitted",
+      "notSelected": "Not Selected"
+    },
+    "projectStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "siteVisitApplied": "Site Visit Applied",
+      "siteVisitCompleted": "Site Visit Completed",
+      "bidding": "Bidding",
+      "biddingSubmitted": "Bidding (Submitted)",
+      "quoted": "Quote Submitted",
+      "selected": "Selected",
+      "notSelected": "Other Contractor Selected",
+      "selectedBy": "selected",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "projectCard": {
+      "budget": "Budget",
+      "location": "Location",
+      "spaceType": "Space Type",
+      "customer": "Customer",
+      "visitDate": "Visit Date",
+      "projectType": "Project Type",
+      "requirements": "Requirements",
+      "myQuote": "Submitted Quote",
+      "noAddress": "No address provided",
+      "noCustomer": "No customer info",
+      "noName": "No name provided",
+      "tbd": "TBD",
+      "under": "Under",
+      "over": "Over"
+    },
+    "projectList": {
+      "title": "Project List",
+      "count": "projects",
+      "clickForDetails": "Click card to view details",
+      "noProjects": "No projects match your filter"
+    },
+    "actions": {
+      "applySiteVisit": "Apply for Site Visit",
+      "cancelSiteVisit": "Cancel Site Visit",
+      "joinBidding": "Join Bidding",
+      "cancelBidding": "Cancel Bidding",
+      "submitQuote": "Submit Quote",
+      "customerInfoSent": "Customer information will be sent to your email"
+    },
+    "messages": {
+      "biddingActive": "🔥 Bidding is active! Submit your quote now.",
+      "biddingSubmitted": "🔥 Bidding is in progress. Your quote has been submitted.",
+      "congratulations": "🎉 Congratulations! The customer has chosen you.",
+      "notSelectedMessage": "The customer has selected",
+      "applying": "Applying for site visit...",
+      "applied": "Site visit application completed!",
+      "appliedWithEmail": "Site visit application completed! Notification email sent to customer.",
+      "cancelled": "Site visit application cancelled",
+      "quoteSubmitted": "Quote has been submitted",
+      "biddingCancelled": "Bidding cancelled"
+    },
+    "profile": {
+      "title": "Profile Management",
+      "description": "Click the button below to update your profile information.",
+      "editProfile": "Edit Profile"
+    },
+    "errors": {
+      "loadFailed": "Failed to load projects",
+      "applySiteVisitFailed": "Failed to apply for site visit",
+      "alreadyApplied": "Already applied for site visit",
+      "cancelSiteVisitFailed": "Failed to cancel site visit",
+      "cancelBiddingFailed": "Failed to cancel bidding",
+      "noContractorInfo": "Contractor information not found",
+      "authError": "Error checking session"
+    },
+    "confirmations": {
+      "cancelSiteVisit": "Are you sure you want to cancel the site visit application?",
+      "cancelBidding": "Are you sure you want to cancel the bidding? Your submitted quote will be deleted."
+    }
   }
 }

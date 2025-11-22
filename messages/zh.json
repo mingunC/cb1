@@ -197,5 +197,104 @@
     "customer": "客户",
     "contractor": "承包商",
     "admin": "管理员"
+  },
+  "contractor": {
+    "dashboard": {
+      "title": "承包商仪表板",
+      "backToHome": "返回首页",
+      "refresh": "刷新",
+      "loading": "仪表板加载中...",
+      "pleaseWait": "请稍候",
+      "refreshed": "数据已刷新",
+      "problemOccurred": "发生问题",
+      "refreshPage": "刷新页面",
+      "goToLogin": "前往登录页面"
+    },
+    "tabs": {
+      "projects": "项目管理",
+      "portfolio": "作品集管理",
+      "profile": "个人资料管理"
+    },
+    "filters": {
+      "all": "全部",
+      "bidding": "投标中",
+      "selected": "已选中",
+      "quoted": "已提交报价",
+      "notSelected": "未选中"
+    },
+    "projectStatus": {
+      "pending": "待审核",
+      "approved": "已批准",
+      "siteVisitApplied": "已申请现场勘查",
+      "siteVisitCompleted": "现场勘查完成",
+      "bidding": "投标中",
+      "biddingSubmitted": "投标中 (已提交)",
+      "quoted": "已提交报价",
+      "selected": "已选中",
+      "notSelected": "其他承包商被选中",
+      "selectedBy": "被选中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "projectCard": {
+      "budget": "预算",
+      "location": "地点",
+      "spaceType": "空间类型",
+      "customer": "客户",
+      "visitDate": "访问日期",
+      "projectType": "项目类型",
+      "requirements": "要求",
+      "myQuote": "我的报价",
+      "noAddress": "未提供地址",
+      "noCustomer": "无客户信息",
+      "noName": "未提供姓名",
+      "tbd": "待定",
+      "under": "低于",
+      "over": "超过"
+    },
+    "projectList": {
+      "title": "项目列表",
+      "count": "个项目",
+      "clickForDetails": "点击卡片查看详情",
+      "noProjects": "没有符合筛选条件的项目"
+    },
+    "actions": {
+      "applySiteVisit": "申请现场勘查",
+      "cancelSiteVisit": "取消现场勘查",
+      "joinBidding": "参与投标",
+      "cancelBidding": "取消投标",
+      "submitQuote": "提交报价",
+      "customerInfoSent": "客户信息将发送至您的电子邮件"
+    },
+    "messages": {
+      "biddingActive": "🔥 投标已开始！请立即提交您的报价。",
+      "biddingSubmitted": "🔥 投标正在进行中。您的报价已提交。",
+      "congratulations": "🎉 恭喜！客户已选择您。",
+      "notSelectedMessage": "客户已选择",
+      "applying": "正在申请现场勘查...",
+      "applied": "现场勘查申请已完成！",
+      "appliedWithEmail": "现场勘查申请已完成！已向客户发送通知电子邮件。",
+      "cancelled": "现场勘查申请已取消",
+      "quoteSubmitted": "报价已提交",
+      "biddingCancelled": "投标已取消"
+    },
+    "profile": {
+      "title": "个人资料管理",
+      "description": "点击下面的按钮更新您的个人资料信息。",
+      "editProfile": "编辑个人资料"
+    },
+    "errors": {
+      "loadFailed": "加载项目失败",
+      "applySiteVisitFailed": "现场勘查申请失败",
+      "alreadyApplied": "已申请现场勘查",
+      "cancelSiteVisitFailed": "取消现场勘查失败",
+      "cancelBiddingFailed": "取消投标失败",
+      "noContractorInfo": "找不到承包商信息",
+      "authError": "检查会话时出错"
+    },
+    "confirmations": {
+      "cancelSiteVisit": "您确定要取消现场勘查申请吗？",
+      "cancelBidding": "您确定要取消投标吗？您提交的报价将被删除。"
+    }
   }
 }

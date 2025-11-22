@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { 
   ArrowLeft, RefreshCw, ChevronDown, ChevronUp, 
@@ -19,6 +20,8 @@ interface Props {
 
 export default function ImprovedContractorDashboard({ initialContractorData }: Props) {
   const router = useRouter()
+  const t = useTranslations()
+  const locale = useLocale()
   
   // 상태 관리
   const [projects, setProjects] = useState<Project[]>([])
@@ -195,7 +198,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       setProjects(processedProjects)
     } catch (err: any) {
       console.error('Failed to load projects:', err)
-      setError('프로젝트를 불러오는데 실패했습니다')
+      setError(t('contractor.errors.loadFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -212,18 +215,18 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     setIsRefreshing(true)
     await loadProjects()
     setIsRefreshing(false)
-    toast.success('데이터를 새로고침했습니다')
+    toast.success(t('contractor.dashboard.refreshed'))
   }
   
   // 현장방문 신청 함수 (API 호출)
   const handleApplySiteVisit = async (project: Project) => {
     if (!contractorData?.id) {
-      toast.error('업체 정보를 찾을 수 없습니다')
+      toast.error(t('contractor.errors.noContractorInfo'))
       return
     }
 
     try {
-      const loadingToast = toast.loading('현장방문 신청 중...')
+      const loadingToast = toast.loading(t('contractor.messages.applying'))
       
       const response = await fetch('/api/apply-site-visit', {
         method: 'POST',
@@ -242,34 +245,34 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
 
       if (!response.ok) {
         if (response.status === 409) {
-          toast.error('이미 현장방문을 신청했습니다')
+          toast.error(t('contractor.errors.alreadyApplied'))
         } else {
-          toast.error(result.error || '현장방문 신청에 실패했습니다')
+          toast.error(result.error || t('contractor.errors.applySiteVisitFailed'))
         }
         return
       }
 
       if (result.data?.emailSent) {
-        toast.success('현장방문 신청이 완료되었습니다! 고객에게 알림 이메일이 발송되었습니다.')
+        toast.success(t('contractor.messages.appliedWithEmail'))
       } else {
-        toast.success('현장방문 신청이 완료되었습니다!')
+        toast.success(t('contractor.messages.applied'))
       }
       
       await loadProjects() // 프로젝트 목록 새로고침
     } catch (error: any) {
       console.error('Site visit application error:', error)
-      toast.error('현장방문 신청에 실패했습니다')
+      toast.error(t('contractor.errors.applySiteVisitFailed'))
     }
   }
   
   // 현장방문 취소 함수
   const handleCancelSiteVisit = async (project: Project) => {
     if (!project.site_visit_application) {
-      toast.error('현장방문 신청 정보를 찾을 수 없습니다')
+      toast.error(t('contractor.errors.noContractorInfo'))
       return
     }
 
-    const confirmed = window.confirm('현장방문 신청을 취소하시겠습니까?')
+    const confirmed = window.confirm(t('contractor.confirmations.cancelSiteVisit'))
     if (!confirmed) return
 
     try {
@@ -283,11 +286,11 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
 
       if (error) throw error
 
-      toast.success('현장방문 신청이 취소되었습니다')
+      toast.success(t('contractor.messages.cancelled'))
       await loadProjects() // 프로젝트 목록 새로고침
     } catch (error: any) {
       console.error('Cancel site visit error:', error)
-      toast.error('현장방문 취소에 실패했습니다')
+      toast.error(t('contractor.errors.cancelSiteVisitFailed'))
     }
   }
   
@@ -301,7 +304,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
   const handleCancelBidding = async (project: Project) => {
     if (!project.contractor_quote) return
     
-    const confirmed = window.confirm('입찰을 취소하시겠습니까? 제출한 견적서가 삭제됩니다.')
+    const confirmed = window.confirm(t('contractor.confirmations.cancelBidding'))
     if (!confirmed) return
     
     try {
@@ -313,11 +316,11 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       
       if (error) throw error
       
-      toast.success('입찰이 취소되었습니다')
+      toast.success(t('contractor.messages.biddingCancelled'))
       await loadProjects()
     } catch (error) {
       console.error('Failed to cancel bidding:', error)
-      toast.error('입찰 취소에 실패했습니다')
+      toast.error(t('contractor.errors.cancelBiddingFailed'))
     }
   }
   
@@ -325,7 +328,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
   const handleQuoteSubmitted = async () => {
     setShowQuoteModal(false)
     setSelectedProject(null)
-    toast.success('견적서가 제출되었습니다')
+    toast.success(t('contractor.messages.quoteSubmitted'))
     await loadProjects()
   }
   
@@ -368,7 +371,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">데이터를 불러오는 중...</p>
+          <p className="mt-4 text-gray-600 font-medium">{t('common.loading')}</p>
         </div>
       </div>
     )
@@ -380,33 +383,33 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     
     const getStatusInfo = () => {
       const statusConfig: Record<ProjectStatus | 'bidding', { label: string; bgColor: string; textColor: string; icon?: any }> = {
-        'pending': { label: '대기중', bgColor: 'bg-gray-100', textColor: 'text-gray-700' },
-        'approved': { label: '승인됨', bgColor: 'bg-green-100', textColor: 'text-green-700' },
-        'site-visit-applied': { label: '현장방문 신청', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
-        'site-visit-completed': { label: '현장방문 완료', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
+        'pending': { label: t('contractor.projectStatus.pending'), bgColor: 'bg-gray-100', textColor: 'text-gray-700' },
+        'approved': { label: t('contractor.projectStatus.approved'), bgColor: 'bg-green-100', textColor: 'text-green-700' },
+        'site-visit-applied': { label: t('contractor.projectStatus.siteVisitApplied'), bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
+        'site-visit-completed': { label: t('contractor.projectStatus.siteVisitCompleted'), bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
         'bidding': { 
-          label: project.contractor_quote ? '입찰 중 (제출완료)' : '입찰 중', 
+          label: project.contractor_quote ? t('contractor.projectStatus.biddingSubmitted') : t('contractor.projectStatus.bidding'), 
           bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
           textColor: 'text-white',
           icon: TrendingUp
         },
-        'quoted': { label: '견적서 제출', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
+        'quoted': { label: t('contractor.projectStatus.quoted'), bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
         'selected': { 
-          label: '선정됨', 
+          label: t('contractor.projectStatus.selected'), 
           bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
           textColor: 'text-white',
           icon: Trophy
         },
         'not-selected': { 
           label: selectedContractorNames[project.selected_contractor_id!] 
-            ? `${selectedContractorNames[project.selected_contractor_id!]} 선정` 
-            : '다른 업체 선정',
+            ? `${selectedContractorNames[project.selected_contractor_id!]} ${t('contractor.projectStatus.selectedBy')}` 
+            : t('contractor.projectStatus.notSelected'),
           bgColor: 'bg-red-100',
           textColor: 'text-red-700',
           icon: X
         },
-        'completed': { label: '완료', bgColor: 'bg-gray-400', textColor: 'text-white' },
-        'cancelled': { label: '취소됨', bgColor: 'bg-gray-300', textColor: 'text-gray-600' }
+        'completed': { label: t('contractor.projectStatus.completed'), bgColor: 'bg-gray-400', textColor: 'text-white' },
+        'cancelled': { label: t('contractor.projectStatus.cancelled'), bgColor: 'bg-gray-300', textColor: 'text-gray-600' }
       }
       
       return statusConfig[project.projectStatus || 'pending']
@@ -417,31 +420,34 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     
     // 고객 이름 표시
     const getCustomerName = () => {
-      if (!project.customer) return '고객 정보 없음'
+      if (!project.customer) return t('contractor.projectCard.noCustomer')
       const { first_name, last_name, email } = project.customer
       if (first_name || last_name) {
         return `${first_name || ''} ${last_name || ''}`.trim()
       }
-      return email?.split('@')[0] || '이름 미입력'
+      return email?.split('@')[0] || t('contractor.projectCard.noName')
     }
     
     // 프로젝트 타입 표시
     const getProjectTypeLabel = () => {
       if (project.project_types && project.project_types.length > 0) {
         return project.project_types.map(type => {
-          const typeLabels: Record<string, string> = {
-            'full_renovation': '전체 리노베이션',
-            'partial_renovation': '부분 리노베이션',
-            'kitchen': '주방',
-            'bathroom': '욕실',
-            'basement': '지하실',
-            'painting': '페인팅',
-            'flooring': '바닥재'
-          }
-          return typeLabels[type] || type
+          // Convert snake_case to camelCase for translation keys
+          const typeKey = type.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+          // Try to get translation from projectTypes
+          try {
+            const translationKey = `projectTypes.${typeKey}` as any
+            const translated = t(translationKey)
+            if (translated && translated !== translationKey) {
+              return translated
+            }
+          } catch {}
+          
+          // Fallback to original type
+          return type
         }).join(', ')
       }
-      return '리노베이션'
+      return t('projectTypes.fullRenovation') || 'Renovation'
     }
     
     // 공간 타입 표시
@@ -459,23 +465,44 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     // 예산 표시
     const getBudgetLabel = () => {
       const budget = project.budget
-      const budgetLabels: Record<string, string> = {
-        'under_50k': '$50,000 미만',
-        '50k_100k': '$50,000 - $100,000',
-        'over_100k': '$100,000 이상',
-        '100k_200k': '$100,000 - $200,000',
-        '200k_500k': '$200,000 - $500,000',
-        'over_500k': '$500,000 이상'
+      
+      // Map budget keys to translation keys
+      const budgetMap: Record<string, string> = {
+        'under_50k': 'budget.under50k',
+        '50k_100k': 'budget.50kTo100k',
+        'over_100k': 'budget.over100k',
+        '100k_200k': 'budget.50kTo100k', // Fallback
+        '200k_500k': 'budget.50kTo100k', // Fallback
+        'over_500k': 'budget.over100k' // Fallback
       }
       
-      if (budgetLabels[budget]) return budgetLabels[budget]
+      if (budget && budgetMap[budget]) {
+        try {
+          const translated = t(budgetMap[budget] as any)
+          if (translated && translated !== budgetMap[budget]) {
+            return translated
+          }
+        } catch {}
+      }
+      
+      // Fallback labels
+      const budgetLabels: Record<string, string> = {
+        'under_50k': 'Under $50,000',
+        '50k_100k': '$50,000 - $100,000',
+        'over_100k': '$100,000+',
+        '100k_200k': '$100,000 - $200,000',
+        '200k_500k': '$200,000 - $500,000',
+        'over_500k': '$500,000+'
+      }
+      
+      if (budget && budgetLabels[budget]) return budgetLabels[budget]
       if (typeof budget === 'number') return `$${budget.toLocaleString()}`
-      return '미정'
+      return t('contractor.projectCard.tbd')
     }
     
     // 날짜 포맷
     const formatDate = (dateStr: string | null) => {
-      if (!dateStr) return '미정'
+      if (!dateStr) return t('contractor.projectCard.tbd')
       try {
         const date = new Date(dateStr)
         return date.toLocaleDateString('ko-KR', { 
@@ -496,7 +523,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       if (project.visit_date) {
         return formatDate(project.visit_date)
       }
-      return '미정'
+      return t('contractor.projectCard.tbd')
     }
     
     // 카드 테두리 색상
@@ -532,7 +559,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                 </div>
                 <div className="flex items-start gap-2 text-base text-gray-700">
                   <MapPin className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
-                  <span className="line-clamp-1">{project.full_address || project.postal_code || '주소 미입력'}</span>
+                  <span className="line-clamp-1">{project.full_address || project.postal_code || t('contractor.projectCard.noAddress')}</span>
                 </div>
               </div>
             </div>
@@ -564,7 +591,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                 </div>
                 <div className="flex items-center gap-2 text-gray-700">
                   <Calendar className="w-4 h-4 text-gray-500" />
-                  <span>방문일: {getVisitDate()}</span>
+                  <span>{t('contractor.projectCard.visitDate')}: {getVisitDate()}</span>
                 </div>
                 <div className="flex items-start gap-2 text-gray-700">
                   <FileText className="w-4 h-4 text-gray-500 mt-0.5" />
@@ -575,7 +602,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               {/* 요구사항 */}
               {project.description && (
                 <div className="bg-white p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1 font-medium">요구사항:</p>
+                  <p className="text-xs text-gray-500 mb-1 font-medium">{t('contractor.projectCard.requirements')}:</p>
                   <p className="text-sm text-gray-700">
                     {project.description}
                   </p>
@@ -586,7 +613,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               {project.contractor_quote && (
                 <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
                   <p className="text-sm font-semibold text-purple-900">
-                    제출 견적: ${project.contractor_quote.price?.toLocaleString()}
+                    {t('contractor.projectCard.myQuote')}: ${project.contractor_quote.price?.toLocaleString()}
                   </p>
                   {project.contractor_quote.description && (
                     <p className="text-xs text-purple-700 mt-1">
@@ -602,8 +629,8 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                   <p className="text-sm font-bold text-orange-700 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
                     {project.contractor_quote 
-                      ? '🔥 입찰이 진행 중입니다. 견적서가 제출되었습니다.' 
-                      : '🔥 입찰이 시작되었습니다! 지금 견적서를 제출하세요.'}
+                      ? t('contractor.messages.biddingSubmitted') 
+                      : t('contractor.messages.biddingActive')}
                   </p>
                 </div>
               )}
@@ -613,7 +640,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                 <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-300">
                   <p className="text-sm font-bold text-green-700 flex items-center gap-2">
                     <Trophy className="w-4 h-4" />
-                    🎉 축하합니다! 고객이 귀사를 선택했습니다.
+                    {t('contractor.messages.congratulations')}
                   </p>
                 </div>
               )}
@@ -621,9 +648,9 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               {project.projectStatus === 'not-selected' && (
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                   <p className="text-sm text-red-700">
-                    고객이 <span className="font-bold">
-                      {selectedContractorNames[project.selected_contractor_id!] || '다른 업체'}
-                    </span>를 선택했습니다.
+                    {t('contractor.messages.notSelectedMessage')} <span className="font-bold">
+                      {selectedContractorNames[project.selected_contractor_id!] || t('contractor.projectStatus.notSelected')}
+                    </span>
                   </p>
                 </div>
               )}
@@ -641,7 +668,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                         }}
                         className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                       >
-                        현장방문 신청
+                        {t('contractor.actions.applySiteVisit')}
                       </button>
                     ) : (
                       <button 
@@ -652,7 +679,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                         className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
                       >
                         <Ban className="w-4 h-4" />
-                        현장방문 취소
+                        {t('contractor.actions.cancelSiteVisit')}
                       </button>
                     )}
                   </>
@@ -668,7 +695,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     className="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
                   >
                     <Ban className="w-4 h-4" />
-                    현장방문 취소
+                    {t('contractor.actions.cancelSiteVisit')}
                   </button>
                 )}
                 
@@ -678,7 +705,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
                   >
                     <FileText className="w-4 h-4" />
-                    입찰 참여하기
+                    {t('contractor.actions.joinBidding')}
                   </button>
                 )}
                 
@@ -688,7 +715,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     className="px-5 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors flex items-center gap-2"
                   >
                     <Ban className="w-4 h-4" />
-                    입찰 취소하기
+                    {t('contractor.actions.cancelBidding')}
                   </button>
                 )}
                 
@@ -700,13 +727,13 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     onClick={() => handleJoinBidding(project)}
                     className="px-4 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
                   >
-                    견적서 작성
+                    {t('contractor.actions.submitQuote')}
                   </button>
                 )}
                 
                 {project.projectStatus === 'selected' && (
                   <div className="w-full px-4 py-3 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-                    고객의 정보가 입력하신 메일로 전송됩니다.
+                    {t('contractor.actions.customerInfoSent')}
                   </div>
                 )}
               </div>
@@ -729,11 +756,11 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
-                <span className="font-medium">홈으로</span>
+                <span className="font-medium">{t('contractor.dashboard.backToHome')}</span>
               </button>
               <div className="h-6 w-px bg-gray-300"></div>
               <h1 className="text-xl font-bold text-gray-900">
-                {contractorData?.company_name || '업체 대시보드'}
+                {contractorData?.company_name || t('contractor.dashboard.title')}
               </h1>
             </div>
             <button
@@ -742,7 +769,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
               className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-medium text-blue-700 transition-colors"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              새로고침
+              {t('contractor.dashboard.refresh')}
             </button>
           </div>
         </div>
@@ -761,7 +788,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                프로젝트 관리
+                {t('contractor.tabs.projects')}
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
@@ -771,7 +798,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                포트폴리오 관리
+                {t('contractor.tabs.portfolio')}
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
@@ -782,7 +809,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                 }`}
               >
                 <Settings className="w-4 h-4" />
-                프로필 관리
+                {t('contractor.tabs.profile')}
               </button>
             </nav>
           </div>
@@ -799,7 +826,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                       : 'bg-white text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  전체 <span className="ml-1.5 font-bold">({statusCounts['all']})</span>
+                  {t('contractor.filters.all')} <span className="ml-1.5 font-bold">({statusCounts['all']})</span>
                 </button>
                 
                 {statusCounts['bidding'] > 0 && (
@@ -811,7 +838,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                         : 'bg-white text-orange-600 hover:bg-orange-50 border border-orange-300'
                     }`}
                   >
-                    🔥 입찰 중 <span className="ml-1.5">({statusCounts['bidding']})</span>
+                    🔥 {t('contractor.filters.bidding')} <span className="ml-1.5">({statusCounts['bidding']})</span>
                   </button>
                 )}
                 
@@ -825,7 +852,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                     }`}
                   >
                     <Trophy className="w-3.5 h-3.5 inline mr-1" />
-                    선정됨 <span className="ml-1.5">({statusCounts['selected']})</span>
+                    {t('contractor.filters.selected')} <span className="ml-1.5">({statusCounts['selected']})</span>
                   </button>
                 )}
                 
@@ -838,7 +865,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                         : 'bg-white text-purple-600 hover:bg-purple-50 border border-purple-300'
                     }`}
                   >
-                    견적서 제출 <span className="ml-1.5 font-bold">({statusCounts['quoted']})</span>
+                    {t('contractor.filters.quoted')} <span className="ml-1.5 font-bold">({statusCounts['quoted']})</span>
                   </button>
                 )}
                 
@@ -851,7 +878,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                         : 'bg-white text-red-600 hover:bg-red-50 border border-red-300'
                     }`}
                   >
-                    미선정 <span className="ml-1.5 font-bold">({statusCounts['not-selected']})</span>
+                    {t('contractor.filters.notSelected')} <span className="ml-1.5 font-bold">({statusCounts['not-selected']})</span>
                   </button>
                 )}
               </div>
@@ -864,11 +891,11 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
               <h3 className="text-lg font-bold text-gray-900">
-                프로젝트 목록 
-                <span className="ml-2 text-blue-600">({filteredProjects.length}개)</span>
+                {t('contractor.projectList.title')} 
+                <span className="ml-2 text-blue-600">({filteredProjects.length}{t('contractor.projectList.count')})</span>
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                카드를 클릭하여 상세 정보를 확인하세요
+                {t('contractor.projectList.clickForDetails')}
               </p>
             </div>
             
@@ -877,7 +904,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                 <div className="text-gray-400 mb-3">
                   <FileText className="w-16 h-16 mx-auto" />
                 </div>
-                <p className="text-gray-500 text-lg font-medium">해당하는 프로젝트가 없습니다.</p>
+                <p className="text-gray-500 text-lg font-medium">{t('contractor.projectList.noProjects')}</p>
               </div>
             ) : (
               <div className="p-6">
@@ -909,16 +936,16 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
         {activeTab === 'profile' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">프로필 관리</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('contractor.profile.title')}</h2>
               <p className="text-gray-600 mb-8">
-                프로필 정보를 업데이트하려면 아래 버튼을 클릭하세요.
+                {t('contractor.profile.description')}
               </p>
               <button
-                onClick={() => router.push('/contractor/profile')}
+                onClick={() => router.push(`/${locale}/contractor/profile`)}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 shadow-md hover:shadow-lg"
               >
                 <Settings className="w-5 h-5" />
-                프로필 편집하기
+                {t('contractor.profile.editProfile')}
               </button>
             </div>
           </div>
