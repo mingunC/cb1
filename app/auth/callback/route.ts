@@ -6,13 +6,15 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   
-  // ✅ cookie에서 locale 읽기 (기본값: 'en')
+  // ✅ cookie에서 locale과 auth type 읽기
   const cookieStore = await cookies()
   const locale = cookieStore.get('auth_locale')?.value || 'en'
+  const authType = cookieStore.get('auth_type')?.value || 'customer'
 
   console.log('🔐 Auth callback received:', {
     hasCode: !!code,
     locale,
+    authType,
     url: requestUrl.toString()
   })
 
@@ -52,11 +54,20 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL(`/${locale}/login?error=auth_failed`, requestUrl.origin))
       }
 
-      console.log('✅ Auth callback successful, redirecting to:', `/${locale}`)
+      // ✅ auth type에 따라 리다이렉트 경로 결정
+      let redirectPath = `/${locale}`
       
-      // ✅ auth_locale cookie 삭제
-      const response = NextResponse.redirect(new URL(`/${locale}`, requestUrl.origin))
+      if (authType === 'contractor') {
+        redirectPath = `/${locale}/contractor`
+        console.log('✅ Auth callback successful (contractor), redirecting to:', redirectPath)
+      } else {
+        console.log('✅ Auth callback successful (customer), redirecting to:', redirectPath)
+      }
+      
+      // ✅ auth cookies 삭제
+      const response = NextResponse.redirect(new URL(redirectPath, requestUrl.origin))
       response.cookies.delete('auth_locale')
+      response.cookies.delete('auth_type')
       
       return response
     } catch (error) {
@@ -67,5 +78,6 @@ export async function GET(request: Request) {
 
   // 코드가 없으면 로그인 페이지로 리다이렉트
   console.log('⚠️ No auth code found, redirecting to login')
-  return NextResponse.redirect(new URL(`/${locale}/login?error=no_code`, requestUrl.origin))
+  const loginPath = authType === 'contractor' ? `/${locale}/contractor-login` : `/${locale}/login`
+  return NextResponse.redirect(new URL(`${loginPath}?error=no_code`, requestUrl.origin))
 }
