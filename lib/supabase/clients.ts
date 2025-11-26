@@ -28,6 +28,8 @@ export const createBrowserClient = () => {
     supabaseAnonKey,
     {
       auth: {
+        // ✅ PKCE flow 사용 - OAuth callback에서 code 파라미터 전달
+        flowType: 'pkce',
         // localStorage 기반 세션 저장 (기본값)
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
         autoRefreshToken: true,
