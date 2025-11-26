@@ -4,12 +4,17 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone, CheckCircle } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 export default function SignupPage() {
+  const t = useTranslations('signup')
+  const params = useParams()
+  const locale = (params?.locale as string) || 'en'
+  
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -39,7 +44,7 @@ export default function SignupPage() {
       const { data, error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?locale=${locale}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -49,14 +54,14 @@ export default function SignupPage() {
 
       if (googleError) {
         console.error('Google signup error:', googleError)
-        setError('Google 회원가입에 실패했습니다.')
-        toast.error('Google 회원가입에 실패했습니다')
+        setError(t('errors.googleSignupFailed'))
+        toast.error(t('errors.googleSignupFailed'))
         hasError = true
       }
     } catch (error) {
       console.error('Google sign up error:', error)
-      setError('Google 회원가입 중 오류가 발생했습니다.')
-      toast.error('Google 회원가입 중 오류가 발생했습니다')
+      setError(t('errors.googleSignupFailed'))
+      toast.error(t('errors.googleSignupFailed'))
       hasError = true
     } finally {
       if (hasError) {
@@ -122,14 +127,14 @@ export default function SignupPage() {
 
     // Password confirmation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('validation.passwordsNotMatch'))
       setIsLoading(false)
       return
     }
 
     // Required fields check
     if (!formData.firstName || !formData.lastName || !formData.mobileNumber) {
-      setError('Please fill in all fields.')
+      setError(t('validation.fillAllFields'))
       setIsLoading(false)
       return
     }
@@ -144,7 +149,7 @@ export default function SignupPage() {
     }
 
     if (!Object.values(passwordRequirements).every(req => req)) {
-      setError('Password must meet all requirements.')
+      setError(t('validation.meetPasswordRequirements'))
       setIsLoading(false)
       return
     }
@@ -157,7 +162,7 @@ export default function SignupPage() {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?locale=${locale}`,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
@@ -193,7 +198,7 @@ export default function SignupPage() {
       }
     } catch (err) {
       console.error('Signup error:', err)
-      setError('An error occurred during sign up.')
+      setError(t('errors.genericError'))
       setIsLoading(false)
     }
   }
@@ -216,34 +221,34 @@ export default function SignupPage() {
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <h2 className="mt-6 text-2xl font-bold text-gray-900">
-                Check Your Email
+                {t('checkYourEmail')}
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                We've sent a verification email to:
+                {t('verificationEmailSent')}
               </p>
               <p className="mt-1 text-sm font-medium text-gray-900">
                 {userEmail}
               </p>
               <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>📧 Next Step:</strong> Click the verification link in your email to activate your account.
+                  <strong>📧 {t('nextStep')}</strong> {t('clickVerificationLink')}
                 </p>
               </div>
               <div className="mt-4 bg-green-50 border border-green-200 rounded-md p-4">
                 <p className="text-sm text-green-800">
-                  <strong>💡 Tip:</strong> After verifying your email, you can also sign in with Google using the same email address!
+                  <strong>💡 {t('tip')}</strong> {t('googleSignInTip')}
                 </p>
               </div>
               <div className="mt-6 space-y-2 text-sm text-gray-600">
-                <p>• Check your spam folder if you don't see the email</p>
-                <p>• The link will expire in 24 hours</p>
+                <p>• {t('checkSpamFolder')}</p>
+                <p>• {t('linkExpiry')}</p>
               </div>
               <div className="mt-8">
                 <Link 
-                  href="/login"
+                  href={`/${locale}/login`}
                   className="text-sm font-medium text-blue-600 hover:text-blue-500"
                 >
-                  Return to Login
+                  {t('returnToLogin')}
                 </Link>
               </div>
             </div>
@@ -256,22 +261,22 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link href="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
+        <Link href={`/${locale}`} className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
           <ArrowLeft className="h-6 w-6" />
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create Account
+          {t('title')}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            Sign In
+          {t('alreadyHaveAccount')}{' '}
+          <Link href={`/${locale}/login`} className="font-medium text-blue-600 hover:text-blue-500">
+            {t('signIn')}
           </Link>
         </p>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Are you a professional contractor?{' '}
-          <Link href="/contractor-signup" className="font-medium text-green-600 hover:text-green-500">
-            Contractor Signup
+          {t('areYouContractor')}{' '}
+          <Link href={`/${locale}/contractor-signup`} className="font-medium text-green-600 hover:text-green-500">
+            {t('contractorSignup')}
           </Link>
         </p>
       </div>
@@ -297,7 +302,7 @@ export default function SignupPage() {
               <path fill="#FBBC05" d="M4.21 14.28c-.28-.82-.44-1.69-.44-2.61 0-.92.16-1.79.44-2.61V6.2H.65C.24 7.01 0 7.99 0 9s.24 1.99.65 2.8l3.56 2.48z" />
               <path fill="#EA4335" d="M12 4.75c2.04 0 3.87.7 5.31 2.07l3.99-3.99C19.46 1.09 16.97 0 12 0 5.89 0 2.36 3.92.65 6.2l3.56 2.48C5.31 7.19 8.38 4.75 12 4.75z" />
             </svg>
-            Sign up with Google
+            {t('signUpWithGoogle')}
           </button>
 
           <div className="relative my-6">
@@ -305,7 +310,7 @@ export default function SignupPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or sign up with email</span>
+              <span className="px-2 bg-white text-gray-500">{t('orSignUpWithEmail')}</span>
             </div>
           </div>
 
@@ -313,7 +318,7 @@ export default function SignupPage() {
             {/* Email input */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+                {t('email')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -336,7 +341,7 @@ export default function SignupPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name *
+                  {t('firstName')} *
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -350,14 +355,14 @@ export default function SignupPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="First Name"
+                    placeholder={t('firstNamePlaceholder')}
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name *
+                  {t('lastName')} *
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -371,7 +376,7 @@ export default function SignupPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Last Name"
+                    placeholder={t('lastNamePlaceholder')}
                   />
                 </div>
               </div>
@@ -380,7 +385,7 @@ export default function SignupPage() {
             {/* Phone number input */}
             <div>
               <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700">
-                Phone Number *
+                {t('phoneNumber')} *
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -395,7 +400,7 @@ export default function SignupPage() {
                   value={formData.mobileNumber}
                   onChange={handlePhoneChange}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="(416) 555 - 1234"
+                  placeholder={t('phoneNumberPlaceholder')}
                 />
               </div>
             </div>
@@ -403,7 +408,7 @@ export default function SignupPage() {
             {/* Password input */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                {t('password')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -436,27 +441,27 @@ export default function SignupPage() {
               
               {/* Password requirements */}
               <div className="mt-2 space-y-1">
-                <div className="text-xs text-gray-600 font-medium mb-2">Password Requirements:</div>
+                <div className="text-xs text-gray-600 font-medium mb-2">{t('passwordRequirements')}</div>
                 <div className="space-y-1">
                   <div className={`flex items-center text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    At least 8 characters
+                    {t('minLength')}
                   </div>
                   <div className={`flex items-center text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    Contains uppercase letter
+                    {t('hasUpperCase')}
                   </div>
                   <div className={`flex items-center text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    Contains lowercase letter
+                    {t('hasLowerCase')}
                   </div>
                   <div className={`flex items-center text-xs ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    Contains number
+                    {t('hasNumber')}
                   </div>
                   <div className={`flex items-center text-xs ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    Contains special character
+                    {t('hasSpecialChar')}
                   </div>
                 </div>
               </div>
@@ -465,7 +470,7 @@ export default function SignupPage() {
             {/* Confirm password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
+                {t('confirmPassword')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -507,12 +512,12 @@ export default function SignupPage() {
                   {formData.password === formData.confirmPassword ? (
                     <div className="flex items-center text-xs text-green-600">
                       <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                      Passwords match
+                      {t('passwordsMatch')}
                     </div>
                   ) : (
                     <div className="flex items-center text-xs text-red-600">
                       <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
-                      Passwords do not match
+                      {t('passwordsNotMatch')}
                     </div>
                   )}
                 </div>
@@ -532,10 +537,10 @@ export default function SignupPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Signing up...
+                    {t('signingUp')}
                   </div>
                 ) : (
-                  'Sign Up'
+                  t('signUp')
                 )}
               </button>
             </div>
