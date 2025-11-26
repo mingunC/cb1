@@ -353,5 +353,125 @@
       "failedToSave": "承包商资料保存失败：",
       "genericError": "注册过程中发生错误。"
     }
+  },
+  "contractorLogin": {
+    "title": "承包商登录",
+    "subtitle": "使用您的承包商账户登录",
+    "backToHome": "返回首页",
+    "areYouCustomer": "您是普通客户吗？",
+    "customerLogin": "客户登录",
+    "notMemberYet": "还不是承包商会员？",
+    "contractorSignup": "承包商注册",
+    "email": "邮箱",
+    "emailPlaceholder": "your@email.com",
+    "password": "密码",
+    "keepSignedIn": "保持登录状态",
+    "forgotPassword": "忘记密码？",
+    "signIn": "登录",
+    "signingIn": "登录中...",
+    "or": "或",
+    "signInWithGoogle": "使用Google登录",
+    "checkingStatus": "检查登录状态...",
+    "alreadyLoggedIn": "已登录",
+    "loggedOutSuccess": "已成功退出登录",
+    "logoutFailed": "退出登录失败",
+    "logoutError": "退出登录时发生错误",
+    "contractorAccount": "承包商账户",
+    "customerAccountWarning": "您已使用普通客户账户登录。请退出登录后使用承包商账户重新登录。",
+    "adminAccountInfo": "您已使用管理员账户登录。",
+    "goToContractorDashboard": "前往承包商仪表板",
+    "goToAdminDashboard": "前往管理员仪表板",
+    "logoutAndLoginAgain": "退出登录并重新登录",
+    "loggingOut": "退出中...",
+    "toDifferentAccount": "要使用其他账户登录，请先退出登录。",
+    "validation": {
+      "enterBothFields": "请输入邮箱和密码。",
+      "invalidEmail": "请输入有效的邮箱地址。"
+    },
+    "errors": {
+      "loginFailed": "登录失败。",
+      "notContractorAccount": "这不是承包商账户。请注册为承包商。",
+      "unexpectedError": "登录时发生错误。",
+      "googleLoginFailed": "Google登录失败。"
+    },
+    "success": {
+      "loggedInAs": "已以{company}身份登录"
+    }
+  },
+  "login": {
+    "title": "客户登录",
+    "backToHome": "返回首页",
+    "notMemberYet": "还不是会员？",
+    "signUp": "注册",
+    "email": "邮箱",
+    "emailPlaceholder": "your@email.com",
+    "password": "密码",
+    "rememberMe": "记住我",
+    "forgotPassword": "忘记密码？",
+    "signIn": "登录",
+    "signingIn": "登录中...",
+    "or": "或",
+    "signInWithGoogle": "使用Google登录",
+    "validation": {
+      "enterBothFields": "请输入邮箱和密码。",
+      "invalidEmail": "请输入有效的邮箱地址。"
+    },
+    "errors": {
+      "loginFailed": "登录失败。",
+      "emailNotConfirmed": "登录前请先验证您的邮箱。请查看收件箱中的验证链接。",
+      "unexpectedError": "登录时发生意外错误。请稍后重试。",
+      "googleLoginFailed": "Google登录失败。"
+    },
+    "success": {
+      "signedInAsAdmin": "已以管理员身份登录。",
+      "signedInAsContractor": "已以{company}身份登录。",
+      "signedInSuccess": "登录成功。"
+    }
+  },
+  "signup": {
+    "title": "创建账户",
+    "alreadyHaveAccount": "已有账户？",
+    "signIn": "登录",
+    "areYouContractor": "您是专业承包商吗？",
+    "contractorSignup": "承包商注册",
+    "signUpWithGoogle": "使用Google注册",
+    "orSignUpWithEmail": "或使用邮箱注册",
+    "email": "邮箱",
+    "firstName": "名字",
+    "firstNamePlaceholder": "名字",
+    "lastName": "姓氏",
+    "lastNamePlaceholder": "姓氏",
+    "phoneNumber": "电话号码",
+    "phoneNumberPlaceholder": "(416) 555 - 1234",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "passwordRequirements": "密码要求：",
+    "minLength": "至少8个字符",
+    "hasUpperCase": "包含大写字母",
+    "hasLowerCase": "包含小写字母",
+    "hasNumber": "包含数字",
+    "hasSpecialChar": "包含特殊字符",
+    "passwordsMatch": "密码匹配",
+    "passwordsNotMatch": "密码不匹配",
+    "signUp": "注册",
+    "signingUp": "注册中...",
+    "checkYourEmail": "请检查您的邮箱",
+    "verificationEmailSent": "我们已发送验证邮件至：",
+    "nextStep": "下一步：",
+    "clickVerificationLink": "点击邮件中的验证链接以激活您的账户。",
+    "tip": "提示：",
+    "googleSignInTip": "验证邮箱后，您也可以使用相同的邮箱地址进行Google登录！",
+    "checkSpamFolder": "如果没有看到邮件，请检查垃圾邮件文件夹",
+    "linkExpiry": "链接将在24小时后过期",
+    "returnToLogin": "返回登录",
+    "validation": {
+      "passwordsNotMatch": "密码不匹配。",
+      "fillAllFields": "请填写所有字段。",
+      "meetPasswordRequirements": "密码必须满足所有要求。"
+    },
+    "errors": {
+      "googleSignupFailed": "Google注册失败。",
+      "genericError": "注册时发生错误。"
+    }
   }
 }

@@ -353,5 +353,125 @@
       "failedToSave": "Failed to save contractor profile: ",
       "genericError": "An error occurred during signup."
     }
+  },
+  "contractorLogin": {
+    "title": "Contractor Login",
+    "subtitle": "Log in with your professional contractor account",
+    "backToHome": "Back to Home",
+    "areYouCustomer": "Are you a regular customer?",
+    "customerLogin": "Customer Login",
+    "notMemberYet": "Not a contractor member yet?",
+    "contractorSignup": "Contractor Sign Up",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "keepSignedIn": "Keep me signed in",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "or": "or",
+    "signInWithGoogle": "Sign in with Google",
+    "checkingStatus": "Checking login status...",
+    "alreadyLoggedIn": "Already Logged In",
+    "loggedOutSuccess": "Logged out successfully",
+    "logoutFailed": "Logout failed",
+    "logoutError": "Error occurred during logout",
+    "contractorAccount": "Contractor Account",
+    "customerAccountWarning": "You are logged in with a regular customer account. Please log out and try again to log in with a contractor account.",
+    "adminAccountInfo": "You are logged in with an admin account.",
+    "goToContractorDashboard": "Go to Contractor Dashboard",
+    "goToAdminDashboard": "Go to Admin Dashboard",
+    "logoutAndLoginAgain": "Log out and log in again",
+    "loggingOut": "Logging out...",
+    "toDifferentAccount": "To log in with a different account, please log out first.",
+    "validation": {
+      "enterBothFields": "Please enter both email and password.",
+      "invalidEmail": "Please enter a valid email address."
+    },
+    "errors": {
+      "loginFailed": "Login failed.",
+      "notContractorAccount": "This is not a contractor account. Please sign up as a contractor.",
+      "unexpectedError": "An error occurred during login.",
+      "googleLoginFailed": "Google login failed."
+    },
+    "success": {
+      "loggedInAs": "Logged in as {company}"
+    }
+  },
+  "login": {
+    "title": "Customer Login",
+    "backToHome": "Back to Home",
+    "notMemberYet": "Not a member yet?",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "or": "Or",
+    "signInWithGoogle": "Sign in with Google",
+    "validation": {
+      "enterBothFields": "Please enter both email and password.",
+      "invalidEmail": "Please enter a valid email address."
+    },
+    "errors": {
+      "loginFailed": "Login failed.",
+      "emailNotConfirmed": "Please verify your email before logging in. Check your inbox for the verification link.",
+      "unexpectedError": "An unexpected error occurred during login. Please try again later.",
+      "googleLoginFailed": "Google sign-in failed."
+    },
+    "success": {
+      "signedInAsAdmin": "Signed in as admin.",
+      "signedInAsContractor": "Signed in as {company}.",
+      "signedInSuccess": "Signed in successfully."
+    }
+  },
+  "signup": {
+    "title": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "areYouContractor": "Are you a professional contractor?",
+    "contractorSignup": "Contractor Signup",
+    "signUpWithGoogle": "Sign up with Google",
+    "orSignUpWithEmail": "Or sign up with email",
+    "email": "Email",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "First Name",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Last Name",
+    "phoneNumber": "Phone Number",
+    "phoneNumberPlaceholder": "(416) 555 - 1234",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "passwordRequirements": "Password Requirements:",
+    "minLength": "At least 8 characters",
+    "hasUpperCase": "Contains uppercase letter",
+    "hasLowerCase": "Contains lowercase letter",
+    "hasNumber": "Contains number",
+    "hasSpecialChar": "Contains special character",
+    "passwordsMatch": "Passwords match",
+    "passwordsNotMatch": "Passwords do not match",
+    "signUp": "Sign Up",
+    "signingUp": "Signing up...",
+    "checkYourEmail": "Check Your Email",
+    "verificationEmailSent": "We've sent a verification email to:",
+    "nextStep": "Next Step:",
+    "clickVerificationLink": "Click the verification link in your email to activate your account.",
+    "tip": "Tip:",
+    "googleSignInTip": "After verifying your email, you can also sign in with Google using the same email address!",
+    "checkSpamFolder": "Check your spam folder if you don't see the email",
+    "linkExpiry": "The link will expire in 24 hours",
+    "returnToLogin": "Return to Login",
+    "validation": {
+      "passwordsNotMatch": "Passwords do not match.",
+      "fillAllFields": "Please fill in all fields.",
+      "meetPasswordRequirements": "Password must meet all requirements."
+    },
+    "errors": {
+      "googleSignupFailed": "Google signup failed.",
+      "genericError": "An error occurred during sign up."
+    }
   }
 }

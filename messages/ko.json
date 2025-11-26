@@ -353,5 +353,125 @@
       "failedToSave": "업체 프로필 저장에 실패했습니다: ",
       "genericError": "가입 중 오류가 발생했습니다."
     }
+  },
+  "contractorLogin": {
+    "title": "업체 로그인",
+    "subtitle": "업체 계정으로 로그인하세요",
+    "backToHome": "홈으로 돌아가기",
+    "areYouCustomer": "일반 고객이신가요?",
+    "customerLogin": "고객 로그인",
+    "notMemberYet": "아직 업체 회원이 아니신가요?",
+    "contractorSignup": "업체 회원가입",
+    "email": "이메일",
+    "emailPlaceholder": "your@email.com",
+    "password": "비밀번호",
+    "keepSignedIn": "로그인 상태 유지",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "signIn": "로그인",
+    "signingIn": "로그인 중...",
+    "or": "또는",
+    "signInWithGoogle": "Google로 로그인",
+    "checkingStatus": "로그인 상태 확인 중...",
+    "alreadyLoggedIn": "이미 로그인됨",
+    "loggedOutSuccess": "로그아웃되었습니다",
+    "logoutFailed": "로그아웃 실패",
+    "logoutError": "로그아웃 중 오류가 발생했습니다",
+    "contractorAccount": "업체 계정",
+    "customerAccountWarning": "일반 고객 계정으로 로그인되어 있습니다. 로그아웃 후 업체 계정으로 다시 로그인해주세요.",
+    "adminAccountInfo": "관리자 계정으로 로그인되어 있습니다.",
+    "goToContractorDashboard": "업체 대시보드로 이동",
+    "goToAdminDashboard": "관리자 대시보드로 이동",
+    "logoutAndLoginAgain": "로그아웃 후 다시 로그인",
+    "loggingOut": "로그아웃 중...",
+    "toDifferentAccount": "다른 계정으로 로그인하려면 먼저 로그아웃해주세요.",
+    "validation": {
+      "enterBothFields": "이메일과 비밀번호를 모두 입력해주세요.",
+      "invalidEmail": "올바른 이메일 주소를 입력해주세요."
+    },
+    "errors": {
+      "loginFailed": "로그인에 실패했습니다.",
+      "notContractorAccount": "업체 계정이 아닙니다. 업체로 가입해주세요.",
+      "unexpectedError": "로그인 중 오류가 발생했습니다.",
+      "googleLoginFailed": "Google 로그인에 실패했습니다."
+    },
+    "success": {
+      "loggedInAs": "{company}로 로그인되었습니다"
+    }
+  },
+  "login": {
+    "title": "고객 로그인",
+    "backToHome": "홈으로 돌아가기",
+    "notMemberYet": "아직 회원이 아니신가요?",
+    "signUp": "회원가입",
+    "email": "이메일",
+    "emailPlaceholder": "your@email.com",
+    "password": "비밀번호",
+    "rememberMe": "로그인 상태 유지",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "signIn": "로그인",
+    "signingIn": "로그인 중...",
+    "or": "또는",
+    "signInWithGoogle": "Google로 로그인",
+    "validation": {
+      "enterBothFields": "이메일과 비밀번호를 모두 입력해주세요.",
+      "invalidEmail": "올바른 이메일 주소를 입력해주세요."
+    },
+    "errors": {
+      "loginFailed": "로그인에 실패했습니다.",
+      "emailNotConfirmed": "로그인하기 전에 이메일을 인증해주세요. 받은편지함에서 인증 링크를 확인하세요.",
+      "unexpectedError": "로그인 중 예기치 않은 오류가 발생했습니다. 나중에 다시 시도해주세요.",
+      "googleLoginFailed": "Google 로그인에 실패했습니다."
+    },
+    "success": {
+      "signedInAsAdmin": "관리자로 로그인되었습니다.",
+      "signedInAsContractor": "{company}로 로그인되었습니다.",
+      "signedInSuccess": "로그인되었습니다."
+    }
+  },
+  "signup": {
+    "title": "회원가입",
+    "alreadyHaveAccount": "이미 계정이 있으신가요?",
+    "signIn": "로그인",
+    "areYouContractor": "전문 업체이신가요?",
+    "contractorSignup": "업체 회원가입",
+    "signUpWithGoogle": "Google로 가입하기",
+    "orSignUpWithEmail": "또는 이메일로 가입하기",
+    "email": "이메일",
+    "firstName": "이름",
+    "firstNamePlaceholder": "이름",
+    "lastName": "성",
+    "lastNamePlaceholder": "성",
+    "phoneNumber": "전화번호",
+    "phoneNumberPlaceholder": "(416) 555 - 1234",
+    "password": "비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "passwordRequirements": "비밀번호 요구사항:",
+    "minLength": "최소 8자 이상",
+    "hasUpperCase": "대문자 포함",
+    "hasLowerCase": "소문자 포함",
+    "hasNumber": "숫자 포함",
+    "hasSpecialChar": "특수문자 포함",
+    "passwordsMatch": "비밀번호가 일치합니다",
+    "passwordsNotMatch": "비밀번호가 일치하지 않습니다",
+    "signUp": "가입하기",
+    "signingUp": "가입 중...",
+    "checkYourEmail": "이메일을 확인하세요",
+    "verificationEmailSent": "인증 이메일을 보냈습니다:",
+    "nextStep": "다음 단계:",
+    "clickVerificationLink": "이메일의 인증 링크를 클릭하여 계정을 활성화하세요.",
+    "tip": "팁:",
+    "googleSignInTip": "이메일 인증 후 같은 이메일 주소로 Google 로그인도 사용할 수 있습니다!",
+    "checkSpamFolder": "이메일이 보이지 않으면 스팸 폴더를 확인하세요",
+    "linkExpiry": "링크는 24시간 후 만료됩니다",
+    "returnToLogin": "로그인으로 돌아가기",
+    "validation": {
+      "passwordsNotMatch": "비밀번호가 일치하지 않습니다.",
+      "fillAllFields": "모든 항목을 입력해주세요.",
+      "meetPasswordRequirements": "비밀번호는 모든 요구사항을 충족해야 합니다."
+    },
+    "errors": {
+      "googleSignupFailed": "Google 회원가입에 실패했습니다.",
+      "genericError": "회원가입 중 오류가 발생했습니다."
+    }
   }
 }
