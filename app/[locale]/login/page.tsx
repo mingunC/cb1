@@ -153,13 +153,14 @@ export default function LoginPage() {
     let hasError = false
 
     try {
-      // ✅ locale을 cookie에 저장 (query parameter 대신)
+      // ✅ locale과 auth type을 cookie에 저장 (query parameter 대신)
       document.cookie = `auth_locale=${locale}; path=/; max-age=300; SameSite=Lax`
+      document.cookie = `auth_type=customer; path=/; max-age=300; SameSite=Lax`
       
-      // ✅ redirectTo에서 locale query parameter 제거
+      // ✅ redirectTo에서 query parameter 제거
       const redirectUrl = `${window.location.origin}/auth/callback`
       
-      console.log('🔐 Google 로그인 시도:', {
+      console.log('🔐 Google 로그인 시도 (customer):', {
         redirectUrl,
         locale,
         timestamp: new Date().toISOString()
