@@ -2,11 +2,12 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, LogOut } from 'lucide-react'
 import { signIn, getCurrentUser, signOut } from '@/lib/auth/client'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 // ✅ 동적 렌더링 강제 - 빌드 시점 pre-render 방지
 export const dynamic = 'force-dynamic'
@@ -26,6 +27,10 @@ interface CurrentUser {
 }
 
 export default function ContractorLoginPage() {
+  const t = useTranslations('contractorLogin')
+  const params = useParams()
+  const locale = (params?.locale as string) || 'en'
+  
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -91,16 +96,16 @@ export default function ContractorLoginPage() {
       const result = await signOut()
       
       if (result.success) {
-        toast.success('Logged out successfully')
+        toast.success(t('loggedOutSuccess'))
         setCurrentUser(null)
         setIsLoading(false)
       } else {
-        toast.error(result.error || 'Logout failed')
+        toast.error(result.error || t('logoutFailed'))
         setIsLoading(false)
       }
     } catch (error) {
       console.error('Logout error:', error)
-      toast.error('Error occurred during logout')
+      toast.error(t('logoutError'))
       setIsLoading(false)
     }
   }
@@ -110,14 +115,14 @@ export default function ContractorLoginPage() {
     
     // 유효성 검사
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password.')
+      setError(t('validation.enterBothFields'))
       return
     }
 
     // 이메일 형식 검사
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address.')
+      setError(t('validation.invalidEmail'))
       return
     }
 
@@ -132,29 +137,29 @@ export default function ContractorLoginPage() {
       })
 
       if (!result.success) {
-        setError(result.error || 'Login failed.')
+        setError(result.error || t('errors.loginFailed'))
         setIsLoading(false)
         return
       }
 
       // 업체 계정 확인
       if (result.userType !== 'contractor') {
-        setError('This is not a contractor account. Please sign up as a contractor.')
+        setError(t('errors.notContractorAccount'))
         setIsLoading(false)
         return
       }
 
       // 로그인 성공
       if (process.env.NODE_ENV === 'development') console.log('Contractor login successful:', result.user?.email)
-      toast.success(`Logged in as ${result.contractorData?.company_name}`)
-      router.push('/contractor')
+      toast.success(t('success.loggedInAs', { company: result.contractorData?.company_name }))
+      router.push(`/${locale}/contractor`)
       
     } catch (err: any) {
       console.error('Unexpected error during login:', err)
-      setError('An error occurred during login.')
+      setError(t('errors.unexpectedError'))
       setIsLoading(false)
     }
-  }, [formData, router])
+  }, [formData, router, t, locale])
 
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
@@ -164,23 +169,23 @@ export default function ContractorLoginPage() {
       const { data, error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?type=contractor`
+          redirectTo: `${window.location.origin}/auth/callback?type=contractor&locale=${locale}`
         }
       })
 
       if (googleError) {
         console.error('Google login error:', googleError)
-        setError('Google login failed.')
-        toast.error('Google login failed')
+        setError(t('errors.googleLoginFailed'))
+        toast.error(t('errors.googleLoginFailed'))
         setIsLoading(false)
       }
     } catch (err) {
       console.error('Google sign in error:', err)
-      setError('An error occurred during Google login.')
-      toast.error('An error occurred during Google login')
+      setError(t('errors.unexpectedError'))
+      toast.error(t('errors.unexpectedError'))
       setIsLoading(false)
     }
-  }, [supabase])
+  }, [supabase, t, locale])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -203,7 +208,7 @@ export default function ContractorLoginPage() {
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Checking login status...</p>
+          <p className="mt-4 text-gray-600">{t('checkingStatus')}</p>
         </div>
       </div>
     )
@@ -217,18 +222,18 @@ export default function ContractorLoginPage() {
           {/* 뒤로가기 버튼 */}
           <div className="mb-6">
             <Link 
-              href="/" 
+              href={`/${locale}`}
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
-              <span>Back to Home</span>
+              <span>{t('backToHome')}</span>
             </Link>
           </div>
           
           <div className="text-center">
             <Building2 className="mx-auto h-12 w-12 text-emerald-600" />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Already Logged In
+              {t('alreadyLoggedIn')}
             </h2>
           </div>
         </div>
@@ -249,21 +254,20 @@ export default function ContractorLoginPage() {
               
               {currentUser.userType === 'contractor' && (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 mt-3">
-                  Contractor Account
+                  {t('contractorAccount')}
                 </span>
               )}
               {currentUser.userType === 'customer' && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                   <p className="text-sm text-yellow-800">
-                    You are logged in with a regular customer account.
-                    Please log out and try again to log in with a contractor account.
+                    {t('customerAccountWarning')}
                   </p>
                 </div>
               )}
               {currentUser.userType === 'admin' && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm text-blue-800">
-                    You are logged in with an admin account.
+                    {t('adminAccountInfo')}
                   </p>
                 </div>
               )}
@@ -272,18 +276,18 @@ export default function ContractorLoginPage() {
             <div className="space-y-3">
               {currentUser.userType === 'contractor' && (
                 <Link
-                  href="/contractor"
+                  href={`/${locale}/contractor`}
                   className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors duration-200"
                 >
-                  Go to Contractor Dashboard
+                  {t('goToContractorDashboard')}
                 </Link>
               )}
               {currentUser.userType === 'admin' && (
                 <Link
-                  href="/admin"
+                  href={`/${locale}/admin`}
                   className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                 >
-                  Go to Admin Dashboard
+                  {t('goToAdminDashboard')}
                 </Link>
               )}
               
@@ -295,12 +299,12 @@ export default function ContractorLoginPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent mr-2" />
-                    Logging out...
+                    {t('loggingOut')}
                   </>
                 ) : (
                   <>
                     <LogOut className="h-4 w-4 mr-2" />
-                    Log out and log in again
+                    {t('logoutAndLoginAgain')}
                   </>
                 )}
               </button>
@@ -308,7 +312,7 @@ export default function ContractorLoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                To log in with a different account, please log out first.
+                {t('toDifferentAccount')}
               </p>
             </div>
           </div>
@@ -324,33 +328,33 @@ export default function ContractorLoginPage() {
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
           <Link 
-            href="/" 
+            href={`/${locale}`}
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            <span>Back to Home</span>
+            <span>{t('backToHome')}</span>
           </Link>
         </div>
         
         <div className="text-center">
           <Building2 className="mx-auto h-12 w-12 text-emerald-600" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Contractor Login
+            {t('title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Log in with your professional contractor account
+            {t('subtitle')}
           </p>
         </div>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Are you a regular customer?{' '}
-          <Link href="/login" className="font-medium text-emerald-600 hover:text-emerald-500">
-            Customer Login
+          {t('areYouCustomer')}{' '}
+          <Link href={`/${locale}/login`} className="font-medium text-emerald-600 hover:text-emerald-500">
+            {t('customerLogin')}
           </Link>
         </p>
         <p className="mt-1 text-center text-sm text-gray-600">
-          Not a contractor member yet?{' '}
-          <Link href="/contractor-signup" className="font-medium text-emerald-600 hover:text-green-500">
-            Contractor Sign Up
+          {t('notMemberYet')}{' '}
+          <Link href={`/${locale}/contractor-signup`} className="font-medium text-emerald-600 hover:text-green-500">
+            {t('contractorSignup')}
           </Link>
         </p>
       </div>
@@ -369,7 +373,7 @@ export default function ContractorLoginPage() {
             {/* 이메일 입력 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+                {t('email')}
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -385,7 +389,7 @@ export default function ContractorLoginPage() {
                   onChange={handleInputChange}
                   disabled={isLoading}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="your@email.com"
+                  placeholder={t('emailPlaceholder')}
                 />
               </div>
             </div>
@@ -393,7 +397,7 @@ export default function ContractorLoginPage() {
             {/* 비밀번호 입력 */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                {t('password')}
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -438,13 +442,13 @@ export default function ContractorLoginPage() {
                   disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Keep me signed in
+                  {t('keepSignedIn')}
                 </label>
               </div>
 
               <div className="text-sm">
-                <Link href="/forgot-password" className="font-medium text-emerald-600 hover:text-green-500">
-                  Forgot password?
+                <Link href={`/${locale}/forgot-password`} className="font-medium text-emerald-600 hover:text-green-500">
+                  {t('forgotPassword')}
                 </Link>
               </div>
             </div>
@@ -459,10 +463,10 @@ export default function ContractorLoginPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    Signing in...
+                    {t('signingIn')}
                   </>
                 ) : (
-                  'Sign In'
+                  t('signIn')
                 )}
               </button>
             </div>
@@ -473,7 +477,7 @@ export default function ContractorLoginPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">or</span>
+                <span className="px-2 bg-white text-gray-500">{t('or')}</span>
               </div>
             </div>
 
@@ -503,7 +507,7 @@ export default function ContractorLoginPage() {
                     d="M12 4.76c1.86 0 3.53.64 4.85 1.9l3.64-3.64A11.86 11.86 0 0012 0 11.93 11.93 0 00.8 7.05l3.6 2.79c1-3.01 3.81-5.08 7.12-5.08z"
                   />
                 </svg>
-                Sign in with Google
+                {t('signInWithGoogle')}
               </button>
             </div>
           </form>
