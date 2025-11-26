@@ -500,12 +500,20 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       return t('contractor.projectCard.tbd')
     }
     
-    // 날짜 포맷
+    // 날짜 포맷 - locale에 따라 다른 형식 사용
     const formatDate = (dateStr: string | null) => {
       if (!dateStr) return t('contractor.projectCard.tbd')
       try {
         const date = new Date(dateStr)
-        return date.toLocaleDateString('ko-KR', { 
+        // locale에 따른 날짜 형식 매핑
+        const localeMap: Record<string, string> = {
+          'ko': 'ko-KR',
+          'en': 'en-US',
+          'zh': 'zh-CN'
+        }
+        const dateLocale = localeMap[locale] || 'en-US'
+        
+        return date.toLocaleDateString(dateLocale, { 
           year: 'numeric',
           month: 'short',
           day: 'numeric'
@@ -752,7 +760,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push(`/${locale}`)}
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
