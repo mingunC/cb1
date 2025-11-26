@@ -7,6 +7,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { signIn, getCurrentUser } from '@/lib/auth/client'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 // ✅ 동적 렌더링 강제 - 빌드 시점 pre-render 방지
 export const dynamic = 'force-dynamic'
@@ -17,6 +18,7 @@ interface FormData {
 }
 
 export default function LoginPage() {
+  const t = useTranslations('login')
   const router = useRouter()
   const params = useParams()
   const locale = (params?.locale as string) || 'en'
@@ -45,13 +47,13 @@ export default function LoginPage() {
             
             if (userInfo.userType === 'admin') {
               redirectTo = `/${locale}/admin`
-              toast.success('Signed in as admin.')
+              toast.success(t('success.signedInAsAdmin'))
             } else if (userInfo.userType === 'contractor' && userInfo.contractorData) {
               redirectTo = `/${locale}/contractor`
-              toast.success(`Signed in as ${userInfo.contractorData.company_name}.`)
+              toast.success(t('success.signedInAsContractor', { company: userInfo.contractorData.company_name }))
             } else {
               redirectTo = `/${locale}`
-              toast.success('Signed in successfully.')
+              toast.success(t('success.signedInSuccess'))
             }
             
             if (process.env.NODE_ENV === 'development') console.log(`Redirecting ${userInfo.userType} to: ${redirectTo}`)
@@ -64,20 +66,20 @@ export default function LoginPage() {
     }
 
     checkExistingSession()
-  }, [router, supabase])
+  }, [router, supabase, locale, t])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password.')
+      setError(t('validation.enterBothFields'))
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address.')
+      setError(t('validation.invalidEmail'))
       return
     }
 
@@ -104,12 +106,12 @@ export default function LoginPage() {
       if (!result.success) {
         // ✅ 이메일 미확인 에러 처리
         if (result.error?.includes('Email not confirmed') || result.error?.includes('email_not_confirmed')) {
-          setError('Please verify your email before logging in. Check your inbox for the verification link.')
+          setError(t('errors.emailNotConfirmed'))
           setIsLoading(false)
           return
         }
         
-        setError(result.error || 'Login failed.')
+        setError(result.error || t('errors.loginFailed'))
         setIsLoading(false)
         return
       }
@@ -131,19 +133,19 @@ export default function LoginPage() {
       })
       
       if (result.userType === 'contractor' && result.contractorData) {
-        toast.success(`Signed in as ${result.contractorData.company_name}.`)
+        toast.success(t('success.signedInAsContractor', { company: result.contractorData.company_name }))
       } else {
-        toast.success('Signed in successfully.')
+        toast.success(t('success.signedInSuccess'))
       }
       
       router.push(redirectTo)
 
     } catch (error: any) {
       console.error('Unexpected error during login:', error)
-      setError('An unexpected error occurred during login. Please try again later.')
+      setError(t('errors.unexpectedError'))
       setIsLoading(false)
     }
-  }, [formData, router])
+  }, [formData, router, locale, t])
 
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
@@ -177,21 +179,21 @@ export default function LoginPage() {
 
       if (googleError) {
         console.error('Google login error:', googleError)
-        setError('Google sign-in failed.')
-        toast.error('Google sign-in failed.')
+        setError(t('errors.googleLoginFailed'))
+        toast.error(t('errors.googleLoginFailed'))
         hasError = true
       }
     } catch (error) {
       console.error('Google sign in error:', error)
-      setError('An error occurred during Google sign-in.')
-      toast.error('An error occurred during Google sign-in.')
+      setError(t('errors.googleLoginFailed'))
+      toast.error(t('errors.googleLoginFailed'))
       hasError = true
     } finally {
       if (hasError) {
         setIsLoading(false)
       }
     }
-  }, [supabase, locale])
+  }, [supabase, locale, t])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -216,20 +218,20 @@ export default function LoginPage() {
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            <span>Back to Home</span>
+            <span>{t('backToHome')}</span>
           </Link>
         </div>
 
         <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          Customer Login
+          {t('title')}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Not a member yet?{' '}
+          {t('notMemberYet')}{' '}
           <Link 
             href={`/${locale}/signup`}
             className="font-medium text-emerald-600 hover:text-emerald-500 transition-colors"
           >
-            Sign Up
+            {t('signUp')}
           </Link>
         </p>
       </div>
@@ -246,7 +248,7 @@ export default function LoginPage() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+                {t('email')}
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -262,14 +264,14 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   disabled={isLoading}
                   className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="your@email.com"
+                  placeholder={t('emailPlaceholder')}
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                {t('password')}
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -313,7 +315,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
+                  {t('rememberMe')}
                 </label>
               </div>
 
@@ -321,7 +323,7 @@ export default function LoginPage() {
                 href={`/${locale}/forgot-password`}
                 className="text-sm font-medium text-orange-600 hover:text-orange-500 transition-colors"
               >
-                Forgot password?
+                {t('forgotPassword')}
               </Link>
             </div>
 
@@ -333,10 +335,10 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  Signing in...
+                  {t('signingIn')}
                 </>
               ) : (
-                'Sign In'
+                t('signIn')
               )}
             </button>
 
@@ -345,7 +347,7 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or</span>
+                <span className="px-2 bg-white text-gray-500">{t('or')}</span>
               </div>
             </div>
 
@@ -361,7 +363,7 @@ export default function LoginPage() {
                 <path fill="#FBBC05" d="M4.21 14.28c-.28-.82-.44-1.69-.44-2.61 0-.92.16-1.79.44-2.61V6.2H.65C.24 7.01 0 7.99 0 9s.24 1.99.65 2.8l3.56 2.48z" />
                 <path fill="#EA4335" d="M12 4.75c2.04 0 3.87.7 5.31 2.07l3.99-3.99C19.46 1.09 16.97 0 12 0 5.89 0 2.36 3.92.65 6.2l3.56 2.48C5.31 7.19 8.38 4.75 12 4.75z" />
               </svg>
-              Sign in with Google
+              {t('signInWithGoogle')}
             </button>
           </form>
         </div>
