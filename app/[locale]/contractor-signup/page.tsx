@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, Phone, MapPin, Check } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import toast from 'react-hot-toast'
@@ -12,12 +12,15 @@ import { useTranslations } from 'next-intl'
 
 export default function ContractorSignupPage() {
   const t = useTranslations('contractorSignup')
+  const params = useParams()
+  const locale = (params?.locale as string) || 'en'
+  
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [error, setError] = useState('')
-  const [currentUser, setCurrentUser] = useState&lt;any&gt;(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [isExistingUser, setIsExistingUser] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -32,7 +35,7 @@ export default function ContractorSignupPage() {
   
   const router = useRouter()
   const supabase = createBrowserClient()
-  const phoneInputRef = useRef&lt;HTMLInputElement&gt;(null)
+  const phoneInputRef = useRef<HTMLInputElement>(null)
 
   // Format phone number to (XXX) XXX - XXXX format
   const formatPhoneNumber = (value: string) => {
@@ -45,9 +48,9 @@ export default function ContractorSignupPage() {
     // Format as (XXX) XXX - XXXX
     if (limited.length === 0) {
       return ''
-    } else if (limited.length &lt;= 3) {
+    } else if (limited.length <= 3) {
       return `(${limited})`
-    } else if (limited.length &lt;= 6) {
+    } else if (limited.length <= 6) {
       return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
     } else {
       return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)} - ${limited.slice(6)}`
@@ -55,7 +58,7 @@ export default function ContractorSignupPage() {
   }
 
   // Handle phone number input change with cursor position management
-  const handlePhoneChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) => {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target
     const previousValue = formData.phone
     const inputValue = input.value
@@ -66,7 +69,7 @@ export default function ContractorSignupPage() {
     const previousCleaned = previousValue.replace(/\D/g, '')
     
     // Check if it's a deletion (going backwards)
-    const isDeletion = cleaned.length &lt; previousCleaned.length
+    const isDeletion = cleaned.length < previousCleaned.length
     
     // Apply formatting
     const formatted = formatPhoneNumber(inputValue)
@@ -77,7 +80,7 @@ export default function ContractorSignupPage() {
     // Find position in formatted string
     let newCursorPosition = formatted.length
     let count = 0
-    for (let i = 0; i &lt; formatted.length; i++) {
+    for (let i = 0; i < formatted.length; i++) {
       if (/\d/.test(formatted[i])) {
         count++
         if (count === beforeCursor) {
@@ -132,7 +135,7 @@ export default function ContractorSignupPage() {
           if (contractorData) {
             if (process.env.NODE_ENV === 'development') console.log('⚠️ 이미 contractor로 등록되어 있음')
             toast.error(t('alreadyRegistered'))
-            router.push('/contractor')
+            router.push(`/${locale}/contractor`)
             return
           }
         } else {
@@ -147,7 +150,7 @@ export default function ContractorSignupPage() {
     }
 
     checkAuthStatus()
-  }, [supabase, router, t])
+  }, [supabase, router, t, locale])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -181,7 +184,7 @@ export default function ContractorSignupPage() {
         hasUpperCase: /[A-Z]/.test(formData.password),
         hasLowerCase: /[a-z]/.test(formData.password),
         hasNumber: /[0-9]/.test(formData.password),
-        hasSpecialChar: /[!@#$%^&amp;*(),.?\":{}|&lt;&gt;]/.test(formData.password)
+        hasSpecialChar: /[!@#$%^&*(),.?\":{}|<>]/.test(formData.password)
       }
 
       if (!Object.values(passwordRequirements).every(req => req)) {
@@ -277,7 +280,7 @@ export default function ContractorSignupPage() {
       localStorage.setItem('cached_user_type', 'contractor')
       localStorage.setItem('cached_user_name', formData.businessName)
       
-      router.push('/contractor')
+      router.push(`/${locale}/contractor`)
       
     } catch (err: any) {
       console.error('❌ Signup error:', err)
@@ -287,7 +290,7 @@ export default function ContractorSignupPage() {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -311,88 +314,88 @@ export default function ContractorSignupPage() {
   // 로딩 중
   if (checkingAuth) {
     return (
-      &lt;div className="min-h-screen bg-gray-50 flex items-center justify-center"&gt;
-        &lt;div className="text-center"&gt;
-          &lt;div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"&gt;&lt;/div&gt;
-          &lt;p className="mt-4 text-gray-600"&gt;{t('checkingAuth')}&lt;/p&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">{t('checkingAuth')}</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    &lt;div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8"&gt;
-      &lt;div className="sm:mx-auto sm:w-full sm:max-w-md"&gt;
-        &lt;Link href="/" className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"&gt;
-          &lt;ArrowLeft className="h-6 w-6" /&gt;
-        &lt;/Link&gt;
-        &lt;div className="text-center"&gt;
-          &lt;Building2 className="mx-auto h-12 w-12 text-blue-600" /&gt;
-          &lt;h2 className="mt-6 text-3xl font-extrabold text-gray-900"&gt;
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Link href={`/${locale}`} className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="h-6 w-6" />
+        </Link>
+        <div className="text-center">
+          <Building2 className="mx-auto h-12 w-12 text-blue-600" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             {isExistingUser ? t('completeProfile') : t('title')}
-          &lt;/h2&gt;
-          &lt;p className="mt-2 text-sm text-gray-600"&gt;
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
             {isExistingUser 
               ? t('subtitleExisting')
               : t('subtitle')
             }
-          &lt;/p&gt;
-        &lt;/div&gt;
-        {!isExistingUser &amp;&amp; (
-          &lt;&gt;
-            &lt;p className="mt-2 text-center text-sm text-gray-600"&gt;
+          </p>
+        </div>
+        {!isExistingUser && (
+          <>
+            <p className="mt-2 text-center text-sm text-gray-600">
               {t('areYouCustomer')}{' '}
-              &lt;Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500"&gt;
+              <Link href={`/${locale}/signup`} className="font-medium text-blue-600 hover:text-blue-500">
                 {t('customerSignup')}
-              &lt;/Link&gt;
-            &lt;/p&gt;
-            &lt;p className="mt-1 text-center text-sm text-gray-600"&gt;
+              </Link>
+            </p>
+            <p className="mt-1 text-center text-sm text-gray-600">
               {t('alreadyHaveAccount')}{' '}
-              &lt;Link href="/contractor-login" className="font-medium text-blue-600 hover:text-blue-500"&gt;
+              <Link href={`/${locale}/contractor-login`} className="font-medium text-blue-600 hover:text-blue-500">
                 {t('contractorLogin')}
-              &lt;/Link&gt;
-            &lt;/p&gt;
-          &lt;/&gt;
+              </Link>
+            </p>
+          </>
         )}
-      &lt;/div&gt;
+      </div>
 
-      &lt;div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"&gt;
-        &lt;div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"&gt;
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {/* 이미 로그인된 사용자 알림 */}
-          {isExistingUser &amp;&amp; (
-            &lt;div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-start"&gt;
-              &lt;Check className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" /&gt;
-              &lt;div&gt;
-                &lt;p className="text-sm text-blue-800 font-medium"&gt;{t('alreadyLoggedIn')}&lt;/p&gt;
-                &lt;p className="text-xs text-blue-600 mt-1"&gt;
+          {isExistingUser && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-start">
+              <Check className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-blue-800 font-medium">{t('alreadyLoggedIn')}</p>
+                <p className="text-xs text-blue-600 mt-1">
                   {t('loggedInAs', { email: currentUser?.email })}
-                &lt;/p&gt;
-              &lt;/div&gt;
-            &lt;/div&gt;
+                </p>
+              </div>
+            </div>
           )}
 
-          {error &amp;&amp; (
-            &lt;div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start"&gt;
-              &lt;AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" /&gt;
-              &lt;span className="text-sm text-red-600"&gt;{error}&lt;/span&gt;
-            &lt;/div&gt;
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-red-600">{error}</span>
+            </div>
           )}
 
-          &lt;form className="space-y-6" onSubmit={handleSubmit}&gt;
+          <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Business Information Section */}
-            &lt;div className="space-y-4"&gt;
-              &lt;h3 className="text-lg font-medium text-gray-900 border-b pb-2"&gt;{t('businessInfo')}&lt;/h3&gt;
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">{t('businessInfo')}</h3>
               
               {/* Business name */}
-              &lt;div&gt;
-                &lt;label htmlFor="businessName" className="block text-sm font-medium text-gray-700"&gt;
+              <div>
+                <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">
                   {t('businessName')} *
-                &lt;/label&gt;
-                &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                  &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                    &lt;Building2 className="h-5 w-5 text-gray-400" /&gt;
-                  &lt;/div&gt;
-                  &lt;input
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
                     id="businessName"
                     name="businessName"
                     type="text"
@@ -401,20 +404,20 @@ export default function ContractorSignupPage() {
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder={t('businessNamePlaceholder')}
-                  /&gt;
-                &lt;/div&gt;
-              &lt;/div&gt;
+                  />
+                </div>
+              </div>
 
               {/* Contact name */}
-              &lt;div&gt;
-                &lt;label htmlFor="contactName" className="block text-sm font-medium text-gray-700"&gt;
+              <div>
+                <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
                   {t('contactName')} *
-                &lt;/label&gt;
-                &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                  &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                    &lt;User className="h-5 w-5 text-gray-400" /&gt;
-                  &lt;/div&gt;
-                  &lt;input
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
                     id="contactName"
                     name="contactName"
                     type="text"
@@ -423,20 +426,20 @@ export default function ContractorSignupPage() {
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder={t('contactNamePlaceholder')}
-                  /&gt;
-                &lt;/div&gt;
-              &lt;/div&gt;
+                  />
+                </div>
+              </div>
 
               {/* Phone Number */}
-              &lt;div&gt;
-                &lt;label htmlFor="phone" className="block text-sm font-medium text-gray-700"&gt;
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                   {t('phoneNumber')} *
-                &lt;/label&gt;
-                &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                  &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                    &lt;Phone className="h-5 w-5 text-gray-400" /&gt;
-                  &lt;/div&gt;
-                  &lt;input
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
                     ref={phoneInputRef}
                     id="phone"
                     name="phone"
@@ -446,20 +449,20 @@ export default function ContractorSignupPage() {
                     onChange={handlePhoneChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder={t('phoneNumberPlaceholder')}
-                  /&gt;
-                &lt;/div&gt;
-              &lt;/div&gt;
+                  />
+                </div>
+              </div>
 
               {/* Address */}
-              &lt;div&gt;
-                &lt;label htmlFor="address" className="block text-sm font-medium text-gray-700"&gt;
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                   {t('businessAddress')} *
-                &lt;/label&gt;
-                &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                  &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                    &lt;MapPin className="h-5 w-5 text-gray-400" /&gt;
-                  &lt;/div&gt;
-                  &lt;input
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPin className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
                     id="address"
                     name="address"
                     type="text"
@@ -468,49 +471,49 @@ export default function ContractorSignupPage() {
                     onChange={handleInputChange}
                     className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder={t('businessAddressPlaceholder')}
-                  /&gt;
-                &lt;/div&gt;
-              &lt;/div&gt;
+                  />
+                </div>
+              </div>
 
               {/* Specialties */}
-              &lt;div&gt;
-                &lt;label className="block text-sm font-medium text-gray-700 mb-2"&gt;
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('specialties')} * {t('specialtiesNote')}
-                &lt;/label&gt;
-                &lt;div className="space-y-2"&gt;
-                  {specialtyOptions.map((option) =&gt; (
-                    &lt;label key={option.value} className="flex items-center"&gt;
-                      &lt;input
+                </label>
+                <div className="space-y-2">
+                  {specialtyOptions.map((option) => (
+                    <label key={option.value} className="flex items-center">
+                      <input
                         type="checkbox"
                         checked={formData.specialties.includes(option.value)}
-                        onChange={(e) =&gt; handleSpecialtyChange(option.value, e.target.checked)}
+                        onChange={(e) => handleSpecialtyChange(option.value, e.target.checked)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      /&gt;
-                      &lt;span className="ml-2 text-sm text-gray-700"&gt;{option.label}&lt;/span&gt;
-                    &lt;/label&gt;
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+                    </label>
                   ))}
-                &lt;/div&gt;
-                {formData.specialties.length === 0 &amp;&amp; (
-                  &lt;p className="text-red-500 text-sm mt-1"&gt;{t('selectSpecialty')}&lt;/p&gt;
+                </div>
+                {formData.specialties.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">{t('selectSpecialty')}</p>
                 )}
-              &lt;/div&gt;
-            &lt;/div&gt;
+              </div>
+            </div>
 
             {/* Account Information Section - Only for new users */}
-            {!isExistingUser &amp;&amp; (
-              &lt;div className="space-y-4 pt-4 border-t"&gt;
-                &lt;h3 className="text-lg font-medium text-gray-900"&gt;{t('accountInfo')}&lt;/h3&gt;
+            {!isExistingUser && (
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-lg font-medium text-gray-900">{t('accountInfo')}</h3>
                 
                 {/* Email */}
-                &lt;div&gt;
-                  &lt;label htmlFor="email" className="block text-sm font-medium text-gray-700"&gt;
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     {t('email')} *
-                  &lt;/label&gt;
-                  &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                    &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                      &lt;Mail className="h-5 w-5 text-gray-400" /&gt;
-                    &lt;/div&gt;
-                    &lt;input
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
                       id="email"
                       name="email"
                       type="email"
@@ -520,20 +523,20 @@ export default function ContractorSignupPage() {
                       onChange={handleInputChange}
                       className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder={t('emailPlaceholder')}
-                    /&gt;
-                  &lt;/div&gt;
-                &lt;/div&gt;
+                    />
+                  </div>
+                </div>
 
                 {/* Password */}
-                &lt;div&gt;
-                  &lt;label htmlFor="password" className="block text-sm font-medium text-gray-700"&gt;
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     {t('password')} *
-                  &lt;/label&gt;
-                  &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                    &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                      &lt;Lock className="h-5 w-5 text-gray-400" /&gt;
-                    &lt;/div&gt;
-                    &lt;input
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
                       id="password"
                       name="password"
                       type={showPassword ? 'text' : 'password'}
@@ -542,54 +545,54 @@ export default function ContractorSignupPage() {
                       value={formData.password}
                       onChange={handleInputChange}
                       className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    /&gt;
-                    &lt;button
+                    />
+                    <button
                       type="button"
-                      onClick={() =&gt; setShowPassword(!showPassword)}
+                      onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    &gt;
-                      {showPassword ? &lt;EyeOff className="h-5 w-5 text-gray-400" /&gt; : &lt;Eye className="h-5 w-5 text-gray-400" /&gt;}
-                    &lt;/button&gt;
-                  &lt;/div&gt;
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+                    </button>
+                  </div>
                   
                   {/* Password requirements */}
-                  &lt;div className="mt-2 space-y-1"&gt;
-                    &lt;div className="text-xs text-gray-600 font-medium mb-2"&gt;{t('passwordRequirements')}&lt;/div&gt;
-                    &lt;div className="space-y-1"&gt;
-                      &lt;div className={`flex items-center text-xs ${formData.password.length &gt;= 8 ? 'text-green-600' : 'text-gray-500'}`}&gt;
-                        &lt;div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length &gt;= 8 ? 'bg-green-500' : 'bg-gray-300'}`}&gt;&lt;/div&gt;
+                  <div className="mt-2 space-y-1">
+                    <div className="text-xs text-gray-600 font-medium mb-2">{t('passwordRequirements')}</div>
+                    <div className="space-y-1">
+                      <div className={`flex items-center text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                         {t('minLength')}
-                      &lt;/div&gt;
-                      &lt;div className={`flex items-center text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}&gt;
-                        &lt;div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}&gt;&lt;/div&gt;
+                      </div>
+                      <div className={`flex items-center text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                         {t('hasUpperCase')}
-                      &lt;/div&gt;
-                      &lt;div className={`flex items-center text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}&gt;
-                        &lt;div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}&gt;&lt;/div&gt;
+                      </div>
+                      <div className={`flex items-center text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                         {t('hasLowerCase')}
-                      &lt;/div&gt;
-                      &lt;div className={`flex items-center text-xs ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}&gt;
-                        &lt;div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}&gt;&lt;/div&gt;
+                      </div>
+                      <div className={`flex items-center text-xs ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                         {t('hasNumber')}
-                      &lt;/div&gt;
-                      &lt;div className={`flex items-center text-xs ${/[!@#$%^&amp;*(),.?\":{}|&lt;&gt;]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}&gt;
-                        &lt;div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&amp;*(),.?\":{}|&lt;&gt;]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}&gt;&lt;/div&gt;
+                      </div>
+                      <div className={`flex items-center text-xs ${/[!@#$%^&*(),.?\":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${/[!@#$%^&*(),.?\":{}|<>]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                         {t('hasSpecialChar')}
-                      &lt;/div&gt;
-                    &lt;/div&gt;
-                  &lt;/div&gt;
-                &lt;/div&gt;
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Confirm password */}
-                &lt;div&gt;
-                  &lt;label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700"&gt;
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                     {t('confirmPassword')} *
-                  &lt;/label&gt;
-                  &lt;div className="mt-1 relative rounded-md shadow-sm"&gt;
-                    &lt;div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"&gt;
-                      &lt;Lock className="h-5 w-5 text-gray-400" /&gt;
-                    &lt;/div&gt;
-                    &lt;input
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
                       id="confirmPassword"
                       name="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -598,61 +601,61 @@ export default function ContractorSignupPage() {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       className={`appearance-none block w-full pl-10 pr-10 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                        formData.confirmPassword &amp;&amp; formData.password === formData.confirmPassword
+                        formData.confirmPassword && formData.password === formData.confirmPassword
                           ? 'border-green-300 bg-green-50'
-                          : formData.confirmPassword &amp;&amp; formData.password !== formData.confirmPassword
+                          : formData.confirmPassword && formData.password !== formData.confirmPassword
                           ? 'border-red-300 bg-red-50'
                           : 'border-gray-300'
                       }`}
-                    /&gt;
-                    &lt;button
+                    />
+                    <button
                       type="button"
-                      onClick={() =&gt; setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    &gt;
-                      {showConfirmPassword ? &lt;EyeOff className="h-5 w-5 text-gray-400" /&gt; : &lt;Eye className="h-5 w-5 text-gray-400" /&gt;}
-                    &lt;/button&gt;
-                  &lt;/div&gt;
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+                    </button>
+                  </div>
                   
-                  {formData.confirmPassword &amp;&amp; (
-                    &lt;div className="mt-2"&gt;
+                  {formData.confirmPassword && (
+                    <div className="mt-2">
                       {formData.password === formData.confirmPassword ? (
-                        &lt;div className="flex items-center text-xs text-green-600"&gt;
-                          &lt;div className="w-2 h-2 rounded-full bg-green-500 mr-2"&gt;&lt;/div&gt;
+                        <div className="flex items-center text-xs text-green-600">
+                          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
                           {t('passwordsMatch')}
-                        &lt;/div&gt;
+                        </div>
                       ) : (
-                        &lt;div className="flex items-center text-xs text-red-600"&gt;
-                          &lt;div className="w-2 h-2 rounded-full bg-red-500 mr-2"&gt;&lt;/div&gt;
+                        <div className="flex items-center text-xs text-red-600">
+                          <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
                           {t('passwordsNotMatch')}
-                        &lt;/div&gt;
+                        </div>
                       )}
-                    &lt;/div&gt;
+                    </div>
                   )}
-                &lt;/div&gt;
-              &lt;/div&gt;
+                </div>
+              </div>
             )}
 
             {/* Submit */}
-            &lt;div&gt;
-              &lt;button
+            <div>
+              <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              &gt;
+              >
                 {isLoading ? (
-                  &lt;&gt;
-                    &lt;div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" /&gt;
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                     {isExistingUser ? t('completingRegistration') : t('signingUp')}
-                  &lt;/&gt;
+                  </>
                 ) : (
                   isExistingUser ? t('completeRegistration') : t('signUpAsContractor')
                 )}
-              &lt;/button&gt;
-            &lt;/div&gt;
-          &lt;/form&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }
