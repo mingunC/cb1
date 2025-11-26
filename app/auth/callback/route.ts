@@ -5,7 +5,10 @@ import { cookies } from 'next/headers'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const locale = requestUrl.searchParams.get('locale') || 'en'
+  
+  // ✅ cookie에서 locale 읽기 (기본값: 'en')
+  const cookieStore = await cookies()
+  const locale = cookieStore.get('auth_locale')?.value || 'en'
 
   console.log('🔐 Auth callback received:', {
     hasCode: !!code,
@@ -14,7 +17,6 @@ export async function GET(request: Request) {
   })
 
   if (code) {
-    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -52,8 +54,11 @@ export async function GET(request: Request) {
 
       console.log('✅ Auth callback successful, redirecting to:', `/${locale}`)
       
-      // 기본 언어로 리다이렉트
-      return NextResponse.redirect(new URL(`/${locale}`, requestUrl.origin))
+      // ✅ auth_locale cookie 삭제
+      const response = NextResponse.redirect(new URL(`/${locale}`, requestUrl.origin))
+      response.cookies.delete('auth_locale')
+      
+      return response
     } catch (error) {
       console.error('❌ Auth callback unexpected error:', error)
       return NextResponse.redirect(new URL(`/${locale}/login?error=unexpected_error`, requestUrl.origin))
@@ -64,4 +69,3 @@ export async function GET(request: Request) {
   console.log('⚠️ No auth code found, redirecting to login')
   return NextResponse.redirect(new URL(`/${locale}/login?error=no_code`, requestUrl.origin))
 }
-
