@@ -34,17 +34,21 @@ export default function SignupPage() {
   const phoneInputRef = useRef<HTMLInputElement>(null)
   const supabase = createBrowserClient()
 
-  // ✅ Google OAuth 로그인 함수 추가
+  // ✅ Google OAuth 로그인 함수 - locale 정보를 cookie에 저장
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
     setError('')
     let hasError = false
 
     try {
+      // locale 정보를 cookie에 저장 (auth callback에서 사용)
+      document.cookie = `auth_locale=${locale}; path=/; max-age=3600`
+      document.cookie = `auth_type=customer; path=/; max-age=3600`
+      
       const { data, error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?locale=${locale}`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -157,17 +161,18 @@ export default function SignupPage() {
     try {
       if (process.env.NODE_ENV === 'development') console.log('🚀 Starting signup process...')
       
-      // 회원가입 시도 (user metadata에 추가 정보 저장)
+      // 회원가입 시도 (user metadata에 추가 정보 저장 - locale 포함)
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?locale=${locale}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
             phone: formData.mobileNumber,
-            user_type: 'customer'
+            user_type: 'customer',
+            preferred_language: locale  // ✅ locale 정보 추가
           }
         }
       })
@@ -176,6 +181,7 @@ export default function SignupPage() {
         userId: data.user?.id, 
         email: data.user?.email,
         emailConfirmed: data.user?.email_confirmed_at,
+        locale: locale,
         error 
       })
       
@@ -188,6 +194,10 @@ export default function SignupPage() {
       if (data.user) {
         // Database trigger가 자동으로 users 테이블에 레코드를 생성합니다
         // 추가 정보는 이메일 확인 후 업데이트됩니다
+        
+        // locale 정보를 cookie에 저장 (auth callback에서 사용)
+        document.cookie = `auth_locale=${locale}; path=/; max-age=3600`
+        document.cookie = `auth_type=customer; path=/; max-age=3600`
         
         if (process.env.NODE_ENV === 'development') console.log('✅ User created successfully - database trigger will handle users table')
         if (process.env.NODE_ENV === 'development') console.log('📧 Email confirmation required - showing confirmation screen')
