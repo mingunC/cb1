@@ -34,6 +34,12 @@ export interface EmailOptions {
   replyTo?: string;
 }
 
+// locale 검증 헬퍼 함수
+const getValidLocale = (locale: string = 'en'): 'en' | 'ko' | 'zh' => {
+  const supportedLocales = ['en', 'ko', 'zh'];
+  return supportedLocales.includes(locale) ? locale as 'en' | 'ko' | 'zh' : 'en';
+};
+
 // 이메일 발송 함수
 export const sendEmail = async (options: EmailOptions) => {
   if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
@@ -154,13 +160,18 @@ const formatBudget = (budget: string): string => {
   return budgetMap[budget] || budget
 }
 
-// ✅ 업체에게 보낼 이메일 템플릿 (고객 정보 포함)
+// ✅ 업체에게 보낼 이메일 템플릿 (고객 정보 포함, 다국어 지원)
 export const createSelectionEmailTemplate = (
   contractorName: string,
   projectInfo: any,
   quoteInfo: any,
-  customerInfo?: any // 고객 정보 추가
+  customerInfo?: any,
+  locale: string = 'en'
 ): string => {
+  const validLocale = getValidLocale(locale);
+  const t = emailTranslations[validLocale].contractor;
+  const common = emailTranslations[validLocale].common;
+  
   const commissionInfo = calculateCommission(quoteInfo.price);
   
   // 고객 이름
@@ -171,6 +182,9 @@ export const createSelectionEmailTemplate = (
   // 고객 전화번호 (있는 경우에만 표시)
   const hasPhone = customerInfo?.phone && customerInfo.phone.trim() !== '';
   const hasEmail = customerInfo?.email && customerInfo.email.trim() !== '';
+  
+  const greeting = typeof t.greeting === 'function' ? t.greeting(contractorName) : t.greeting;
+  const steps = typeof t.steps === 'function' ? t.steps(hasPhone) : t.steps;
   
   return `
     <!DOCTYPE html>
@@ -199,133 +213,127 @@ export const createSelectionEmailTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎉 Congratulations!</h1>
-          <p style="margin: 0; font-size: 18px;">You've been selected for the project</p>
+          <h1>${t.title}</h1>
+          <p style="margin: 0; font-size: 18px;">${t.subtitle}</p>
         </div>
         
         <div class="content">
-          <p>Hello, <strong>${contractorName}</strong></p>
+          <p>${greeting}</p>
           
-          <p>We are pleased to inform you that the quotation you submitted has been selected. The customer has finally chosen your company's quotation.</p>
+          <p>${t.intro}</p>
           
           <div class="customer-info">
-            <h3 style="margin-top: 0; color: #333;">📞 Customer Contact Information</h3>
+            <h3 style="margin-top: 0; color: #333;">${t.customerContact}</h3>
             <table class="info-table" style="background: white; border-radius: 5px;">
               <tr>
-                <td>Customer Name</td>
+                <td>${t.customerName}</td>
                 <td class="contact-info">${customerName}</td>
               </tr>
               ${hasEmail ? `
               <tr>
-                <td>Email</td>
+                <td>${t.email}</td>
                 <td class="contact-info">${customerInfo.email}</td>
               </tr>
               ` : ''}
               ${hasPhone ? `
               <tr>
-                <td>Phone Number</td>
+                <td>${t.phone}</td>
                 <td class="contact-info">${customerInfo.phone}</td>
               </tr>
               ` : `
               <tr>
-                <td>Phone Number</td>
-                <td style="color: #999; font-style: italic;">The customer did not provide a phone number.</td>
+                <td>${t.phone}</td>
+                <td style="color: #999; font-style: italic;">${t.phoneNotProvided}</td>
               </tr>
               `}
             </table>
             ${!hasPhone ? `
             <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px;">
-              ⚠️ <strong>Notice:</strong> The customer did not enter a phone number. Please contact them via email first, or confirm their contact details during the on-site visit.
+              ${t.phoneNotice}
             </div>
             ` : ''}
           </div>
           
           <div class="warning-box">
-            <strong>⚠️ Important Notice</strong>
-            <p style="margin: 10px 0 0 0;">Please contact the customer <strong>as soon as possible</strong> to coordinate the project schedule. Prompt response enhances customer satisfaction.</p>
+            <strong>${t.importantNotice}</strong>
+            <p style="margin: 10px 0 0 0;">${t.noticeText}</p>
           </div>
           
           <div class="highlight">
-            <h3 style="margin-top: 0;">📋 Project Information</h3>
+            <h3 style="margin-top: 0;">${t.projectInfo}</h3>
             <table class="info-table">
               <tr>
-                <td>Project Type</td>
+                <td>${t.projectType}</td>
                 <td>${formatProjectTypes(projectInfo.project_types || [])}</td>
               </tr>
               <tr>
-                <td>Property Type</td>
+                <td>${t.propertyType}</td>
                 <td>${formatSpaceType(projectInfo.space_type || '')}</td>
               </tr>
               <tr>
-                <td>Address</td>
-                <td>${projectInfo.full_address || 'Detailed address: Please inquire with the customer.'}</td>
+                <td>${t.address}</td>
+                <td>${projectInfo.full_address || t.addressInquiry}</td>
               </tr>
               <tr>
-                <td>Quotation Amount</td>
+                <td>${t.quoteAmount}</td>
                 <td><strong style="font-size: 18px; color: #4A90E2;">$${quoteInfo.price?.toLocaleString() || '0'} CAD</strong></td>
               </tr>
             </table>
           </div>
           
           <div class="commission-box">
-            <h3 style="margin-top: 0; color: #333;">💰 Platform Commission Information</h3>
+            <h3 style="margin-top: 0; color: #333;">${t.commissionInfo}</h3>
             <table class="info-table" style="background: white; border-radius: 5px;">
               <tr>
-                <td>Platform Commission</td>
+                <td>${t.platformCommission}</td>
                 <td><strong style="font-size: 18px; color: #28a745;">${commissionInfo.amount}</strong></td>
               </tr>
               <tr>
-                <td>Commission Rate</td>
+                <td>${t.commissionRate}</td>
                 <td>
-                    <strong>1% of the quotation amount</strong> : $100,000+<br>
-                    <strong>2% of the quotation amount</strong> : $50,000 - $100,000<br>
-                    <strong>3% of the quotation amount</strong> : Under $50,000
+                    <strong>${t.commissionRateDesc1}</strong> : $100,000+<br>
+                    <strong>${t.commissionRateDesc2}</strong> : $50,000 - $100,000<br>
+                    <strong>${t.commissionRateDesc3}</strong> : Under $50,000
                 </td>
               </tr>
               <tr>
-                <td>Payment Due Date</td>
-                <td><strong>Please refer to the Policy</strong></td>
+                <td>${t.paymentDueDate}</td>
+                <td><strong>${t.paymentPolicy}</strong></td>
               </tr>
             </table>
             <div style="background: #e7f3ff; padding: 12px; border-radius: 5px; margin-top: 15px; font-size: 14px; color: #333;">
-              <strong>📌 Commission Policy:</strong>
+              <strong>${t.commissionPolicy}</strong>
               <ul style="margin: 8px 0; padding-left: 20px;">
-                <li>Please pay the commission within 3 days after the project contract is signed.</li>
-                <li>If the final project amount changes, the commission will be recalculated based on the changed amount.</li>
-                <li>Deposit account information will be provided separately.</li>
+                ${t.policyItems.map((item: string) => `<li>${item}</li>`).join('')}
               </ul>
             </div>
           </div>
           
-          <h3>📌 Next Steps</h3>
+          <h3>${t.nextSteps}</h3>
           <ol class="steps">
-            <li><strong>Contact the Customer</strong>: ${hasPhone ? 'Email or phone' : 'Email'} to coordinate the schedule</li>
-            <li><strong>Site Visit</strong>: Schedule a visit and confirm the detailed quotation</li>
-            <li><strong>Contract Signing</strong>: Write and sign the contract</li>
-            <li><strong>Progress Update</strong>: Email the start date of the project to Canada Beaver</li>
-            <li><strong>Commission Payment</strong>: Pay the platform commission within 3 days after the contract is signed</li>
+            ${steps.map((step: string) => `<li>${step}</li>`).join('')}
           </ol>
           
           <center>
             <a href="https://canadabeaver.pro/contractor" class="button">
-              Check in Dashboard
+              ${t.checkDashboard}
             </a>
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-            If you have any questions during the project, please contact us anytime.
+            ${t.contactUs}
           </p>
           
           <p>
-            Thank you.<br>
-            <strong>Canada Beaver Team</strong>
+            ${t.thanks}<br>
+            <strong>${t.team}</strong>
           </p>
         </div>
         
         <div class="footer">
-          <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>Contact: support@canadabeaver.pro | Website: www.canadabeaver.pro</p>
-          <p>© 2025 Canada Beaver. All rights reserved.</p>
+          <p>${common.autoSent}</p>
+          <p>${common.contact}</p>
+          <p>${common.copyright}</p>
         </div>
       </div>
     </body>
@@ -333,13 +341,20 @@ export const createSelectionEmailTemplate = (
   `;
 };
 
-// 고객에게 보낼 이메일 템플릿
+// ✅ 고객에게 보낼 업체 선정 알림 이메일 템플릿 (다국어 지원)
 export const createCustomerNotificationTemplate = (
   customerName: string,
   contractorInfo: any,
   projectInfo: any,
-  quoteInfo: any
+  quoteInfo: any,
+  locale: string = 'en'
 ): string => {
+  const validLocale = getValidLocale(locale);
+  const t = emailTranslations[validLocale].customer;
+  const common = emailTranslations[validLocale].common;
+  
+  const greeting = typeof t.greeting === 'function' ? t.greeting(customerName) : t.greeting;
+  
   return `
     <!DOCTYPE html>
     <html>
@@ -361,70 +376,70 @@ export const createCustomerNotificationTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>Contractor Selected</h1>
-          <p style="margin: 0; font-size: 18px;">The project is ready to start</p>
+          <h1>${t.title}</h1>
+          <p style="margin: 0; font-size: 18px;">${t.subtitle}</p>
         </div>
         
         <div class="content">
-          <p>Hello, <strong>${customerName}</strong></p>
+          <p>${greeting}</p>
           
           <div class="success-badge">
-            🎉 The contractor you selected has been confirmed!
+            ${t.successBadge}
           </div>
           
-          <p>We are pleased to inform you that the contractor you selected has been confirmed.</p>
+          <p>${t.intro}</p>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #28a745;">🏢 Selected Contractor Information</h3>
+            <h3 style="margin-top: 0; color: #28a745;">${t.selectedContractor}</h3>
             <table class="info-table">
               <tr>
-                <td>Contractor Name</td>
+                <td>${t.contractorName}</td>
                 <td><strong>${contractorInfo.company_name}</strong></td>
               </tr>
               <tr>
-                <td>Contact Name</td>
+                <td>${t.contactName}</td>
                 <td>${contractorInfo.contact_name || contractorInfo.company_name}</td>
               </tr>
               ${contractorInfo.phone ? `
               <tr>
-                <td>Phone Number</td>
+                <td>${t.phoneNumber}</td>
                 <td><strong>${contractorInfo.phone}</strong></td>
               </tr>
               ` : ''}
               ${contractorInfo.email ? `
               <tr>
-                <td>Email</td>
+                <td>${t.email}</td>
                 <td>${contractorInfo.email}</td>
               </tr>
               ` : ''}
               <tr>
-                <td>Quotation Amount</td>
+                <td>${t.quoteAmount}</td>
                 <td><strong style="color: #28a745; font-size: 18px;">$${quoteInfo.price?.toLocaleString() || '0'} CAD</strong></td>
               </tr>
             </table>
           </div>
           
           <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <strong>📞 Next Steps:</strong>
-            <p style="margin: 10px 0 0 0;">The selected contractor will contact you soon to coordinate the project schedule and details.</p>
+            <strong>${t.nextSteps}</strong>
+            <p style="margin: 10px 0 0 0;">${t.nextStepsText}</p>
           </div>
           
-          <p>We hope the project is successful!</p>
+          <p>${t.hopeful}</p>
           
           <center>
             <a href="https://canadabeaver.pro/my-quotes" class="button">
-              Check My Quotes
+              ${t.checkMyQuotes}
             </a>
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-            If you have any questions during the project, please contact us anytime at support@canadabeaver.pro.
+            ${t.contactText}
           </p>
         </div>
         
         <div class="footer">
-          <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>© 2025 Canada Beaver. All rights reserved.</p>
+          <p>${common.autoSent}</p>
+          <p>${common.copyright}</p>
         </div>
       </div>
     </body>
@@ -445,14 +460,13 @@ export const createSiteVisitApplicationTemplate = (
     space_type?: string;
     budget?: string;
   },
-  locale: string = 'en'  // 기본값은 영어
+  locale: string = 'en'
 ): string => {
-  // 지원하는 언어인지 확인, 아니면 영어로 fallback
-  const supportedLocales = ['en', 'ko', 'zh'];
-  const validLocale = supportedLocales.includes(locale) ? locale : 'en';
+  const validLocale = getValidLocale(locale);
+  const t = emailTranslations[validLocale].siteVisit;
+  const common = emailTranslations[validLocale].common;
   
-  const t = emailTranslations[validLocale as keyof typeof emailTranslations]?.siteVisit || emailTranslations.en.siteVisit;
-  const common = emailTranslations[validLocale as keyof typeof emailTranslations]?.common || emailTranslations.en.common;
+  const greeting = typeof t.greeting === 'function' ? t.greeting(customerName) : t.greeting;
   
   return `
     <!DOCTYPE html>
@@ -480,7 +494,7 @@ export const createSiteVisitApplicationTemplate = (
         </div>
         
         <div class="content">
-          <p>${typeof t.greeting === 'function' ? t.greeting(customerName) : t.greeting}</p>
+          <p>${greeting}</p>
           
           <p>${t.intro}</p>
           
@@ -536,12 +550,11 @@ export const createSiteVisitApplicationTemplate = (
 
 // ✅ 사이트 방문 신청 이메일 subject 가져오기 (다국어)
 export const getSiteVisitEmailSubject = (locale: string = 'en'): string => {
-  const supportedLocales = ['en', 'ko', 'zh'];
-  const validLocale = supportedLocales.includes(locale) ? locale : 'en';
-  return emailTranslations[validLocale as keyof typeof emailTranslations]?.siteVisit?.subject || emailTranslations.en.siteVisit.subject;
+  const validLocale = getValidLocale(locale);
+  return emailTranslations[validLocale].siteVisit.subject;
 };
 
-// ✅ 고객에게 보낼 견적서 제출 알림 이메일 템플릿 (PDF 다운로드 안내 추가)
+// ✅ 고객에게 보낼 견적서 제출 알림 이메일 템플릿 (다국어 지원)
 export const createQuoteSubmissionTemplate = (
   customerName: string,
   contractorInfo: {
@@ -557,8 +570,15 @@ export const createQuoteSubmissionTemplate = (
   quoteInfo: {
     price: number;
     description?: string;
-  }
+  },
+  locale: string = 'en'
 ): string => {
+  const validLocale = getValidLocale(locale);
+  const t = emailTranslations[validLocale].quoteSubmission;
+  const common = emailTranslations[validLocale].common;
+  
+  const greeting = typeof t.greeting === 'function' ? t.greeting(customerName) : t.greeting;
+  
   return `
     <!DOCTYPE html>
     <html>
@@ -582,31 +602,31 @@ export const createQuoteSubmissionTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>New Quote Received</h1>
-          <p style="margin: 0; font-size: 18px;">A contractor has submitted a quote for your project</p>
+          <h1>${t.title}</h1>
+          <p style="margin: 0; font-size: 18px;">${t.subtitle}</p>
         </div>
         
         <div class="content">
-          <p>Hello, <strong>${customerName}</strong></p>
+          <p>${greeting}</p>
           
-          <p>Good news! A contractor has submitted a quote for your renovation project.</p>
+          <p>${t.intro}</p>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #28a745;">🏢 Contractor Information</h3>
+            <h3 style="margin-top: 0; color: #28a745;">${t.contractorInfo}</h3>
             <table class="info-table">
               <tr>
-                <td>Company Name</td>
+                <td>${t.companyName}</td>
                 <td><strong>${contractorInfo.company_name}</strong></td>
               </tr>
               ${contractorInfo.email ? `
               <tr>
-                <td>Email</td>
+                <td>${t.email}</td>
                 <td>${contractorInfo.email}</td>
               </tr>
               ` : ''}
               ${contractorInfo.phone ? `
               <tr>
-                <td>Phone</td>
+                <td>${t.phone}</td>
                 <td>${contractorInfo.phone}</td>
               </tr>
               ` : ''}
@@ -614,15 +634,15 @@ export const createQuoteSubmissionTemplate = (
           </div>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #28a745;">💰 Quote Details</h3>
+            <h3 style="margin-top: 0; color: #28a745;">${t.quoteDetails}</h3>
             <table class="info-table">
               <tr>
-                <td>Quote Amount</td>
+                <td>${t.quoteAmount}</td>
                 <td class="price-highlight">$${quoteInfo.price.toLocaleString()} CAD</td>
               </tr>
               ${quoteInfo.description ? `
               <tr>
-                <td>Description</td>
+                <td>${t.description}</td>
                 <td>${quoteInfo.description}</td>
               </tr>
               ` : ''}
@@ -630,24 +650,24 @@ export const createQuoteSubmissionTemplate = (
           </div>
           
           <div class="pdf-notice">
-            <strong>📄 Detailed Quote (PDF)</strong>
-            <p style="margin: 10px 0 0 0;">The detailed quote in PDF format is available for download directly from the website. Please visit your dashboard to view and download the complete quote document.</p>
+            <strong>${t.pdfNotice}</strong>
+            <p style="margin: 10px 0 0 0;">${t.pdfNoticeText}</p>
           </div>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #28a745;">📋 Project Details</h3>
+            <h3 style="margin-top: 0; color: #28a745;">${t.projectDetails}</h3>
             <table class="info-table">
               <tr>
-                <td>Address</td>
-                <td>${projectInfo.full_address || 'Not specified'}</td>
+                <td>${t.address}</td>
+                <td>${projectInfo.full_address || t.notSpecified}</td>
               </tr>
               <tr>
-                <td>Space Type</td>
+                <td>${t.spaceType}</td>
                 <td>${formatSpaceType(projectInfo.space_type || '')}</td>
               </tr>
               ${projectInfo.budget ? `
               <tr>
-                <td>Budget</td>
+                <td>${t.budget}</td>
                 <td>${formatBudget(projectInfo.budget)}</td>
               </tr>
               ` : ''}
@@ -655,31 +675,50 @@ export const createQuoteSubmissionTemplate = (
           </div>
           
           <div class="highlight-box">
-            <strong>📅 Next Steps:</strong>
-            <p style="margin: 10px 0 0 0;">You can review all quotes in your dashboard and select the contractor that best fits your needs. The contractor will contact you after selection.</p>
+            <strong>${t.nextStepsTitle}</strong>
+            <p style="margin: 10px 0 0 0;">${t.nextStepsText}</p>
           </div>
           
-          <p>Thank you for using Canada Beaver!</p>
+          <p>${t.thanks}</p>
           
           <center>
             <a href="https://canadabeaver.pro/my-quotes" class="button">
-              View All Quotes
+              ${t.viewAllQuotes}
             </a>
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-            If you have any questions, please contact us anytime at admin@canadabeaver.pro.
+            ${t.contactText}
           </p>
         </div>
         
         <div class="footer">
-          <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>© 2025 Canada Beaver. All rights reserved.</p>
+          <p>${common.autoSent}</p>
+          <p>${common.copyright}</p>
         </div>
       </div>
     </body>
     </html>
   `;
+};
+
+// ✅ 견적서 제출 이메일 subject 가져오기 (다국어)
+export const getQuoteSubmissionEmailSubject = (locale: string = 'en'): string => {
+  const validLocale = getValidLocale(locale);
+  return emailTranslations[validLocale].quoteSubmission.subject;
+};
+
+// ✅ 업체 선정 이메일 subject 가져오기 (다국어) - 업체용
+export const getContractorSelectionEmailSubject = (customerName: string, locale: string = 'en'): string => {
+  const validLocale = getValidLocale(locale);
+  const subjectFn = emailTranslations[validLocale].contractor.subject;
+  return typeof subjectFn === 'function' ? subjectFn(customerName) : subjectFn;
+};
+
+// ✅ 업체 선정 이메일 subject 가져오기 (다국어) - 고객용
+export const getCustomerSelectionEmailSubject = (locale: string = 'en'): string => {
+  const validLocale = getValidLocale(locale);
+  return emailTranslations[validLocale].customer.subject;
 };
 
 // API 키 검증 함수 (테스트용)
