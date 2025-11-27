@@ -5,10 +5,33 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 
+// 다국어 메시지
+const messages = {
+  en: {
+    processing: 'Processing...',
+    signingIn: 'Signing in...',
+    redirecting: 'Redirecting...',
+    loading: 'Loading...'
+  },
+  ko: {
+    processing: '처리 중...',
+    signingIn: '로그인 완료 중...',
+    redirecting: '리다이렉트 중...',
+    loading: '로딩 중...'
+  },
+  zh: {
+    processing: '处理中...',
+    signingIn: '登录中...',
+    redirecting: '重定向中...',
+    loading: '加载中...'
+  }
+}
+
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState('처리 중...')
+  const [status, setStatus] = useState('...')
+  const [locale, setLocale] = useState('en')
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -22,10 +45,18 @@ function AuthCallbackContent() {
         return null
       }
       
-      const locale = getCookie('auth_locale') || 'en'
+      const cookieLocale = getCookie('auth_locale') || 'en'
       const authType = getCookie('auth_type') || 'customer'
       
-      console.log('🔐 Auth callback processing:', { locale, authType })
+      // locale 상태 설정
+      setLocale(cookieLocale)
+      
+      // 해당 언어의 메시지 가져오기
+      const t = messages[cookieLocale as keyof typeof messages] || messages.en
+      
+      setStatus(t.processing)
+      
+      console.log('🔐 Auth callback processing:', { locale: cookieLocale, authType })
 
       try {
         // URL에서 code 파라미터 확인
@@ -35,20 +66,20 @@ function AuthCallbackContent() {
         
         if (errorParam) {
           console.error('❌ OAuth error:', errorParam, errorDescription)
-          const loginPath = authType === 'contractor' ? `/${locale}/contractor-login` : `/${locale}/login`
+          const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
           router.push(`${loginPath}?error=${errorParam}`)
           return
         }
 
         if (code) {
           // PKCE flow: code를 세션으로 교환
-          setStatus('로그인 완료 중...')
+          setStatus(t.signingIn)
           
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
           
           if (error) {
             console.error('❌ Session exchange error:', error)
-            const loginPath = authType === 'contractor' ? `/${locale}/contractor-login` : `/${locale}/login`
+            const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
             router.push(`${loginPath}?error=auth_failed`)
             return
           }
@@ -60,7 +91,7 @@ function AuthCallbackContent() {
           
           if (error || !session) {
             console.error('❌ No session found:', error)
-            const loginPath = authType === 'contractor' ? `/${locale}/contractor-login` : `/${locale}/login`
+            const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
             router.push(`${loginPath}?error=no_session`)
             return
           }
@@ -73,14 +104,14 @@ function AuthCallbackContent() {
         document.cookie = 'auth_type=; path=/; max-age=0'
 
         // 리다이렉트
-        setStatus('리다이렉트 중...')
+        setStatus(t.redirecting)
         
         if (authType === 'contractor') {
           console.log('➡️ Redirecting to contractor dashboard')
-          router.push(`/${locale}/contractor`)
+          router.push(`/${cookieLocale}/contractor`)
         } else {
           console.log('➡️ Redirecting to home')
-          router.push(`/${locale}`)
+          router.push(`/${cookieLocale}`)
         }
         
       } catch (error) {
@@ -91,7 +122,7 @@ function AuthCallbackContent() {
     }
 
     handleCallback()
-  }, [router, searchParams])
+  }, [router, searchParams, locale])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
@@ -104,11 +135,12 @@ function AuthCallbackContent() {
 }
 
 function LoadingFallback() {
+  // 기본 영어로 표시 (Suspense fallback에서는 cookie 접근 불가)
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">로딩 중...</p>
+        <p className="mt-4 text-gray-600">Loading...</p>
       </div>
     </div>
   )
