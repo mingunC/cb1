@@ -65,6 +65,22 @@ export const emailTranslations = {
       checkMyQuotes: 'Check My Quotes',
       contactText: 'If you have any questions during the project, please contact us anytime at support@canadabeaver.pro.'
     },
+    siteVisit: {
+      subject: '🏠 New Site Visit Application for Your Project',
+      title: 'New Site Visit Application',
+      subtitle: 'A contractor wants to visit your property',
+      greeting: (name: string) => `Hello, <strong>${name}</strong>`,
+      intro: 'Good news! A contractor has applied for a site visit to your renovation project.',
+      contractorInfo: 'Contractor Information',
+      companyName: 'Company Name',
+      email: 'Email',
+      phone: 'Phone',
+      nextStepsTitle: 'Next Steps:',
+      nextStepsText: 'We will inform you of the contractor\'s scheduled site visit time one week prior to the visit date you requested through Canada Beaver.',
+      thanks: 'Thank you for choosing our service!',
+      viewProjects: 'View My Projects',
+      contactText: 'If you have any questions, please contact us anytime at admin@canadabeaver.pro.'
+    },
     common: {
       autoSent: 'This email was automatically sent by the Canada Beaver Platform.',
       copyright: '© 2025 Canada Beaver. All rights reserved.',
@@ -135,6 +151,22 @@ export const emailTranslations = {
       checkMyQuotes: '내 견적 확인하기',
       contactText: '프로젝트 진행 중 궁금한 사항이 있으시면 언제든 support@canadabeaver.pro로 문의해주세요.'
     },
+    siteVisit: {
+      subject: '🏠 새로운 현장 방문 신청이 접수되었습니다',
+      title: '새로운 현장 방문 신청',
+      subtitle: '업체가 귀하의 물건을 방문하고자 합니다',
+      greeting: (name: string) => `안녕하세요, <strong>${name}</strong>님`,
+      intro: '좋은 소식입니다! 업체가 귀하의 리노베이션 프로젝트 현장 방문을 신청했습니다.',
+      contractorInfo: '업체 정보',
+      companyName: '상호명',
+      email: '이메일',
+      phone: '전화번호',
+      nextStepsTitle: '다음 단계:',
+      nextStepsText: 'Canada Beaver를 통해 요청하신 방문 희망일 1주일 전에 업체의 현장 방문 일정을 안내해드리겠습니다.',
+      thanks: '저희 서비스를 이용해주셔서 감사합니다!',
+      viewProjects: '내 프로젝트 보기',
+      contactText: '궁금한 점이 있으시면 언제든 admin@canadabeaver.pro로 문의해주세요.'
+    },
     common: {
       autoSent: '이 이메일은 Canada Beaver 플랫폼에서 자동으로 발송되었습니다.',
       copyright: '© 2025 Canada Beaver. All rights reserved.',
@@ -204,6 +236,22 @@ export const emailTranslations = {
       hopeful: '我们希望项目顺利进行！',
       checkMyQuotes: '查看我的报价',
       contactText: '如果在项目期间有任何问题，请随时通过support@canadabeaver.pro与我们联系。'
+    },
+    siteVisit: {
+      subject: '🏠 您的项目有新的现场访问申请',
+      title: '新的现场访问申请',
+      subtitle: '承包商希望访问您的物业',
+      greeting: (name: string) => `您好，<strong>${name}</strong>`,
+      intro: '好消息！一位承包商已申请对您的翻新项目进行现场访问。',
+      contractorInfo: '承包商信息',
+      companyName: '公司名称',
+      email: '电子邮件',
+      phone: '电话',
+      nextStepsTitle: '后续步骤：',
+      nextStepsText: '我们将在您通过Canada Beaver请求的访问日期前一周通知您承包商的预定现场访问时间。',
+      thanks: '感谢您选择我们的服务！',
+      viewProjects: '查看我的项目',
+      contactText: '如有任何问题，请随时通过admin@canadabeaver.pro与我们联系。'
     },
     common: {
       autoSent: '此电子邮件由Canada Beaver平台自动发送。',
