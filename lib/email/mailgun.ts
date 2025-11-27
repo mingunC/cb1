@@ -1,5 +1,6 @@
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
+import { emailTranslations } from './email-translations';
 
 // 디버깅을 위한 로그 추가
 if (process.env.NODE_ENV === 'development') console.log('Mailgun Config:', {
@@ -431,7 +432,7 @@ export const createCustomerNotificationTemplate = (
   `;
 };
 
-// ✅ 고객에게 보낼 사이트 방문 신청 알림 이메일 템플릿
+// ✅ 고객에게 보낼 사이트 방문 신청 알림 이메일 템플릿 (다국어 지원)
 export const createSiteVisitApplicationTemplate = (
   customerName: string,
   contractorInfo: {
@@ -443,8 +444,16 @@ export const createSiteVisitApplicationTemplate = (
     full_address?: string;
     space_type?: string;
     budget?: string;
-  }
+  },
+  locale: string = 'en'  // 기본값은 영어
 ): string => {
+  // 지원하는 언어인지 확인, 아니면 영어로 fallback
+  const supportedLocales = ['en', 'ko', 'zh'];
+  const validLocale = supportedLocales.includes(locale) ? locale : 'en';
+  
+  const t = emailTranslations[validLocale as keyof typeof emailTranslations]?.siteVisit || emailTranslations.en.siteVisit;
+  const common = emailTranslations[validLocale as keyof typeof emailTranslations]?.common || emailTranslations.en.common;
+  
   return `
     <!DOCTYPE html>
     <html>
@@ -466,31 +475,31 @@ export const createSiteVisitApplicationTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <h1>New Site Visit Application</h1>
-          <p style="margin: 0; font-size: 18px;">A contractor wants to visit your property</p>
+          <h1>${t.title}</h1>
+          <p style="margin: 0; font-size: 18px;">${t.subtitle}</p>
         </div>
         
         <div class="content">
-          <p>Hello, <strong>${customerName}</strong></p>
+          <p>${typeof t.greeting === 'function' ? t.greeting(customerName) : t.greeting}</p>
           
-          <p>Good news! A contractor has applied for a site visit to your renovation project.</p>
+          <p>${t.intro}</p>
           
           <div class="info-box">
-            <h3 style="margin-top: 0; color: #4A90E2;">Contractor Information</h3>
+            <h3 style="margin-top: 0; color: #4A90E2;">${t.contractorInfo}</h3>
             <table class="info-table">
               <tr>
-                <td>Company Name</td>
+                <td>${t.companyName}</td>
                 <td><strong>${contractorInfo.company_name}</strong></td>
               </tr>
               ${contractorInfo.email ? `
               <tr>
-                <td>Email</td>
+                <td>${t.email}</td>
                 <td>${contractorInfo.email}</td>
               </tr>
               ` : ''}
               ${contractorInfo.phone ? `
               <tr>
-                <td>Phone</td>
+                <td>${t.phone}</td>
                 <td>${contractorInfo.phone}</td>
               </tr>
               ` : ''}
@@ -498,31 +507,38 @@ export const createSiteVisitApplicationTemplate = (
           </div>
           
           <div class="highlight-box">
-            <strong>Next Steps:</strong>
-            <p style="margin: 10px 0 0 0;">We will inform you of the contractor's scheduled site visit time one week prior to the visit date you requested through Canada Beaver.</p>
+            <strong>${t.nextStepsTitle}</strong>
+            <p style="margin: 10px 0 0 0;">${t.nextStepsText}</p>
           </div>
           
-          <p>Thank you for choosing our service!</p>
+          <p>${t.thanks}</p>
           
           <center>
             <a href="https://canadabeaver.pro/my-quotes" class="button">
-              View My Projects
+              ${t.viewProjects}
             </a>
           </center>
           
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-            If you have any questions, please contact us anytime at admin@canadabeaver.pro.
+            ${t.contactText}
           </p>
         </div>
         
         <div class="footer">
-          <p>This email was automatically sent by the Canada Beaver Platform.</p>
-          <p>© 2025 Canada Beaver. All rights reserved.</p>
+          <p>${common.autoSent}</p>
+          <p>${common.copyright}</p>
         </div>
       </div>
     </body>
     </html>
   `;
+};
+
+// ✅ 사이트 방문 신청 이메일 subject 가져오기 (다국어)
+export const getSiteVisitEmailSubject = (locale: string = 'en'): string => {
+  const supportedLocales = ['en', 'ko', 'zh'];
+  const validLocale = supportedLocales.includes(locale) ? locale : 'en';
+  return emailTranslations[validLocale as keyof typeof emailTranslations]?.siteVisit?.subject || emailTranslations.en.siteVisit.subject;
 };
 
 // ✅ 고객에게 보낼 견적서 제출 알림 이메일 템플릿 (PDF 다운로드 안내 추가)
