@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server'
 import { 
   sendEmail, 
   createSelectionEmailTemplate, 
-  createCustomerNotificationTemplate 
+  createCustomerNotificationTemplate,
+  getContractorSelectionEmailSubject,
+  getCustomerSelectionEmailSubject
 } from '@/lib/email/mailgun'
-import { emailTranslations } from '@/lib/email/email-translations'
 
 export async function POST(request: Request) {
   try {
@@ -31,10 +32,10 @@ export async function POST(request: Request) {
       throw new Error('Project not found')
     }
     
-    // 2. 고객 정보 가져오기 (preferred_locale 포함)
+    // 2. 고객 정보 가져오기 (preferred_language 포함)
     const { data: customer, error: customerError } = await supabase
       .from('users')
-      .select('first_name, last_name, email, phone, preferred_locale')
+      .select('first_name, last_name, email, phone, preferred_language')
       .eq('id', project.customer_id)
       .single()
     
@@ -43,8 +44,7 @@ export async function POST(request: Request) {
     }
     
     // 고객 언어 설정 (기본값: 'en')
-    const customerLocale = (customer.preferred_locale || 'en') as 'en' | 'ko' | 'zh'
-    const customerTranslations = emailTranslations[customerLocale]
+    const customerLocale = customer.preferred_language || 'en'
     
     // 3. 업체 정보 가져오기
     const { data: contractor, error: contractorError } = await supabase
@@ -57,10 +57,10 @@ export async function POST(request: Request) {
       throw new Error('Contractor not found')
     }
     
-    // 4. 업체 사용자 정보 가져오기 (이메일 + preferred_locale)
+    // 4. 업체 사용자 정보 가져오기 (이메일 + preferred_language)
     const { data: contractorUser, error: contractorUserError } = await supabase
       .from('users')
-      .select('email, preferred_locale')
+      .select('email, preferred_language')
       .eq('id', contractor.user_id)
       .single()
     
@@ -71,8 +71,7 @@ export async function POST(request: Request) {
     }
     
     // 업체 언어 설정 (기본값: 'en')
-    const contractorLocale = (contractorUser?.preferred_locale || 'en') as 'en' | 'ko' | 'zh'
-    const contractorTranslations = emailTranslations[contractorLocale]
+    const contractorLocale = contractorUser?.preferred_language || 'en'
     
     // 5. 선택된 견적서 정보 가져오기
     const { data: quote, error: quoteError } = await supabase
@@ -105,13 +104,13 @@ export async function POST(request: Request) {
     // 7. 업체에게 해당 언어로 이메일 발송 (고객 정보 포함)
     const contractorEmailResult = await sendEmail({
       to: contractorEmail,
-      subject: contractorTranslations.contractor.subject(customerName),
+      subject: getContractorSelectionEmailSubject(customerName, contractorLocale),
       html: createSelectionEmailTemplate(
         contractor.company_name,
         project,
         quote,
-        customer, // 고객 정보 전달
-        contractorLocale // 언어 설정 전달
+        customer,
+        contractorLocale
       )
     })
     
@@ -124,13 +123,13 @@ export async function POST(request: Request) {
     // 8. 고객에게 해당 언어로 이메일 발송
     const customerEmailResult = await sendEmail({
       to: customer.email,
-      subject: customerTranslations.customer.subject,
+      subject: getCustomerSelectionEmailSubject(customerLocale),
       html: createCustomerNotificationTemplate(
         customerName,
         contractor,
         project,
         quote,
-        customerLocale // 언어 설정 전달
+        customerLocale
       )
     })
     
