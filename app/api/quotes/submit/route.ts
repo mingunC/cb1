@@ -3,7 +3,7 @@ import { successResponse } from '@/lib/api/response'
 import { ApiErrors } from '@/lib/api/error'
 import { requireContractor } from '@/lib/api/auth'
 import { createAdminClient } from '@/lib/supabase/server-clients'
-import { sendEmail, createQuoteSubmissionTemplate } from '@/lib/email/mailgun'
+import { sendEmail, createQuoteSubmissionTemplate, getQuoteSubmissionEmailSubject } from '@/lib/email/mailgun'
 import { NextRequest } from 'next/server'
 
 const handler = createApiHandler({
@@ -148,9 +148,10 @@ const handler = createApiHandler({
 
       console.log('📋 Project info retrieved')
 
+      // ✅ 고객 정보 + preferred_language 가져오기
       const { data: customer, error: customerError } = await supabase
         .from('users')
-        .select('email, phone')
+        .select('email, phone, first_name, last_name, preferred_language')
         .eq('id', projectWithCustomer.customer_id)
         .single()
 
@@ -159,7 +160,10 @@ const handler = createApiHandler({
         throw new Error(customerError?.message || '고객 이메일 주소가 없습니다.')
       }
 
-      console.log('👤 Customer email retrieved:', customer.email)
+      // 고객 언어 설정 (기본값: 'en')
+      const customerLocale = customer.preferred_language || 'en'
+
+      console.log('👤 Customer email retrieved:', customer.email, 'locale:', customerLocale)
 
       const { data: contractorInfo, error: contractorError } = await supabase
         .from('contractors')
@@ -173,8 +177,12 @@ const handler = createApiHandler({
 
       console.log('🏢 Contractor info retrieved')
 
-      const customerName = customer.email.split('@')[0] || 'Customer'
+      // 고객 이름 생성
+      const customerName = customer.first_name && customer.last_name
+        ? `${customer.first_name} ${customer.last_name}`
+        : customer.email.split('@')[0] || 'Customer'
 
+      // ✅ 고객의 선호 언어로 이메일 템플릿 생성
       const emailHTML = createQuoteSubmissionTemplate(
         customerName,
         {
@@ -189,15 +197,19 @@ const handler = createApiHandler({
         },
         {
           price: parseFloat(price),
-          description: description || 'No additional details provided',
-        }
+          description: description || undefined,
+        },
+        customerLocale  // ✅ locale 전달
       )
 
-      console.log('📧 Sending email to:', customer.email)
+      // ✅ 고객의 선호 언어로 이메일 제목 가져오기
+      const emailSubject = getQuoteSubmissionEmailSubject(customerLocale)
+
+      console.log('📧 Sending email to:', customer.email, 'with locale:', customerLocale)
 
       const emailResult = await sendEmail({
         to: customer.email,
-        subject: 'New Quote Received for Your Project',
+        subject: emailSubject,
         html: emailHTML,
       })
 
