@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { sendEmail, createSiteVisitApplicationTemplate } from '@/lib/email/mailgun'
+import { sendEmail, createSiteVisitApplicationTemplate, getSiteVisitEmailSubject } from '@/lib/email/mailgun'
 
 export async function POST(request: Request) {
   try {
@@ -126,22 +126,30 @@ export async function POST(request: Request) {
       // Site visit is already created, so we continue
     }
     
-    // 4. Get customer information
+    // 4. Get customer information (including preferred_language for email locale)
     let customer = null
+    let customerLocale = 'en' // 기본값은 영어
     if (project) {
       const { data: customerData, error: customerError } = await supabase
         .from('users')
-        .select('first_name, last_name, email, phone')
+        .select('first_name, last_name, email, phone, preferred_language')
         .eq('id', project.customer_id)
         .single()
       
       customer = customerData
       
+      // 고객이 선호하는 언어 설정 가져오기
+      if (customer?.preferred_language) {
+        customerLocale = customer.preferred_language
+      }
+      
       if (process.env.NODE_ENV === 'development') {
         console.log('📧 Customer data retrieved:', {
           hasCustomer: !!customer,
           hasEmail: !!customer?.email,
-          email: customer?.email
+          email: customer?.email,
+          preferredLanguage: customer?.preferred_language,
+          locale: customerLocale
         })
       }
     }
@@ -160,7 +168,7 @@ export async function POST(request: Request) {
       })
     }
     
-    // 6. Send email notification to customer
+    // 6. Send email notification to customer (using customer's preferred language)
     let emailSent = false
     if (customer && contractor && project && customer.email) {
       try {
@@ -172,10 +180,12 @@ export async function POST(request: Request) {
           console.log('📧 Preparing to send email:', {
             to: customer.email,
             customerName: customerName,
-            contractorName: contractor.company_name
+            contractorName: contractor.company_name,
+            locale: customerLocale
           })
         }
         
+        // 고객의 선호 언어로 이메일 템플릿 생성
         const emailHTML = createSiteVisitApplicationTemplate(
           customerName,
           {
@@ -187,12 +197,16 @@ export async function POST(request: Request) {
             full_address: project.full_address,
             space_type: project.space_type,
             budget: project.budget
-          }
+          },
+          customerLocale  // 고객의 선호 언어 전달
         )
+        
+        // 고객의 선호 언어로 이메일 제목 가져오기
+        const emailSubject = getSiteVisitEmailSubject(customerLocale)
         
         const emailResult = await sendEmail({
           to: customer.email,
-          subject: '🏠 New Site Visit Application for Your Project',
+          subject: emailSubject,
           html: emailHTML,
           replyTo: 'support@canadabeaver.pro'
         })
@@ -201,6 +215,7 @@ export async function POST(request: Request) {
           emailSent = true
           if (process.env.NODE_ENV === 'development') console.log('✅ Site visit application email sent successfully:', {
             to: customer.email,
+            locale: customerLocale,
             messageId: (emailResult as any).messageId
           })
         } else {
