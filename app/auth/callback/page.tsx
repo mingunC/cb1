@@ -11,19 +11,22 @@ const messages = {
     processing: 'Processing...',
     signingIn: 'Signing in...',
     redirecting: 'Redirecting...',
-    loading: 'Loading...'
+    loading: 'Loading...',
+    settingUp: 'Setting up your account...'
   },
   ko: {
     processing: '처리 중...',
     signingIn: '로그인 완료 중...',
     redirecting: '리다이렉트 중...',
-    loading: '로딩 중...'
+    loading: '로딩 중...',
+    settingUp: '계정 설정 중...'
   },
   zh: {
     processing: '处理中...',
     signingIn: '登录中...',
     redirecting: '重定向中...',
-    loading: '加载中...'
+    loading: '加载中...',
+    settingUp: '设置账户中...'
   }
 }
 
@@ -71,6 +74,8 @@ function AuthCallbackContent() {
           return
         }
 
+        let userId: string | null = null
+
         if (code) {
           // PKCE flow: code를 세션으로 교환
           setStatus(t.signingIn)
@@ -84,6 +89,7 @@ function AuthCallbackContent() {
             return
           }
           
+          userId = data.user?.id || null
           console.log('✅ Session exchange successful:', data.user?.email)
         } else {
           // Implicit flow 또는 기존 세션 확인
@@ -96,7 +102,26 @@ function AuthCallbackContent() {
             return
           }
           
+          userId = session.user?.id || null
           console.log('✅ Existing session found:', session.user?.email)
+        }
+
+        // ✅ Google OAuth 로그인 시 users 테이블에 preferred_language 업데이트
+        if (userId) {
+          setStatus(t.settingUp)
+          console.log('🌐 Updating preferred_language to:', cookieLocale)
+          
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ preferred_language: cookieLocale })
+            .eq('id', userId)
+          
+          if (updateError) {
+            // 업데이트 실패해도 로그인은 계속 진행 (치명적이지 않음)
+            console.warn('⚠️ Failed to update preferred_language:', updateError.message)
+          } else {
+            console.log('✅ preferred_language updated successfully')
+          }
         }
 
         // 쿠키 삭제
