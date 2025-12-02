@@ -10,7 +10,8 @@ export const config = {
   matcher: [
     // Skip all internal paths (_next, api, auth)
     // Skip all files in public folder (images, icons, etc)
-    '/((?!api|_next|auth|favicon.ico|logo.png|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.ico|.*\\.webp).*)',
+    // Skip sitemap.xml and robots.txt for SEO
+    '/((?!api|_next|auth|sitemap.xml|robots.txt|favicon.ico|logo.png|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.ico|.*\\.webp).*)',
     // Include root
     '/',
     // Include all locale paths
