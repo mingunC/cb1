@@ -15,13 +15,17 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Canada Beaver',
-  description: '신뢰할 수 있는 전문 업체와 연결되어 완벽한 리노베이션을 경험하세요. 5단계 간편 견적 요청으로 시작하세요.',
+  title: 'Canada Beaver | 토론토 인테리어 & 레노베이션 전문 (Toronto Renovation)',
+  description: 'Canada Beaver는 토론토 및 GTA 지역 최고의 레노베이션 업체 연결 서비스입니다. 믿을 수 있는 인테리어 전문가를 만나보세요. Kitchen, Bathroom, Basement Renovation.',
   keywords: '리노베이션, 인테리어, 업체, 견적, 홈리모델링',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
     apple: '/favicon.svg',
+  },
+  openGraph: {
+    title: 'Canada Beaver - 토론토 인테리어의 모든 것',
+    description: '믿을 수 있는 레노베이션 업체를 찾고 계신가요? Canada Beaver에서 무료 견적을 받아보세요.',
   },
 }
 
