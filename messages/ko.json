@@ -276,7 +276,8 @@
       "appliedWithEmail": "현장방문 신청이 완료되었습니다! 고객에게 알림 이메일이 발송되었습니다.",
       "cancelled": "현장방문 신청이 취소되었습니다",
       "quoteSubmitted": "견적서가 제출되었습니다",
-      "biddingCancelled": "입찰이 취소되었습니다"
+      "biddingCancelled": "입찰이 취소되었습니다",
+      "siteVisitRequired": "⚠️ 현장방문을 완료해야 견적서를 제출할 수 있습니다."
     },
     "profile": {
       "title": "프로필 관리",

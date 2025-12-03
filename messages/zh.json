@@ -276,7 +276,8 @@
       "appliedWithEmail": "现场勘查申请已完成！已向客户发送通知电子邮件。",
       "cancelled": "现场勘查申请已取消",
       "quoteSubmitted": "报价已提交",
-      "biddingCancelled": "投标已取消"
+      "biddingCancelled": "投标已取消",
+      "siteVisitRequired": "⚠️ 必须完成现场访问才能提交报价。"
     },
     "profile": {
       "title": "个人资料管理",

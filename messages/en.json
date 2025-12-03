@@ -276,7 +276,8 @@
       "appliedWithEmail": "Site visit application completed! Notification email sent to customer.",
       "cancelled": "Site visit application cancelled",
       "quoteSubmitted": "Quote has been submitted",
-      "biddingCancelled": "Bidding cancelled"
+      "biddingCancelled": "Bidding cancelled",
+      "siteVisitRequired": "⚠️ You must complete the site visit before submitting a quote."
     },
     "profile": {
       "title": "Profile Management",
