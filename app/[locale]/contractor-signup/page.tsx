@@ -37,7 +37,6 @@ export default function ContractorSignupPage() {
   const supabase = createBrowserClient()
   const phoneInputRef = useRef<HTMLInputElement>(null)
 
-  // Format phone number to (XXX) XXX - XXXX format
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
     const limited = cleaned.slice(0, 10)
@@ -206,6 +205,27 @@ export default function ContractorSignupPage() {
         
         userId = data.user.id
         if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, userId:', userId)
+        
+        // ✅ 회원가입 후 바로 로그인하여 세션 활성화
+        if (process.env.NODE_ENV === 'development') console.log('🔐 자동 로그인 시도 중...')
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        })
+        
+        if (signInError) {
+          console.error('❌ 자동 로그인 실패:', signInError)
+          // 이메일 인증이 필요한 경우
+          if (signInError.message.includes('Email not confirmed')) {
+            setError(t('errors.emailNotConfirmed') || '이메일 인증이 필요합니다. 이메일을 확인해주세요.')
+            setIsLoading(false)
+            return
+          }
+          setError(signInError.message)
+          setIsLoading(false)
+          return
+        }
+        if (process.env.NODE_ENV === 'development') console.log('✅ 자동 로그인 성공')
       }
 
       if (isExistingUser && userId) {
@@ -231,7 +251,6 @@ export default function ContractorSignupPage() {
 
       if (process.env.NODE_ENV === 'development') console.log('📝 contractors 테이블에 저장 중...')
       
-      // ✅ specialties는 배열 직접 전달 (JSON.stringify 제거)
       const contractorData = {
         user_id: userId,
         company_name: formData.businessName,
