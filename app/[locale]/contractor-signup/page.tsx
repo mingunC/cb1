@@ -39,13 +39,9 @@ export default function ContractorSignupPage() {
 
   // Format phone number to (XXX) XXX - XXXX format
   const formatPhoneNumber = (value: string) => {
-    // Extract only digits
     const cleaned = value.replace(/\D/g, '')
-    
-    // Limit to 10 digits
     const limited = cleaned.slice(0, 10)
     
-    // Format as (XXX) XXX - XXXX
     if (limited.length === 0) {
       return ''
     } else if (limited.length <= 3) {
@@ -57,44 +53,32 @@ export default function ContractorSignupPage() {
     }
   }
 
-  // Handle phone number input change with cursor position management
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target
     const previousValue = formData.phone
     const inputValue = input.value
     const cursorPosition = input.selectionStart || 0
     
-    // Extract only digits
     const cleaned = inputValue.replace(/\D/g, '')
     const previousCleaned = previousValue.replace(/\D/g, '')
-    
-    // Check if it's a deletion (going backwards)
     const isDeletion = cleaned.length < previousCleaned.length
-    
-    // Apply formatting
     const formatted = formatPhoneNumber(inputValue)
-    
-    // Calculate cursor position: count digits before cursor
     const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
     
-    // Find position in formatted string
     let newCursorPosition = formatted.length
     let count = 0
     for (let i = 0; i < formatted.length; i++) {
       if (/\d/.test(formatted[i])) {
         count++
         if (count === beforeCursor) {
-          // If deletion, position after the digit; if insertion, position after format character
           newCursorPosition = isDeletion ? i + 1 : i + 1
           break
         }
       }
     }
     
-    // Update state
     setFormData(prev => ({ ...prev, phone: formatted }))
     
-    // Restore cursor position
     setTimeout(() => {
       if (phoneInputRef.current) {
         phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
@@ -102,13 +86,11 @@ export default function ContractorSignupPage() {
     }, 0)
   }
 
-  // Specialty options
   const specialtyOptions = [
     { value: 'residential', label: t('residential') },
     { value: 'commercial', label: t('commercial') }
   ]
 
-  // 현재 로그인 상태 확인
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
@@ -119,13 +101,11 @@ export default function ContractorSignupPage() {
           setCurrentUser(session.user)
           setIsExistingUser(true)
           
-          // 이메일 자동 입력
           setFormData(prev => ({
             ...prev,
             email: session.user.email || ''
           }))
           
-          // 이미 contractor인지 확인
           const { data: contractorData } = await supabase
             .from('contractors')
             .select('id')
@@ -164,14 +144,12 @@ export default function ContractorSignupPage() {
       isExistingUser
     })
 
-    // 입력 검증
     if (!formData.businessName || !formData.contactName || !formData.phone || !formData.address || formData.specialties.length === 0) {
       setError(t('validation.fillAllFields'))
       setIsLoading(false)
       return
     }
 
-    // 신규 회원가입인 경우 비밀번호 검증
     if (!isExistingUser) {
       if (formData.password !== formData.confirmPassword) {
         setError(t('validation.passwordsNotMatch'))
@@ -197,11 +175,9 @@ export default function ContractorSignupPage() {
     try {
       let userId = currentUser?.id
 
-      // 신규 회원가입인 경우
       if (!isExistingUser) {
         if (process.env.NODE_ENV === 'development') console.log('📝 신규 회원가입 진행 중...')
         
-        // ✅ metadata에 preferred_language와 user 정보 포함
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -210,7 +186,7 @@ export default function ContractorSignupPage() {
               first_name: formData.contactName.split(' ')[0] || formData.contactName,
               last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
               phone: formData.phone,
-              preferred_language: locale  // ✅ locale 저장
+              preferred_language: locale
             }
           }
         })
@@ -230,11 +206,8 @@ export default function ContractorSignupPage() {
         
         userId = data.user.id
         if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, userId:', userId)
-        
-        // trigger가 users 테이블에 자동으로 insert하므로 여기서는 건드리지 않음
       }
 
-      // ✅ 기존 사용자인 경우에만 users 테이블 업데이트 (본인 데이터만 가능)
       if (isExistingUser && userId) {
         if (process.env.NODE_ENV === 'development') console.log('📝 기존 사용자 - users 테이블 업데이트 중...')
         const { error: userError } = await supabase
@@ -250,7 +223,6 @@ export default function ContractorSignupPage() {
 
         if (userError) {
           console.error('❌ users 테이블 update 오류:', userError)
-          // users 업데이트 실패해도 contractor 등록은 진행
           console.warn('⚠️ users 테이블 업데이트 실패, contractor 등록 계속 진행')
         } else {
           if (process.env.NODE_ENV === 'development') console.log('✅ users 테이블 업데이트 완료')
@@ -258,7 +230,8 @@ export default function ContractorSignupPage() {
       }
 
       if (process.env.NODE_ENV === 'development') console.log('📝 contractors 테이블에 저장 중...')
-      // contractors 테이블에 업체 정보 저장
+      
+      // ✅ specialties는 배열 직접 전달 (JSON.stringify 제거)
       const contractorData = {
         user_id: userId,
         company_name: formData.businessName,
@@ -267,7 +240,7 @@ export default function ContractorSignupPage() {
         email: formData.email,
         address: formData.address,
         status: 'active',
-        specialties: JSON.stringify(formData.specialties), // JSONB를 위해 JSON.stringify 사용
+        specialties: formData.specialties,
         years_experience: 0,
         portfolio_count: 0,
         rating: 0.0,
@@ -289,7 +262,6 @@ export default function ContractorSignupPage() {
       if (process.env.NODE_ENV === 'development') console.log('✅ Contractor 등록 완료!')
       toast.success(t('registrationCompleted'))
       
-      // localStorage 캐시 업데이트
       localStorage.setItem('cached_user_type', 'contractor')
       localStorage.setItem('cached_user_name', formData.businessName)
       
@@ -324,7 +296,6 @@ export default function ContractorSignupPage() {
     }
   }
 
-  // 로딩 중
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -374,7 +345,6 @@ export default function ContractorSignupPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* 이미 로그인된 사용자 알림 */}
           {isExistingUser && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-start">
               <Check className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
@@ -395,11 +365,9 @@ export default function ContractorSignupPage() {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Business Information Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-900 border-b pb-2">{t('businessInfo')}</h3>
               
-              {/* Business name */}
               <div>
                 <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">
                   {t('businessName')} *
@@ -421,7 +389,6 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
 
-              {/* Contact name */}
               <div>
                 <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
                   {t('contactName')} *
@@ -443,7 +410,6 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
 
-              {/* Phone Number */}
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                   {t('phoneNumber')} *
@@ -466,7 +432,6 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
 
-              {/* Address */}
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                   {t('businessAddress')} *
@@ -488,7 +453,6 @@ export default function ContractorSignupPage() {
                 </div>
               </div>
 
-              {/* Specialties */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('specialties')} * {t('specialtiesNote')}
@@ -512,12 +476,10 @@ export default function ContractorSignupPage() {
               </div>
             </div>
 
-            {/* Account Information Section - Only for new users */}
             {!isExistingUser && (
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="text-lg font-medium text-gray-900">{t('accountInfo')}</h3>
                 
-                {/* Email */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     {t('email')} *
@@ -540,7 +502,6 @@ export default function ContractorSignupPage() {
                   </div>
                 </div>
 
-                {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     {t('password')} *
@@ -568,7 +529,6 @@ export default function ContractorSignupPage() {
                     </button>
                   </div>
                   
-                  {/* Password requirements */}
                   <div className="mt-2 space-y-1">
                     <div className="text-xs text-gray-600 font-medium mb-2">{t('passwordRequirements')}</div>
                     <div className="space-y-1">
@@ -596,7 +556,6 @@ export default function ContractorSignupPage() {
                   </div>
                 </div>
 
-                {/* Confirm password */}
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                     {t('confirmPassword')} *
@@ -649,7 +608,6 @@ export default function ContractorSignupPage() {
               </div>
             )}
 
-            {/* Submit */}
             <div>
               <button
                 type="submit"
