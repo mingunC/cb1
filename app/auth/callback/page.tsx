@@ -13,7 +13,8 @@ const messages = {
     redirecting: 'Redirecting...',
     loading: 'Loading...',
     settingUp: 'Setting up your account...',
-    savingContractor: 'Saving contractor info...'
+    savingContractor: 'Saving contractor info...',
+    checkingContractor: 'Checking contractor status...'
   },
   ko: {
     processing: '처리 중...',
@@ -21,7 +22,8 @@ const messages = {
     redirecting: '리다이렉트 중...',
     loading: '로딩 중...',
     settingUp: '계정 설정 중...',
-    savingContractor: '업체 정보 저장 중...'
+    savingContractor: '업체 정보 저장 중...',
+    checkingContractor: '업체 등록 상태 확인 중...'
   },
   zh: {
     processing: '处理中...',
@@ -29,7 +31,8 @@ const messages = {
     redirecting: '重定向中...',
     loading: '加载中...',
     settingUp: '设置账户中...',
-    savingContractor: '保存承包商信息...'
+    savingContractor: '保存承包商信息...',
+    checkingContractor: '检查承包商状态...'
   }
 }
 
@@ -129,90 +132,117 @@ function AuthCallbackContent() {
           }
         }
 
-        // ✅ 업체 회원가입인 경우: localStorage에서 임시 데이터 가져와서 contractors 테이블에 저장
+        // ✅ 업체 로그인/회원가입인 경우 처리
         if (authType === 'contractor' && userId) {
-          setStatus(t.savingContractor)
+          setStatus(t.checkingContractor)
           
+          // 이미 등록된 contractor인지 확인
+          const { data: existingContractor } = await supabase
+            .from('contractors')
+            .select('id, company_name')
+            .eq('user_id', userId)
+            .maybeSingle()
+          
+          if (existingContractor) {
+            // 이미 업체로 등록되어 있으면 → contractor 대시보드로
+            console.log('✅ Already registered as contractor:', existingContractor.company_name)
+            localStorage.setItem('cached_user_type', 'contractor')
+            localStorage.setItem('cached_user_name', existingContractor.company_name)
+            
+            // 쿠키 삭제
+            document.cookie = 'auth_locale=; path=/; max-age=0'
+            document.cookie = 'auth_type=; path=/; max-age=0'
+            
+            setStatus(t.redirecting)
+            router.push(`/${cookieLocale}/contractor`)
+            return
+          }
+          
+          // localStorage에 contractor_temp_data가 있는지 확인 (이메일 인증 후 돌아온 경우)
           const tempDataStr = localStorage.getItem('contractor_temp_data')
           
           if (tempDataStr) {
+            // 이메일 인증 후 돌아온 경우 → contractors 테이블에 저장
+            setStatus(t.savingContractor)
+            
             try {
               const tempData = JSON.parse(tempDataStr)
               console.log('📦 Found contractor temp data:', tempData)
               
-              // 이미 등록된 contractor인지 확인
-              const { data: existingContractor } = await supabase
-                .from('contractors')
-                .select('id')
-                .eq('user_id', userId)
-                .maybeSingle()
+              const contractorData = {
+                user_id: userId,
+                company_name: tempData.businessName,
+                contact_name: tempData.contactName,
+                phone: tempData.phone,
+                email: tempData.email || userEmail,
+                address: tempData.address,
+                status: 'active',
+                specialties: tempData.specialties,
+                years_experience: 0,
+                portfolio_count: 0,
+                rating: 0.0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
               
-              if (!existingContractor) {
-                // contractors 테이블에 저장
-                const contractorData = {
-                  user_id: userId,
-                  company_name: tempData.businessName,
-                  contact_name: tempData.contactName,
-                  phone: tempData.phone,
-                  email: tempData.email || userEmail,
-                  address: tempData.address,
-                  status: 'active',
-                  specialties: tempData.specialties,
-                  years_experience: 0,
-                  portfolio_count: 0,
-                  rating: 0.0,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                }
-                
-                console.log('📤 Saving contractor data:', contractorData)
-                
-                const { error: contractorError } = await supabase
-                  .from('contractors')
-                  .insert(contractorData)
-                
-                if (contractorError) {
-                  console.error('❌ Failed to save contractor:', contractorError)
-                } else {
-                  console.log('✅ Contractor saved successfully')
-                  
-                  // users 테이블에 user_type 업데이트
-                  await supabase
-                    .from('users')
-                    .update({ user_type: 'contractor' })
-                    .eq('id', userId)
-                  
-                  // localStorage 캐시 업데이트
-                  localStorage.setItem('cached_user_type', 'contractor')
-                  localStorage.setItem('cached_user_name', tempData.businessName)
-                }
+              console.log('📤 Saving contractor data:', contractorData)
+              
+              const { error: contractorError } = await supabase
+                .from('contractors')
+                .insert(contractorData)
+              
+              if (contractorError) {
+                console.error('❌ Failed to save contractor:', contractorError)
               } else {
-                console.log('ℹ️ Contractor already registered')
+                console.log('✅ Contractor saved successfully')
+                
+                // users 테이블에 user_type 업데이트
+                await supabase
+                  .from('users')
+                  .update({ user_type: 'contractor' })
+                  .eq('id', userId)
+                
+                // localStorage 캐시 업데이트
+                localStorage.setItem('cached_user_type', 'contractor')
+                localStorage.setItem('cached_user_name', tempData.businessName)
               }
               
               // 임시 데이터 삭제
               localStorage.removeItem('contractor_temp_data')
               
+              // 쿠키 삭제
+              document.cookie = 'auth_locale=; path=/; max-age=0'
+              document.cookie = 'auth_type=; path=/; max-age=0'
+              
+              setStatus(t.redirecting)
+              router.push(`/${cookieLocale}/contractor`)
+              return
+              
             } catch (parseError) {
               console.error('❌ Failed to parse contractor temp data:', parseError)
             }
           }
+          
+          // Google 로그인으로 처음 온 경우 → contractor-signup 페이지로 리다이렉트
+          console.log('➡️ Redirecting to contractor-signup for profile completion')
+          
+          // 쿠키 삭제
+          document.cookie = 'auth_locale=; path=/; max-age=0'
+          document.cookie = 'auth_type=; path=/; max-age=0'
+          
+          setStatus(t.redirecting)
+          router.push(`/${cookieLocale}/contractor-signup`)
+          return
         }
 
         // 쿠키 삭제
         document.cookie = 'auth_locale=; path=/; max-age=0'
         document.cookie = 'auth_type=; path=/; max-age=0'
 
-        // 리다이렉트
+        // 고객 로그인 → 홈으로 리다이렉트
         setStatus(t.redirecting)
-        
-        if (authType === 'contractor') {
-          console.log('➡️ Redirecting to contractor dashboard')
-          router.push(`/${cookieLocale}/contractor`)
-        } else {
-          console.log('➡️ Redirecting to home')
-          router.push(`/${cookieLocale}`)
-        }
+        console.log('➡️ Redirecting to home')
+        router.push(`/${cookieLocale}`)
         
       } catch (error) {
         console.error('❌ Unexpected callback error:', error)
