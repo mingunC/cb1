@@ -200,9 +200,19 @@ export default function ContractorSignupPage() {
       // 신규 회원가입인 경우
       if (!isExistingUser) {
         if (process.env.NODE_ENV === 'development') console.log('📝 신규 회원가입 진행 중...')
+        
+        // ✅ metadata에 preferred_language와 user 정보 포함
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            data: {
+              first_name: formData.contactName.split(' ')[0] || formData.contactName,
+              last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
+              phone: formData.phone,
+              preferred_language: locale  // ✅ locale 저장
+            }
+          }
         })
         
         if (signUpError) {
@@ -220,29 +230,32 @@ export default function ContractorSignupPage() {
         
         userId = data.user.id
         if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, userId:', userId)
+        
+        // trigger가 users 테이블에 자동으로 insert하므로 여기서는 건드리지 않음
       }
 
-      if (process.env.NODE_ENV === 'development') console.log('📝 users 테이블 업데이트 중...')
-      // users 테이블 업데이트 (upsert 사용)
-      const { error: userError } = await supabase
-        .from('users')
-        .upsert({
-          id: userId,
-          email: formData.email,
-          user_type: 'contractor',
-          first_name: formData.contactName.split(' ')[0] || formData.contactName,
-          last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
-          phone: formData.phone,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
-        })
+      // ✅ 기존 사용자인 경우에만 users 테이블 업데이트 (본인 데이터만 가능)
+      if (isExistingUser && userId) {
+        if (process.env.NODE_ENV === 'development') console.log('📝 기존 사용자 - users 테이블 업데이트 중...')
+        const { error: userError } = await supabase
+          .from('users')
+          .update({
+            user_type: 'contractor',
+            first_name: formData.contactName.split(' ')[0] || formData.contactName,
+            last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
+            phone: formData.phone,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId)
 
-      if (userError) {
-        console.error('❌ users 테이블 upsert 오류:', userError)
-        throw new Error(t('errors.failedToUpdate') + userError.message)
+        if (userError) {
+          console.error('❌ users 테이블 update 오류:', userError)
+          // users 업데이트 실패해도 contractor 등록은 진행
+          console.warn('⚠️ users 테이블 업데이트 실패, contractor 등록 계속 진행')
+        } else {
+          if (process.env.NODE_ENV === 'development') console.log('✅ users 테이블 업데이트 완료')
+        }
       }
-      if (process.env.NODE_ENV === 'development') console.log('✅ users 테이블 업데이트 완료')
 
       if (process.env.NODE_ENV === 'development') console.log('📝 contractors 테이블에 저장 중...')
       // contractors 테이블에 업체 정보 저장
