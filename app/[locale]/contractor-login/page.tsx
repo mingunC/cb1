@@ -9,10 +9,8 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
 
-// ✅ 동적 렌더링 강제 - 빌드 시점 pre-render 방지
 export const dynamic = 'force-dynamic'
 
-// 타입 정의
 interface FormData {
   email: string
   password: string
@@ -43,11 +41,9 @@ export default function ContractorLoginPage() {
   
   const router = useRouter()
   const supabase = createBrowserClient()
-  const checkingRef = useRef(false) // 중복 실행 방지
+  const checkingRef = useRef(false)
 
-  // 세션 체크 - 이미 로그인된 상태 확인
   useEffect(() => {
-    // 이미 체크 중이면 무시
     if (checkingRef.current) return
     
     const checkSession = async () => {
@@ -56,7 +52,6 @@ export default function ContractorLoginPage() {
       try {
         if (process.env.NODE_ENV === 'development') console.log('🔍 Checking session...')
         
-        // Timeout 추가 (5초)
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Session check timeout')), 5000)
         )
@@ -89,7 +84,6 @@ export default function ContractorLoginPage() {
     checkSession()
   }, [])
 
-  // 로그아웃 처리
   const handleLogout = async () => {
     setIsLoading(true)
     try {
@@ -113,13 +107,11 @@ export default function ContractorLoginPage() {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 유효성 검사
     if (!formData.email || !formData.password) {
       setError(t('validation.enterBothFields'))
       return
     }
 
-    // 이메일 형식 검사
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
       setError(t('validation.invalidEmail'))
@@ -130,7 +122,6 @@ export default function ContractorLoginPage() {
     setError('')
 
     try {
-      // 새로운 통합 로그인 함수 사용
       const result = await signIn({
         email: formData.email,
         password: formData.password
@@ -142,14 +133,12 @@ export default function ContractorLoginPage() {
         return
       }
 
-      // 업체 계정 확인
       if (result.userType !== 'contractor') {
         setError(t('errors.notContractorAccount'))
         setIsLoading(false)
         return
       }
 
-      // 로그인 성공
       if (process.env.NODE_ENV === 'development') console.log('Contractor login successful:', result.user?.email)
       toast.success(t('success.loggedInAs', { company: result.contractorData?.company_name }))
       router.push(`/${locale}/contractor`)
@@ -166,11 +155,9 @@ export default function ContractorLoginPage() {
     setError('')
 
     try {
-      // ✅ locale과 login type을 cookie에 저장 (query parameter 대신)
       document.cookie = `auth_locale=${locale}; path=/; max-age=300; SameSite=Lax`
       document.cookie = `auth_type=contractor; path=/; max-age=300; SameSite=Lax`
       
-      // ✅ redirectTo에서 query parameter 제거
       const redirectUrl = `${window.location.origin}/auth/callback`
       
       console.log('🔐 Google 로그인 시도 (contractor):', {
@@ -217,7 +204,6 @@ export default function ContractorLoginPage() {
       [name]: value
     }))
     
-    // 입력 시 에러 메시지 제거
     if (error) setError('')
   }, [error])
 
@@ -225,7 +211,6 @@ export default function ContractorLoginPage() {
     setShowPassword(prev => !prev)
   }, [])
 
-  // 세션 체크 중
   if (checkingSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
@@ -242,7 +227,6 @@ export default function ContractorLoginPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          {/* 뒤로가기 버튼 */}
           <div className="mb-6">
             <Link 
               href={`/${locale}`}
@@ -281,11 +265,20 @@ export default function ContractorLoginPage() {
                 </span>
               )}
               {currentUser.userType === 'customer' && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-sm text-yellow-800">
-                    {t('customerAccountWarning')}
-                  </p>
-                </div>
+                <>
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      {t('customerAccountWarning')}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/${locale}/contractor-signup`}
+                    className="mt-4 w-full inline-flex justify-center items-center py-2.5 px-4 border border-emerald-600 rounded-md text-sm font-medium text-emerald-600 bg-white hover:bg-emerald-50 transition-colors"
+                  >
+                    <Building2 className="h-4 w-4 mr-2" />
+                    {t('registerAsContractor') || '업체로 등록하기'}
+                  </Link>
+                </>
               )}
               {currentUser.userType === 'admin' && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -348,7 +341,6 @@ export default function ContractorLoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* 뒤로가기 버튼 */}
         <div className="mb-6">
           <Link 
             href={`/${locale}`}
@@ -384,7 +376,6 @@ export default function ContractorLoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
-          {/* 오류 메시지 */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
               <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
@@ -393,7 +384,6 @@ export default function ContractorLoginPage() {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* 이메일 입력 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 {t('email')}
@@ -417,7 +407,6 @@ export default function ContractorLoginPage() {
               </div>
             </div>
 
-            {/* 비밀번호 입력 */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 {t('password')}
@@ -454,7 +443,6 @@ export default function ContractorLoginPage() {
               </div>
             </div>
 
-            {/* 비밀번호 찾기 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -476,7 +464,6 @@ export default function ContractorLoginPage() {
               </div>
             </div>
 
-            {/* 로그인 버튼 */}
             <div>
               <button
                 type="submit"
@@ -494,7 +481,6 @@ export default function ContractorLoginPage() {
               </button>
             </div>
 
-            {/* 구분선 */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
@@ -504,7 +490,6 @@ export default function ContractorLoginPage() {
               </div>
             </div>
 
-            {/* Google 로그인 */}
             <div>
               <button
                 type="button"
