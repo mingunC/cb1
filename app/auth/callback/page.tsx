@@ -82,7 +82,6 @@ function AuthCallbackContent() {
         setStatus(t.signingIn)
 
         // ✅ Supabase가 URL의 code를 자동으로 처리하도록 getSession 호출
-        // getSession()은 URL에 code가 있으면 자동으로 exchangeCodeForSession을 수행함
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
@@ -101,22 +100,66 @@ function AuthCallbackContent() {
         
         const userId = session.user?.id || null
         const userEmail = session.user?.email || null
+        const userMetadata = session.user?.user_metadata || {}
         console.log('✅ Session found:', session.user?.email)
 
-        // ✅ users 테이블에 preferred_language 업데이트
+        // ✅ users 테이블에 레코드 확인 및 생성/업데이트
         if (userId) {
           setStatus(t.settingUp)
-          console.log('🌐 Updating preferred_language to:', cookieLocale)
+          console.log('🌐 Checking/creating user record with preferred_language:', cookieLocale)
           
-          const { error: updateError } = await supabase
+          // 먼저 users 테이블에 레코드가 있는지 확인
+          const { data: existingUser, error: checkError } = await supabase
             .from('users')
-            .update({ preferred_language: cookieLocale })
+            .select('id')
             .eq('id', userId)
+            .maybeSingle()
           
-          if (updateError) {
-            console.warn('⚠️ Failed to update preferred_language:', updateError.message)
+          if (checkError) {
+            console.warn('⚠️ Error checking user:', checkError.message)
+          }
+          
+          if (existingUser) {
+            // 레코드가 있으면 preferred_language만 업데이트
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ 
+                preferred_language: cookieLocale,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', userId)
+            
+            if (updateError) {
+              console.warn('⚠️ Failed to update preferred_language:', updateError.message)
+            } else {
+              console.log('✅ preferred_language updated successfully')
+            }
           } else {
-            console.log('✅ preferred_language updated successfully')
+            // 레코드가 없으면 새로 생성
+            console.log('📝 Creating new user record...')
+            
+            // Google 메타데이터에서 이름 추출
+            const firstName = userMetadata.given_name || userMetadata.full_name?.split(' ')[0] || userEmail?.split('@')[0] || 'User'
+            const lastName = userMetadata.family_name || userMetadata.full_name?.split(' ').slice(1).join(' ') || ''
+            
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert({
+                id: userId,
+                email: userEmail,
+                first_name: firstName,
+                last_name: lastName,
+                user_type: authType === 'contractor' ? 'contractor' : 'customer',
+                preferred_language: cookieLocale,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+            
+            if (insertError) {
+              console.error('❌ Failed to create user record:', insertError.message)
+            } else {
+              console.log('✅ User record created successfully')
+            }
           }
         }
 
