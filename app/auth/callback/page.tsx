@@ -12,21 +12,24 @@ const messages = {
     signingIn: 'Signing in...',
     redirecting: 'Redirecting...',
     loading: 'Loading...',
-    settingUp: 'Setting up your account...'
+    settingUp: 'Setting up your account...',
+    savingContractor: 'Saving contractor info...'
   },
   ko: {
     processing: '처리 중...',
     signingIn: '로그인 완료 중...',
     redirecting: '리다이렉트 중...',
     loading: '로딩 중...',
-    settingUp: '계정 설정 중...'
+    settingUp: '계정 설정 중...',
+    savingContractor: '업체 정보 저장 중...'
   },
   zh: {
     processing: '处理中...',
     signingIn: '登录中...',
     redirecting: '重定向中...',
     loading: '加载中...',
-    settingUp: '设置账户中...'
+    settingUp: '设置账户中...',
+    savingContractor: '保存承包商信息...'
   }
 }
 
@@ -75,6 +78,7 @@ function AuthCallbackContent() {
         }
 
         let userId: string | null = null
+        let userEmail: string | null = null
 
         if (code) {
           // PKCE flow: code를 세션으로 교환
@@ -90,6 +94,7 @@ function AuthCallbackContent() {
           }
           
           userId = data.user?.id || null
+          userEmail = data.user?.email || null
           console.log('✅ Session exchange successful:', data.user?.email)
         } else {
           // Implicit flow 또는 기존 세션 확인
@@ -103,10 +108,11 @@ function AuthCallbackContent() {
           }
           
           userId = session.user?.id || null
+          userEmail = session.user?.email || null
           console.log('✅ Existing session found:', session.user?.email)
         }
 
-        // ✅ Google OAuth 로그인 시 users 테이블에 preferred_language 업데이트
+        // ✅ users 테이블에 preferred_language 업데이트
         if (userId) {
           setStatus(t.settingUp)
           console.log('🌐 Updating preferred_language to:', cookieLocale)
@@ -117,10 +123,79 @@ function AuthCallbackContent() {
             .eq('id', userId)
           
           if (updateError) {
-            // 업데이트 실패해도 로그인은 계속 진행 (치명적이지 않음)
             console.warn('⚠️ Failed to update preferred_language:', updateError.message)
           } else {
             console.log('✅ preferred_language updated successfully')
+          }
+        }
+
+        // ✅ 업체 회원가입인 경우: localStorage에서 임시 데이터 가져와서 contractors 테이블에 저장
+        if (authType === 'contractor' && userId) {
+          setStatus(t.savingContractor)
+          
+          const tempDataStr = localStorage.getItem('contractor_temp_data')
+          
+          if (tempDataStr) {
+            try {
+              const tempData = JSON.parse(tempDataStr)
+              console.log('📦 Found contractor temp data:', tempData)
+              
+              // 이미 등록된 contractor인지 확인
+              const { data: existingContractor } = await supabase
+                .from('contractors')
+                .select('id')
+                .eq('user_id', userId)
+                .maybeSingle()
+              
+              if (!existingContractor) {
+                // contractors 테이블에 저장
+                const contractorData = {
+                  user_id: userId,
+                  company_name: tempData.businessName,
+                  contact_name: tempData.contactName,
+                  phone: tempData.phone,
+                  email: tempData.email || userEmail,
+                  address: tempData.address,
+                  status: 'active',
+                  specialties: tempData.specialties,
+                  years_experience: 0,
+                  portfolio_count: 0,
+                  rating: 0.0,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }
+                
+                console.log('📤 Saving contractor data:', contractorData)
+                
+                const { error: contractorError } = await supabase
+                  .from('contractors')
+                  .insert(contractorData)
+                
+                if (contractorError) {
+                  console.error('❌ Failed to save contractor:', contractorError)
+                } else {
+                  console.log('✅ Contractor saved successfully')
+                  
+                  // users 테이블에 user_type 업데이트
+                  await supabase
+                    .from('users')
+                    .update({ user_type: 'contractor' })
+                    .eq('id', userId)
+                  
+                  // localStorage 캐시 업데이트
+                  localStorage.setItem('cached_user_type', 'contractor')
+                  localStorage.setItem('cached_user_name', tempData.businessName)
+                }
+              } else {
+                console.log('ℹ️ Contractor already registered')
+              }
+              
+              // 임시 데이터 삭제
+              localStorage.removeItem('contractor_temp_data')
+              
+            } catch (parseError) {
+              console.error('❌ Failed to parse contractor temp data:', parseError)
+            }
           }
         }
 
@@ -160,7 +235,6 @@ function AuthCallbackContent() {
 }
 
 function LoadingFallback() {
-  // 기본 영어로 표시 (Suspense fallback에서는 cookie 접근 불가)
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-gray-50 to-emerald-50 flex items-center justify-center">
       <div className="text-center">
