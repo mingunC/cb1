@@ -69,6 +69,27 @@ const handler = createApiHandler({
       throw ApiErrors.badRequest('현재 프로젝트는 견적서 제출 단계가 아닙니다.')
     }
 
+    // ✅ 현장방문 완료 여부 확인 (필수 조건)
+    console.log('🔍 Checking site visit completion...')
+    const { data: siteVisit, error: siteVisitError } = await supabase
+      .from('site_visits')
+      .select('id, status')
+      .eq('project_id', projectId)
+      .eq('contractor_id', contractorId)
+      .eq('status', 'completed')
+      .maybeSingle()
+
+    if (siteVisitError) {
+      console.error('❌ Site visit check error:', siteVisitError)
+    }
+
+    if (!siteVisit) {
+      console.warn('⚠️ Site visit not completed for this contractor')
+      throw ApiErrors.badRequest('현장방문을 완료해야 견적서를 제출할 수 있습니다. (Site visit must be completed before submitting a quote.)')
+    }
+
+    console.log('✅ Site visit verified:', { siteVisitId: siteVisit.id })
+
     // ✅ 중복 견적서 확인
     console.log('🔍 Checking for existing quotes...')
     const { data: existingQuote } = await supabase
