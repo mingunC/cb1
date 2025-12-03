@@ -68,8 +68,7 @@ function AuthCallbackContent() {
       console.log('🔐 Auth callback processing:', { locale: cookieLocale, authType })
 
       try {
-        // URL에서 code 파라미터 확인
-        const code = searchParams.get('code')
+        // URL에서 error 파라미터 확인
         const errorParam = searchParams.get('error')
         const errorDescription = searchParams.get('error_description')
         
@@ -80,40 +79,29 @@ function AuthCallbackContent() {
           return
         }
 
-        let userId: string | null = null
-        let userEmail: string | null = null
+        setStatus(t.signingIn)
 
-        if (code) {
-          // PKCE flow: code를 세션으로 교환
-          setStatus(t.signingIn)
-          
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-          
-          if (error) {
-            console.error('❌ Session exchange error:', error)
-            const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
-            router.push(`${loginPath}?error=auth_failed`)
-            return
-          }
-          
-          userId = data.user?.id || null
-          userEmail = data.user?.email || null
-          console.log('✅ Session exchange successful:', data.user?.email)
-        } else {
-          // Implicit flow 또는 기존 세션 확인
-          const { data: { session }, error } = await supabase.auth.getSession()
-          
-          if (error || !session) {
-            console.error('❌ No session found:', error)
-            const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
-            router.push(`${loginPath}?error=no_session`)
-            return
-          }
-          
-          userId = session.user?.id || null
-          userEmail = session.user?.email || null
-          console.log('✅ Existing session found:', session.user?.email)
+        // ✅ Supabase가 URL의 code를 자동으로 처리하도록 getSession 호출
+        // getSession()은 URL에 code가 있으면 자동으로 exchangeCodeForSession을 수행함
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError)
+          const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
+          router.push(`${loginPath}?error=session_error`)
+          return
         }
+        
+        if (!session) {
+          console.error('❌ No session found')
+          const loginPath = authType === 'contractor' ? `/${cookieLocale}/contractor-login` : `/${cookieLocale}/login`
+          router.push(`${loginPath}?error=no_session`)
+          return
+        }
+        
+        const userId = session.user?.id || null
+        const userEmail = session.user?.email || null
+        console.log('✅ Session found:', session.user?.email)
 
         // ✅ users 테이블에 preferred_language 업데이트
         if (userId) {
