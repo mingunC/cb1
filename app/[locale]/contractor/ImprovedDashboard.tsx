@@ -452,14 +452,39 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     
     // 공간 타입 표시
     const getSpaceTypeLabel = () => {
-      const spaceLabels: Record<string, string> = {
+      // DB에 저장된 값(snake_case)을 번역 키(camelCase)로 변환
+      const spaceTypeMap: Record<string, string> = {
+        'detached_house': 'detachedHouse',
+        'town_house': 'townHouse',
+        'condo': 'condo',
+        'condo_apartment': 'condoApartment',
+        'semi_detached': 'semiDetached',
+        'commercial': 'commercial',
+        'apartment': 'apartment',
+        'house': 'house'
+      }
+      
+      const typeKey = spaceTypeMap[project.space_type] || project.space_type
+      
+      // 번역 시도
+      try {
+        const translationKey = `spaceTypes.${typeKey}` as any
+        const translated = t(translationKey)
+        if (translated && translated !== translationKey && !translated.startsWith('spaceTypes.')) {
+          return translated
+        }
+      } catch {}
+      
+      // Fallback labels (영어)
+      const fallbackLabels: Record<string, string> = {
         'detached_house': 'Detached House',
         'town_house': 'Town House',
         'condo': 'Condo',
         'semi_detached': 'Semi-Detached',
         'commercial': 'Commercial'
       }
-      return spaceLabels[project.space_type] || 'House'
+      
+      return fallbackLabels[project.space_type] || 'House'
     }
     
     // 예산 표시
