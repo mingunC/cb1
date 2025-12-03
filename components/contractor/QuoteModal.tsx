@@ -7,6 +7,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { Project } from '@/types/contractor'
 import { formatPrice } from '@/lib/contractor/projectHelpers'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface QuoteModalProps {
   isOpen: boolean
@@ -29,6 +30,7 @@ export default function QuoteModal({
   onSuccess 
 }: QuoteModalProps) {
   const router = useRouter()
+  const t = useTranslations('contractor.quoteModal')
   const [price, setPrice] = useState('')
   const [priceDisplay, setPriceDisplay] = useState('')
   const [detailedDescription, setDetailedDescription] = useState('')
@@ -279,7 +281,7 @@ export default function QuoteModal({
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold text-gray-800">
-                {mode === 'create' ? 'Create Quote' : 'Submitted Quote'}
+                {mode === 'create' ? t('createQuote') : t('submittedQuote')}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 {project.full_address}
@@ -303,7 +305,7 @@ export default function QuoteModal({
               <div>
                 <label htmlFor="price" className="flex items-center gap-3 mb-3">
                   <DollarSign className="h-5 w-5 text-amber-500" />
-                  <span className="text-md font-semibold text-gray-700">Total Quote Amount (CAD)</span>
+                  <span className="text-md font-semibold text-gray-700">{t('totalQuoteAmount')}</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
@@ -323,7 +325,7 @@ export default function QuoteModal({
               <div>
                 <label htmlFor="detailed-description" className="flex items-center gap-3 mb-3">
                   <FileText className="h-5 w-5 text-amber-500" />
-                  <span className="text-md font-semibold text-gray-700">Detailed Work Description</span>
+                  <span className="text-md font-semibold text-gray-700">{t('detailedWorkDescription')}</span>
                 </label>
                 <textarea
                   id="detailed-description"
@@ -331,7 +333,7 @@ export default function QuoteModal({
                   onChange={(e) => setDetailedDescription(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition resize-none"
                   rows={6}
-                  placeholder="Write work details that appeal to customers (Optional)"
+                  placeholder={t('workDescriptionPlaceholder')}
                 />
               </div>
 
@@ -344,9 +346,9 @@ export default function QuoteModal({
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-amber-800 mb-1">Important Notice</h3>
+                    <h3 className="text-sm font-semibold text-amber-800 mb-1">{t('importantNotice')}</h3>
                     <p className="text-sm text-amber-700">
-                      Once submitted, quotes <strong>cannot be modified or cancelled</strong>. Please review carefully before submitting.
+                      {t('noticeText')}
                     </p>
                   </div>
                 </div>
@@ -356,7 +358,7 @@ export default function QuoteModal({
               <div>
                 <label className="flex items-center gap-3 mb-3">
                   <Upload className="h-5 w-5 text-amber-500" />
-                  <span className="text-md font-semibold text-gray-700">Detailed Quote (PDF) *</span>
+                  <span className="text-md font-semibold text-gray-700">{t('detailedQuotePdf')} *</span>
                 </label>
                 
                 {/* 파일이 선택되지 않았을 때 */}
@@ -373,10 +375,10 @@ export default function QuoteModal({
                       <div className="flex flex-col items-center justify-center">
                         <Upload className="h-12 w-12 text-gray-400 mb-3" />
                         <p className="text-gray-700 font-semibold text-lg mb-1">
-                          Select a file or drag it here
+                          {t('selectFile')}
                         </p>
                         <p className="text-sm text-gray-500">
-                          PDF files only (Max 10MB)
+                          {t('pdfOnly')}
                         </p>
                       </div>
                     </label>
@@ -392,13 +394,13 @@ export default function QuoteModal({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                            <span className="text-sm font-semibold text-green-700">File Selected</span>
+                            <span className="text-sm font-semibold text-green-700">{t('fileSelected')}</span>
                           </div>
                           <p className="text-gray-900 font-semibold text-lg break-all mb-1" style={{ overflowWrap: 'anywhere' }}>
                             {pdfFile.name}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Size: {formatFileSize(pdfFile.size)}
+                            {t('fileSize')}: {formatFileSize(pdfFile.size)}
                           </p>
                         </div>
                       </div>
@@ -426,7 +428,7 @@ export default function QuoteModal({
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-green-500 text-green-700 rounded-md hover:bg-green-50 transition-colors cursor-pointer font-medium text-sm"
                       >
                         <Upload className="h-4 w-4" />
-                        Select Different File
+                        {t('selectDifferentFile')}
                       </label>
                     </div>
                   </div>
@@ -441,7 +443,7 @@ export default function QuoteModal({
                   disabled={isSubmitting}
                   className="px-6 py-2 text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -451,9 +453,9 @@ export default function QuoteModal({
                   {isSubmitting ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      Submitting...
+                      {t('submitting')}
                     </>
-                  ) : 'Submit Quote'}
+                  ) : t('submitQuote')}
                 </button>
               </div>
             </form>
@@ -461,7 +463,7 @@ export default function QuoteModal({
             /* View Mode */
             <div className="space-y-6">
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-500 mb-1">Quote Amount</h3>
+                <h3 className="text-sm font-semibold text-gray-500 mb-1">{t('quoteAmount')}</h3>
                 <p className="text-3xl font-bold text-amber-600">
                   ${priceDisplay || '0'} <span className="text-xl font-medium text-gray-500">CAD</span>
                 </p>
@@ -470,7 +472,7 @@ export default function QuoteModal({
               <div className="space-y-4">
                 {detailedDescription && (
                   <div>
-                    <h3 className="text-md font-semibold text-gray-800 mb-2">Detailed Work Description</h3>
+                    <h3 className="text-md font-semibold text-gray-800 mb-2">{t('detailedWorkDescription')}</h3>
                     <p className="text-gray-600 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-md">
                       {detailedDescription}
                     </p>
@@ -480,7 +482,7 @@ export default function QuoteModal({
 
               {project.contractor_quote?.pdf_url && (
                 <div>
-                  <h3 className="text-md font-semibold text-gray-800 mb-2">Attached Detailed Quote</h3>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">{t('attachedQuote')}</h3>
                   <button
                     onClick={async () => {
                       if (!project.contractor_quote?.pdf_url) return
@@ -493,7 +495,7 @@ export default function QuoteModal({
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm"
                   >
                     <FileText className="h-4 w-4 text-red-500" />
-                    {project.contractor_quote.pdf_filename || 'Download Quote'}
+                    {project.contractor_quote.pdf_filename || t('downloadQuote')}
                   </button>
                 </div>
               )}
@@ -503,7 +505,7 @@ export default function QuoteModal({
                   onClick={handleClose}
                   className="px-6 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-semibold"
                 >
-                  Close
+                  {t('close')}
                 </button>
               </div>
             </div>

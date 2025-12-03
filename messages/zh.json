@@ -295,6 +295,28 @@
     "confirmations": {
       "cancelSiteVisit": "您确定要取消现场勘查申请吗？",
       "cancelBidding": "您确定要取消投标吗？您提交的报价将被删除。"
+    },
+    "quoteModal": {
+      "createQuote": "创建报价",
+      "submittedQuote": "已提交报价",
+      "totalQuoteAmount": "总报价金额 (CAD)",
+      "detailedWorkDescription": "详细工作描述",
+      "workDescriptionPlaceholder": "写下吸引客户的工作详情（选填）",
+      "importantNotice": "重要提示",
+      "noticeText": "提交后，报价无法修改或取消。请在提交前仔细检查。",
+      "detailedQuotePdf": "详细报价 (PDF)",
+      "selectFile": "选择文件或拖放到此处",
+      "pdfOnly": "仅限PDF文件（最大10MB）",
+      "fileSelected": "已选择文件",
+      "fileSize": "大小",
+      "selectDifferentFile": "选择其他文件",
+      "cancel": "取消",
+      "submitQuote": "提交报价",
+      "submitting": "提交中...",
+      "quoteAmount": "报价金额",
+      "attachedQuote": "附件详细报价",
+      "downloadQuote": "下载报价",
+      "close": "关闭"
     }
   },
   "contractorSignup": {

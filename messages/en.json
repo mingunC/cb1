@@ -295,6 +295,28 @@
     "confirmations": {
       "cancelSiteVisit": "Are you sure you want to cancel the site visit application?",
       "cancelBidding": "Are you sure you want to cancel the bidding? Your submitted quote will be deleted."
+    },
+    "quoteModal": {
+      "createQuote": "Create Quote",
+      "submittedQuote": "Submitted Quote",
+      "totalQuoteAmount": "Total Quote Amount (CAD)",
+      "detailedWorkDescription": "Detailed Work Description",
+      "workDescriptionPlaceholder": "Write work details that appeal to customers (Optional)",
+      "importantNotice": "Important Notice",
+      "noticeText": "Once submitted, quotes cannot be modified or cancelled. Please review carefully before submitting.",
+      "detailedQuotePdf": "Detailed Quote (PDF)",
+      "selectFile": "Select a file or drag it here",
+      "pdfOnly": "PDF files only (Max 10MB)",
+      "fileSelected": "File Selected",
+      "fileSize": "Size",
+      "selectDifferentFile": "Select Different File",
+      "cancel": "Cancel",
+      "submitQuote": "Submit Quote",
+      "submitting": "Submitting...",
+      "quoteAmount": "Quote Amount",
+      "attachedQuote": "Attached Detailed Quote",
+      "downloadQuote": "Download Quote",
+      "close": "Close"
     }
   },
   "contractorSignup": {
