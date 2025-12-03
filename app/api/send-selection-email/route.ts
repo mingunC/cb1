@@ -57,12 +57,29 @@ export async function POST(request: Request) {
       throw new Error('Contractor not found')
     }
     
+    console.log('🔍 Contractor info:', {
+      contractorId,
+      user_id: contractor.user_id,
+      company_name: contractor.company_name
+    })
+    
     // 4. 업체 사용자 정보 가져오기 (이메일 + preferred_language)
     const { data: contractorUser, error: contractorUserError } = await supabase
       .from('users')
       .select('email, preferred_language')
       .eq('id', contractor.user_id)
       .single()
+    
+    // ✅ 디버깅: 업체 사용자 조회 결과 로그
+    console.log('🔍 Contractor user lookup:', {
+      user_id: contractor.user_id,
+      found: !!contractorUser,
+      error: contractorUserError?.message || null,
+      contractorUser: contractorUser ? {
+        email: contractorUser.email,
+        preferred_language: contractorUser.preferred_language
+      } : null
+    })
     
     const contractorEmail = contractorUser?.email || contractor.email
     
@@ -72,6 +89,14 @@ export async function POST(request: Request) {
     
     // 업체 언어 설정 (기본값: 'en')
     const contractorLocale = contractorUser?.preferred_language || 'en'
+    
+    // ✅ 디버깅: 최종 언어 설정 로그
+    console.log('🌐 Language settings:', {
+      contractorLocale,
+      customerLocale,
+      contractorUserPreferredLanguage: contractorUser?.preferred_language,
+      customerPreferredLanguage: customer.preferred_language
+    })
     
     // 5. 선택된 견적서 정보 가져오기
     const { data: quote, error: quoteError } = await supabase
