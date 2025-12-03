@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, Phone, MapPin, Check } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, Phone, MapPin, Check, CheckCircle } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
@@ -22,6 +22,8 @@ export default function ContractorSignupPage() {
   const [error, setError] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isExistingUser, setIsExistingUser] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -174,17 +176,31 @@ export default function ContractorSignupPage() {
     try {
       let userId = currentUser?.id
 
+      // 신규 회원가입인 경우 - 이메일 인증 필요
       if (!isExistingUser) {
         if (process.env.NODE_ENV === 'development') console.log('📝 신규 회원가입 진행 중...')
+        
+        // 업체 정보를 localStorage에 임시 저장 (이메일 인증 후 사용)
+        const contractorTempData = {
+          businessName: formData.businessName,
+          contactName: formData.contactName,
+          phone: formData.phone,
+          address: formData.address,
+          specialties: formData.specialties,
+          email: formData.email
+        }
+        localStorage.setItem('contractor_temp_data', JSON.stringify(contractorTempData))
         
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: {
               first_name: formData.contactName.split(' ')[0] || formData.contactName,
               last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
               phone: formData.phone,
+              user_type: 'contractor',
               preferred_language: locale
             }
           }
@@ -203,31 +219,20 @@ export default function ContractorSignupPage() {
           return
         }
         
-        userId = data.user.id
-        if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, userId:', userId)
+        // locale 정보를 cookie에 저장 (auth callback에서 사용)
+        document.cookie = `auth_locale=${locale}; path=/; max-age=3600`
+        document.cookie = `auth_type=contractor; path=/; max-age=3600`
         
-        // ✅ 회원가입 후 바로 로그인하여 세션 활성화
-        if (process.env.NODE_ENV === 'development') console.log('🔐 자동 로그인 시도 중...')
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password
-        })
+        if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, 이메일 인증 필요')
         
-        if (signInError) {
-          console.error('❌ 자동 로그인 실패:', signInError)
-          // 이메일 인증이 필요한 경우
-          if (signInError.message.includes('Email not confirmed')) {
-            setError(t('errors.emailNotConfirmed') || '이메일 인증이 필요합니다. 이메일을 확인해주세요.')
-            setIsLoading(false)
-            return
-          }
-          setError(signInError.message)
-          setIsLoading(false)
-          return
-        }
-        if (process.env.NODE_ENV === 'development') console.log('✅ 자동 로그인 성공')
+        // 이메일 인증 안내 화면 표시
+        setUserEmail(formData.email)
+        setEmailSent(true)
+        setIsLoading(false)
+        return
       }
 
+      // 기존 사용자인 경우 - 바로 contractors 테이블에 저장
       if (isExistingUser && userId) {
         if (process.env.NODE_ENV === 'development') console.log('📝 기존 사용자 - users 테이블 업데이트 중...')
         const { error: userError } = await supabase
@@ -247,44 +252,44 @@ export default function ContractorSignupPage() {
         } else {
           if (process.env.NODE_ENV === 'development') console.log('✅ users 테이블 업데이트 완료')
         }
+
+        if (process.env.NODE_ENV === 'development') console.log('📝 contractors 테이블에 저장 중...')
+        
+        const contractorData = {
+          user_id: userId,
+          company_name: formData.businessName,
+          contact_name: formData.contactName,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          status: 'active',
+          specialties: formData.specialties,
+          years_experience: 0,
+          portfolio_count: 0,
+          rating: 0.0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+
+        if (process.env.NODE_ENV === 'development') console.log('📤 contractors 테이블 데이터:', contractorData)
+
+        const { error: contractorError } = await supabase
+          .from('contractors')
+          .insert(contractorData)
+
+        if (contractorError) {
+          console.error('❌ contractors 테이블 insert 오류:', contractorError)
+          throw new Error(t('errors.failedToSave') + contractorError.message)
+        }
+
+        if (process.env.NODE_ENV === 'development') console.log('✅ Contractor 등록 완료!')
+        toast.success(t('registrationCompleted'))
+        
+        localStorage.setItem('cached_user_type', 'contractor')
+        localStorage.setItem('cached_user_name', formData.businessName)
+        
+        router.push(`/${locale}/contractor`)
       }
-
-      if (process.env.NODE_ENV === 'development') console.log('📝 contractors 테이블에 저장 중...')
-      
-      const contractorData = {
-        user_id: userId,
-        company_name: formData.businessName,
-        contact_name: formData.contactName,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        status: 'active',
-        specialties: formData.specialties,
-        years_experience: 0,
-        portfolio_count: 0,
-        rating: 0.0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-
-      if (process.env.NODE_ENV === 'development') console.log('📤 contractors 테이블 데이터:', contractorData)
-
-      const { error: contractorError } = await supabase
-        .from('contractors')
-        .insert(contractorData)
-
-      if (contractorError) {
-        console.error('❌ contractors 테이블 insert 오류:', contractorError)
-        throw new Error(t('errors.failedToSave') + contractorError.message)
-      }
-
-      if (process.env.NODE_ENV === 'development') console.log('✅ Contractor 등록 완료!')
-      toast.success(t('registrationCompleted'))
-      
-      localStorage.setItem('cached_user_type', 'contractor')
-      localStorage.setItem('cached_user_name', formData.businessName)
-      
-      router.push(`/${locale}/contractor`)
       
     } catch (err: any) {
       console.error('❌ Signup error:', err)
@@ -321,6 +326,54 @@ export default function ContractorSignupPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">{t('checkingAuth')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 이메일 인증 안내 화면
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                {t('checkYourEmail') || '이메일을 확인해주세요'}
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                {t('verificationEmailSent') || '인증 이메일이 발송되었습니다'}
+              </p>
+              <p className="mt-1 text-sm font-medium text-gray-900">
+                {userEmail}
+              </p>
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>📧 {t('nextStep') || '다음 단계:'}</strong> {t('clickVerificationLink') || '이메일의 인증 링크를 클릭하세요'}
+                </p>
+              </div>
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-md p-4">
+                <p className="text-sm text-green-800">
+                  <strong>💡 {t('tip') || '팁:'}</strong> {t('contractorVerificationTip') || '인증 완료 후 자동으로 업체 등록이 진행됩니다'}
+                </p>
+              </div>
+              <div className="mt-6 space-y-2 text-sm text-gray-600">
+                <p>• {t('checkSpamFolder') || '스팸 폴더도 확인해주세요'}</p>
+                <p>• {t('linkExpiry') || '링크는 24시간 동안 유효합니다'}</p>
+              </div>
+              <div className="mt-8">
+                <Link 
+                  href={`/${locale}/contractor-login`}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                >
+                  {t('returnToLogin') || '로그인 페이지로 돌아가기'}
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
