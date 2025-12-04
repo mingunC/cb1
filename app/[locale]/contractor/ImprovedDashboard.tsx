@@ -418,8 +418,8 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     const statusInfo = getStatusInfo()
     const StatusIcon = statusInfo.icon
     
-    // ✅ 현장방문 완료 여부 확인 - 프로젝트가 bidding 상태면 이미 현장방문 완료로 간주
-    const isSiteVisitCompleted = project.site_visit_application?.status === 'completed' || project.status === 'bidding'
+    // ✅ 현장방문 신청이 있어야만 견적 제출 가능 (프로젝트가 bidding이면 신청만 있으면 OK)
+    const canSubmitQuote = !!project.site_visit_application && (project.site_visit_application.status === 'completed' || project.status === 'bidding')
     
     // 고객 이름 표시
     const getCustomerName = () => {
@@ -739,9 +739,9 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                   <div className="flex flex-col gap-2">
                     <button 
                       onClick={() => handleJoinBidding(project)}
-                      disabled={!isSiteVisitCompleted}
+                      disabled={!canSubmitQuote}
                       className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                        isSiteVisitCompleted
+                        canSubmitQuote
                           ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
@@ -749,7 +749,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
                       <FileText className="w-4 h-4" />
                       {t('contractor.actions.joinBidding')}
                     </button>
-                    {!isSiteVisitCompleted && (
+                    {!canSubmitQuote && (
                       <p className="text-xs text-red-500">
                         {t('contractor.messages.siteVisitRequired')}
                       </p>
