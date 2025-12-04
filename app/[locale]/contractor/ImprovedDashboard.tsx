@@ -418,8 +418,8 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
     const statusInfo = getStatusInfo()
     const StatusIcon = statusInfo.icon
     
-    // 현장방문 완료 여부 확인
-    const isSiteVisitCompleted = project.site_visit_application?.status === 'completed'
+    // ✅ 현장방문 완료 여부 확인 - 프로젝트가 bidding 상태면 이미 현장방문 완료로 간주
+    const isSiteVisitCompleted = project.site_visit_application?.status === 'completed' || project.status === 'bidding'
     
     // 고객 이름 표시
     const getCustomerName = () => {
