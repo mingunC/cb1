@@ -69,26 +69,28 @@ const handler = createApiHandler({
       throw ApiErrors.badRequest('현재 프로젝트는 견적서 제출 단계가 아닙니다.')
     }
 
-    // ✅ 현장방문 완료 여부 확인 (필수 조건)
-    console.log('🔍 Checking site visit completion...')
+    // ✅ 현장방문 신청 여부 확인 (프로젝트가 bidding이면 이미 현장방문 완료로 간주)
+    // 테이블: site_visit_applications (site_visits 아님!)
+    console.log('🔍 Checking site visit application...')
     const { data: siteVisit, error: siteVisitError } = await supabase
-      .from('site_visits')
-      .select('id, status')
+      .from('site_visit_applications')
+      .select('id, status, is_cancelled')
       .eq('project_id', projectId)
       .eq('contractor_id', contractorId)
-      .eq('status', 'completed')
+      .eq('is_cancelled', false)
       .maybeSingle()
 
     if (siteVisitError) {
       console.error('❌ Site visit check error:', siteVisitError)
     }
 
+    // 현장방문 신청이 없으면 에러 (프로젝트가 bidding이면 신청만 있으면 OK)
     if (!siteVisit) {
-      console.warn('⚠️ Site visit not completed for this contractor')
-      throw ApiErrors.badRequest('현장방문을 완료해야 견적서를 제출할 수 있습니다. (Site visit must be completed before submitting a quote.)')
+      console.warn('⚠️ No site visit application for this contractor')
+      throw ApiErrors.badRequest('현장방문을 신청해야 견적서를 제출할 수 있습니다. (You must apply for a site visit before submitting a quote.)')
     }
 
-    console.log('✅ Site visit verified:', { siteVisitId: siteVisit.id })
+    console.log('✅ Site visit application verified:', { siteVisitId: siteVisit.id, status: siteVisit.status })
 
     // ✅ 중복 견적서 확인
     console.log('🔍 Checking for existing quotes...')
