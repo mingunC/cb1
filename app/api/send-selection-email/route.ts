@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server-clients'
 import { NextResponse } from 'next/server'
 import { 
   sendEmail, 
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
       )
     }
     
-    const supabase = await createClient()
+    // ✅ Admin client 사용 (RLS 우회하여 preferred_language 조회 가능)
+    const supabase = createAdminClient()
     
     // 1. 프로젝트 정보 가져오기
     const { data: project, error: projectError } = await supabase
@@ -40,8 +41,16 @@ export async function POST(request: Request) {
       .single()
     
     if (customerError || !customer) {
+      console.error('❌ Customer fetch error:', customerError)
       throw new Error('Customer not found')
     }
+    
+    // ✅ 디버깅: 고객 정보 로그
+    console.log('👤 Customer info:', {
+      customer_id: project.customer_id,
+      email: customer.email,
+      preferred_language: customer.preferred_language
+    })
     
     // 고객 언어 설정 (기본값: 'en')
     const customerLocale = customer.preferred_language || 'en'
