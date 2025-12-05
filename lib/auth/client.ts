@@ -1,9 +1,10 @@
 import { createBrowserClient } from '@/lib/supabase/clients'
 import type { AuthCredentials, AuthResult } from '@/types'
-import { getRedirectPath, getUserProfile, mapAuthErrorMessage } from './utils'
+import { getRedirectPath, getUserProfile, mapAuthErrorCode } from './utils'
 
 /**
  * Sign in using user-provided credentials (client-side).
+ * Returns error codes instead of translated messages for i18n support.
  */
 export async function signIn(credentials: AuthCredentials): Promise<AuthResult> {
   const supabase = createBrowserClient()
@@ -15,16 +16,16 @@ export async function signIn(credentials: AuthCredentials): Promise<AuthResult> 
     })
 
     if (error) {
-      return { success: false, error: mapAuthErrorMessage(error.message) }
+      return { success: false, error: mapAuthErrorCode(error.message) }
     }
 
     if (!data.user) {
-      return { success: false, error: '로그인에 실패했습니다.' }
+      return { success: false, error: 'loginFailed' }
     }
 
     const profileResult = await getUserProfile(supabase, data.user.id)
     if (!profileResult.success) {
-      return { success: false, error: profileResult.error || '사용자 정보를 불러올 수 없습니다.' }
+      return { success: false, error: profileResult.error || 'profileQueryFailed' }
     }
 
     return {
@@ -38,7 +39,7 @@ export async function signIn(credentials: AuthCredentials): Promise<AuthResult> 
     console.error('Unexpected error during login:', error)
     return {
       success: false,
-      error: '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      error: 'unexpectedError',
     }
   }
 }
@@ -90,13 +91,12 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
 
     if (error) {
       console.error('Sign out error:', error)
-      return { success: false, error: '로그아웃 중 오류가 발생했습니다.' }
+      return { success: false, error: 'logoutFailed' }
     }
 
     return { success: true }
   } catch (error) {
     console.error('Unexpected sign out error:', error)
-    return { success: false, error: '로그아웃 중 오류가 발생했습니다.' }
+    return { success: false, error: 'logoutFailed' }
   }
 }
-
