@@ -9,6 +9,8 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, User, Phone, CheckCirc
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { toast } from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
+import LanguageSelector from '@/components/LanguageSelector'
+import { SupportedLanguage, determineEmailLanguage } from '@/lib/utils/emailLanguage'
 
 export default function SignupPage() {
   const t = useTranslations('signup')
@@ -21,6 +23,8 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [preferredLanguages, setPreferredLanguages] = useState<SupportedLanguage[]>(['en'])
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -34,16 +38,24 @@ export default function SignupPage() {
   const phoneInputRef = useRef<HTMLInputElement>(null)
   const supabase = createBrowserClient()
 
-  // ✅ Google OAuth 로그인 함수 - locale 정보를 cookie에 저장
+  // ✅ Google OAuth 로그인 함수 - 언어 선택 후 진행
   const handleGoogleSignUp = async () => {
+    // 언어가 선택되지 않았으면 선택 UI 표시
+    if (preferredLanguages.length === 0) {
+      setError(t('validation.selectLanguage') || 'Please select at least one preferred language')
+      return
+    }
+
     setIsLoading(true)
     setError('')
     let hasError = false
 
     try {
-      // locale 정보를 cookie에 저장 (auth callback에서 사용)
-      document.cookie = `auth_locale=${locale}; path=/; max-age=3600`
+      // 언어 정보를 cookie에 저장 (auth callback에서 사용)
+      const emailLang = determineEmailLanguage(preferredLanguages)
+      document.cookie = `auth_locale=${emailLang}; path=/; max-age=3600`
       document.cookie = `auth_type=customer; path=/; max-age=3600`
+      document.cookie = `auth_preferred_languages=${JSON.stringify(preferredLanguages)}; path=/; max-age=3600`
       
       const { data, error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -129,6 +141,13 @@ export default function SignupPage() {
     setIsLoading(true)
     setError('')
 
+    // Language selection check
+    if (preferredLanguages.length === 0) {
+      setError(t('validation.selectLanguage') || 'Please select at least one preferred language')
+      setIsLoading(false)
+      return
+    }
+
     // Password confirmation
     if (formData.password !== formData.confirmPassword) {
       setError(t('validation.passwordsNotMatch'))
@@ -161,7 +180,10 @@ export default function SignupPage() {
     try {
       if (process.env.NODE_ENV === 'development') console.log('🚀 Starting signup process...')
       
-      // 회원가입 시도 (user metadata에 추가 정보 저장 - locale 포함)
+      // 이메일 발송 언어 결정
+      const emailLanguage = determineEmailLanguage(preferredLanguages)
+      
+      // 회원가입 시도 (user metadata에 추가 정보 저장 - preferred_languages 배열 포함)
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -172,7 +194,8 @@ export default function SignupPage() {
             last_name: formData.lastName,
             phone: formData.mobileNumber,
             user_type: 'customer',
-            preferred_language: locale  // ✅ locale 정보 추가
+            preferred_language: emailLanguage,
+            preferred_languages: preferredLanguages
           }
         }
       })
@@ -181,7 +204,8 @@ export default function SignupPage() {
         userId: data.user?.id, 
         email: data.user?.email,
         emailConfirmed: data.user?.email_confirmed_at,
-        locale: locale,
+        preferredLanguages,
+        emailLanguage,
         error 
       })
       
@@ -192,12 +216,10 @@ export default function SignupPage() {
       }
       
       if (data.user) {
-        // Database trigger가 자동으로 users 테이블에 레코드를 생성합니다
-        // 추가 정보는 이메일 확인 후 업데이트됩니다
-        
         // locale 정보를 cookie에 저장 (auth callback에서 사용)
-        document.cookie = `auth_locale=${locale}; path=/; max-age=3600`
+        document.cookie = `auth_locale=${emailLanguage}; path=/; max-age=3600`
         document.cookie = `auth_type=customer; path=/; max-age=3600`
+        document.cookie = `auth_preferred_languages=${JSON.stringify(preferredLanguages)}; path=/; max-age=3600`
         
         if (process.env.NODE_ENV === 'development') console.log('✅ User created successfully - database trigger will handle users table')
         if (process.env.NODE_ENV === 'development') console.log('📧 Email confirmation required - showing confirmation screen')
@@ -300,10 +322,20 @@ export default function SignupPage() {
             </div>
           )}
 
+          {/* 언어 선택 - Google 회원가입 전에 필수 */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <LanguageSelector
+              selectedLanguages={preferredLanguages}
+              onChange={setPreferredLanguages}
+              locale={locale}
+              required
+            />
+          </div>
+
           <button
             type="button"
             onClick={handleGoogleSignUp}
-            disabled={isLoading}
+            disabled={isLoading || preferredLanguages.length === 0}
             className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
           >
             <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
@@ -538,7 +570,7 @@ export default function SignupPage() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || preferredLanguages.length === 0}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (

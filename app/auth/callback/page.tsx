@@ -46,7 +46,7 @@ function AuthCallbackContent() {
     const handleCallback = async () => {
       const supabase = createBrowserClient()
       
-      // cookie에서 locale과 auth type 읽기
+      // cookie에서 locale, auth type, preferred_languages 읽기
       const getCookie = (name: string) => {
         const value = `; ${document.cookie}`
         const parts = value.split(`; ${name}=`)
@@ -56,6 +56,16 @@ function AuthCallbackContent() {
       
       const cookieLocale = getCookie('auth_locale') || 'en'
       const authType = getCookie('auth_type') || 'customer'
+      const preferredLanguagesStr = getCookie('auth_preferred_languages')
+      
+      let preferredLanguages: string[] = ['en']
+      try {
+        if (preferredLanguagesStr) {
+          preferredLanguages = JSON.parse(decodeURIComponent(preferredLanguagesStr))
+        }
+      } catch (e) {
+        console.warn('Failed to parse preferred_languages cookie:', e)
+      }
       
       // locale 상태 설정
       setLocale(cookieLocale)
@@ -65,7 +75,7 @@ function AuthCallbackContent() {
       
       setStatus(t.processing)
       
-      console.log('🔐 Auth callback processing:', { locale: cookieLocale, authType })
+      console.log('🔐 Auth callback processing:', { locale: cookieLocale, authType, preferredLanguages })
 
       try {
         // URL에서 error 파라미터 확인
@@ -103,10 +113,10 @@ function AuthCallbackContent() {
         const userMetadata = session.user?.user_metadata || {}
         console.log('✅ Session found:', session.user?.email)
 
-        // ✅ users 테이블에 레코드 확인 및 생성/업데이트
+        // ✅ users 테이블에 레코드 확인 및 생성/업데이트 (preferred_languages 배열 포함)
         if (userId) {
           setStatus(t.settingUp)
-          console.log('🌐 Checking/creating user record with preferred_language:', cookieLocale)
+          console.log('🌐 Checking/creating user record with preferred_languages:', preferredLanguages)
           
           // 먼저 users 테이블에 레코드가 있는지 확인
           const { data: existingUser, error: checkError } = await supabase
@@ -120,19 +130,20 @@ function AuthCallbackContent() {
           }
           
           if (existingUser) {
-            // 레코드가 있으면 preferred_language만 업데이트
+            // 레코드가 있으면 preferred_languages 업데이트
             const { error: updateError } = await supabase
               .from('users')
               .update({ 
                 preferred_language: cookieLocale,
+                preferred_languages: preferredLanguages,
                 updated_at: new Date().toISOString()
               })
               .eq('id', userId)
             
             if (updateError) {
-              console.warn('⚠️ Failed to update preferred_language:', updateError.message)
+              console.warn('⚠️ Failed to update preferred_languages:', updateError.message)
             } else {
-              console.log('✅ preferred_language updated successfully')
+              console.log('✅ preferred_languages updated successfully')
             }
           } else {
             // 레코드가 없으면 새로 생성
@@ -151,6 +162,7 @@ function AuthCallbackContent() {
                 last_name: lastName,
                 user_type: authType === 'contractor' ? 'contractor' : 'customer',
                 preferred_language: cookieLocale,
+                preferred_languages: preferredLanguages,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               })
@@ -183,6 +195,7 @@ function AuthCallbackContent() {
             // 쿠키 삭제
             document.cookie = 'auth_locale=; path=/; max-age=0'
             document.cookie = 'auth_type=; path=/; max-age=0'
+            document.cookie = 'auth_preferred_languages=; path=/; max-age=0'
             
             setStatus(t.redirecting)
             router.push(`/${cookieLocale}/contractor`)
@@ -209,6 +222,7 @@ function AuthCallbackContent() {
                 address: tempData.address,
                 status: 'active',
                 specialties: tempData.specialties,
+                preferred_languages: tempData.preferredLanguages || preferredLanguages,
                 years_experience: 0,
                 portfolio_count: 0,
                 rating: 0.0,
@@ -230,7 +244,10 @@ function AuthCallbackContent() {
                 // users 테이블에 user_type 업데이트
                 await supabase
                   .from('users')
-                  .update({ user_type: 'contractor' })
+                  .update({ 
+                    user_type: 'contractor',
+                    preferred_languages: tempData.preferredLanguages || preferredLanguages
+                  })
                   .eq('id', userId)
                 
                 // localStorage 캐시 업데이트
@@ -244,6 +261,7 @@ function AuthCallbackContent() {
               // 쿠키 삭제
               document.cookie = 'auth_locale=; path=/; max-age=0'
               document.cookie = 'auth_type=; path=/; max-age=0'
+              document.cookie = 'auth_preferred_languages=; path=/; max-age=0'
               
               setStatus(t.redirecting)
               router.push(`/${cookieLocale}/contractor`)
@@ -260,6 +278,7 @@ function AuthCallbackContent() {
           // 쿠키 삭제
           document.cookie = 'auth_locale=; path=/; max-age=0'
           document.cookie = 'auth_type=; path=/; max-age=0'
+          document.cookie = 'auth_preferred_languages=; path=/; max-age=0'
           
           setStatus(t.redirecting)
           router.push(`/${cookieLocale}/contractor-signup`)
@@ -269,6 +288,7 @@ function AuthCallbackContent() {
         // 쿠키 삭제
         document.cookie = 'auth_locale=; path=/; max-age=0'
         document.cookie = 'auth_type=; path=/; max-age=0'
+        document.cookie = 'auth_preferred_languages=; path=/; max-age=0'
 
         // 고객 로그인 → 홈으로 리다이렉트
         setStatus(t.redirecting)

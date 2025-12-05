@@ -9,6 +9,8 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Building2, User, Phone
 import { createBrowserClient } from '@/lib/supabase/clients'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
+import LanguageSelector from '@/components/LanguageSelector'
+import { SupportedLanguage, determineEmailLanguage } from '@/lib/utils/emailLanguage'
 
 export default function ContractorSignupPage() {
   const t = useTranslations('contractorSignup')
@@ -24,6 +26,7 @@ export default function ContractorSignupPage() {
   const [isExistingUser, setIsExistingUser] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [preferredLanguages, setPreferredLanguages] = useState<SupportedLanguage[]>(['en'])
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -92,6 +95,54 @@ export default function ContractorSignupPage() {
     { value: 'commercial', label: t('commercial') }
   ]
 
+  // ✅ Google OAuth 로그인 함수
+  const handleGoogleSignUp = async () => {
+    // 언어가 선택되지 않았으면 에러
+    if (preferredLanguages.length === 0) {
+      setError(t('validation.selectLanguage') || 'Please select at least one preferred language')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+    let hasError = false
+
+    try {
+      // 언어 정보를 cookie에 저장
+      const emailLang = determineEmailLanguage(preferredLanguages)
+      document.cookie = `auth_locale=${emailLang}; path=/; max-age=3600`
+      document.cookie = `auth_type=contractor; path=/; max-age=3600`
+      document.cookie = `auth_preferred_languages=${JSON.stringify(preferredLanguages)}; path=/; max-age=3600`
+      
+      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      })
+
+      if (googleError) {
+        console.error('Google signup error:', googleError)
+        setError(t('errors.googleSignupFailed') || 'Google signup failed')
+        toast.error(t('errors.googleSignupFailed') || 'Google signup failed')
+        hasError = true
+      }
+    } catch (error) {
+      console.error('Google sign up error:', error)
+      setError(t('errors.googleSignupFailed') || 'Google signup failed')
+      toast.error(t('errors.googleSignupFailed') || 'Google signup failed')
+      hasError = true
+    } finally {
+      if (hasError) {
+        setIsLoading(false)
+      }
+    }
+  }
+
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
@@ -142,8 +193,16 @@ export default function ContractorSignupPage() {
       businessName: formData.businessName,
       contactName: formData.contactName,
       specialties: formData.specialties,
+      preferredLanguages,
       isExistingUser
     })
+
+    // Language selection check
+    if (preferredLanguages.length === 0) {
+      setError(t('validation.selectLanguage') || 'Please select at least one preferred language')
+      setIsLoading(false)
+      return
+    }
 
     if (!formData.businessName || !formData.contactName || !formData.phone || !formData.address || formData.specialties.length === 0) {
       setError(t('validation.fillAllFields'))
@@ -175,6 +234,7 @@ export default function ContractorSignupPage() {
 
     try {
       let userId = currentUser?.id
+      const emailLanguage = determineEmailLanguage(preferredLanguages)
 
       // 신규 회원가입인 경우 - 이메일 인증 필요
       if (!isExistingUser) {
@@ -187,7 +247,8 @@ export default function ContractorSignupPage() {
           phone: formData.phone,
           address: formData.address,
           specialties: formData.specialties,
-          email: formData.email
+          email: formData.email,
+          preferredLanguages
         }
         localStorage.setItem('contractor_temp_data', JSON.stringify(contractorTempData))
         
@@ -201,7 +262,8 @@ export default function ContractorSignupPage() {
               last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
               phone: formData.phone,
               user_type: 'contractor',
-              preferred_language: locale
+              preferred_language: emailLanguage,
+              preferred_languages: preferredLanguages
             }
           }
         })
@@ -220,8 +282,9 @@ export default function ContractorSignupPage() {
         }
         
         // locale 정보를 cookie에 저장 (auth callback에서 사용)
-        document.cookie = `auth_locale=${locale}; path=/; max-age=3600`
+        document.cookie = `auth_locale=${emailLanguage}; path=/; max-age=3600`
         document.cookie = `auth_type=contractor; path=/; max-age=3600`
+        document.cookie = `auth_preferred_languages=${JSON.stringify(preferredLanguages)}; path=/; max-age=3600`
         
         if (process.env.NODE_ENV === 'development') console.log('✅ 회원가입 완료, 이메일 인증 필요')
         
@@ -242,6 +305,8 @@ export default function ContractorSignupPage() {
             first_name: formData.contactName.split(' ')[0] || formData.contactName,
             last_name: formData.contactName.split(' ').slice(1).join(' ') || '',
             phone: formData.phone,
+            preferred_language: emailLanguage,
+            preferred_languages: preferredLanguages,
             updated_at: new Date().toISOString()
           })
           .eq('id', userId)
@@ -264,6 +329,7 @@ export default function ContractorSignupPage() {
           address: formData.address,
           status: 'active',
           specialties: formData.specialties,
+          preferred_languages: preferredLanguages,
           years_experience: 0,
           portfolio_count: 0,
           rating: 0.0,
@@ -434,6 +500,45 @@ export default function ContractorSignupPage() {
               <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-red-600">{error}</span>
             </div>
+          )}
+
+          {/* 언어 선택 - 회원가입 전에 필수 */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <LanguageSelector
+              selectedLanguages={preferredLanguages}
+              onChange={setPreferredLanguages}
+              locale={locale}
+              required
+            />
+          </div>
+
+          {/* Google 회원가입 버튼 (신규 사용자만) */}
+          {!isExistingUser && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleSignUp}
+                disabled={isLoading || preferredLanguages.length === 0}
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+              >
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.05-4.71 1.05-3.62 0-6.69-2.44-7.79-5.72H.65v2.86C2.36 19.08 5.89 23 12 23z" />
+                  <path fill="#FBBC05" d="M4.21 14.28c-.28-.82-.44-1.69-.44-2.61 0-.92.16-1.79.44-2.61V6.2H.65C.24 7.01 0 7.99 0 9s.24 1.99.65 2.8l3.56 2.48z" />
+                  <path fill="#EA4335" d="M12 4.75c2.04 0 3.87.7 5.31 2.07l3.99-3.99C19.46 1.09 16.97 0 12 0 5.89 0 2.36 3.92.65 6.2l3.56 2.48C5.31 7.19 8.38 4.75 12 4.75z" />
+                </svg>
+                {t('signUpWithGoogle') || 'Sign up with Google'}
+              </button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">{t('orSignUpWithEmail') || 'Or sign up with email'}</span>
+                </div>
+              </div>
+            </>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -683,7 +788,7 @@ export default function ContractorSignupPage() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || preferredLanguages.length === 0}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
