@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server-clients'
 import { sendEmail } from '@/lib/email/mailgun'
+import { emailTranslations } from '@/lib/email/email-translations'
+
+// 유효한 locale 검증
+function getValidLocale(locale: string | null | undefined): 'en' | 'ko' | 'zh' {
+  if (locale === 'ko' || locale === 'zh') return locale
+  return 'en'
+}
 
 // 수수료 비율 계산 함수
 function calculateCommissionRate(quoteAmount: number): number {
@@ -220,6 +227,153 @@ WHERE qr.id = '${projectId}';</code></pre>
   }
 }
 
+// ✅ 고객에게 프로젝트 시작 이메일 생성 (다국어)
+function createCustomerProjectStartEmail(
+  customerName: string,
+  contractorName: string,
+  spaceType: string,
+  address: string,
+  locale: 'en' | 'ko' | 'zh'
+): string {
+  const t = emailTranslations[locale].projectStart
+  const common = emailTranslations[locale].common
+  
+  const nextStepsHtml = t.customerNextSteps.map((step: string) => `<li>${step}</li>`).join('')
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; }
+        .info-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .highlight { background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0; font-size: 32px;">${t.customerTitle}</h1>
+          <p style="margin: 10px 0 0 0; font-size: 18px;">${t.customerSubtitle}</p>
+        </div>
+        
+        <div class="content">
+          <p>${typeof t.customerGreeting === 'function' ? t.customerGreeting(customerName) : `Hello, <strong>${customerName}</strong>`}</p>
+          
+          <div class="highlight">
+            <h3 style="margin-top: 0; color: #d97706;">${t.customerHighlightTitle}</h3>
+            <p style="margin-bottom: 0;">${t.customerHighlightText}</p>
+          </div>
+
+          <div class="info-box">
+            <h3 style="color: #667eea; margin-top: 0;">${t.projectInfo}</h3>
+            <p style="margin: 10px 0;"><strong>${t.selectedContractor}:</strong> ${contractorName}</p>
+            <p style="margin: 10px 0;"><strong>${t.projectType}:</strong> ${spaceType}</p>
+            <p style="margin: 10px 0;"><strong>${t.address}:</strong> ${address}</p>
+          </div>
+          
+          <div class="info-box">
+            <h3 style="color: #667eea; margin-top: 0;">${t.nextStepsTitle}</h3>
+            <ul style="padding-left: 20px;">
+              ${nextStepsHtml}
+            </ul>
+          </div>
+
+          <div class="highlight">
+            <p style="margin: 0;">${t.customerTip}</p>
+          </div>
+          
+          <p style="margin-top: 30px; text-align: center;">
+            <strong>${t.customerWish}</strong>
+          </p>
+          
+          <p style="text-align: center;">
+            ${common.thanks}<br>
+            <strong>${common.team}</strong>
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p>${common.copyright}</p>
+          <p>${common.questionsFooter}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}
+
+// ✅ 업체에게 프로젝트 시작 이메일 생성 (다국어)
+function createContractorProjectStartEmail(
+  contractorName: string,
+  customerName: string,
+  spaceType: string,
+  address: string,
+  startDate: string,
+  locale: 'en' | 'ko' | 'zh'
+): string {
+  const t = emailTranslations[locale].projectStart
+  const common = emailTranslations[locale].common
+  
+  const nextStepsHtml = t.contractorNextSteps.map((step: string) => `<li>${step}</li>`).join('')
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #28a745; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; }
+        .info-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>${t.contractorTitle}</h1>
+          <p style="margin: 0;">${t.contractorSubtitle}</p>
+        </div>
+        
+        <div class="content">
+          <p>${typeof t.contractorGreeting === 'function' ? t.contractorGreeting(contractorName) : `Hello, <strong>${contractorName}</strong>`}</p>
+          
+          <div class="info-box">
+            <h3 style="color: #28a745; margin-top: 0;">${t.contractorHighlightTitle}</h3>
+            <p>${typeof t.contractorConfirmed === 'function' ? t.contractorConfirmed(customerName) : `<strong>${customerName}</strong> has confirmed the project start.`}</p>
+            <p style="margin: 15px 0;">📋 ${t.projectType}: ${spaceType}</p>
+            <p style="margin: 15px 0;">📍 ${t.address}: ${address}</p>
+            <p style="margin: 15px 0;">📅 ${t.startDate}: ${startDate}</p>
+          </div>
+          
+          <p><strong>${t.nextStepsTitle}:</strong></p>
+          <ul>
+            ${nextStepsHtml}
+          </ul>
+          
+          <p style="margin-top: 30px;">${t.contractorWish}</p>
+          
+          <p>
+            ${common.thanks}<br>
+            <strong>${common.team}</strong>
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p>${common.copyright}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -236,6 +390,9 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerClient()
+    // ✅ Admin client for accessing preferred_language (bypass RLS)
+    const adminClient = createAdminClient()
+    
     if (process.env.NODE_ENV === 'development') console.log('✅ Supabase client created')
 
     // 1. 현재 프로젝트 상태 확인
@@ -354,7 +511,7 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV === 'development') console.log('📌 Contractor ID:', currentProject.selected_contractor_id)
     const { data: contractorInfo, error: contractorError } = await supabase
       .from('contractors')
-      .select('company_name, contact_name, email')
+      .select('company_name, contact_name, email, user_id')
       .eq('id', currentProject.selected_contractor_id)
       .single()
 
@@ -370,11 +527,23 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // ✅ 업체 사용자의 preferred_language 조회 (Admin client 사용)
+    let contractorLocale: 'en' | 'ko' | 'zh' = 'en'
+    if (contractorInfo?.user_id) {
+      const { data: contractorUser } = await adminClient
+        .from('users')
+        .select('preferred_language')
+        .eq('id', contractorInfo.user_id)
+        .single()
+      
+      contractorLocale = getValidLocale(contractorUser?.preferred_language)
+      console.log('🌐 Contractor locale:', contractorLocale)
+    }
+
     // 7. 선정된 견적 정보 조회 - Admin client 사용
     if (process.env.NODE_ENV === 'development') console.log('🔍 Fetching selected quote info...')
     if (process.env.NODE_ENV === 'development') console.log('📌 Quote ID:', currentProject.selected_quote_id)
     
-    const adminClient = createAdminClient()
     let selectedQuote = null
     
     // 먼저 quote_id로 조회
@@ -455,11 +624,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 9. 고객 정보 조회
+    // 9. 고객 정보 조회 (Admin client로 preferred_language 포함)
     if (process.env.NODE_ENV === 'development') console.log('🔍 Fetching customer info...')
-    const { data: customerInfo, error: customerError } = await supabase
+    const { data: customerInfo, error: customerError } = await adminClient
       .from('users')
-      .select('first_name, last_name, email')
+      .select('first_name, last_name, email, preferred_language')
       .eq('id', currentProject.customer_id)
       .single()
 
@@ -470,85 +639,33 @@ export async function POST(request: NextRequest) {
     }
 
     const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim() || 'Customer'
+    const customerLocale = getValidLocale(customerInfo?.preferred_language)
+    
+    console.log('🌐 Language settings:', {
+      customerLocale,
+      contractorLocale,
+      customerPreferredLanguage: customerInfo?.preferred_language,
+    })
 
-    // 10. 고객에게 프로젝트 시작 축하 이메일 발송
+    // 10. 고객에게 프로젝트 시작 축하 이메일 발송 (다국어)
     if (customerInfo?.email) {
       try {
-        if (process.env.NODE_ENV === 'development') console.log('📧 Sending congratulations email to customer...')
+        if (process.env.NODE_ENV === 'development') console.log('📧 Sending congratulations email to customer in', customerLocale)
+        const t = emailTranslations[customerLocale].projectStart
+        
         await sendEmail({
           to: customerInfo.email,
-          subject: '🎉 Congratulations! Your Project Has Started',
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; }
-                .info-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                .highlight { background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px; }
-                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1 style="margin: 0; font-size: 32px;">🎉 Congratulations!</h1>
-                  <p style="margin: 10px 0 0 0; font-size: 18px;">Your renovation project has officially started</p>
-                </div>
-                
-                <div class="content">
-                  <p>Hello, <strong>${customerName}</strong></p>
-                  
-                  <div class="highlight">
-                    <h3 style="margin-top: 0; color: #d97706;">✨ Your Project Has Officially Started!</h3>
-                    <p style="margin-bottom: 0;">The transformation of your dream space begins now.</p>
-                  </div>
-
-                  <div class="info-box">
-                    <h3 style="color: #667eea; margin-top: 0;">📋 Project Information</h3>
-                    <p style="margin: 10px 0;"><strong>Selected Contractor:</strong> ${contractorInfo?.company_name || 'Contractor'}</p>
-                    <p style="margin: 10px 0;"><strong>Project Type:</strong> ${currentProject.space_type}</p>
-                    <p style="margin: 10px 0;"><strong>Address:</strong> ${currentProject.full_address}</p>
-                  </div>
-                  
-                  <div class="info-box">
-                    <h3 style="color: #667eea; margin-top: 0;">👷 Next Steps</h3>
-                    <ul style="padding-left: 20px;">
-                      <li>Confirm construction preparation details</li>
-                      <li>Regular progress updates</li>
-                      <li>Final inspection upon completion</li>
-                    </ul>
-                  </div>
-
-                  <div class="highlight">
-                    <p style="margin: 0;"><strong>💡 Tip:</strong> Please communicate regularly with the contractor if you have any questions or changes!</p>
-                  </div>
-                  
-                  <p style="margin-top: 30px; text-align: center;">
-                    <strong>We wish you a successful project completion!</strong>
-                  </p>
-                  
-                  <p style="text-align: center;">
-                    Thank you,<br>
-                    <strong>Canada Beaver Team</strong>
-                  </p>
-                </div>
-                
-                <div class="footer">
-                  <p>© 2025 Canada Beaver. All rights reserved.</p>
-                  <p>If you have any questions, please feel free to contact us.</p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `
+          subject: t.customerSubject,
+          html: createCustomerProjectStartEmail(
+            customerName,
+            contractorInfo?.company_name || 'Contractor',
+            currentProject.space_type,
+            currentProject.full_address,
+            customerLocale
+          )
         })
         
-        if (process.env.NODE_ENV === 'development') console.log('✅ Congratulations email sent to customer')
+        console.log('✅ Email sent to customer:', customerInfo.email, 'in', customerLocale)
       } catch (emailError: any) {
         console.error('⚠️ Customer email failed (process continues):', emailError.message)
       }
@@ -556,71 +673,31 @@ export async function POST(request: NextRequest) {
       if (process.env.NODE_ENV === 'development') console.log('ℹ️ No customer email to send')
     }
 
-    // 11. 업체에게 프로젝트 시작 알림 이메일 발송
+    // 11. 업체에게 프로젝트 시작 알림 이메일 발송 (다국어)
     if (contractorInfo?.email) {
       try {
-        if (process.env.NODE_ENV === 'development') console.log('📧 Sending notification email to contractor...')
+        if (process.env.NODE_ENV === 'development') console.log('📧 Sending notification email to contractor in', contractorLocale)
+        const t = emailTranslations[contractorLocale].projectStart
+        
+        const startDateFormatted = new Date().toLocaleDateString(
+          contractorLocale === 'ko' ? 'ko-KR' : contractorLocale === 'zh' ? 'zh-CN' : 'en-US',
+          { year: 'numeric', month: 'long', day: 'numeric' }
+        )
+        
         await sendEmail({
           to: contractorInfo.email,
-          subject: '🚀 Project Started',
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #28a745; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none; }
-                .info-box { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>🚀 Project Started!</h1>
-                  <p style="margin: 0;">The customer has confirmed the project start</p>
-                </div>
-                
-                <div class="content">
-                  <p>Hello, <strong>${contractorInfo.company_name}</strong></p>
-                  
-                  <div class="info-box">
-                    <h3 style="color: #28a745; margin-top: 0;">🎉 The Project Has Officially Started</h3>
-                    <p><strong>${customerName}</strong> has confirmed the project start.</p>
-                    <p style="margin: 15px 0;">📋 Project Type: ${currentProject.space_type}</p>
-                    <p style="margin: 15px 0;">📍 Address: ${currentProject.full_address}</p>
-                    <p style="margin: 15px 0;">📅 Start Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  </div>
-                  
-                  <p><strong>Next Steps:</strong></p>
-                  <ul>
-                    <li>Final confirmation of construction schedule</li>
-                    <li>Commission due within 3 days of signing.</li>
-                    <li>Prepare necessary materials and workforce</li>
-                    <li>Regular progress updates</li>
-                    <li>Final inspection upon completion</li>
-                  </ul>
-                  
-                  <p style="margin-top: 30px;">We wish you a successful project completion!</p>
-                  
-                  <p>
-                    Thank you,<br>
-                    <strong>Canada Beaver Team</strong>
-                  </p>
-                </div>
-                
-                <div class="footer">
-                  <p>© 2025 Canada Beaver. All rights reserved.</p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `
+          subject: t.contractorSubject,
+          html: createContractorProjectStartEmail(
+            contractorInfo.company_name,
+            customerName,
+            currentProject.space_type,
+            currentProject.full_address,
+            startDateFormatted,
+            contractorLocale
+          )
         })
         
-        if (process.env.NODE_ENV === 'development') console.log('✅ Notification email sent to contractor')
+        console.log('✅ Email sent to contractor:', contractorInfo.email, 'in', contractorLocale)
       } catch (emailError: any) {
         console.error('⚠️ Contractor email failed (process continues):', emailError.message)
       }
