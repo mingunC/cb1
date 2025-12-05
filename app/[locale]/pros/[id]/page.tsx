@@ -7,7 +7,7 @@ import {
   Star, Award, Calendar, Users, 
   CheckCircle, Phone, Mail, Globe, Clock, Building,
   Briefcase, Shield, ChevronLeft, X, MessageCircle, Image as ImageIcon,
-  ArrowLeft, Reply, Edit2, Trash2
+  ArrowLeft, Reply, Edit2, Trash2, Languages
 } from 'lucide-react'
 import Link from 'next/link'
 import ReviewForm from '@/components/ReviewForm'
@@ -40,6 +40,7 @@ interface Contractor {
   min_budget?: number
   is_verified: boolean
   is_premium: boolean
+  preferred_languages?: string[]
 }
 
 interface Review {
@@ -60,6 +61,13 @@ interface Review {
     last_name: string | null
     email: string
   }
+}
+
+// 언어 코드를 표시 이름과 국기로 변환
+const languageDisplay: Record<string, { name: string; flag: string }> = {
+  en: { name: 'English', flag: '🇺🇸' },
+  zh: { name: '中文', flag: '🇨🇳' },
+  ko: { name: '한국어', flag: '🇰🇷' }
 }
 
 export default function ContractorDetailPage() {
@@ -123,7 +131,8 @@ export default function ContractorDetailPage() {
           specialties,
           rating,
           status,
-          created_at
+          created_at,
+          preferred_languages
         `)
         .eq('id', contractorId)
         .single()
@@ -183,6 +192,14 @@ export default function ContractorDetailPage() {
       }
       if (process.env.NODE_ENV === 'development') console.log('✅ Parsed specialties:', parsedSpecialties) // 디버깅용
 
+      // preferred_languages 파싱
+      let parsedLanguages: string[] = []
+      if (contractorData.preferred_languages) {
+        if (Array.isArray(contractorData.preferred_languages)) {
+          parsedLanguages = contractorData.preferred_languages
+        }
+      }
+
       const formattedContractor: Contractor = {
         id: contractorData.id,
         company_name: contractorData.company_name || 'No company name',
@@ -206,7 +223,8 @@ export default function ContractorDetailPage() {
         is_verified: true,
         is_premium: false,
         portfolio_count: portfolioCount || 0,
-        created_at: contractorData.created_at
+        created_at: contractorData.created_at,
+        preferred_languages: parsedLanguages
       }
 
       setContractor(formattedContractor)
@@ -470,6 +488,30 @@ export default function ContractorDetailPage() {
           </div>
 
           <p className="text-gray-700 mb-6 whitespace-pre-wrap">{contractor.description}</p>
+
+          {/* Languages - 선호 언어 표시 (Specialties 위에) */}
+          {contractor.preferred_languages && contractor.preferred_languages.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Languages className="h-4 w-4 text-gray-500" />
+                Languages
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {contractor.preferred_languages.map((lang, index) => {
+                  const langInfo = languageDisplay[lang] || { name: lang, flag: '🌐' }
+                  return (
+                    <span 
+                      key={index} 
+                      className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm flex items-center gap-1.5 border border-blue-100"
+                    >
+                      <span className="text-base">{langInfo.flag}</span>
+                      <span>{langInfo.name}</span>
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Specialties */}
           <div className="mb-6">
