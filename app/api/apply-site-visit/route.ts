@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { sendEmail, createSiteVisitApplicationTemplate, getSiteVisitEmailSubject } from '@/lib/email/mailgun'
+import { determineEmailLanguage } from '@/lib/utils/emailLanguage'
 
 export async function POST(request: Request) {
   try {
@@ -126,20 +127,22 @@ export async function POST(request: Request) {
       // Site visit is already created, so we continue
     }
     
-    // 4. Get customer information (including preferred_language for email locale)
+    // 4. Get customer information (including preferred_languages for email locale)
     let customer = null
     let customerLocale = 'en' // 기본값은 영어
     if (project) {
       const { data: customerData, error: customerError } = await supabase
         .from('users')
-        .select('first_name, last_name, email, phone, preferred_language')
+        .select('first_name, last_name, email, phone, preferred_language, preferred_languages')
         .eq('id', project.customer_id)
         .single()
       
       customer = customerData
       
-      // 고객이 선호하는 언어 설정 가져오기
-      if (customer?.preferred_language) {
+      // ✅ preferred_languages 배열 우선 사용, 없으면 preferred_language 사용
+      if (customer?.preferred_languages && customer.preferred_languages.length > 0) {
+        customerLocale = determineEmailLanguage(customer.preferred_languages)
+      } else if (customer?.preferred_language) {
         customerLocale = customer.preferred_language
       }
       
@@ -149,6 +152,7 @@ export async function POST(request: Request) {
           hasEmail: !!customer?.email,
           email: customer?.email,
           preferredLanguage: customer?.preferred_language,
+          preferredLanguages: customer?.preferred_languages,
           locale: customerLocale
         })
       }
