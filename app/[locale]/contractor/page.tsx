@@ -3,17 +3,47 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import ImprovedContractorDashboard from './ImprovedDashboard'
+
+// 다국어 텍스트
+const translations = {
+  en: {
+    loadingTitle: 'Loading Dashboard...',
+    loadingSubtitle: 'Please wait',
+    errorTitle: 'Something went wrong',
+    refreshButton: 'Refresh Page',
+    loginButton: 'Go to Login'
+  },
+  zh: {
+    loadingTitle: '加载控制面板...',
+    loadingSubtitle: '请稍候',
+    errorTitle: '出现问题',
+    refreshButton: '刷新页面',
+    loginButton: '前往登录'
+  },
+  ko: {
+    loadingTitle: '대시보드 로딩 중...',
+    loadingSubtitle: '잠시만 기다려주세요',
+    errorTitle: '문제가 발생했습니다',
+    refreshButton: '페이지 새로고침',
+    loginButton: '로그인 페이지로 이동'
+  }
+}
 
 export default function ContractorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [contractorData, setContractorData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const params = useParams()
   const authCheckRef = useRef(false)
   const supabase = createBrowserClient()
+
+  // locale 가져오기 (기본값 'en')
+  const locale = (params?.locale as string) || 'en'
+  const t = translations[locale as keyof typeof translations] || translations.en
 
   useEffect(() => {
     // 중복 실행 방지
@@ -115,20 +145,20 @@ export default function ContractorPage() {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
         <div className="text-center max-w-md px-4 bg-white rounded-xl shadow-lg p-8">
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.errorTitle}</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
               onClick={() => window.location.reload()}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
             >
-              Refresh Page
+              {t.refreshButton}
             </button>
             <button
               onClick={() => router.push('/contractor-login')}
               className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium"
             >
-              Go to Login
+              {t.loginButton}
             </button>
           </div>
         </div>
@@ -142,8 +172,8 @@ export default function ContractorPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-700 font-semibold text-lg">Loading Dashboard...</p>
-          <p className="mt-2 text-sm text-gray-500">Please wait</p>
+          <p className="mt-4 text-gray-700 font-semibold text-lg">{t.loadingTitle}</p>
+          <p className="mt-2 text-sm text-gray-500">{t.loadingSubtitle}</p>
         </div>
       </div>
     )
