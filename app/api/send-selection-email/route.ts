@@ -7,6 +7,7 @@ import {
   getContractorSelectionEmailSubject,
   getCustomerSelectionEmailSubject
 } from '@/lib/email/mailgun'
+import { determineEmailLanguage } from '@/lib/utils/emailLanguage'
 
 export async function POST(request: Request) {
   try {
@@ -33,10 +34,10 @@ export async function POST(request: Request) {
       throw new Error('Project not found')
     }
     
-    // 2. 고객 정보 가져오기 (preferred_language 포함)
+    // 2. 고객 정보 가져오기 (preferred_language + preferred_languages 둘 다 포함!)
     const { data: customer, error: customerError } = await supabase
       .from('users')
-      .select('first_name, last_name, email, phone, preferred_language')
+      .select('first_name, last_name, email, phone, preferred_language, preferred_languages')
       .eq('id', project.customer_id)
       .single()
     
@@ -49,11 +50,22 @@ export async function POST(request: Request) {
     console.log('👤 Customer info:', {
       customer_id: project.customer_id,
       email: customer.email,
-      preferred_language: customer.preferred_language
+      preferred_language: customer.preferred_language,
+      preferred_languages: customer.preferred_languages
     })
     
-    // 고객 언어 설정 (기본값: 'en')
-    const customerLocale = customer.preferred_language || 'en'
+    // ✅ 고객 언어 설정 - preferred_languages 배열 우선 사용!
+    let customerLocale = 'en' // 기본값
+    if (customer.preferred_languages && customer.preferred_languages.length > 0) {
+      customerLocale = determineEmailLanguage(customer.preferred_languages)
+      console.log('📧 Using determineEmailLanguage for customer:', {
+        input: customer.preferred_languages,
+        result: customerLocale
+      })
+    } else if (customer.preferred_language) {
+      customerLocale = customer.preferred_language
+      console.log('📧 Using preferred_language for customer:', customerLocale)
+    }
     
     // 3. 업체 정보 가져오기
     const { data: contractor, error: contractorError } = await supabase
@@ -72,10 +84,10 @@ export async function POST(request: Request) {
       company_name: contractor.company_name
     })
     
-    // 4. 업체 사용자 정보 가져오기 (이메일 + preferred_language)
+    // 4. 업체 사용자 정보 가져오기 (이메일 + preferred_language + preferred_languages)
     const { data: contractorUser, error: contractorUserError } = await supabase
       .from('users')
-      .select('email, preferred_language')
+      .select('email, preferred_language, preferred_languages')
       .eq('id', contractor.user_id)
       .single()
     
@@ -86,7 +98,8 @@ export async function POST(request: Request) {
       error: contractorUserError?.message || null,
       contractorUser: contractorUser ? {
         email: contractorUser.email,
-        preferred_language: contractorUser.preferred_language
+        preferred_language: contractorUser.preferred_language,
+        preferred_languages: contractorUser.preferred_languages
       } : null
     })
     
@@ -96,15 +109,27 @@ export async function POST(request: Request) {
       throw new Error('Contractor email not found')
     }
     
-    // 업체 언어 설정 (기본값: 'en')
-    const contractorLocale = contractorUser?.preferred_language || 'en'
+    // ✅ 업체 언어 설정 - preferred_languages 배열 우선 사용!
+    let contractorLocale = 'en' // 기본값
+    if (contractorUser?.preferred_languages && contractorUser.preferred_languages.length > 0) {
+      contractorLocale = determineEmailLanguage(contractorUser.preferred_languages)
+      console.log('📧 Using determineEmailLanguage for contractor:', {
+        input: contractorUser.preferred_languages,
+        result: contractorLocale
+      })
+    } else if (contractorUser?.preferred_language) {
+      contractorLocale = contractorUser.preferred_language
+      console.log('📧 Using preferred_language for contractor:', contractorLocale)
+    }
     
     // ✅ 디버깅: 최종 언어 설정 로그
-    console.log('🌐 Language settings:', {
+    console.log('🌐 FINAL Language settings:', {
       contractorLocale,
       customerLocale,
       contractorUserPreferredLanguage: contractorUser?.preferred_language,
-      customerPreferredLanguage: customer.preferred_language
+      contractorUserPreferredLanguages: contractorUser?.preferred_languages,
+      customerPreferredLanguage: customer.preferred_language,
+      customerPreferredLanguages: customer.preferred_languages
     })
     
     // 5. 선택된 견적서 정보 가져오기
