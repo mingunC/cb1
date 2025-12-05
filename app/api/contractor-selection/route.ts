@@ -4,8 +4,11 @@ import { createAdminClient } from '@/lib/supabase/server-clients'
 import { 
   sendEmail, 
   createSelectionEmailTemplate, 
-  createCustomerNotificationTemplate 
+  createCustomerNotificationTemplate,
+  getContractorSelectionEmailSubject,
+  getCustomerSelectionEmailSubject
 } from '@/lib/email/mailgun'
+import { determineEmailLanguage } from '@/lib/utils/emailLanguage'
 
 export async function POST(request: NextRequest) {
   try {
@@ -193,7 +196,7 @@ export async function POST(request: NextRequest) {
       
       const { data: contractorResults, error: contractorError } = await supabase
         .from('contractors')
-        .select('*')
+        .select('*, preferred_languages')
         .eq('id', acceptedQuote?.contractor_id)
 
       let contractorInfo = null
@@ -207,7 +210,8 @@ export async function POST(request: NextRequest) {
           id: contractorInfo?.id,
           company_name: contractorInfo?.company_name,
           email: contractorInfo?.email || '(비어있음)',
-          user_id: contractorInfo?.user_id
+          user_id: contractorInfo?.user_id,
+          preferred_languages: contractorInfo?.preferred_languages
         })
       }
 
@@ -251,10 +255,10 @@ export async function POST(request: NextRequest) {
 
       if (process.env.NODE_ENV === 'development') console.log('📧 최종 이메일 주소:', contractorEmail || '(없음)', '출처:', emailSource)
 
-      // 7. ✅ 고객 정보 조회 (users 테이블 + quote_requests 테이블)
+      // 7. ✅ 고객 정보 조회 (users 테이블 + quote_requests 테이블) - preferred_languages 포함!
       const { data: customerResults, error: customerError } = await supabase
         .from('users')
-        .select('id, email, first_name, last_name, phone')
+        .select('id, email, first_name, last_name, phone, preferred_language, preferred_languages')
         .eq('id', currentProject.customer_id)
 
       let customerInfo = null
@@ -265,6 +269,16 @@ export async function POST(request: NextRequest) {
       // quote_requests 테이블의 customer_phone 필드도 확인 (우선순위 높음)
       const customerPhone = currentProject.customer_phone || customerInfo?.phone
       const customerName = `${customerInfo?.first_name || ''} ${customerInfo?.last_name || ''}`.trim()
+      
+      // ✅ 고객의 선호 언어 결정 (preferred_languages 배열 사용)
+      const customerLocale = customerInfo?.preferred_languages 
+        ? determineEmailLanguage(customerInfo.preferred_languages)
+        : (customerInfo?.preferred_language || 'en')
+      
+      // ✅ 업체의 선호 언어 결정
+      const contractorLocale = contractorInfo?.preferred_languages
+        ? determineEmailLanguage(contractorInfo.preferred_languages)
+        : 'en'
 
       if (customerError) {
         console.error('고객 정보 조회 실패:', customerError)
@@ -272,7 +286,9 @@ export async function POST(request: NextRequest) {
         if (process.env.NODE_ENV === 'development') console.log('✅ Customer info loaded:', {
           email: customerInfo?.email,
           phone: customerPhone,
-          name: customerName || '고객'
+          name: customerName || '고객',
+          preferred_languages: customerInfo?.preferred_languages,
+          locale: customerLocale
         })
       }
 
@@ -281,7 +297,7 @@ export async function POST(request: NextRequest) {
         try {
           if (process.env.NODE_ENV === 'development') console.log('📧 이메일 발송 시작:', contractorEmail)
           
-          // ✅ 업체에게 선정 알림 이메일 발송 (고객 정보 포함)
+          // ✅ 업체에게 선정 알림 이메일 발송 (업체의 선호 언어로)
           const contractorEmailHtml = createSelectionEmailTemplate(
             contractorInfo?.contact_name || contractorInfo?.company_name || '업체',
             currentProject,
@@ -291,33 +307,44 @@ export async function POST(request: NextRequest) {
               phone: customerPhone, // quote_requests 또는 users 테이블의 전화번호
               first_name: customerInfo?.first_name,
               last_name: customerInfo?.last_name
-            }
+            },
+            contractorLocale // ✅ 업체의 선호 언어
+          )
+
+          // ✅ 업체의 선호 언어로 제목 생성
+          const contractorSubject = getContractorSelectionEmailSubject(
+            customerName || 'Customer',
+            contractorLocale
           )
 
           await sendEmail({
             to: contractorEmail,
-            subject: `🎉 Congratulations! You've been selected for the "${currentProject.space_type}" project`,
+            subject: contractorSubject,
             html: contractorEmailHtml
           })
 
-          if (process.env.NODE_ENV === 'development') console.log('✅ Selection notification email sent to contractor:', contractorEmail, `(출처: ${emailSource})`)
+          if (process.env.NODE_ENV === 'development') console.log('✅ Selection notification email sent to contractor:', contractorEmail, `(출처: ${emailSource}, locale: ${contractorLocale})`)
 
-          // 고객에게도 알림 이메일 발송 (옵션)
+          // ✅ 고객에게도 알림 이메일 발송 (고객의 선호 언어로!)
           if (customerInfo?.email) {
             const customerEmailHtml = createCustomerNotificationTemplate(
               customerName || '고객',
               contractorInfo,
               currentProject,
-              acceptedQuote
+              acceptedQuote,
+              customerLocale // ✅ 고객의 선호 언어 전달!
             )
+
+            // ✅ 고객의 선호 언어로 제목 생성
+            const customerSubject = getCustomerSelectionEmailSubject(customerLocale)
 
             await sendEmail({
               to: customerInfo.email,
-              subject: `✅ Contractor Selection Complete - Your Project is Ready to Start`,
+              subject: customerSubject,
               html: customerEmailHtml
             })
 
-            if (process.env.NODE_ENV === 'development') console.log('✅ Notification email sent to customer')
+            if (process.env.NODE_ENV === 'development') console.log('✅ Notification email sent to customer (locale:', customerLocale, ')')
           }
         } catch (emailError: any) {
           // 이메일 발송 실패는 전체 프로세스를 중단시키지 않음
