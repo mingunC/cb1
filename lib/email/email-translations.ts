@@ -111,10 +111,48 @@ export const emailTranslations = {
       viewAllQuotes: 'View All Quotes',
       contactText: 'If you have any questions, please contact us anytime at admin@canadabeaver.pro.'
     },
+    projectStart: {
+      customerSubject: '🎉 Congratulations! Your Project Has Started',
+      customerTitle: '🎉 Congratulations!',
+      customerSubtitle: 'Your renovation project has officially started',
+      customerGreeting: (name: string) => `Hello, <strong>${name}</strong>`,
+      customerHighlightTitle: '✨ Your Project Has Officially Started!',
+      customerHighlightText: 'The transformation of your dream space begins now.',
+      projectInfo: '📋 Project Information',
+      selectedContractor: 'Selected Contractor',
+      projectType: 'Project Type',
+      address: 'Address',
+      nextStepsTitle: '👷 Next Steps',
+      customerNextSteps: [
+        'Confirm construction preparation details',
+        'Regular progress updates',
+        'Final inspection upon completion'
+      ],
+      customerTip: '💡 Tip: Please communicate regularly with the contractor if you have any questions or changes!',
+      customerWish: 'We wish you a successful project completion!',
+      contractorSubject: '🚀 Project Started',
+      contractorTitle: '🚀 Project Started!',
+      contractorSubtitle: 'The customer has confirmed the project start',
+      contractorGreeting: (name: string) => `Hello, <strong>${name}</strong>`,
+      contractorHighlightTitle: '🎉 The Project Has Officially Started',
+      contractorConfirmed: (customerName: string) => `<strong>${customerName}</strong> has confirmed the project start.`,
+      startDate: 'Start Date',
+      contractorNextSteps: [
+        'Final confirmation of construction schedule',
+        'Commission due within 3 days of signing.',
+        'Prepare necessary materials and workforce',
+        'Regular progress updates',
+        'Final inspection upon completion'
+      ],
+      contractorWish: 'We wish you a successful project completion!'
+    },
     common: {
       autoSent: 'This email was automatically sent by the Canada Beaver Platform.',
       copyright: '© 2025 Canada Beaver. All rights reserved.',
-      contact: 'Contact: support@canadabeaver.pro | Website: www.canadabeaver.pro'
+      contact: 'Contact: support@canadabeaver.pro | Website: www.canadabeaver.pro',
+      thanks: 'Thank you,',
+      team: 'Canada Beaver Team',
+      questionsFooter: 'If you have any questions, please feel free to contact us.'
     }
   },
   ko: {
@@ -227,10 +265,48 @@ export const emailTranslations = {
       viewAllQuotes: '모든 견적 보기',
       contactText: '궁금한 점이 있으시면 언제든 admin@canadabeaver.pro로 문의해주세요.'
     },
+    projectStart: {
+      customerSubject: '🎉 축하합니다! 프로젝트가 시작되었습니다',
+      customerTitle: '🎉 축하합니다!',
+      customerSubtitle: '리노베이션 프로젝트가 공식적으로 시작되었습니다',
+      customerGreeting: (name: string) => `안녕하세요, <strong>${name}</strong>님`,
+      customerHighlightTitle: '✨ 프로젝트가 공식적으로 시작되었습니다!',
+      customerHighlightText: '꿈꾸던 공간의 변화가 지금 시작됩니다.',
+      projectInfo: '📋 프로젝트 정보',
+      selectedContractor: '선정 업체',
+      projectType: '프로젝트 유형',
+      address: '주소',
+      nextStepsTitle: '👷 다음 단계',
+      customerNextSteps: [
+        '공사 준비 세부사항 확인',
+        '정기적인 진행 상황 업데이트',
+        '완료 후 최종 점검'
+      ],
+      customerTip: '💡 팁: 질문이나 변경 사항이 있으면 업체와 정기적으로 소통해주세요!',
+      customerWish: '프로젝트의 성공적인 완료를 기원합니다!',
+      contractorSubject: '🚀 프로젝트가 시작되었습니다',
+      contractorTitle: '🚀 프로젝트 시작!',
+      contractorSubtitle: '고객이 프로젝트 시작을 확인했습니다',
+      contractorGreeting: (name: string) => `안녕하세요, <strong>${name}</strong>`,
+      contractorHighlightTitle: '🎉 프로젝트가 공식적으로 시작되었습니다',
+      contractorConfirmed: (customerName: string) => `<strong>${customerName}</strong>님이 프로젝트 시작을 확인했습니다.`,
+      startDate: '시작 날짜',
+      contractorNextSteps: [
+        '공사 일정 최종 확인',
+        '계약 후 3일 이내 수수료 납부',
+        '필요한 자재 및 인력 준비',
+        '정기적인 진행 상황 업데이트',
+        '완료 후 최종 점검'
+      ],
+      contractorWish: '프로젝트의 성공적인 완료를 기원합니다!'
+    },
     common: {
       autoSent: '이 이메일은 Canada Beaver 플랫폼에서 자동으로 발송되었습니다.',
       copyright: '© 2025 Canada Beaver. All rights reserved.',
-      contact: '문의: support@canadabeaver.pro | 웹사이트: www.canadabeaver.pro'
+      contact: '문의: support@canadabeaver.pro | 웹사이트: www.canadabeaver.pro',
+      thanks: '감사합니다,',
+      team: 'Canada Beaver 팀',
+      questionsFooter: '궁금한 점이 있으시면 언제든 문의해주세요.'
     }
   },
   zh: {
@@ -343,10 +419,48 @@ export const emailTranslations = {
       viewAllQuotes: '查看所有报价',
       contactText: '如有任何问题，请随时通过admin@canadabeaver.pro与我们联系。'
     },
+    projectStart: {
+      customerSubject: '🎉 恭喜！您的项目已开始',
+      customerTitle: '🎉 恭喜！',
+      customerSubtitle: '您的翻新项目已正式开始',
+      customerGreeting: (name: string) => `您好，<strong>${name}</strong>`,
+      customerHighlightTitle: '✨ 您的项目已正式开始！',
+      customerHighlightText: '您梦想空间的改造现在开始。',
+      projectInfo: '📋 项目信息',
+      selectedContractor: '选定承包商',
+      projectType: '项目类型',
+      address: '地址',
+      nextStepsTitle: '👷 后续步骤',
+      customerNextSteps: [
+        '确认施工准备细节',
+        '定期进度更新',
+        '完工后最终检查'
+      ],
+      customerTip: '💡 提示：如有任何问题或变更，请与承包商定期沟通！',
+      customerWish: '祝您项目顺利完成！',
+      contractorSubject: '🚀 项目已开始',
+      contractorTitle: '🚀 项目开始！',
+      contractorSubtitle: '客户已确认项目开始',
+      contractorGreeting: (name: string) => `您好，<strong>${name}</strong>`,
+      contractorHighlightTitle: '🎉 项目已正式开始',
+      contractorConfirmed: (customerName: string) => `<strong>${customerName}</strong>已确认项目开始。`,
+      startDate: '开始日期',
+      contractorNextSteps: [
+        '最终确认施工时间表',
+        '签约后3天内支付佣金',
+        '准备必要的材料和人力',
+        '定期进度更新',
+        '完工后最终检查'
+      ],
+      contractorWish: '祝您项目顺利完成！'
+    },
     common: {
       autoSent: '此电子邮件由Canada Beaver平台自动发送。',
       copyright: '© 2025 Canada Beaver. 保留所有权利。',
-      contact: '联系方式：support@canadabeaver.pro | 网站：www.canadabeaver.pro'
+      contact: '联系方式：support@canadabeaver.pro | 网站：www.canadabeaver.pro',
+      thanks: '谢谢，',
+      team: 'Canada Beaver团队',
+      questionsFooter: '如有任何问题，请随时联系我们。'
     }
   }
 }
