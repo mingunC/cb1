@@ -37,7 +37,7 @@ export default function ContractorPage() {
         
         if (sessionError) {
           console.error('❌ Session error:', sessionError)
-          throw new Error('세션 확인 중 오류가 발생했습니다.')
+          throw new Error('Session verification error.')
         }
         
         if (!session) {
@@ -68,7 +68,7 @@ export default function ContractorPage() {
           }
           
           console.error('❌ Contractor lookup error:', contractorError)
-          throw new Error('업체 정보를 불러오는 중 오류가 발생했습니다.')
+          throw new Error('Error loading contractor information.')
         }
         
         if (!contractor) {
@@ -84,7 +84,7 @@ export default function ContractorPage() {
         
       } catch (error: any) {
         console.error('🔥 Auth check error:', error)
-        setError(error.message || '인증 확인 중 오류가 발생했습니다.')
+        setError(error.message || 'Authentication error.')
         setIsLoading(false)
       }
     }
@@ -115,20 +115,20 @@ export default function ContractorPage() {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
         <div className="text-center max-w-md px-4 bg-white rounded-xl shadow-lg p-8">
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">문제가 발생했습니다</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
               onClick={() => window.location.reload()}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
             >
-              페이지 새로고침
+              Refresh Page
             </button>
             <button
               onClick={() => router.push('/contractor-login')}
               className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium"
             >
-              로그인 페이지로 이동
+              Go to Login
             </button>
           </div>
         </div>
@@ -142,8 +142,8 @@ export default function ContractorPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-700 font-semibold text-lg">대시보드 로딩 중...</p>
-          <p className="mt-2 text-sm text-gray-500">잠시만 기다려주세요</p>
+          <p className="mt-4 text-gray-700 font-semibold text-lg">Loading Dashboard...</p>
+          <p className="mt-2 text-sm text-gray-500">Please wait</p>
         </div>
       </div>
     )
