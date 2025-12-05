@@ -1,23 +1,24 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, ContractorSummary, UserProfileResult, UserType } from '@/types'
 
-const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  'Invalid login credentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
-  'Email not confirmed': '이메일 인증이 필요합니다. 이메일을 확인해주세요.',
-  'Too many requests': '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.',
+// 에러 메시지를 에러 코드로 매핑 (번역은 UI에서 처리)
+const AUTH_ERROR_CODES: Record<string, string> = {
+  'Invalid login credentials': 'invalidCredentials',
+  'Email not confirmed': 'emailNotConfirmed',
+  'Too many requests': 'tooManyRequests',
 }
 
 /**
- * Translate Supabase auth errors into user-friendly messages.
+ * Translate Supabase auth errors into error codes.
+ * The actual translation should be done in the UI using the locale.
  */
-export function mapAuthErrorMessage(message: string): string {
-  for (const [key, translated] of Object.entries(AUTH_ERROR_MESSAGES)) {
+export function mapAuthErrorCode(message: string): string {
+  for (const [key, code] of Object.entries(AUTH_ERROR_CODES)) {
     if (message.includes(key)) {
-      return translated
+      return code
     }
   }
-
-  return '로그인에 실패했습니다.'
+  return 'loginFailed'
 }
 
 /**
@@ -60,7 +61,7 @@ export async function getUserProfile(
 
     if (contractorError && contractorError.code !== 'PGRST116') {
       console.error('Contractor data query error:', contractorError)
-      return { success: false, error: '업체 정보 조회 실패' }
+      return { success: false, error: 'contractorQueryFailed' }
     }
 
     const { data: userData, error: userError } = await client
@@ -71,7 +72,7 @@ export async function getUserProfile(
 
     if (userError && userError.code !== 'PGRST116') {
       console.error('User type query error:', userError)
-      return { success: false, error: '사용자 정보 조회 실패' }
+      return { success: false, error: 'userQueryFailed' }
     }
 
     if (userData && userData.user_type && userData.user_type !== 'contractor') {
@@ -81,7 +82,7 @@ export async function getUserProfile(
     return { success: true, userType: 'customer' }
   } catch (error) {
     console.error('getUserProfile error:', error)
-    return { success: false, error: '사용자 정보 조회 중 오류가 발생했습니다.' }
+    return { success: false, error: 'profileQueryFailed' }
   }
 }
 
@@ -149,4 +150,3 @@ export function checkPathPermission(
 
   return { allowed: true }
 }
-
