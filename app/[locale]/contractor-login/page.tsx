@@ -45,6 +45,22 @@ export default function ContractorLoginPage() {
   const supabase = createBrowserClient()
   const checkingRef = useRef(false) // 중복 실행 방지
 
+  // 에러 코드를 번역된 메시지로 변환
+  const translateErrorCode = useCallback((errorCode: string): string => {
+    const errorMap: Record<string, string> = {
+      'invalidCredentials': t('errors.invalidCredentials'),
+      'emailNotConfirmed': t('errors.emailNotConfirmed'),
+      'tooManyRequests': t('errors.tooManyRequests'),
+      'loginFailed': t('errors.loginFailed'),
+      'unexpectedError': t('errors.unexpectedError'),
+      'contractorQueryFailed': t('errors.loginFailed'),
+      'userQueryFailed': t('errors.loginFailed'),
+      'profileQueryFailed': t('errors.loginFailed'),
+      'logoutFailed': t('logoutFailed'),
+    }
+    return errorMap[errorCode] || t('errors.loginFailed')
+  }, [t])
+
   // 세션 체크 - 이미 로그인된 상태 확인
   useEffect(() => {
     // 이미 체크 중이면 무시
@@ -100,7 +116,7 @@ export default function ContractorLoginPage() {
         setCurrentUser(null)
         setIsLoading(false)
       } else {
-        toast.error(result.error || t('logoutFailed'))
+        toast.error(translateErrorCode(result.error || 'logoutFailed'))
         setIsLoading(false)
       }
     } catch (error) {
@@ -137,7 +153,8 @@ export default function ContractorLoginPage() {
       })
 
       if (!result.success) {
-        setError(result.error || t('errors.loginFailed'))
+        // 에러 코드를 번역된 메시지로 변환
+        setError(translateErrorCode(result.error || 'loginFailed'))
         setIsLoading(false)
         return
       }
@@ -159,7 +176,7 @@ export default function ContractorLoginPage() {
       setError(t('errors.unexpectedError'))
       setIsLoading(false)
     }
-  }, [formData, router, t, locale])
+  }, [formData, router, t, locale, translateErrorCode])
 
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true)
