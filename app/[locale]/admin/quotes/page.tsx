@@ -110,6 +110,15 @@ export default function AdminQuotesPage() {
             return quote.status === 'site-visit-pending'
           case 'bidding':
             return quote.status === 'bidding'
+          case 'deadline-urgent':
+            if (quote.status !== 'bidding') return false
+            const deadline = new Date(quote.created_at)
+            deadline.setDate(deadline.getDate() + 7)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            deadline.setHours(0, 0, 0, 0)
+            const daysLeft = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+            return daysLeft <= 3  // D-3 이하
           case 'contractor-selected':
             return quote.status === 'contractor-selected' || 
                    quote.status === 'bidding-closed' || 
@@ -359,12 +368,27 @@ export default function AdminQuotesPage() {
     'flexible': '유연함'
   }
 
+  // 마감 임박 프로젝트 계산 함수
+  const getDeadlineUrgentQuotes = () => {
+    return quotes.filter(q => {
+      if (q.status !== 'bidding') return false
+      const deadline = new Date(q.created_at)
+      deadline.setDate(deadline.getDate() + 7)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      deadline.setHours(0, 0, 0, 0)
+      const daysLeft = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      return daysLeft <= 3  // D-3 이하
+    })
+  }
+
   const tabs = [
     { id: 'all', label: '전체', count: quotes.length },
     { id: 'pending', label: '대기중', count: quotes.filter(q => q.status === 'pending').length },
     { id: 'approved', label: '승인됨', count: quotes.filter(q => q.status === 'approved').length },
     { id: 'site-visit', label: '현장방문대기', count: quotes.filter(q => q.status === 'site-visit-pending').length },
     { id: 'bidding', label: '입찰중', count: quotes.filter(q => q.status === 'bidding').length },
+    { id: 'deadline-urgent', label: '🚨 마감임박', count: getDeadlineUrgentQuotes().length },
     { 
       id: 'contractor-selected', 
       label: '업체선정완료', 
