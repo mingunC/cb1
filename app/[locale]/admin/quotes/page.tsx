@@ -624,6 +624,34 @@ export default function AdminQuotesPage() {
                             방문: {new Date(quote.visit_date).toLocaleDateString('ko-KR')}
                           </div>
                         )}
+                        {quote.status === 'bidding' && (() => {
+                          const deadline = new Date(quote.created_at)
+                          deadline.setDate(deadline.getDate() + 7)
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+                          deadline.setHours(0, 0, 0, 0)
+                          const daysLeft = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                          
+                          let badgeColor = 'text-green-600'
+                          let badgeText = `D-${daysLeft}`
+                          
+                          if (daysLeft <= 0) {
+                            badgeColor = 'text-red-600 font-bold animate-pulse'
+                            badgeText = '⚠️ 마감!'
+                          } else if (daysLeft <= 1) {
+                            badgeColor = 'text-orange-600 font-bold'
+                            badgeText = `⏰ D-${daysLeft}`
+                          } else if (daysLeft <= 3) {
+                            badgeColor = 'text-yellow-600 font-semibold'
+                            badgeText = `D-${daysLeft}`
+                          }
+                          
+                          return (
+                            <div className={`text-xs ${badgeColor}`}>
+                              마감: {deadline.toLocaleDateString('ko-KR')} ({badgeText})
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-2">
