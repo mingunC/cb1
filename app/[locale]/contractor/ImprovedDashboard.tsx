@@ -86,6 +86,7 @@ export default function ImprovedContractorDashboard({ initialContractorData }: P
       const { data: projectsData, error: projectsError } = await supabase
         .from('quote_requests')
         .select('*, selected_contractor_id, selected_quote_id')
+        .gte('created_at', contractorData.created_at)
         .order('created_at', { ascending: false })
         .limit(50)
       
