@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Camera, Save } from 'lucide-react'
+import { ArrowLeft, Camera, Save, Trash2, AlertTriangle, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
@@ -44,6 +44,13 @@ export default function ContractorProfile() {
     license_number: '',
     insurance: ''
   })
+
+  // Delete account states
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<'warning' | 'confirm'>('warning')
 
   useEffect(() => {
     loadProfile()
@@ -286,6 +293,68 @@ export default function ContractorProfile() {
       setIsSaving(false)
       if (process.env.NODE_ENV === 'development') console.log('💾 Profile save process ended')
     }
+  }
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      toast.error('Please enter your password')
+      return
+    }
+
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: deletePassword }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Handle specific error messages
+        if (data.error?.includes('pending quotes')) {
+          toast.error('Cannot delete account with pending quotes. Please withdraw all pending quotes first.')
+        } else if (data.error?.includes('active projects')) {
+          toast.error('Cannot delete account with active projects. Please complete or cancel all projects first.')
+        } else if (data.error?.includes('Invalid password')) {
+          toast.error('Invalid password. Please try again.')
+        } else {
+          toast.error(data.error || 'Failed to delete account')
+        }
+        return
+      }
+
+      toast.success('Account successfully deleted')
+      
+      // Redirect to home page
+      setTimeout(() => {
+        router.push('/')
+      }, 1500)
+
+    } catch (error: any) {
+      console.error('Delete account error:', error)
+      toast.error('An error occurred. Please try again.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const openDeleteModal = () => {
+    setShowDeleteModal(true)
+    setDeleteStep('warning')
+    setDeletePassword('')
+  }
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false)
+    setDeleteStep('warning')
+    setDeletePassword('')
+    setShowPassword(false)
   }
 
   const specialtyOptions = [
@@ -551,7 +620,150 @@ export default function ContractorProfile() {
             </div>
           </div>
         </div>
+
+        {/* Delete Account Section */}
+        <div className="mt-8 bg-white rounded-xl shadow-sm p-8 border border-red-100">
+          <h2 className="text-lg font-semibold text-red-600 mb-4 flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2" />
+            Danger Zone
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
+          <button
+            type="button"
+            onClick={openDeleteModal}
+            className="flex items-center px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Account
+          </button>
+        </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
+                Delete Account
+              </h3>
+              <button
+                onClick={closeDeleteModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {deleteStep === 'warning' ? (
+                <>
+                  {/* Warning Step */}
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-semibold text-red-800 mb-2">⚠️ Warning</h4>
+                    <ul className="text-sm text-red-700 space-y-2">
+                      <li>• This action <strong>cannot be undone</strong></li>
+                      <li>• All your profile information will be deleted</li>
+                      <li>• Your portfolio and project history will be removed</li>
+                      <li>• You will lose access to all current and past projects</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-semibold text-yellow-800 mb-2">📋 Before you proceed</h4>
+                    <ul className="text-sm text-yellow-700 space-y-2">
+                      <li>• You cannot delete your account if you have <strong>pending quotes</strong></li>
+                      <li>• You cannot delete your account if you have <strong>active projects</strong></li>
+                      <li>• Please withdraw all pending quotes and complete/cancel all projects first</li>
+                    </ul>
+                  </div>
+
+                  <p className="text-gray-600 mb-6">
+                    Are you sure you want to permanently delete your contractor account?
+                  </p>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={closeDeleteModal}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => setDeleteStep('confirm')}
+                      className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Confirm Step */}
+                  <p className="text-gray-600 mb-4">
+                    Please enter your password to confirm account deletion.
+                  </p>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        className="w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                        placeholder="Enter your password"
+                        disabled={isDeleting}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setDeleteStep('warning')}
+                      disabled={isDeleting}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting || !deletePassword.trim()}
+                      className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete My Account
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
