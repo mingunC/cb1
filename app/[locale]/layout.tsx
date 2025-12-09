@@ -19,10 +19,16 @@ export const metadata: Metadata = {
   description: 'Canada Beaver는 토론토 및 GTA 지역 최고의 레노베이션 업체 연결 서비스입니다. 믿을 수 있는 인테리어 전문가를 만나보세요. Kitchen, Bathroom, Basement Renovation.',
   keywords: '리노베이션, 인테리어, 업체, 견적, 홈리모델링',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
+  manifest: '/site.webmanifest',
   openGraph: {
     title: 'Canada Beaver - 토론토 인테리어의 모든 것',
     description: '믿을 수 있는 레노베이션 업체를 찾고 계신가요? Canada Beaver에서 무료 견적을 받아보세요.',
