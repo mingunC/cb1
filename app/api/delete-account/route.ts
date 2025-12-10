@@ -6,31 +6,48 @@ export async function POST(request: Request) {
   
   try {
     const supabase = await createServerClient()
-    console.log('✅ Supabase client created')
+    console.log('✅ Supabase client created with cookies')
     
-    // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // 사용자 확인 - getSession과 getUser 모두 시도
+    let user = null
     
-    console.log('👤 Auth check result:', { 
-      hasUser: !!user, 
-      userId: user?.id,
-      userEmail: user?.email,
-      authError: authError?.message 
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    console.log('🔐 Session check:', { 
+      hasSession: !!sessionData?.session, 
+      userId: sessionData?.session?.user?.id,
+      sessionError: sessionError?.message 
     })
     
-    if (authError || !user) {
-      console.error('❌ Auth failed:', authError)
+    if (sessionData?.session?.user) {
+      user = sessionData.session.user
+      console.log('✅ Got user from session:', user.email)
+    } else {
+      // getSession이 실패하면 getUser로 시도
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      console.log('👤 User check:', { 
+        hasUser: !!userData?.user, 
+        userId: userData?.user?.id,
+        userError: userError?.message 
+      })
+      
+      if (userData?.user) {
+        user = userData.user
+        console.log('✅ Got user from getUser:', user.email)
+      }
+    }
+    
+    if (!user) {
+      console.error('❌ No user found')
       return NextResponse.json(
-        { error: 'Unauthorized', details: authError?.message },
+        { error: 'Unauthorized', details: 'Auth session missing!' },
         { status: 401 }
       )
     }
 
-    // 사용자의 provider 확인
+    // Provider 확인
     const provider = user.app_metadata?.provider || user.user_metadata?.provider
     const isOAuthUser = provider === 'google' || provider === 'oauth'
-    
-    console.log('🔐 Provider check:', { provider, isOAuthUser })
+    console.log('🔐 Provider:', provider, 'isOAuth:', isOAuthUser)
 
     const requestBody = await request.json()
     console.log('📦 Request body:', { 
@@ -52,10 +69,10 @@ export async function POST(request: Request) {
       console.log('📧 Email comparison:', { 
         confirmEmail, 
         userEmail: user.email,
-        match: confirmEmail === user.email 
+        match: confirmEmail.toLowerCase() === user.email?.toLowerCase() 
       })
 
-      if (confirmEmail !== user.email) {
+      if (confirmEmail.toLowerCase() !== user.email?.toLowerCase()) {
         return NextResponse.json(
           { error: 'Email does not match' },
           { status: 401 }
@@ -96,6 +113,8 @@ export async function POST(request: Request) {
 
     console.log('👤 User data:', { userData, userDataError: userDataError?.message })
 
+    // 진행 중인 프로젝트/입찰 확인
+
     if (userData?.user_type === 'customer') {
       const { data: activeProjects } = await supabase
         .from('quote_requests')
@@ -105,13 +124,12 @@ export async function POST(request: Request) {
 
       if (activeProjects && activeProjects.length > 0) {
         return NextResponse.json(
-          { error: 'Cannot delete account with active projects. Please complete or cancel all projects first.' },
+          { error: 'Cannot delete account with active projects.' },
           { status: 400 }
         )
       }
     }
 
-    // 진행 중인 입찰 확인 (업체인 경우)
     if (userData?.user_type === 'contractor') {
       const { data: activeQuotes } = await supabase
         .from('contractor_quotes')
@@ -121,14 +139,14 @@ export async function POST(request: Request) {
 
       if (activeQuotes && activeQuotes.length > 0) {
         return NextResponse.json(
-          { error: 'Cannot delete account with pending quotes. Please withdraw all pending quotes first.' },
+          { error: 'Cannot delete account with pending quotes.' },
           { status: 400 }
         )
       }
     }
 
     // Soft delete 실행
-    console.log('🗑️ Executing soft delete for user:', user.id)
+    console.log('🗑️ Soft deleting user:', user.id)
     
     const { error: updateError } = await supabase
       .from('users')
@@ -147,9 +165,7 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('✅ User marked as deleted')
-
-    // contractors 업데이트
+    // Contractor 비활성화
     if (userData?.user_type === 'contractor') {
       const { error: contractorError } = await supabase
         .from('contractors')
@@ -159,16 +175,14 @@ export async function POST(request: Request) {
         })
         .eq('user_id', user.id)
 
-      console.log('📝 Contractor update:', { error: contractorError?.message })
+      if (contractorError) {
+        console.error('⚠️ Contractor update error:', contractorError)
+      }
     }
 
-    // Auth 계정 삭제 (선택사항 - 주석 처리)
-    // Supabase Auth에서 완전 삭제하려면 서비스 역할 키가 필요합니다
-    // 현재는 soft delete만 수행하고, Auth 계정은 유지합니다
-    // 필요시 Supabase Dashboard에서 수동으로 삭제할 수 있습니다
-
+    // 로그아웃
     await supabase.auth.signOut()
-    console.log('✅ Signed out')
+    console.log('✅ Account deleted successfully')
 
     return NextResponse.json({ 
       success: true,
