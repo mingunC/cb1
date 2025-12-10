@@ -150,12 +150,12 @@ export default function ContractorProfile() {
             try {
               parsedLanguages = JSON.parse(contractor.preferred_languages)
             } catch (e) {
-              console.error('Failed to parse preferred_languages:', e)
-              parsedLanguages = []
+              // JSON 파싱 실패 시 단일 문자열로 처리
+              parsedLanguages = [contractor.preferred_languages]
             }
           }
         } else if (contractor.preferred_language) {
-          // 단일 값이 있는 경우 배열로 변환
+          // 이전 단일 값 호환
           parsedLanguages = [contractor.preferred_language]
         }
         
@@ -165,6 +165,8 @@ export default function ContractorProfile() {
           // 기본값으로 현재 로케일 사용
           if (['en', 'ko', 'zh'].includes(locale)) {
             setPreferredLanguages([locale])
+          } else {
+            setPreferredLanguages(['en'])
           }
         }
         
@@ -337,7 +339,9 @@ export default function ContractorProfile() {
         years_in_business: formData.years_in_business || 0,
         license_number: formData.license_number.trim() || null,
         insurance: formData.insurance.trim() || null,
-        preferred_languages: preferredLanguages.length > 0 ? preferredLanguages : ['en']
+        preferred_languages: preferredLanguages.length > 0 ? preferredLanguages : ['en'],
+        // 하위 호환성을 위해 첫 번째 언어를 preferred_language에도 설정
+        preferred_language: preferredLanguages[0] || 'en'
       }
 
       if (process.env.NODE_ENV === 'development') console.log('📝 Update data:', updateData)
@@ -703,32 +707,34 @@ export default function ContractorProfile() {
                 {t('preferredLanguageNote')}
               </p>
               <div className="flex flex-wrap gap-2">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    onClick={() => {
-                      if (preferredLanguages.includes(lang.code)) {
-                        // 이미 선택된 경우 제거
-                        setPreferredLanguages(prev => prev.filter(l => l !== lang.code))
-                      } else {
-                        // 선택되지 않은 경우 추가
-                        setPreferredLanguages(prev => [...prev, lang.code])
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      preferredLanguages.includes(lang.code)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <span>{lang.flag}</span>
-                    <span>{lang.name}</span>
-                    {preferredLanguages.includes(lang.code) && (
-                      <span className="ml-1">✓</span>
-                    )}
-                  </button>
-                ))}
+                {languages.map((lang) => {
+                  const isSelected = preferredLanguages.includes(lang.code)
+                  return (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          // 최소 1개는 선택되어야 함
+                          if (preferredLanguages.length > 1) {
+                            setPreferredLanguages(prev => prev.filter(l => l !== lang.code))
+                          }
+                        } else {
+                          setPreferredLanguages(prev => [...prev, lang.code])
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                      {isSelected && <span className="text-blue-600">✓</span>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
