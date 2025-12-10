@@ -15,7 +15,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Canada Beaver | 토론토 인테리어 & 레노베이션 전문 (Toronto Renovation)',
+  title: 'Canada Beaver | 토론토 인테리어 &amp; 레노베이션 전문 (Toronto Renovation)',
   description: 'Canada Beaver는 토론토 및 GTA 지역 최고의 레노베이션 업체 연결 서비스입니다. 믿을 수 있는 인테리어 전문가를 만나보세요. Kitchen, Bathroom, Basement Renovation.',
   keywords: '리노베이션, 인테리어, 업체, 견적, 홈리모델링',
   icons: {
@@ -28,7 +28,6 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
-  manifest: '/site.webmanifest',
   openGraph: {
     title: 'Canada Beaver - 토론토 인테리어의 모든 것',
     description: '믿을 수 있는 레노베이션 업체를 찾고 계신가요? Canada Beaver에서 무료 견적을 받아보세요.',
@@ -55,6 +54,11 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className={inter.variable}>
+      <head>
+        {/* Manifest - absolute path to avoid i18n prefix */}
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#b91c1c" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">
