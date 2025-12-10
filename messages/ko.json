@@ -602,5 +602,31 @@
       "googleSignupFailed": "Google 회원가입에 실패했습니다.",
       "genericError": "회원가입 중 오류가 발생했습니다."
     }
+  },
+  "specialties": {
+    "fullRenovation": "전체 리노베이션",
+    "kitchen": "주방",
+    "bathroom": "욕실",
+    "basement": "지하실",
+    "painting": "페인팅",
+    "flooring": "바닥",
+    "electrical": "전기",
+    "plumbing": "배관",
+    "roofing": "지붕",
+    "exterior": "외부"
+  },
+  "contractorProfile": {
+    "verified": "인증됨",
+    "reviews": "리뷰",
+    "noDescription": "회사 소개가 없습니다.",
+    "languages": "언어",
+    "specialties": "전문 분야",
+    "serviceAreas": "서비스 지역",
+    "contact": "연락처",
+    "viewPortfolio": "포트폴리오 보기",
+    "requestConsultation": "상담 요청",
+    "reviewsTitle": "리뷰",
+    "writeReview": "리뷰 작성",
+    "noReviews": "아직 리뷰가 없습니다."
   }
 }

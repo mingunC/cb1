@@ -602,5 +602,31 @@
       "googleSignupFailed": "Google signup failed.",
       "genericError": "An error occurred during sign up."
     }
+  },
+  "specialties": {
+    "fullRenovation": "Full Renovation",
+    "kitchen": "Kitchen",
+    "bathroom": "Bathroom",
+    "basement": "Basement",
+    "painting": "Painting",
+    "flooring": "Flooring",
+    "electrical": "Electrical",
+    "plumbing": "Plumbing",
+    "roofing": "Roofing",
+    "exterior": "Exterior"
+  },
+  "contractorProfile": {
+    "verified": "Verified",
+    "reviews": "reviews",
+    "noDescription": "No company description provided.",
+    "languages": "Languages",
+    "specialties": "Specialties",
+    "serviceAreas": "Service Areas",
+    "contact": "Contact",
+    "viewPortfolio": "View Portfolio",
+    "requestConsultation": "Request Consultation",
+    "reviewsTitle": "Reviews",
+    "writeReview": "Write a Review",
+    "noReviews": "No reviews yet."
   }
 }

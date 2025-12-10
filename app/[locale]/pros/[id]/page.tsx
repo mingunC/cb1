@@ -12,6 +12,7 @@ import {
 import Link from 'next/link'
 import ReviewForm from '@/components/ReviewForm'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 interface Contractor {
   id: string
@@ -74,6 +75,8 @@ export default function ContractorDetailPage() {
   const params = useParams()
   const router = useRouter()
   const contractorId = params.id as string
+  const tProfile = useTranslations('contractorProfile')
+  const tSpecialties = useTranslations('specialties')
   
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
@@ -86,6 +89,15 @@ export default function ContractorDetailPage() {
   const [replyText, setReplyText] = useState('')
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [isSubmittingReply, setIsSubmittingReply] = useState(false)
+
+  const getSpecialtyLabel = (specialty: string) => {
+    const key = specialty.toLowerCase().replace(/\s+/g, '') as keyof typeof tSpecialties
+    try {
+      return tSpecialties(key)
+    } catch {
+      return specialty
+    }
+  }
 
   const checkContractorOwnership = useCallback(async () => {
     try {
@@ -474,27 +486,29 @@ export default function ContractorDetailPage() {
                 <h1 className="text-2xl font-bold">{contractor.company_name}</h1>
                 {contractor.is_verified && (
                   <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
-                    Verified
+                    {tProfile('verified')}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center">
-                  <span className="ml-0">({reviews.length} reviews)</span>
+                  <span className="ml-0">({reviews.length} {tProfile('reviews')})</span>
                 </div>
                 {contractor.established_year && <span>Established in {contractor.established_year}</span>}
               </div>
             </div>
           </div>
 
-          <p className="text-gray-700 mb-6 whitespace-pre-wrap">{contractor.description}</p>
+          <p className="text-gray-700 mb-6 whitespace-pre-wrap">
+            {contractor.description || tProfile('noDescription')}
+          </p>
 
           {/* Languages - 선호 언어 표시 (Specialties 위에) */}
           {contractor.preferred_languages && contractor.preferred_languages.length > 0 && (
             <div className="mb-6">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Languages className="h-4 w-4 text-gray-500" />
-                Languages
+                {tProfile('languages')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {contractor.preferred_languages.map((lang, index) => {
@@ -515,7 +529,7 @@ export default function ContractorDetailPage() {
 
           {/* Specialties */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-3">Specialties</h3>
+            <h3 className="font-semibold mb-3">{tProfile('specialties')}</h3>
             <div className="flex flex-wrap gap-2">
               {Array.isArray(contractor.specialties) && contractor.specialties.length > 0 ? (
                 contractor.specialties.map((specialty, index) => {
@@ -526,21 +540,21 @@ export default function ContractorDetailPage() {
                         key={index} 
                         className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm"
                       >
-                        {specialty}
+                        {getSpecialtyLabel(specialty)}
                       </span>
                     )
                   }
                   return null
                 })
               ) : (
-                <span className="text-gray-500 text-sm">No specialty information</span>
+                <span className="text-gray-500 text-sm">{tProfile('noDescription')}</span>
               )}
             </div>
           </div>
 
           {/* Service areas */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-3">Service Areas</h3>
+            <h3 className="font-semibold mb-3">{tProfile('serviceAreas')}</h3>
             <div className="flex flex-wrap gap-2">
               {contractor.service_areas.map((area, index) => (
                 <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
@@ -552,7 +566,7 @@ export default function ContractorDetailPage() {
 
           {/* Contact */}
           <div className="border-t pt-6">
-            <h3 className="font-semibold mb-3">Contact</h3>
+            <h3 className="font-semibold mb-3">{tProfile('contact')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gray-400" />
@@ -580,11 +594,11 @@ export default function ContractorDetailPage() {
             <div className="flex gap-3">
               <Link href={`/portfolio?contractor=${contractor.id}`} className="flex-1 px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium flex items-center justify-center gap-2">
                 <ImageIcon className="h-5 w-5" />
-                View Portfolio
+                {tProfile('viewPortfolio')}
               </Link>
               <button onClick={() => handleSMSConsultation(contractor)} className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">
                 <MessageCircle className="h-5 w-5" />
-                Request Consultation
+                {tProfile('requestConsultation')}
               </button>
             </div>
           </div>
@@ -594,7 +608,7 @@ export default function ContractorDetailPage() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-200">
             <h2 className="text-xl font-bold flex items-center">
-              Reviews
+              {tProfile('reviewsTitle')}
               <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                 {reviews.length}
               </span>
@@ -604,7 +618,7 @@ export default function ContractorDetailPage() {
                 onClick={() => setShowReviewForm(true)}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
               >
-                Write a Review
+                {tProfile('writeReview')}
               </button>
             )}
           </div>
@@ -612,7 +626,7 @@ export default function ContractorDetailPage() {
           {reviews.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p>No reviews yet.</p>
+              <p>{tProfile('noReviews')}</p>
             </div>
           ) : (
             <div className="space-y-6">

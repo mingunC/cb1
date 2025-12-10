@@ -607,5 +607,31 @@
       "googleSignupFailed": "Google注册失败。",
       "genericError": "注册时发生错误。"
     }
+  },
+  "specialties": {
+    "fullRenovation": "全面翻新",
+    "kitchen": "厨房",
+    "bathroom": "浴室",
+    "basement": "地下室",
+    "painting": "油漆",
+    "flooring": "地板",
+    "electrical": "电气",
+    "plumbing": "管道",
+    "roofing": "屋顶",
+    "exterior": "外部"
+  },
+  "contractorProfile": {
+    "verified": "已认证",
+    "reviews": "评价",
+    "noDescription": "暂无公司介绍。",
+    "languages": "语言",
+    "specialties": "专业领域",
+    "serviceAreas": "服务区域",
+    "contact": "联系方式",
+    "viewPortfolio": "查看作品集",
+    "requestConsultation": "请求咨询",
+    "reviewsTitle": "评价",
+    "writeReview": "写评价",
+    "noReviews": "暂无评价。"
   }
 }
