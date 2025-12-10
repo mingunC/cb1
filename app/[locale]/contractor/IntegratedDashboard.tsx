@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, RefreshCw, Eye, CheckCircle, XCircle, Calendar, MapPin, User, Trophy, X, TrendingUp, FileText, Ban, Settings } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 import PortfolioManager from '@/components/PortfolioManager'
 import type { Project, ProjectStatus, ContractorData } from '@/types/contractor'
 import { calculateProjectStatus } from '@/lib/contractor/projectHelpers'
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function IntegratedContractorDashboard({ initialContractorData }: Props) {
+  const t = useTranslations('contractor.tabs')
   const router = useRouter()
   
   // 상태 관리
@@ -624,7 +626,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                프로젝트 관리
+                {t('projects')}
               </button>
               <button
                 onClick={() => setActiveTab('portfolio')}
@@ -634,7 +636,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                포트폴리오 관리
+                {t('portfolio')}
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
@@ -645,7 +647,7 @@ export default function IntegratedContractorDashboard({ initialContractorData }:
                 }`}
               >
                 <Settings className="w-4 h-4" />
-                프로필 관리
+                {t('profile')}
               </button>
             </nav>
           </div>

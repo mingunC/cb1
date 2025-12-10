@@ -359,6 +359,8 @@
     },
     "profile": {
       "title": "个人资料管理",
+      "description": "点击下面的按钮更新您的个人资料信息。",
+      "editProfile": "编辑个人资料",
       "companyName": "公司名称",
       "companyNameRequired": "公司名称为必填项",
       "companyDescription": "公司简介",
@@ -376,7 +378,47 @@
       "insurancePlaceholder": "请输入保险信息",
       "supportedFormats": "支持格式：JPG, JPEG, PNG, GIF, WEBP (最大 5MB)",
       "profileSaved": "个人资料已保存！",
-      "saveFailed": "保存失败"
+      "saveFailed": "保存失败",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "deleteAccount": {
+        "title": "删除账户",
+        "warning": "警告",
+        "warningItems": {
+          "cannotUndone": "此操作无法撤销",
+          "profileDeleted": "您的所有个人资料信息将被删除",
+          "portfolioRemoved": "您的作品集和项目历史将被移除",
+          "loseAccess": "您将失去对所有当前和过去项目的访问权限"
+        },
+        "beforeProceed": "在继续之前",
+        "beforeProceedItems": {
+          "pendingQuotes": "如果您有待处理的报价，则无法删除账户",
+          "activeProjects": "如果您有进行中的项目，则无法删除账户",
+          "withdrawFirst": "请先撤回所有待处理的报价并完成/取消所有项目"
+        },
+        "confirmQuestion": "您确定要永久删除您的承包商账户吗？",
+        "enterPassword": "请输入密码以确认账户删除。",
+        "enterPasswordError": "请输入密码",
+        "invalidPassword": "密码不正确。请重试。",
+        "pendingQuotesError": "无法删除有待处理报价的账户。请先撤回所有待处理的报价。",
+        "activeProjectsError": "无法删除有进行中项目的账户。请先完成或取消所有项目。",
+        "deleteFailed": "删除账户失败",
+        "deleteSuccess": "账户已成功删除",
+        "deleting": "删除中...",
+        "deleteMyAccount": "删除我的账户"
+      }
+    },
+    "specialties": {
+      "fullRenovation": "全面翻新",
+      "kitchen": "厨房",
+      "bathroom": "浴室",
+      "basement": "地下室",
+      "painting": "油漆",
+      "flooring": "地板",
+      "electrical": "电气",
+      "plumbing": "管道",
+      "roofing": "屋顶",
+      "exterior": "外部"
     },
     "dangerZone": {
       "title": "危险区域",

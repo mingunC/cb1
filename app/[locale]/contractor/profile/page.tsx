@@ -29,6 +29,8 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 export default function ContractorProfile() {
   const t = useTranslations('contractor.profile')
   const tCommon = useTranslations('common')
+  const tSpecialties = useTranslations('specialties')
+  const tDangerZone = useTranslations('contractor.dangerZone')
   const router = useRouter()
   const [profile, setProfile] = useState<ContractorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -301,7 +303,7 @@ export default function ContractorProfile() {
   // Handle account deletion
   const handleDeleteAccount = async () => {
     if (!deletePassword.trim()) {
-      toast.error('Please enter your password')
+      toast.error(t('deleteAccount.enterPasswordError'))
       return
     }
 
@@ -321,18 +323,18 @@ export default function ContractorProfile() {
       if (!response.ok) {
         // Handle specific error messages
         if (data.error?.includes('pending quotes')) {
-          toast.error('Cannot delete account with pending quotes. Please withdraw all pending quotes first.')
+          toast.error(t('deleteAccount.pendingQuotesError'))
         } else if (data.error?.includes('active projects')) {
-          toast.error('Cannot delete account with active projects. Please complete or cancel all projects first.')
+          toast.error(t('deleteAccount.activeProjectsError'))
         } else if (data.error?.includes('Invalid password')) {
-          toast.error('Invalid password. Please try again.')
+          toast.error(t('deleteAccount.invalidPassword'))
         } else {
-          toast.error(data.error || 'Failed to delete account')
+          toast.error(data.error || t('deleteAccount.deleteFailed'))
         }
         return
       }
 
-      toast.success('Account successfully deleted')
+      toast.success(t('deleteAccount.deleteSuccess'))
       
       // Redirect to home page
       setTimeout(() => {
@@ -372,6 +374,11 @@ export default function ContractorProfile() {
     'Roofing',
     'Exterior'
   ]
+
+  const getSpecialtyLabel = (specialty: string) => {
+    const key = specialty.toLowerCase().replace(/\s+/g, '') as keyof typeof tSpecialties
+    return tSpecialties(key) || specialty
+  }
 
   if (isLoading) {
     return (
@@ -574,7 +581,7 @@ export default function ContractorProfile() {
                       onChange={() => handleSpecialtiesChange(specialty)}
                       className="mr-2 cursor-pointer"
                     />
-                    <span className="text-sm">{specialty}</span>
+                    <span className="text-sm">{getSpecialtyLabel(specialty)}</span>
                   </label>
                 ))}
               </div>
@@ -628,10 +635,10 @@ export default function ContractorProfile() {
         <div className="mt-8 bg-white rounded-xl shadow-sm p-8 border border-red-100">
           <h2 className="text-lg font-semibold text-red-600 mb-4 flex items-center">
             <AlertTriangle className="h-5 w-5 mr-2" />
-            Danger Zone
+            {tDangerZone('title')}
           </h2>
           <p className="text-gray-600 mb-4">
-            Once you delete your account, there is no going back. Please be certain.
+            {tDangerZone('description')}
           </p>
           <button
             type="button"
@@ -639,7 +646,7 @@ export default function ContractorProfile() {
             className="flex items-center px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete Account
+            {tDangerZone('deleteAccount')}
           </button>
         </div>
       </div>
@@ -652,7 +659,7 @@ export default function ContractorProfile() {
             <div className="flex items-center justify-between p-6 border-b">
               <h3 className="text-xl font-semibold text-gray-900 flex items-center">
                 <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
-                Delete Account
+                {t('deleteAccount.title')}
               </h3>
               <button
                 onClick={closeDeleteModal}
@@ -668,26 +675,26 @@ export default function ContractorProfile() {
                 <>
                   {/* Warning Step */}
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                    <h4 className="font-semibold text-red-800 mb-2">⚠️ Warning</h4>
+                    <h4 className="font-semibold text-red-800 mb-2">⚠️ {t('deleteAccount.warning')}</h4>
                     <ul className="text-sm text-red-700 space-y-2">
-                      <li>• This action <strong>cannot be undone</strong></li>
-                      <li>• All your profile information will be deleted</li>
-                      <li>• Your portfolio and project history will be removed</li>
-                      <li>• You will lose access to all current and past projects</li>
+                      <li>• {t('deleteAccount.warningItems.cannotUndone')}</li>
+                      <li>• {t('deleteAccount.warningItems.profileDeleted')}</li>
+                      <li>• {t('deleteAccount.warningItems.portfolioRemoved')}</li>
+                      <li>• {t('deleteAccount.warningItems.loseAccess')}</li>
                     </ul>
                   </div>
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <h4 className="font-semibold text-yellow-800 mb-2">📋 Before you proceed</h4>
+                    <h4 className="font-semibold text-yellow-800 mb-2">📋 {t('deleteAccount.beforeProceed')}</h4>
                     <ul className="text-sm text-yellow-700 space-y-2">
-                      <li>• You cannot delete your account if you have <strong>pending quotes</strong></li>
-                      <li>• You cannot delete your account if you have <strong>active projects</strong></li>
-                      <li>• Please withdraw all pending quotes and complete/cancel all projects first</li>
+                      <li>• {t('deleteAccount.beforeProceedItems.pendingQuotes')}</li>
+                      <li>• {t('deleteAccount.beforeProceedItems.activeProjects')}</li>
+                      <li>• {t('deleteAccount.beforeProceedItems.withdrawFirst')}</li>
                     </ul>
                   </div>
 
                   <p className="text-gray-600 mb-6">
-                    Are you sure you want to permanently delete your contractor account?
+                    {t('deleteAccount.confirmQuestion')}
                   </p>
 
                   <div className="flex gap-3">
@@ -695,13 +702,13 @@ export default function ContractorProfile() {
                       onClick={closeDeleteModal}
                       className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Cancel
+                      {tCommon('cancel')}
                     </button>
                     <button
                       onClick={() => setDeleteStep('confirm')}
                       className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
-                      Continue
+                      {tCommon('continue')}
                     </button>
                   </div>
                 </>
@@ -709,12 +716,12 @@ export default function ContractorProfile() {
                 <>
                   {/* Confirm Step */}
                   <p className="text-gray-600 mb-4">
-                    Please enter your password to confirm account deletion.
+                    {t('deleteAccount.enterPassword')}
                   </p>
 
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Password
+                      {t('password')}
                     </label>
                     <div className="relative">
                       <input
@@ -722,7 +729,7 @@ export default function ContractorProfile() {
                         value={deletePassword}
                         onChange={(e) => setDeletePassword(e.target.value)}
                         className="w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                        placeholder="Enter your password"
+                        placeholder={t('passwordPlaceholder')}
                         disabled={isDeleting}
                       />
                       <button
@@ -741,7 +748,7 @@ export default function ContractorProfile() {
                       disabled={isDeleting}
                       className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                      Back
+                      {tCommon('back')}
                     </button>
                     <button
                       onClick={handleDeleteAccount}
@@ -751,12 +758,12 @@ export default function ContractorProfile() {
                       {isDeleting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Deleting...
+                          {t('deleteAccount.deleting')}
                         </>
                       ) : (
                         <>
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete My Account
+                          {t('deleteAccount.deleteMyAccount')}
                         </>
                       )}
                     </button>

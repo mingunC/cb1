@@ -359,6 +359,8 @@
     },
     "profile": {
       "title": "Profile Management",
+      "description": "Click the button below to update your profile information.",
+      "editProfile": "Edit Profile",
       "companyName": "Company Name",
       "companyNameRequired": "Company name is required",
       "companyDescription": "Company Description",
@@ -376,7 +378,47 @@
       "insurancePlaceholder": "Enter insurance information",
       "supportedFormats": "Supported formats: JPG, JPEG, PNG, GIF, WEBP (Max 5MB)",
       "profileSaved": "Profile updated successfully!",
-      "saveFailed": "Save failed"
+      "saveFailed": "Save failed",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "deleteAccount": {
+        "title": "Delete Account",
+        "warning": "Warning",
+        "warningItems": {
+          "cannotUndone": "This action cannot be undone",
+          "profileDeleted": "All your profile information will be deleted",
+          "portfolioRemoved": "Your portfolio and project history will be removed",
+          "loseAccess": "You will lose access to all current and past projects"
+        },
+        "beforeProceed": "Before you proceed",
+        "beforeProceedItems": {
+          "pendingQuotes": "You cannot delete your account if you have pending quotes",
+          "activeProjects": "You cannot delete your account if you have active projects",
+          "withdrawFirst": "Please withdraw all pending quotes and complete/cancel all projects first"
+        },
+        "confirmQuestion": "Are you sure you want to permanently delete your contractor account?",
+        "enterPassword": "Please enter your password to confirm account deletion.",
+        "enterPasswordError": "Please enter your password",
+        "invalidPassword": "Invalid password. Please try again.",
+        "pendingQuotesError": "Cannot delete account with pending quotes. Please withdraw all pending quotes first.",
+        "activeProjectsError": "Cannot delete account with active projects. Please complete or cancel all projects first.",
+        "deleteFailed": "Failed to delete account",
+        "deleteSuccess": "Account successfully deleted",
+        "deleting": "Deleting...",
+        "deleteMyAccount": "Delete My Account"
+      }
+    },
+    "specialties": {
+      "fullRenovation": "Full Renovation",
+      "kitchen": "Kitchen",
+      "bathroom": "Bathroom",
+      "basement": "Basement",
+      "painting": "Painting",
+      "flooring": "Flooring",
+      "electrical": "Electrical",
+      "plumbing": "Plumbing",
+      "roofing": "Roofing",
+      "exterior": "Exterior"
     },
     "dangerZone": {
       "title": "Danger Zone",
