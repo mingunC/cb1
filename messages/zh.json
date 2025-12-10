@@ -616,6 +616,9 @@
     }
   },
   "specialties": {
+    "residential": "住宅",
+    "commercial": "商业",
+    "fullRenovation": "全面翻新",
     "fullrenovation": "全面翻新",
     "kitchen": "厨房",
     "bathroom": "浴室",

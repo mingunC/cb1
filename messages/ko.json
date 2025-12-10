@@ -611,6 +611,9 @@
     }
   },
   "specialties": {
+    "residential": "주거용",
+    "commercial": "상업용",
+    "fullRenovation": "전체 리노베이션",
     "fullrenovation": "전체 리노베이션",
     "kitchen": "주방",
     "bathroom": "욕실",

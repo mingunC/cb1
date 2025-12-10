@@ -611,6 +611,9 @@
     }
   },
   "specialties": {
+    "residential": "Residential",
+    "commercial": "Commercial",
+    "fullRenovation": "Full Renovation",
     "fullrenovation": "Full Renovation",
     "kitchen": "Kitchen",
     "bathroom": "Bathroom",
