@@ -15,27 +15,53 @@ export async function POST(request: Request) {
       )
     }
 
-    const { password } = await request.json()
+    // 사용자의 provider 확인
+    const provider = user.app_metadata?.provider || user.user_metadata?.provider
+    const isOAuthUser = provider === 'google' || provider === 'oauth'
 
-    // 비밀번호 확인 (보안을 위해)
-    if (!password) {
-      return NextResponse.json(
-        { error: 'Password is required for account deletion' },
-        { status: 400 }
-      )
-    }
+    const requestBody = await request.json()
 
-    // 비밀번호 재확인
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
-      password: password
-    })
+    // OAuth 사용자와 일반 사용자 분기 처리
+    if (isOAuthUser) {
+      // OAuth 사용자: 이메일 확인
+      const { email: confirmEmail } = requestBody
 
-    if (signInError) {
-      return NextResponse.json(
-        { error: 'Invalid password' },
-        { status: 401 }
-      )
+      if (!confirmEmail) {
+        return NextResponse.json(
+          { error: 'Email is required for account deletion' },
+          { status: 400 }
+        )
+      }
+
+      if (confirmEmail !== user.email) {
+        return NextResponse.json(
+          { error: 'Email does not match' },
+          { status: 401 }
+        )
+      }
+    } else {
+      // 일반 이메일 사용자: 비밀번호 확인
+      const { password } = requestBody
+
+      if (!password) {
+        return NextResponse.json(
+          { error: 'Password is required for account deletion' },
+          { status: 400 }
+        )
+      }
+
+      // 비밀번호 재확인
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: password
+      })
+
+      if (signInError) {
+        return NextResponse.json(
+          { error: 'Invalid password' },
+          { status: 401 }
+        )
+      }
     }
 
     // 진행 중인 프로젝트 확인 (고객인 경우)

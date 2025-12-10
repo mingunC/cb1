@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Camera, Save, Trash2, AlertTriangle, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 interface ContractorProfile {
@@ -32,11 +32,14 @@ export default function ContractorProfile() {
   const tSpecialties = useTranslations('specialties')
   const tDangerZone = useTranslations('contractor.dangerZone')
   const router = useRouter()
+  const params = useParams()
+  const locale = (params?.locale as string) || 'en'
   const [profile, setProfile] = useState<ContractorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [preferredLanguage, setPreferredLanguage] = useState('en')
   const [formData, setFormData] = useState({
     company_name: '',
     description: '',
@@ -50,16 +53,39 @@ export default function ContractorProfile() {
     insurance: ''
   })
 
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'ko', name: '한국어', flag: '🇰🇷' },
+    { code: 'zh', name: '中文', flag: '🇨🇳' },
+  ]
+
   // Delete account states
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
+  const [confirmEmail, setConfirmEmail] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isOAuthUser, setIsOAuthUser] = useState(false)
   const [deleteStep, setDeleteStep] = useState<'warning' | 'confirm'>('warning')
 
   useEffect(() => {
     loadProfile()
+    checkOAuthUser()
   }, [])
+
+  const checkOAuthUser = async () => {
+    try {
+      const supabase = createBrowserClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const provider = user.app_metadata?.provider || user.user_metadata?.provider
+        setIsOAuthUser(provider === 'google' || provider === 'oauth')
+      }
+    } catch (error) {
+      console.error('Error checking OAuth user:', error)
+    }
+  }
 
   const loadProfile = async () => {
     try {
@@ -114,6 +140,16 @@ export default function ContractorProfile() {
           license_number: contractor.license_number || '',
           insurance: contractor.insurance || ''
         })
+        
+        // preferred_language 설정
+        if (contractor.preferred_language) {
+          setPreferredLanguage(contractor.preferred_language)
+        } else {
+          // 기본값으로 현재 로케일 사용
+          if (['en', 'ko', 'zh'].includes(locale)) {
+            setPreferredLanguage(locale)
+          }
+        }
         
         if (contractor.company_logo) {
           setLogoPreview(contractor.company_logo)
@@ -192,6 +228,53 @@ export default function ContractorProfile() {
     }
   }
 
+  const handleDeleteLogo = async () => {
+    if (!confirm(t('confirmDeleteLogo'))) return
+
+    if (!profile || !logoPreview) {
+      return
+    }
+
+    try {
+      const supabase = createBrowserClient()
+      
+      // Supabase Storage에서 파일 삭제
+      // URL에서 파일 경로 추출 (예: https://xxx.supabase.co/storage/v1/object/public/portfolios/contractor-logos/xxx.jpg)
+      const urlParts = logoPreview.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+      const filePath = `contractor-logos/${fileName}`
+
+      // Storage에서 파일 삭제 시도
+      const { error: deleteError } = await supabase.storage
+        .from('portfolios')
+        .remove([filePath])
+
+      if (deleteError) {
+        console.warn('Failed to delete file from storage:', deleteError)
+        // Storage 삭제 실패해도 DB 업데이트는 진행
+      }
+
+      // DB에서 logo URL 제거
+      const { error: updateError } = await supabase
+        .from('contractors')
+        .update({ company_logo: null })
+        .eq('id', profile.id)
+
+      if (updateError) {
+        console.error('Failed to update contractor:', updateError)
+        toast.error(t('deleteLogoFailed'))
+        return
+      }
+
+      setLogoPreview(null)
+      setProfile(prev => prev ? { ...prev, company_logo: undefined } : null)
+      toast.success(t('logoDeleted'))
+    } catch (error: any) {
+      console.error('Delete logo error:', error)
+      toast.error(t('deleteLogoFailed'))
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -236,7 +319,8 @@ export default function ContractorProfile() {
         specialties: formData.specialties,
         years_in_business: formData.years_in_business || 0,
         license_number: formData.license_number.trim() || null,
-        insurance: formData.insurance.trim() || null
+        insurance: formData.insurance.trim() || null,
+        preferred_language: preferredLanguage
       }
 
       if (process.env.NODE_ENV === 'development') console.log('📝 Update data:', updateData)
@@ -302,20 +386,32 @@ export default function ContractorProfile() {
 
   // Handle account deletion
   const handleDeleteAccount = async () => {
-    if (!deletePassword.trim()) {
-      toast.error(t('deleteAccount.enterPasswordError'))
-      return
+    if (isOAuthUser) {
+      if (!confirmEmail.trim()) {
+        toast.error(t('deleteAccount.emailMismatch'))
+        return
+      }
+    } else {
+      if (!deletePassword.trim()) {
+        toast.error(t('deleteAccount.enterPasswordError'))
+        return
+      }
     }
 
     setIsDeleting(true)
 
     try {
+      const body = isOAuthUser 
+        ? { email: confirmEmail }
+        : { password: deletePassword }
+
       const response = await fetch('/api/delete-account', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password: deletePassword }),
+        body: JSON.stringify(body),
       })
 
       const data = await response.json()
@@ -328,6 +424,8 @@ export default function ContractorProfile() {
           toast.error(t('deleteAccount.activeProjectsError'))
         } else if (data.error?.includes('Invalid password')) {
           toast.error(t('deleteAccount.invalidPassword'))
+        } else if (data.error?.includes('Email does not match') || data.error?.includes('email')) {
+          toast.error(t('deleteAccount.emailMismatch'))
         } else {
           toast.error(data.error || t('deleteAccount.deleteFailed'))
         }
@@ -353,12 +451,14 @@ export default function ContractorProfile() {
     setShowDeleteModal(true)
     setDeleteStep('warning')
     setDeletePassword('')
+    setConfirmEmail('')
   }
 
   const closeDeleteModal = () => {
     setShowDeleteModal(false)
     setDeleteStep('warning')
     setDeletePassword('')
+    setConfirmEmail('')
     setShowPassword(false)
   }
 
@@ -441,6 +541,16 @@ export default function ContractorProfile() {
                   </div>
                 )}
               </div>
+              {logoPreview && !isUploadingLogo && (
+                <button
+                  type="button"
+                  onClick={handleDeleteLogo}
+                  className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 shadow-lg transition-all z-10"
+                  title={t('deleteLogo')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               <label 
                 htmlFor="logo-upload" 
                 className={`absolute bottom-0 right-0 bg-blue-600 text-white p-3 rounded-full cursor-pointer hover:bg-blue-700 shadow-lg transition-all ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'}`}
@@ -565,6 +675,32 @@ export default function ContractorProfile() {
                   placeholder="0"
                   min="0"
                 />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('preferredLanguage')}
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                {t('preferredLanguageNote')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => setPreferredLanguage(lang.code)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                      preferredLanguage === lang.code
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -716,30 +852,48 @@ export default function ContractorProfile() {
                 <>
                   {/* Confirm Step */}
                   <p className="text-gray-600 mb-4">
-                    {t('deleteAccount.enterPassword')}
+                    {isOAuthUser ? t('deleteAccount.confirmWithEmail') : t('deleteAccount.confirmWithPassword')}
                   </p>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('password')}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={deletePassword}
-                        onChange={(e) => setDeletePassword(e.target.value)}
-                        className="w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                        placeholder={t('passwordPlaceholder')}
-                        disabled={isDeleting}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                    </div>
+                    {isOAuthUser ? (
+                      <>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('email')}
+                        </label>
+                        <input
+                          type="email"
+                          value={confirmEmail}
+                          onChange={(e) => setConfirmEmail(e.target.value)}
+                          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                          placeholder={t('deleteAccount.emailPlaceholder')}
+                          disabled={isDeleting}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('password')}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            className="w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                            placeholder={t('deleteAccount.passwordPlaceholder')}
+                            disabled={isDeleting}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex gap-3">
@@ -752,7 +906,7 @@ export default function ContractorProfile() {
                     </button>
                     <button
                       onClick={handleDeleteAccount}
-                      disabled={isDeleting || !deletePassword.trim()}
+                      disabled={isDeleting || (isOAuthUser ? !confirmEmail.trim() : !deletePassword.trim())}
                       className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {isDeleting ? (
