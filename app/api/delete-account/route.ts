@@ -2,15 +2,26 @@ import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
+  console.log('🗑️ Delete account API called')
+  
   try {
     const supabase = await createServerClient()
+    console.log('✅ Supabase client created')
     
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
+    console.log('👤 Auth check result:', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      userEmail: user?.email,
+      authError: authError?.message 
+    })
+    
     if (authError || !user) {
+      console.error('❌ Auth failed:', authError)
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', details: authError?.message },
         { status: 401 }
       )
     }
@@ -18,12 +29,17 @@ export async function POST(request: Request) {
     // 사용자의 provider 확인
     const provider = user.app_metadata?.provider || user.user_metadata?.provider
     const isOAuthUser = provider === 'google' || provider === 'oauth'
+    
+    console.log('🔐 Provider check:', { provider, isOAuthUser })
 
     const requestBody = await request.json()
+    console.log('📦 Request body:', { 
+      hasEmail: !!requestBody.email, 
+      hasPassword: !!requestBody.password 
+    })
 
     // OAuth 사용자와 일반 사용자 분기 처리
     if (isOAuthUser) {
-      // OAuth 사용자: 이메일 확인
       const { email: confirmEmail } = requestBody
 
       if (!confirmEmail) {
@@ -32,6 +48,12 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
+
+      console.log('📧 Email comparison:', { 
+        confirmEmail, 
+        userEmail: user.email,
+        match: confirmEmail === user.email 
+      })
 
       if (confirmEmail !== user.email) {
         return NextResponse.json(
@@ -57,6 +79,7 @@ export async function POST(request: Request) {
       })
 
       if (signInError) {
+        console.error('❌ Password verification failed:', signInError)
         return NextResponse.json(
           { error: 'Invalid password' },
           { status: 401 }
@@ -64,12 +87,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // 진행 중인 프로젝트 확인 (고객인 경우)
-    const { data: userData } = await supabase
+    // 사용자 타입 확인
+    const { data: userData, error: userDataError } = await supabase
       .from('users')
       .select('user_type')
       .eq('id', user.id)
       .single()
+
+    console.log('👤 User data:', { userData, userDataError: userDataError?.message })
 
     if (userData?.user_type === 'customer') {
       const { data: activeProjects } = await supabase
@@ -102,7 +127,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Soft delete: users 테이블에 is_deleted 플래그 추가
+    // Soft delete 실행
+    console.log('🗑️ Executing soft delete for user:', user.id)
+    
     const { error: updateError } = await supabase
       .from('users')
       .update({ 
@@ -113,22 +140,26 @@ export async function POST(request: Request) {
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('Failed to mark user as deleted:', updateError)
+      console.error('❌ Update error:', updateError)
       return NextResponse.json(
-        { error: 'Failed to delete account' },
+        { error: 'Failed to delete account', details: updateError.message },
         { status: 500 }
       )
     }
 
-    // contractors 또는 customers 테이블도 업데이트
+    console.log('✅ User marked as deleted')
+
+    // contractors 업데이트
     if (userData?.user_type === 'contractor') {
-      await supabase
+      const { error: contractorError } = await supabase
         .from('contractors')
         .update({ 
           status: 'inactive',
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id)
+
+      console.log('📝 Contractor update:', { error: contractorError?.message })
     }
 
     // Auth 계정 삭제 (선택사항 - 주석 처리)
@@ -136,8 +167,8 @@ export async function POST(request: Request) {
     // 현재는 soft delete만 수행하고, Auth 계정은 유지합니다
     // 필요시 Supabase Dashboard에서 수동으로 삭제할 수 있습니다
 
-    // 로그아웃
     await supabase.auth.signOut()
+    console.log('✅ Signed out')
 
     return NextResponse.json({ 
       success: true,
@@ -145,7 +176,7 @@ export async function POST(request: Request) {
     })
 
   } catch (error: any) {
-    console.error('Delete account error:', error)
+    console.error('❌ Delete account error:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

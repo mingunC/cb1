@@ -436,8 +436,18 @@ export default function ContractorProfile() {
       })
 
       const data = await response.json()
+      
+      // 디버깅용 로그
+      console.log('🗑️ Delete response:', { 
+        status: response.status, 
+        ok: response.ok, 
+        data 
+      })
 
       if (!response.ok) {
+        // 에러 메시지에 상세 정보 포함
+        console.error('❌ Delete failed:', data)
+        
         // Handle specific error messages
         if (data.error?.includes('pending quotes')) {
           toast.error(t('deleteAccount.pendingQuotesError'))
@@ -448,7 +458,7 @@ export default function ContractorProfile() {
         } else if (data.error?.includes('Email does not match') || data.error?.includes('email')) {
           toast.error(t('deleteAccount.emailMismatch'))
         } else {
-          toast.error(data.error || t('deleteAccount.deleteFailed'))
+          toast.error(data.error + (data.details ? `: ${data.details}` : '') || t('deleteAccount.deleteFailed'))
         }
         return
       }
@@ -461,7 +471,7 @@ export default function ContractorProfile() {
       }, 1500)
 
     } catch (error: any) {
-      console.error('Delete account error:', error)
+      console.error('❌ Network error:', error)
       toast.error('An error occurred. Please try again.')
     } finally {
       setIsDeleting(false)
