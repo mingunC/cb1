@@ -652,5 +652,32 @@
     "portfolio": "作品集",
     "noResults": "未找到承包商",
     "loading": "加载中..."
+  },
+  "portfolioPage": {
+    "backToHome": "返回首页",
+    "title": "精选作品集",
+    "subtitle": "探索我们值得信赖的专业人士的精彩翻新项目",
+    "searchPlaceholder": "按公司名称或项目名称搜索...",
+    "noResults": "未找到作品集",
+    "loading": "加载中...",
+    "viewDetails": "查看详情",
+    "by": "来自",
+    "projectType": "项目类型",
+    "completedDate": "完成日期",
+    "location": "位置",
+    "allCategories": "全部类别",
+    "filterBy": "筛选",
+    "noPortfoliosAvailable": "暂无作品集",
+    "noSearchResults": "未找到搜索结果。",
+    "noPortfoliosYet": "暂无作品集。",
+    "moreImages": "+{count} 更多",
+    "viewContractor": "查看承包商",
+    "category": "类别",
+    "completionYear": "完成年份",
+    "projectAddress": "项目地址",
+    "projectDescription": "项目描述",
+    "projectLocation": "项目位置",
+    "requestQuote": "请求报价",
+    "loadingPortfolios": "加载作品集中..."
   }
 }

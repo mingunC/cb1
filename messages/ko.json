@@ -647,5 +647,32 @@
     "portfolio": "포트폴리오",
     "noResults": "업체를 찾을 수 없습니다",
     "loading": "로딩 중..."
+  },
+  "portfolioPage": {
+    "backToHome": "홈으로 돌아가기",
+    "title": "영감을 주는 포트폴리오",
+    "subtitle": "신뢰할 수 있는 전문가들의 놀라운 리노베이션 프로젝트를 살펴보세요",
+    "searchPlaceholder": "업체명 또는 프로젝트명으로 검색...",
+    "noResults": "포트폴리오를 찾을 수 없습니다",
+    "loading": "로딩 중...",
+    "viewDetails": "상세 보기",
+    "by": "by",
+    "projectType": "프로젝트 유형",
+    "completedDate": "완료일",
+    "location": "위치",
+    "allCategories": "전체 카테고리",
+    "filterBy": "필터",
+    "noPortfoliosAvailable": "포트폴리오 없음",
+    "noSearchResults": "검색 결과가 없습니다.",
+    "noPortfoliosYet": "아직 포트폴리오가 없습니다.",
+    "moreImages": "+{count}개 더",
+    "viewContractor": "업체 보기",
+    "category": "카테고리",
+    "completionYear": "완료 연도",
+    "projectAddress": "프로젝트 주소",
+    "projectDescription": "프로젝트 설명",
+    "projectLocation": "프로젝트 위치",
+    "requestQuote": "견적 요청",
+    "loadingPortfolios": "포트폴리오 로딩 중..."
   }
 }

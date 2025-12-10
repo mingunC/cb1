@@ -647,5 +647,32 @@
     "portfolio": "Portfolio",
     "noResults": "No contractors found",
     "loading": "Loading..."
+  },
+  "portfolioPage": {
+    "backToHome": "Back to Home",
+    "title": "Inspiring Portfolio",
+    "subtitle": "Explore stunning renovation projects from our trusted professionals",
+    "searchPlaceholder": "Search by company or project name...",
+    "noResults": "No portfolios found",
+    "loading": "Loading...",
+    "viewDetails": "View Details",
+    "by": "by",
+    "projectType": "Project Type",
+    "completedDate": "Completed",
+    "location": "Location",
+    "allCategories": "All Categories",
+    "filterBy": "Filter by",
+    "noPortfoliosAvailable": "No Portfolios Available",
+    "noSearchResults": "No search results found.",
+    "noPortfoliosYet": "No portfolios available yet.",
+    "moreImages": "+{count} more",
+    "viewContractor": "View Contractor",
+    "category": "Category",
+    "completionYear": "Completion Year",
+    "projectAddress": "Project Address",
+    "projectDescription": "Project Description",
+    "projectLocation": "Project Location",
+    "requestQuote": "Request Quote",
+    "loadingPortfolios": "Loading portfolios..."
   }
 }

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Search, Heart, Eye, ChevronLeft, ChevronRight, X, Building, Home, MapPin, ArrowLeft, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import { useTranslations } from 'next-intl'
 
 interface Portfolio {
   id: string
@@ -24,6 +25,7 @@ interface Portfolio {
 }
 
 function PortfolioContent() {
+  const t = useTranslations('portfolioPage')
   const searchParams = useSearchParams()
   const contractorIdFromUrl = searchParams?.get('contractor')
   
@@ -126,14 +128,14 @@ function PortfolioContent() {
             className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {t('backToHome')}
           </Link>
           <div className="flex items-center mb-6">
             <Briefcase className="h-12 w-12 mr-4" />
-            <h1 className="text-5xl font-bold">Inspiring Portfolio</h1>
+            <h1 className="text-5xl font-bold">{t('title')}</h1>
           </div>
           <p className="text-xl text-white/90 max-w-3xl">
-            Explore stunning renovation projects from our trusted professionals
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -144,7 +146,7 @@ function PortfolioContent() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="Search by company or project name..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base"
@@ -157,14 +159,14 @@ function PortfolioContent() {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-gray-600">{t('loading')}</p>
           </div>
         ) : filteredPortfolios.length === 0 ? (
           <div className="text-center py-12">
             <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Portfolios Available</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('noPortfoliosAvailable')}</h3>
             <p className="text-gray-500">
-              {searchTerm ? 'No search results found.' : 'No portfolios available yet.'}
+              {searchTerm ? t('noSearchResults') : t('noPortfoliosYet')}
             </p>
           </div>
         ) : (
@@ -193,7 +195,7 @@ function PortfolioContent() {
 
                   {portfolio.images && portfolio.images.length > 1 && (
                     <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 text-white text-xs rounded-full">
-                      +{portfolio.images.length - 1} more
+                      {t('moreImages', { count: portfolio.images.length - 1 })}
                     </div>
                   )}
                 </div>
@@ -295,7 +297,7 @@ function PortfolioContent() {
                     </div>
                   </div>
                   <Link href="/pros" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
-                    View Contractor
+                    {t('viewContractor')}
                   </Link>
                 </div>
               )}
@@ -303,13 +305,13 @@ function PortfolioContent() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {selectedPortfolio.category && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Category</p>
+                    <p className="text-sm text-gray-500 mb-1">{t('category')}</p>
                     <p className="font-medium">{selectedPortfolio.category}</p>
                   </div>
                 )}
                 {selectedPortfolio.year && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Completion Year</p>
+                    <p className="text-sm text-gray-500 mb-1">{t('completionYear')}</p>
                     <p className="font-medium">{selectedPortfolio.year}</p>
                   </div>
                 )}
@@ -317,7 +319,7 @@ function PortfolioContent() {
 
               {selectedPortfolio.project_address && (
                 <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-1">Project Address</p>
+                  <p className="text-sm text-gray-500 mb-1">{t('projectAddress')}</p>
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-400" />
                     <p className="font-medium">{selectedPortfolio.project_address}</p>
@@ -327,14 +329,14 @@ function PortfolioContent() {
 
               {selectedPortfolio.description && (
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-2">Project Description</h4>
+                  <h4 className="font-semibold mb-2">{t('projectDescription')}</h4>
                   <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedPortfolio.description}</p>
                 </div>
               )}
 
               {selectedPortfolio.project_address && (
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-2">Project Location</h4>
+                  <h4 className="font-semibold mb-2">{t('projectLocation')}</h4>
                   <p className="text-gray-600 flex items-center">
                     📍 {selectedPortfolio.project_address}
                   </p>
@@ -342,7 +344,7 @@ function PortfolioContent() {
               )}
 
               <Link href="/quote-request" className="block w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-center">
-                Request Quote
+                {t('requestQuote')}
               </Link>
             </div>
           </div>
@@ -353,12 +355,14 @@ function PortfolioContent() {
 }
 
 export default function PortfolioGalleryPage() {
+  const t = useTranslations('portfolioPage')
+  
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading portfolios...</p>
+          <p className="text-gray-600">{t('loadingPortfolios')}</p>
         </div>
       </div>
     }>
