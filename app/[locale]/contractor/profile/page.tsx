@@ -39,7 +39,7 @@ export default function ContractorProfile() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [preferredLanguage, setPreferredLanguage] = useState('en')
+  const [preferredLanguages, setPreferredLanguages] = useState<string[]>(['en'])
   const [formData, setFormData] = useState({
     company_name: '',
     description: '',
@@ -141,13 +141,30 @@ export default function ContractorProfile() {
           insurance: contractor.insurance || ''
         })
         
-        // preferred_language 설정
-        if (contractor.preferred_language) {
-          setPreferredLanguage(contractor.preferred_language)
+        // preferred_languages 설정
+        let parsedLanguages: string[] = []
+        if (contractor.preferred_languages) {
+          if (Array.isArray(contractor.preferred_languages)) {
+            parsedLanguages = contractor.preferred_languages
+          } else if (typeof contractor.preferred_languages === 'string') {
+            try {
+              parsedLanguages = JSON.parse(contractor.preferred_languages)
+            } catch (e) {
+              console.error('Failed to parse preferred_languages:', e)
+              parsedLanguages = []
+            }
+          }
+        } else if (contractor.preferred_language) {
+          // 단일 값이 있는 경우 배열로 변환
+          parsedLanguages = [contractor.preferred_language]
+        }
+        
+        if (parsedLanguages.length > 0) {
+          setPreferredLanguages(parsedLanguages)
         } else {
           // 기본값으로 현재 로케일 사용
           if (['en', 'ko', 'zh'].includes(locale)) {
-            setPreferredLanguage(locale)
+            setPreferredLanguages([locale])
           }
         }
         
@@ -320,7 +337,7 @@ export default function ContractorProfile() {
         years_in_business: formData.years_in_business || 0,
         license_number: formData.license_number.trim() || null,
         insurance: formData.insurance.trim() || null,
-        preferred_language: preferredLanguage
+        preferred_languages: preferredLanguages.length > 0 ? preferredLanguages : ['en']
       }
 
       if (process.env.NODE_ENV === 'development') console.log('📝 Update data:', updateData)
@@ -690,15 +707,26 @@ export default function ContractorProfile() {
                   <button
                     key={lang.code}
                     type="button"
-                    onClick={() => setPreferredLanguage(lang.code)}
+                    onClick={() => {
+                      if (preferredLanguages.includes(lang.code)) {
+                        // 이미 선택된 경우 제거
+                        setPreferredLanguages(prev => prev.filter(l => l !== lang.code))
+                      } else {
+                        // 선택되지 않은 경우 추가
+                        setPreferredLanguages(prev => [...prev, lang.code])
+                      }
+                    }}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      preferredLanguage === lang.code
+                      preferredLanguages.includes(lang.code)
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                         : 'border-gray-300 hover:border-gray-400'
                     }`}
                   >
                     <span>{lang.flag}</span>
                     <span>{lang.name}</span>
+                    {preferredLanguages.includes(lang.code) && (
+                      <span className="ml-1">✓</span>
+                    )}
                   </button>
                 ))}
               </div>
