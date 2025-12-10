@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Camera, Save, Trash2, AlertTriangle, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -67,6 +67,7 @@ export default function ContractorProfile() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isOAuthUser, setIsOAuthUser] = useState(false)
   const [deleteStep, setDeleteStep] = useState<'warning' | 'confirm'>('warning')
+  const phoneInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadProfile()
@@ -131,7 +132,7 @@ export default function ContractorProfile() {
         setFormData({
           company_name: contractor.company_name || '',
           description: contractor.description || '',
-          phone: contractor.phone || '',
+          phone: formatPhoneNumber(contractor.phone || ''),
           email: contractor.email || session.user.email || '',
           address: contractor.address || '',
           website: contractor.website || '',
@@ -294,6 +295,63 @@ export default function ContractorProfile() {
     }
   }
 
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const cleaned = value.replace(/\D/g, '')
+    // 최대 10자리로 제한
+    const limited = cleaned.slice(0, 10)
+    
+    if (limited.length === 0) {
+      return ''
+    } else if (limited.length <= 3) {
+      return `(${limited})`
+    } else if (limited.length <= 6) {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    } else {
+      return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)} - ${limited.slice(6)}`
+    }
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const previousValue = formData.phone
+    const inputValue = input.value
+    const cursorPosition = input.selectionStart || 0
+    
+    // 숫자 추출
+    const cleaned = inputValue.replace(/\D/g, '')
+    const previousCleaned = previousValue.replace(/\D/g, '')
+    const isDeletion = cleaned.length < previousCleaned.length
+    
+    // 포맷팅
+    const formatted = formatPhoneNumber(inputValue)
+    
+    // 커서 위치 계산
+    const beforeCursor = inputValue.slice(0, cursorPosition).replace(/\D/g, '').length
+    
+    let newCursorPosition = formatted.length
+    let count = 0
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
+        count++
+        if (count === beforeCursor) {
+          newCursorPosition = isDeletion ? i + 1 : i + 1
+          break
+        }
+      }
+    }
+    
+    // 상태 업데이트
+    setFormData(prev => ({ ...prev, phone: formatted }))
+    
+    // 커서 위치 복원
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
+      }
+    }, 0)
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -331,7 +389,7 @@ export default function ContractorProfile() {
       const updateData = {
         company_name: formData.company_name.trim(),
         description: formData.description.trim() || null,
-        phone: formData.phone.trim() || null,
+        phone: formData.phone.replace(/\D/g, '') || null, // 숫자만 저장
         email: formData.email.trim() || null,
         address: formData.address.trim() || null,
         website: formData.website.trim() || null,
@@ -640,12 +698,14 @@ export default function ContractorProfile() {
                   {t('phone')}
                 </label>
                 <input
+                  ref={phoneInputRef}
                   type="tel"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleInputChange}
+                  onChange={handlePhoneChange}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder={t('phone')}
+                  placeholder="(123) 456 - 7890"
+                  maxLength={16}
                 />
               </div>
 

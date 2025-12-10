@@ -99,6 +99,14 @@ export default function ContractorDetailPage() {
     }
   }
 
+  const formatPhoneDisplay = (phone: string) => {
+    const cleaned = phone?.replace(/\D/g, '') || ''
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)} - ${cleaned.slice(6)}`
+    }
+    return phone // 10자리가 아니면 원본 반환
+  }
+
   const checkContractorOwnership = useCallback(async () => {
     try {
       const supabase = createBrowserClient()
@@ -570,7 +578,7 @@ export default function ContractorDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gray-400" />
-                <span className="text-sm">{contractor.phone}</span>
+                <span className="text-sm">{formatPhoneDisplay(contractor.phone)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-gray-400" />
