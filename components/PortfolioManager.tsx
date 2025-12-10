@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, Upload, X, Edit3, Trash2, Image as ImageIcon } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabase/clients'
+import { useTranslations } from 'next-intl'
 
 interface PortfolioProject {
   id: string
@@ -24,6 +25,8 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_IMAGES = 10
 
 export default function PortfolioManager({ contractorId, onPortfolioUpdate }: PortfolioManagerProps) {
+  const t = useTranslations('contractor.portfolio')
+  const tCommon = useTranslations('common')
   const [projects, setProjects] = useState<PortfolioProject[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -89,7 +92,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     const remainingSlots = MAX_IMAGES - currentImageCount
     
     if (files.length > remainingSlots) {
-      alert(`You can upload up to ${MAX_IMAGES} images.`)
+      alert(t('maxImagesError', { count: MAX_IMAGES }))
       return
     }
 
@@ -152,12 +155,12 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
     e.preventDefault()
     
     if (!formData.title || !formData.description) {
-      alert('Please enter a title and description.')
+      alert(t('titleRequired'))
       return
     }
 
     if (formData.images.length === 0 && !editingProject) {
-      alert('Please upload at least 1 image.')
+      alert(t('imageRequired'))
       return
     }
 
@@ -190,7 +193,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
       }
 
       if (imageUrls.length === 0) {
-        alert('Image upload failed.')
+        alert(t('uploadFailed'))
         return
       }
 
@@ -212,7 +215,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
 
         if (error) {
           console.error('Portfolio update error:', error)
-          alert('Failed to update portfolio.')
+          alert(t('saveFailed'))
           return
         }
       } else {
@@ -222,18 +225,18 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
 
         if (error) {
           console.error('Portfolio creation error:', error)
-          alert('Failed to create portfolio.')
+          alert(t('saveFailed'))
           return
         }
       }
 
-      alert(editingProject ? 'Portfolio updated successfully.' : 'Portfolio added successfully.')
+      alert(editingProject ? t('portfolioUpdated') : t('portfolioAdded'))
       await fetchProjects()
       cancelForm()
       onPortfolioUpdate?.()
     } catch (error) {
       console.error('Error:', error)
-      alert('Failed to save portfolio.')
+      alert(t('saveFailed'))
     } finally {
       setIsUploading(false)
     }
@@ -254,7 +257,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
   }
 
   const handleDelete = async (projectId: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return
+    if (!confirm(t('deleteConfirm'))) return
 
     try {
       const supabase = createBrowserClient()
@@ -266,16 +269,16 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
 
       if (error) {
         console.error('Delete error:', error)
-        alert('Failed to delete project.')
+        alert(t('deleteFailed'))
         return
       }
 
-      alert('Project deleted successfully.')
+      alert(t('portfolioDeleted'))
       await fetchProjects()
       onPortfolioUpdate?.()
     } catch (error) {
       console.error('Error deleting project:', error)
-      alert('Failed to delete project.')
+      alert(t('deleteFailed'))
     }
   }
 
@@ -299,16 +302,16 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Portfolio Management</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t('title')}</h3>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Total {projects.length} projects</span>
+          <span className="text-sm text-gray-500">{t('totalProjects', { count: projects.length })}</span>
           {!showAddForm && (
             <button
               onClick={() => setShowAddForm(true)}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Project
+              {t('addProject')}
             </button>
           )}
         </div>
@@ -317,7 +320,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
       {isLoading && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading portfolios...</p>
+          <p className="mt-4 text-gray-600">{t('loadingPortfolios')}</p>
         </div>
       )}
 
@@ -327,7 +330,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-medium text-gray-900">
-                  {editingProject ? 'Edit Project' : 'Add New Project'}
+                  {editingProject ? t('editProject') : t('addNewProject')}
                 </h4>
                 <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600">
                   <X className="h-5 w-5" />
@@ -337,20 +340,20 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Project Title *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectTitle')} *</label>
                     <input
                       type="text"
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Modern Apartment Renovation"
+                      placeholder={t('projectTitlePlaceholder')}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')} *</label>
                     <select
                       name="category"
                       value={formData.category}
@@ -358,28 +361,28 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="Residential">Residential</option>
-                      <option value="Commercial">Commercial</option>
+                      <option value="Residential">{t('residential')}</option>
+                      <option value="Commercial">{t('commercial')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Description *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectDescription')} *</label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter a detailed description of the project."
+                    placeholder={t('projectDescriptionPlaceholder')}
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Completion Year *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('completionYear')} *</label>
                     <input
                       type="number"
                       name="year"
@@ -393,21 +396,21 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectAddress')}</label>
                     <input
                       type="text"
                       name="project_address"
                       value={formData.project_address}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., 123 Main St, Toronto, ON"
+                      placeholder={t('projectAddressPlaceholder')}
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Project Images * (Max {MAX_IMAGES} images)
+                    {t('projectImages')} * ({t('maxImages', { count: MAX_IMAGES })})
                   </label>
                   <div className="space-y-3">
                     {imagePreviews.length > 0 && (
@@ -451,10 +454,10 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                         >
                           <Upload className="h-8 w-8 text-gray-400 mb-2" />
                           <span className="text-sm text-gray-600">
-                            Add Images ({imagePreviews.length}/{MAX_IMAGES})
+                            {t('addImages')} ({imagePreviews.length}/{MAX_IMAGES})
                           </span>
                           <span className="text-xs text-gray-500 mt-1">
-                            JPG, PNG, GIF, WEBP (Max 5MB)
+                            {t('imageFormats')}
                           </span>
                         </label>
                       </div>
@@ -468,14 +471,14 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                     onClick={cancelForm}
                     className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
                   >
-                    Cancel
+                    {tCommon('cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={isUploading}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {isUploading ? 'Saving...' : editingProject ? 'Update' : 'Add'}
+                    {isUploading ? tCommon('saving') : editingProject ? tCommon('update') : tCommon('add')}
                   </button>
                 </div>
               </form>
@@ -499,7 +502,7 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                   )}
                   {project.images && project.images.length > 1 && (
                     <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                      +{project.images.length - 1} More
+                      {t('moreImages', { count: project.images.length - 1 })}
                     </div>
                   )}
                 </div>
@@ -521,14 +524,14 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
                       className="flex-1 flex items-center justify-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
                     >
                       <Edit3 className="h-4 w-4 mr-1" />
-                      Edit
+                      {tCommon('edit')}
                     </button>
                     <button
                       onClick={() => handleDelete(project.id)}
                       className="flex-1 flex items-center justify-center px-3 py-2 text-sm text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
+                      {tCommon('delete')}
                     </button>
                   </div>
                 </div>
@@ -541,14 +544,14 @@ export default function PortfolioManager({ contractorId, onPortfolioUpdate }: Po
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ImageIcon className="w-8 h-8 text-gray-400" />
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No portfolios available</h4>
-              <p className="text-gray-500 mb-4">Try adding your first project.</p>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">{t('noPortfolios')}</h4>
+              <p className="text-gray-500 mb-4">{t('tryAddingFirst')}</p>
               <button
                 onClick={() => setShowAddForm(true)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Project
+                {t('addProject')}
               </button>
             </div>
           )}

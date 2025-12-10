@@ -5,6 +5,7 @@ import { createBrowserClient } from '@/lib/supabase/clients'
 import { ArrowLeft, Camera, Save } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface ContractorProfile {
   id: string
@@ -26,6 +27,8 @@ const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export default function ContractorProfile() {
+  const t = useTranslations('contractor.profile')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [profile, setProfile] = useState<ContractorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -204,7 +207,7 @@ export default function ContractorProfile() {
     }
 
     if (!formData.company_name.trim()) {
-      toast.error('Company name is required')
+      toast.error(t('companyNameRequired'))
       return
     }
 
@@ -266,7 +269,7 @@ export default function ContractorProfile() {
 
         if (process.env.NODE_ENV === 'development') console.log('✅ Save successful!')
         setProfile(prev => prev ? { ...prev, ...updateData } : null)
-        toast.success('Profile updated successfully!')
+        toast.success(t('profileSaved'))
         
       } catch (raceError: any) {
         clearTimeout(timeoutId!)
@@ -281,7 +284,7 @@ export default function ContractorProfile() {
       
     } catch (error: any) {
       console.error('❌ Unexpected error:', error)
-      toast.error(`Profile save failed: ${error.message || 'Unknown error'}`)
+      toast.error(t('saveFailed'))
     } finally {
       setIsSaving(false)
       if (process.env.NODE_ENV === 'development') console.log('💾 Profile save process ended')
@@ -306,7 +309,7 @@ export default function ContractorProfile() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <p className="mt-4 text-gray-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -324,10 +327,10 @@ export default function ContractorProfile() {
                 className="flex items-center text-gray-600 hover:text-gray-900"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
-                Back
+                {tCommon('back')}
               </button>
             </div>
-            <h1 className="text-xl font-semibold">Profile Management</h1>
+            <h1 className="text-xl font-semibold">{t('title')}</h1>
             <div className="w-24" />
           </div>
         </div>
@@ -378,9 +381,9 @@ export default function ContractorProfile() {
                 />
               </label>
             </div>
-            <p className="text-lg font-medium mt-4">{formData.company_name || 'Company Name'}</p>
+            <p className="text-lg font-medium mt-4">{formData.company_name || t('companyName')}</p>
             <p className="text-xs text-gray-500 mt-2">
-              Supported formats: {ALLOWED_IMAGE_EXTENSIONS.join(', ').toUpperCase()} (Max {Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB)
+              {t('supportedFormats')}
             </p>
           </div>
 
@@ -388,7 +391,7 @@ export default function ContractorProfile() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company Name <span className="text-red-500">*</span>
+                {t('companyName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -396,13 +399,13 @@ export default function ContractorProfile() {
                 value={formData.company_name}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Enter company name"
+                placeholder={t('companyName')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company Description
+                {t('companyDescription')}
               </label>
               <textarea
                 name="description"
@@ -410,14 +413,14 @@ export default function ContractorProfile() {
                 onChange={handleInputChange}
                 rows={4}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Enter company description"
+                placeholder={t('companyDescriptionPlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
+                  {t('phone')}
                 </label>
                 <input
                   type="tel"
@@ -425,13 +428,13 @@ export default function ContractorProfile() {
                   value={formData.phone}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter phone number"
+                  placeholder={t('phone')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  {t('email')}
                 </label>
                 <input
                   type="email"
@@ -439,14 +442,14 @@ export default function ContractorProfile() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter email"
+                  placeholder={t('email')}
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address
+                {t('address')}
               </label>
               <input
                 type="text"
@@ -454,14 +457,14 @@ export default function ContractorProfile() {
                 value={formData.address}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Enter address"
+                placeholder={t('address')}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Website
+                  {t('website')}
                 </label>
                 <input
                   type="url"
@@ -469,13 +472,13 @@ export default function ContractorProfile() {
                   value={formData.website}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="https://example.com"
+                  placeholder={t('websitePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Years in Business
+                  {t('yearsInBusiness')}
                 </label>
                 <input
                   type="number"
@@ -491,7 +494,7 @@ export default function ContractorProfile() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Specialties
+                {t('specialties')}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {specialtyOptions.map(specialty => (
@@ -511,7 +514,7 @@ export default function ContractorProfile() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business License Number
+                  {t('businessLicenseNumber')}
                 </label>
                 <input
                   type="text"
@@ -519,13 +522,13 @@ export default function ContractorProfile() {
                   value={formData.license_number}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter business license number"
+                  placeholder={t('businessLicensePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Insurance
+                  {t('insurance')}
                 </label>
                 <input
                   type="text"
@@ -533,7 +536,7 @@ export default function ContractorProfile() {
                   value={formData.insurance}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter insurance information"
+                  placeholder={t('insurancePlaceholder')}
                 />
               </div>
             </div>
@@ -546,7 +549,7 @@ export default function ContractorProfile() {
                 className="flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save'}
+                {isSaving ? tCommon('saving') : tCommon('save')}
               </button>
             </div>
           </div>
