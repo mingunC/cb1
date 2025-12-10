@@ -679,5 +679,42 @@
     "projectLocation": "项目位置",
     "requestQuote": "请求报价",
     "loadingPortfolios": "加载作品集中..."
+  },
+  "events": {
+    "backToHome": "返回首页",
+    "title": "专属活动",
+    "subtitle": "发现来自值得信赖的专业人士的特别优惠",
+    "tabs": {
+      "ongoing": "进行中",
+      "upcoming": "即将开始",
+      "ended": "已结束"
+    },
+    "filters": {
+      "all": "全部",
+      "discount": "折扣",
+      "gift": "礼品",
+      "special": "特别",
+      "season": "季节",
+      "collaboration": "合作"
+    },
+    "noEvents": "暂无活动",
+    "loading": "加载中...",
+    "viewDetails": "查看详情",
+    "validUntil": "有效期至",
+    "expired": "已过期",
+    "startingSoon": "即将开始",
+    "daysLeft": "天剩余",
+    "termsConditions": "条款和条件",
+    "noEventsAtThisTime": "目前暂无活动。",
+    "eventInformation": "活动信息",
+    "period": "期间",
+    "discountRate": "折扣率",
+    "targetSpace": "目标空间",
+    "minimumBudget": "最低预算",
+    "participants": "参与者",
+    "joinEvent": "参加活动",
+    "contactContractor": "联系承包商",
+    "ended": "已结束",
+    "dDay": "D-Day"
   }
 }

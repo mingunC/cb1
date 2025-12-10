@@ -674,5 +674,42 @@
     "projectLocation": "Project Location",
     "requestQuote": "Request Quote",
     "loadingPortfolios": "Loading portfolios..."
+  },
+  "events": {
+    "backToHome": "Back to Home",
+    "title": "Exclusive Events",
+    "subtitle": "Discover special offers from trusted professionals",
+    "tabs": {
+      "ongoing": "Ongoing",
+      "upcoming": "Upcoming",
+      "ended": "Ended"
+    },
+    "filters": {
+      "all": "All",
+      "discount": "Discount",
+      "gift": "Gift",
+      "special": "Special",
+      "season": "Season",
+      "collaboration": "Collaboration"
+    },
+    "noEvents": "No events available",
+    "loading": "Loading...",
+    "viewDetails": "View Details",
+    "validUntil": "Valid until",
+    "expired": "Expired",
+    "startingSoon": "Starting soon",
+    "daysLeft": "days left",
+    "termsConditions": "Terms & Conditions",
+    "noEventsAtThisTime": "No events available at this time.",
+    "eventInformation": "Event Information",
+    "period": "Period",
+    "discountRate": "Discount Rate",
+    "targetSpace": "Target Space",
+    "minimumBudget": "Minimum Budget",
+    "participants": "Participants",
+    "joinEvent": "Join Event",
+    "contactContractor": "Contact Contractor",
+    "ended": "Ended",
+    "dDay": "D-Day"
   }
 }

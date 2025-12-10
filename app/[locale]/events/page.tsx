@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Calendar, Gift, Percent, Tag, AlertCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface Event {
   id: string
@@ -37,6 +38,7 @@ type FilterType = 'all' | 'discount' | 'gift' | 'special' | 'season' | 'collabor
 type StatusFilter = 'all' | 'ongoing' | 'upcoming' | 'ended'
 
 export default function EventsPromotionPage() {
+  const t = useTranslations('events')
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -100,11 +102,11 @@ export default function EventsPromotionPage() {
 
   const getEventTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      'discount': 'Discount',
-      'gift': 'Gift',
-      'special': 'Special',
-      'season': 'Season',
-      'collaboration': 'Collaboration'
+      'discount': t('filters.discount'),
+      'gift': t('filters.gift'),
+      'special': t('filters.special'),
+      'season': t('filters.season'),
+      'collaboration': t('filters.collaboration')
     }
     return labels[type] || type
   }
@@ -127,8 +129,8 @@ export default function EventsPromotionPage() {
     const end = new Date(endDate)
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     
-    if (diff < 0) return 'Ended'
-    if (diff === 0) return 'D-Day'
+    if (diff < 0) return t('ended')
+    if (diff === 0) return t('dDay')
     return `D-${diff}`
   }
 
@@ -147,14 +149,14 @@ export default function EventsPromotionPage() {
             className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {t('backToHome')}
           </Link>
           <div className="flex items-center mb-6">
             <Gift className="h-12 w-12 mr-4" />
-            <h1 className="text-5xl font-bold">Exclusive Events</h1>
+            <h1 className="text-5xl font-bold">{t('title')}</h1>
           </div>
           <p className="text-xl text-white/90 max-w-3xl">
-            Discover special offers from trusted professionals
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -174,9 +176,9 @@ export default function EventsPromotionPage() {
                     : 'text-gray-500 border-transparent hover:text-gray-700'
                 }`}
               >
-                {status === 'ongoing' && 'Ongoing'}
-                {status === 'upcoming' && 'Upcoming'}
-                {status === 'ended' && 'Ended'}
+                {status === 'ongoing' && t('tabs.ongoing')}
+                {status === 'upcoming' && t('tabs.upcoming')}
+                {status === 'ended' && t('tabs.ended')}
                 <span className="ml-2 text-sm">
                   ({events.filter(e => {
                     const now = new Date()
@@ -201,7 +203,7 @@ export default function EventsPromotionPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              All
+              {t('filters.all')}
             </button>
             {(['discount', 'gift', 'special', 'season', 'collaboration'] as FilterType[]).map(type => (
               <button
@@ -238,14 +240,14 @@ export default function EventsPromotionPage() {
         ) : filteredEvents.length === 0 ? (
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No events available at this time.</p>
+            <p className="text-gray-500">{t('noEventsAtThisTime')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEvents.map(event => {
               const dday = calculateDday(event.end_date)
               const progress = calculateProgress(event.current_participants, event.max_participants)
-              const isEnded = dday === 'Ended'
+              const isEnded = dday === t('ended')
 
               return (
                 <div
@@ -284,7 +286,7 @@ export default function EventsPromotionPage() {
                     {/* D-Day */}
                     <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-sm font-bold ${
                       isEnded ? 'bg-gray-500 text-white' :
-                      dday === 'D-Day' ? 'bg-red-500 text-white' :
+                      dday === t('dDay') ? 'bg-red-500 text-white' :
                       'bg-black/60 text-white'
                     }`}>
                       {dday}
@@ -334,7 +336,7 @@ export default function EventsPromotionPage() {
                     {event.max_participants && (
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-600">Participants</span>
+                          <span className="text-gray-600">{t('participants')}</span>
                           <span className="font-medium">
                             {event.current_participants || 0}/{event.max_participants}
                           </span>
@@ -423,10 +425,10 @@ export default function EventsPromotionPage() {
 
               {/* Event Information */}
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold mb-3">Event Information</h3>
+                <h3 className="font-semibold mb-3">{t('eventInformation')}</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Period</span>
+                    <span className="text-gray-600">{t('period')}</span>
                     <span className="font-medium">
                       {new Date(selectedEvent.start_date).toLocaleDateString()} ~ 
                       {new Date(selectedEvent.end_date).toLocaleDateString()}
@@ -434,7 +436,7 @@ export default function EventsPromotionPage() {
                   </div>
                   {selectedEvent.discount_rate && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Discount Rate</span>
+                      <span className="text-gray-600">{t('discountRate')}</span>
                       <span className="font-medium text-red-500">
                         {selectedEvent.discount_rate}% OFF
                       </span>
@@ -442,7 +444,7 @@ export default function EventsPromotionPage() {
                   )}
                   {selectedEvent.target_space && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Target Space</span>
+                      <span className="text-gray-600">{t('targetSpace')}</span>
                       <span className="font-medium">
                         {selectedEvent.target_space.join(', ')}
                       </span>
@@ -450,7 +452,7 @@ export default function EventsPromotionPage() {
                   )}
                   {selectedEvent.min_budget && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Minimum Budget</span>
+                      <span className="text-gray-600">{t('minimumBudget')}</span>
                       <span className="font-medium">
                         ${selectedEvent.min_budget.toLocaleString()} or more
                       </span>
@@ -458,7 +460,7 @@ export default function EventsPromotionPage() {
                   )}
                   {selectedEvent.max_participants && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Participants</span>
+                      <span className="text-gray-600">{t('participants')}</span>
                       <span className="font-medium">
                         {selectedEvent.current_participants || 0} / {selectedEvent.max_participants}
                       </span>
@@ -470,7 +472,7 @@ export default function EventsPromotionPage() {
               {/* Terms and Conditions */}
               {selectedEvent.terms_conditions.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="font-semibold mb-3">Terms and Conditions</h3>
+                  <h3 className="font-semibold mb-3">{t('termsConditions')}</h3>
                   <ul className="space-y-1">
                     {selectedEvent.terms_conditions.map((term, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
@@ -485,10 +487,10 @@ export default function EventsPromotionPage() {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <button className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
-                  Join Event
+                  {t('joinEvent')}
                 </button>
                 <button className="px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium">
-                  Contact Contractor
+                  {t('contactContractor')}
                 </button>
               </div>
             </div>

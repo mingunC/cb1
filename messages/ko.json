@@ -674,5 +674,42 @@
     "projectLocation": "프로젝트 위치",
     "requestQuote": "견적 요청",
     "loadingPortfolios": "포트폴리오 로딩 중..."
+  },
+  "events": {
+    "backToHome": "홈으로 돌아가기",
+    "title": "특별 이벤트",
+    "subtitle": "신뢰할 수 있는 전문가들의 특별 혜택을 만나보세요",
+    "tabs": {
+      "ongoing": "진행 중",
+      "upcoming": "예정",
+      "ended": "종료"
+    },
+    "filters": {
+      "all": "전체",
+      "discount": "할인",
+      "gift": "사은품",
+      "special": "스페셜",
+      "season": "시즌",
+      "collaboration": "콜라보"
+    },
+    "noEvents": "이벤트가 없습니다",
+    "loading": "로딩 중...",
+    "viewDetails": "상세 보기",
+    "validUntil": "유효 기간",
+    "expired": "종료됨",
+    "startingSoon": "곧 시작",
+    "daysLeft": "일 남음",
+    "termsConditions": "이용약관",
+    "noEventsAtThisTime": "현재 이용 가능한 이벤트가 없습니다.",
+    "eventInformation": "이벤트 정보",
+    "period": "기간",
+    "discountRate": "할인율",
+    "targetSpace": "대상 공간",
+    "minimumBudget": "최소 예산",
+    "participants": "참가자",
+    "joinEvent": "이벤트 참가",
+    "contactContractor": "업체 문의",
+    "ended": "종료됨",
+    "dDay": "D-Day"
   }
 }
