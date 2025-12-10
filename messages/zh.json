@@ -282,11 +282,6 @@
       "biddingCancelled": "投标已取消",
       "siteVisitRequired": "⚠️ 必须完成现场访问才能提交报价。"
     },
-    "profile": {
-      "title": "个人资料管理",
-      "description": "点击下面的按钮更新您的个人资料信息。",
-      "editProfile": "编辑个人资料"
-    },
     "errors": {
       "loadFailed": "加载项目失败",
       "applySiteVisitFailed": "现场勘查申请失败",
@@ -645,5 +640,17 @@
     "reviewsTitle": "评价",
     "writeReview": "写评价",
     "noReviews": "暂无评价。"
+  },
+  "prosPage": {
+    "backToHome": "返回首页",
+    "title": "专业合作伙伴",
+    "subtitle": "认识值得信赖的专家，为您打造理想空间",
+    "searchPlaceholder": "按公司名称、专业领域搜索...",
+    "noReviews": "暂无评价",
+    "noDescription": "暂无公司介绍。",
+    "details": "详情",
+    "portfolio": "作品集",
+    "noResults": "未找到承包商",
+    "loading": "加载中..."
   }
 }

@@ -9,6 +9,7 @@ import {
   ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface Contractor {
   id: string
@@ -53,6 +54,7 @@ interface FilterState {
 }
 
 export default function ContractorsListingPage() {
+  const t = useTranslations('prosPage')
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [filteredContractors, setFilteredContractors] = useState<Contractor[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -139,7 +141,7 @@ export default function ContractorsListingPage() {
           website: contractor.website,
           logo_url: contractor.company_logo,
           cover_image: contractor.company_logo,
-          description: contractor.description || 'No company description.',
+          description: contractor.description || t('noDescription'),
           established_year: contractor.years_in_business ? new Date().getFullYear() - contractor.years_in_business : undefined,
           employee_count: '정보 없음',
           service_areas: contractor.address ? [contractor.address] : ['서울', '경기'],
@@ -265,14 +267,14 @@ export default function ContractorsListingPage() {
             className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {t('backToHome')}
           </Link>
           <div className="flex items-center mb-6">
             <Users className="h-12 w-12 mr-4" />
-            <h1 className="text-5xl font-bold">Professional Partners</h1>
+            <h1 className="text-5xl font-bold">{t('title')}</h1>
           </div>
           <p className="text-xl text-white/90 max-w-3xl">
-            Meet trusted experts ready to transform your space
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -284,7 +286,7 @@ export default function ContractorsListingPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="업체명, 전문분야로 검색..."
+                placeholder={t('searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base"
@@ -298,12 +300,12 @@ export default function ContractorsListingPage() {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">로딩 중...</p>
+            <p className="text-gray-600">{t('loading')}</p>
           </div>
         ) : filteredContractors.length === 0 ? (
           <div className="text-center py-12">
             <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">업체가 없습니다.</p>
+            <p className="text-gray-500">{t('noResults')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -341,7 +343,7 @@ export default function ContractorsListingPage() {
                       <h3 className="font-bold text-gray-900">{contractor.company_name}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm text-gray-600">
-                          {contractor.review_count > 0 ? `(${contractor.review_count} reviews)` : '(No reviews yet)'}
+                          {contractor.review_count > 0 ? `(${contractor.review_count} reviews)` : `(${t('noReviews')})`}
                         </span>
                       </div>
                     </div>
@@ -352,11 +354,11 @@ export default function ContractorsListingPage() {
                   <div className="flex justify-between items-center pt-3 border-t">
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <Briefcase className="h-4 w-4" />
-                      <span>Details</span>
+                      <span>{t('details')}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <ImageIcon className="h-4 w-4" />
-                      <span>Portfolio</span>
+                      <span>{t('portfolio')}</span>
                     </div>
                   </div>
                 </div>

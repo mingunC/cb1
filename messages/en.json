@@ -282,11 +282,6 @@
       "biddingCancelled": "Bidding cancelled",
       "siteVisitRequired": "⚠️ You must complete the site visit before submitting a quote."
     },
-    "profile": {
-      "title": "Profile Management",
-      "description": "Click the button below to update your profile information.",
-      "editProfile": "Edit Profile"
-    },
     "errors": {
       "loadFailed": "Failed to load projects",
       "applySiteVisitFailed": "Failed to apply for site visit",
@@ -640,5 +635,17 @@
     "reviewsTitle": "Reviews",
     "writeReview": "Write a Review",
     "noReviews": "No reviews yet."
+  },
+  "prosPage": {
+    "backToHome": "Back to Home",
+    "title": "Professional Partners",
+    "subtitle": "Meet trusted experts ready to transform your space",
+    "searchPlaceholder": "Search by company name, specialty...",
+    "noReviews": "No reviews yet",
+    "noDescription": "No company description.",
+    "details": "Details",
+    "portfolio": "Portfolio",
+    "noResults": "No contractors found",
+    "loading": "Loading..."
   }
 }
