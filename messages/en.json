@@ -18,7 +18,9 @@
     "selecting": "Selecting...",
     "update": "Update",
     "updating": "Updating...",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "add": "Add",
+    "saving": "Saving..."
   },
   "auth": {
     "signIn": "Sign In",
@@ -282,7 +284,108 @@
     "profile": {
       "title": "Profile Management",
       "description": "Click the button below to update your profile information.",
-      "editProfile": "Edit Profile"
+      "editProfile": "Edit Profile",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "Enter company name",
+      "companyDescription": "Company Description",
+      "companyDescriptionPlaceholder": "Enter company description",
+      "phone": "Phone",
+      "phonePlaceholder": "Enter phone number",
+      "email": "Email",
+      "emailPlaceholder": "Enter email",
+      "address": "Address",
+      "addressPlaceholder": "Enter address",
+      "website": "Website",
+      "websitePlaceholder": "https://example.com",
+      "yearsInBusiness": "Years in Business",
+      "specialties": "Specialties",
+      "businessLicenseNumber": "Business License Number",
+      "businessLicensePlaceholder": "Enter business license number",
+      "insurance": "Insurance",
+      "insurancePlaceholder": "Enter insurance information",
+      "supportedFormats": "Supported formats: JPG, JPEG, PNG, GIF, WEBP (Max 5MB)",
+      "uploadLogo": "Upload Logo",
+      "uploading": "Uploading...",
+      "saveSuccess": "Profile updated successfully!",
+      "saveFailed": "Failed to save profile"
+    },
+    "portfolio": {
+      "title": "Portfolio Management",
+      "totalProjects": "Total {count} projects",
+      "addProject": "Add Project",
+      "editProject": "Edit Project",
+      "addNewProject": "Add New Project",
+      "projectTitle": "Project Title",
+      "projectTitlePlaceholder": "e.g., Modern Apartment Renovation",
+      "category": "Category",
+      "residential": "Residential",
+      "commercial": "Commercial",
+      "projectDescription": "Project Description",
+      "projectDescriptionPlaceholder": "Enter a detailed description of the project.",
+      "completionYear": "Completion Year",
+      "projectAddress": "Project Address",
+      "projectAddressPlaceholder": "e.g., 123 Main St, Toronto, ON",
+      "projectImages": "Project Images",
+      "maxImages": "Max {count} images",
+      "addImages": "Add Images",
+      "loadingPortfolios": "Loading portfolios...",
+      "noPortfolios": "No portfolios available",
+      "noPortfoliosSubtitle": "Try adding your first project.",
+      "more": "+{count} More",
+      "validation": {
+        "enterTitleDescription": "Please enter a title and description.",
+        "uploadImage": "Please upload at least 1 image.",
+        "maxImagesExceeded": "You can upload up to {count} images.",
+        "unsupportedFormat": "unsupported format",
+        "fileTooLarge": "max 5MB",
+        "invalidFiles": "The following files cannot be uploaded:"
+      },
+      "success": {
+        "added": "Portfolio added successfully.",
+        "updated": "Portfolio updated successfully.",
+        "deleted": "Project deleted successfully."
+      },
+      "errors": {
+        "uploadFailed": "Image upload failed.",
+        "saveFailed": "Failed to save portfolio.",
+        "updateFailed": "Failed to update portfolio.",
+        "deleteFailed": "Failed to delete project."
+      },
+      "confirmDelete": "Are you sure you want to delete this project?"
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Once you delete your account, there is no going back. Please be certain.",
+      "deleteAccount": "Delete Account",
+      "warning": "Warning",
+      "warningList": {
+        "cannotUndo": "This action cannot be undone",
+        "profileDeleted": "All your profile information will be deleted",
+        "portfolioDeleted": "Your portfolio and project history will be removed",
+        "loseAccess": "You will lose access to all current and past projects"
+      },
+      "beforeProceed": "Before you proceed",
+      "beforeProceedList": {
+        "pendingQuotes": "You cannot delete your account if you have pending quotes",
+        "activeProjects": "You cannot delete your account if you have active projects",
+        "withdrawFirst": "Please withdraw all pending quotes and complete/cancel all projects first"
+      },
+      "confirmQuestion": "Are you sure you want to permanently delete your contractor account?",
+      "continue": "Continue",
+      "enterPassword": "Please enter your password to confirm account deletion.",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "deleting": "Deleting...",
+      "deleteMyAccount": "Delete My Account",
+      "errors": {
+        "enterPassword": "Please enter your password",
+        "pendingQuotes": "Cannot delete account with pending quotes. Please withdraw all pending quotes first.",
+        "activeProjects": "Cannot delete account with active projects. Please complete or cancel all projects first.",
+        "invalidPassword": "Invalid password. Please try again.",
+        "failed": "Failed to delete account",
+        "error": "An error occurred. Please try again."
+      },
+      "success": "Account successfully deleted"
     },
     "errors": {
       "loadFailed": "Failed to load projects",

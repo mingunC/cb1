@@ -14,17 +14,19 @@
     "previous": "上一步",
     "close": "关闭",
     "select": "选择",
-    "selected": "已选",
+    "selected": "已选择",
     "selecting": "选择中...",
     "update": "更新",
     "updating": "更新中...",
-    "submitting": "提交中..."
+    "submitting": "提交中...",
+    "add": "添加",
+    "saving": "保存中..."
   },
   "auth": {
     "signIn": "登录",
     "signUp": "注册",
-    "signOut": "退出",
-    "email": "邮箱",
+    "signOut": "登出",
+    "email": "电子邮件",
     "password": "密码",
     "confirmPassword": "确认密码",
     "forgotPassword": "忘记密码？",
@@ -33,7 +35,7 @@
   },
   "navigation": {
     "home": "首页",
-    "pros": "合作伙伴",
+    "pros": "承包商",
     "portfolio": "作品集",
     "events": "活动",
     "myQuotes": "我的报价",
@@ -42,7 +44,7 @@
   },
   "myPage": {
     "title": "我的页面",
-    "subtitle": "将您的报价请求与承包商报价进行比较。",
+    "subtitle": "比较您的报价请求与承包商报价。",
     "noQuotes": "暂无报价请求",
     "createNew": "创建新的报价请求。",
     "requestQuote": "请求报价",
@@ -50,25 +52,25 @@
     "contractorQuotes": "承包商报价",
     "startProject": "开始项目",
     "starting": "启动中...",
-    "pleasePress": "请在确定详细日程并与专业伙伴签订合同后按此按钮。",
+    "pleasePress": "请在与专业合作伙伴确定详细日程并签订合同后按此按钮。",
     "viewQuote": "查看报价",
     "editQuoteRequest": "编辑报价请求",
     "accessDenied": "访问被拒绝",
     "loginRequired": "请使用客户账户登录。",
     "goToLogin": "前往登录",
-    "applied": "申请日期",
+    "applied": "已申请",
     "company": "公司",
-    "notAvailable": "不可用"
+    "notAvailable": "无信息"
   },
   "status": {
     "pending": "审核中",
     "approved": "已批准",
     "rejected": "已拒绝",
-    "siteVisitPending": "现场访问待定",
+    "siteVisitPending": "等待现场访问",
     "siteVisitCompleted": "现场访问完成",
     "bidding": "投标中",
     "quoteSubmitted": "报价已提交",
-    "contractorSelected": "已选承包商",
+    "contractorSelected": "已选择承包商",
     "inProgress": "进行中",
     "completed": "已完成",
     "biddingClosed": "已完成",
@@ -77,40 +79,40 @@
   },
   "quoteRequest": {
     "title": "报价请求",
-    "subtitle": "通过6个简单步骤完成",
+    "subtitle": "6个简单步骤完成",
     "step": "步骤",
     "of": "/",
     "step1": {
       "title": "物业类型",
-      "subtitle": "选择您想要翻新的空间类型"
+      "subtitle": "选择您要翻新的空间类型"
     },
     "step2": {
       "title": "项目区域",
-      "subtitle": "选择您想要翻新的区域",
-      "note": "注意：如果您选择'全面翻新'，则无法选择其他选项。其余选项可以多选。"
+      "subtitle": "选择您要翻新的区域",
+      "note": "注意：如果选择"全面翻新"，则无法选择其他选项。其余可以多选。"
     },
     "step3": {
       "title": "预算范围",
-      "subtitle": "选择您的预计预算范围"
+      "subtitle": "选择您的预估预算范围"
     },
     "step4": {
       "title": "开始时间",
-      "subtitle": "选择您的首选项目开始时间"
+      "subtitle": "选择您希望的项目开始时间"
     },
     "step5": {
-      "title": "位置和现场访问",
-      "subtitle": "输入项目位置和必需的现场访问日程"
+      "title": "位置与现场访问",
+      "subtitle": "输入项目位置和必需的现场访问时间"
     },
     "step6": {
       "title": "项目要求",
-      "subtitle": "写下您项目的详细要求"
+      "subtitle": "填写项目的详细要求"
     },
     "siteVisitDate": "现场访问日期 *",
-    "siteVisitRequired": "⚠️ 现场访问日期为必填！\n\n承包商需要访问您的现场以提供准确的估价。请使用日历选择首选日期。",
-    "siteVisitScheduled": "现场访问安排在",
-    "siteVisitWhy": "💡 为什么需要这个？承包商必须实地检查您的房产，以了解工作范围并为您提供最准确的报价。",
+    "siteVisitRequired": "⚠️ 现场访问日期是必需的！\n\n承包商需要访问您的现场以提供准确的报价。请使用日历选择您的首选日期。",
+    "siteVisitScheduled": "现场访问预定于",
+    "siteVisitWhy": "💡 为什么这是必需的？承包商必须实际检查您的物业以了解工作范围并为您提供最准确的报价。",
     "projectDescription": "项目描述 *",
-    "projectDescriptionPlaceholder": "写下有关您项目的详细信息。例如：期望的风格、特殊要求、当前状况等。",
+    "projectDescriptionPlaceholder": "填写项目的详细信息。例如：期望的风格、特殊要求、当前状况等。",
     "phoneNumber": "电话号码 *",
     "phoneNumberPlaceholder": "例如：(416) 555-0100",
     "phoneNumberNote": "供承包商直接联系您",
@@ -120,7 +122,7 @@
     "fullAddressPlaceholder": "例如：123 Main Street, Toronto, ON",
     "submitButton": "提交报价请求",
     "completedTitle": "报价请求已提交！",
-    "completedMessage": "您的报价请求已成功提交。\n承包商将在管理员批准后进行访问。",
+    "completedMessage": "您的报价请求已成功提交。\n承包商将在管理员批准后访问。",
     "viewMyQuotes": "查看我的报价",
     "validation": {
       "selectSpaceType": "请选择物业类型。",
@@ -130,7 +132,7 @@
       "enterPostalAndAddress": "请输入邮政编码和完整地址。",
       "invalidPostalCode": "请输入有效的邮政编码格式。（例如：A0A 0A0）",
       "enterDescription": "请输入项目描述。",
-      "enterPhoneNumber": "请输入您的电话号码。",
+      "enterPhoneNumber": "请输入电话号码。",
       "loginRequired": "请登录以提交报价请求。"
     }
   },
@@ -142,10 +144,10 @@
     "flooring": "地板",
     "fullRenovation": "全面翻新",
     "restaurant": "餐厅",
-    "retail": "零售店",
+    "retail": "零售",
     "office": "办公室",
-    "education": "教育设施",
-    "hospitality": "酒店业",
+    "education": "教育",
+    "hospitality": "酒店",
     "other": "其他"
   },
   "actionTypes": {
@@ -156,10 +158,10 @@
     "flooring": "地板",
     "fullRenovation": "全面翻新",
     "restaurant": "餐厅",
-    "retail": "零售店",
+    "retail": "零售",
     "office": "办公室",
-    "education": "教育设施",
-    "hospitality": "酒店业",
+    "education": "教育",
+    "hospitality": "酒店",
     "other": "其他"
   },
   "spaceTypes": {
@@ -169,10 +171,10 @@
     "condoApartment": "公寓",
     "commercial": "商业",
     "apartment": "公寓",
-    "house": "房屋"
+    "house": "住宅"
   },
   "budget": {
-    "under50k": "低于 $50,000",
+    "under50k": "$50,000以下",
     "under50kSubtitle": "小型翻新",
     "50kTo100k": "$50,000 - $100,000",
     "50kTo100kSubtitle": "中型翻新",
@@ -189,8 +191,8 @@
     "3months": "3个月内",
     "3monthSubtitle": "三个月内",
     "within3Months": "3个月内",
-    "planning": "规划阶段",
-    "planningSubtitle": "仍在规划中",
+    "planning": "计划阶段",
+    "planningSubtitle": "仍在计划中",
     "flexible": "灵活"
   },
   "roles": {
@@ -200,13 +202,13 @@
   },
   "contractor": {
     "dashboard": {
-      "title": "承包商仪表板",
+      "title": "承包商控制面板",
       "backToHome": "返回首页",
       "refresh": "刷新",
-      "loading": "仪表板加载中...",
+      "loading": "加载控制面板...",
       "pleaseWait": "请稍候",
       "refreshed": "数据已刷新",
-      "problemOccurred": "发生问题",
+      "problemOccurred": "出现问题",
       "refreshPage": "刷新页面",
       "goToLogin": "前往登录页面"
     },
@@ -223,34 +225,34 @@
       "notSelected": "未选中"
     },
     "projectStatus": {
-      "pending": "待审核",
+      "pending": "待处理",
       "approved": "已批准",
-      "siteVisitApplied": "已申请现场勘查",
-      "siteVisitCompleted": "现场勘查完成",
+      "siteVisitApplied": "已申请现场访问",
+      "siteVisitCompleted": "现场访问完成",
       "bidding": "投标中",
-      "biddingSubmitted": "投标中 (已提交)",
+      "biddingSubmitted": "投标中（已提交）",
       "quoted": "已提交报价",
       "selected": "已选中",
-      "notSelected": "其他承包商被选中",
-      "selectedBy": "被选中",
+      "notSelected": "选择了其他承包商",
+      "selectedBy": "已选中",
       "completed": "已完成",
       "cancelled": "已取消"
     },
     "projectCard": {
       "budget": "预算",
-      "location": "地点",
+      "location": "位置",
       "spaceType": "空间类型",
       "customer": "客户",
       "visitDate": "访问日期",
       "projectType": "项目类型",
       "requirements": "要求",
-      "myQuote": "我的报价",
+      "myQuote": "已提交报价",
       "noAddress": "未提供地址",
       "noCustomer": "无客户信息",
       "noName": "未提供姓名",
       "tbd": "待定",
-      "under": "低于",
-      "over": "超过"
+      "under": "以下",
+      "over": "以上"
     },
     "projectList": {
       "title": "项目列表",
@@ -259,53 +261,154 @@
       "noProjects": "没有符合筛选条件的项目"
     },
     "actions": {
-      "applySiteVisit": "申请现场勘查",
-      "cancelSiteVisit": "取消现场勘查",
+      "applySiteVisit": "申请现场访问",
+      "cancelSiteVisit": "取消现场访问",
       "joinBidding": "参与投标",
       "cancelBidding": "取消投标",
       "submitQuote": "提交报价",
-      "customerInfoSent": "客户信息将发送至您的电子邮件"
+      "customerInfoSent": "客户信息将发送到您的邮箱"
     },
     "messages": {
-      "biddingActive": "🔥 投标已开始！请立即提交您的报价。",
-      "biddingSubmitted": "🔥 投标正在进行中。您的报价已提交。",
-      "congratulations": "🎉 恭喜！客户已选择您。",
-      "notSelectedMessage": "客户已选择",
-      "applying": "正在申请现场勘查...",
-      "applied": "现场勘查申请已完成！",
-      "appliedWithEmail": "现场勘查申请已完成！已向客户发送通知电子邮件。",
-      "cancelled": "现场勘查申请已取消",
+      "biddingActive": "🔥 投标已开始！立即提交您的报价。",
+      "biddingSubmitted": "🔥 投标进行中。您的报价已提交。",
+      "congratulations": "🎉 恭喜！客户选择了您。",
+      "notSelectedMessage": "客户选择了",
+      "applying": "申请现场访问中...",
+      "applied": "现场访问申请完成！",
+      "appliedWithEmail": "现场访问申请完成！已向客户发送通知邮件。",
+      "cancelled": "现场访问申请已取消",
       "quoteSubmitted": "报价已提交",
       "biddingCancelled": "投标已取消",
-      "siteVisitRequired": "⚠️ 必须完成现场访问才能提交报价。"
+      "siteVisitRequired": "⚠️ 您必须完成现场访问后才能提交报价。"
     },
     "profile": {
       "title": "个人资料管理",
-      "description": "点击下面的按钮更新您的个人资料信息。",
-      "editProfile": "编辑个人资料"
+      "description": "点击下方按钮更新您的个人资料。",
+      "editProfile": "编辑资料",
+      "companyName": "公司名称",
+      "companyNamePlaceholder": "输入公司名称",
+      "companyDescription": "公司简介",
+      "companyDescriptionPlaceholder": "输入公司简介",
+      "phone": "电话",
+      "phonePlaceholder": "输入电话号码",
+      "email": "电子邮件",
+      "emailPlaceholder": "输入电子邮件",
+      "address": "地址",
+      "addressPlaceholder": "输入地址",
+      "website": "网站",
+      "websitePlaceholder": "https://example.com",
+      "yearsInBusiness": "从业年限",
+      "specialties": "专业领域",
+      "businessLicenseNumber": "营业执照号",
+      "businessLicensePlaceholder": "输入营业执照号",
+      "insurance": "保险信息",
+      "insurancePlaceholder": "输入保险信息",
+      "supportedFormats": "支持格式：JPG、JPEG、PNG、GIF、WEBP（最大5MB）",
+      "uploadLogo": "上传标志",
+      "uploading": "上传中...",
+      "saveSuccess": "资料更新成功！",
+      "saveFailed": "保存资料失败"
+    },
+    "portfolio": {
+      "title": "作品集管理",
+      "totalProjects": "共 {count} 个项目",
+      "addProject": "添加项目",
+      "editProject": "编辑项目",
+      "addNewProject": "添加新项目",
+      "projectTitle": "项目标题",
+      "projectTitlePlaceholder": "例如：现代公寓翻新",
+      "category": "类别",
+      "residential": "住宅",
+      "commercial": "商业",
+      "projectDescription": "项目描述",
+      "projectDescriptionPlaceholder": "输入项目的详细描述。",
+      "completionYear": "完工年份",
+      "projectAddress": "项目地址",
+      "projectAddressPlaceholder": "例如：123 Main St, Toronto, ON",
+      "projectImages": "项目图片",
+      "maxImages": "最多 {count} 张",
+      "addImages": "添加图片",
+      "loadingPortfolios": "加载作品集...",
+      "noPortfolios": "暂无作品集",
+      "noPortfoliosSubtitle": "尝试添加您的第一个项目。",
+      "more": "+{count} 更多",
+      "validation": {
+        "enterTitleDescription": "请输入标题和描述。",
+        "uploadImage": "请至少上传1张图片。",
+        "maxImagesExceeded": "最多可上传 {count} 张图片。",
+        "unsupportedFormat": "不支持的格式",
+        "fileTooLarge": "最大5MB",
+        "invalidFiles": "以下文件无法上传："
+      },
+      "success": {
+        "added": "作品集添加成功。",
+        "updated": "作品集更新成功。",
+        "deleted": "项目删除成功。"
+      },
+      "errors": {
+        "uploadFailed": "图片上传失败。",
+        "saveFailed": "保存作品集失败。",
+        "updateFailed": "更新作品集失败。",
+        "deleteFailed": "删除项目失败。"
+      },
+      "confirmDelete": "确定要删除这个项目吗？"
+    },
+    "dangerZone": {
+      "title": "危险区域",
+      "description": "一旦删除账户，将无法恢复。请谨慎操作。",
+      "deleteAccount": "删除账户",
+      "warning": "警告",
+      "warningList": {
+        "cannotUndo": "此操作无法撤销",
+        "profileDeleted": "所有个人资料将被删除",
+        "portfolioDeleted": "您的作品集和项目历史将被移除",
+        "loseAccess": "您将失去对所有当前和过去项目的访问权限"
+      },
+      "beforeProceed": "继续之前",
+      "beforeProceedList": {
+        "pendingQuotes": "如果有待处理的报价，则无法删除账户",
+        "activeProjects": "如果有进行中的项目，则无法删除账户",
+        "withdrawFirst": "请先撤回所有待处理的报价并完成或取消所有项目"
+      },
+      "confirmQuestion": "确定要永久删除您的承包商账户吗？",
+      "continue": "继续",
+      "enterPassword": "请输入密码以确认删除账户。",
+      "password": "密码",
+      "passwordPlaceholder": "输入密码",
+      "deleting": "删除中...",
+      "deleteMyAccount": "删除我的账户",
+      "errors": {
+        "enterPassword": "请输入密码",
+        "pendingQuotes": "有待处理的报价，无法删除账户。请先撤回所有报价。",
+        "activeProjects": "有进行中的项目，无法删除账户。请先完成或取消所有项目。",
+        "invalidPassword": "密码错误，请重试。",
+        "failed": "删除账户失败",
+        "error": "发生错误，请重试。"
+      },
+      "success": "账户删除成功"
     },
     "errors": {
       "loadFailed": "加载项目失败",
-      "applySiteVisitFailed": "现场勘查申请失败",
-      "alreadyApplied": "已申请现场勘查",
-      "cancelSiteVisitFailed": "取消现场勘查失败",
+      "applySiteVisitFailed": "申请现场访问失败",
+      "alreadyApplied": "已申请现场访问",
+      "cancelSiteVisitFailed": "取消现场访问失败",
       "cancelBiddingFailed": "取消投标失败",
       "noContractorInfo": "找不到承包商信息",
       "authError": "检查会话时出错"
     },
     "confirmations": {
-      "cancelSiteVisit": "您确定要取消现场勘查申请吗？",
-      "cancelBidding": "您确定要取消投标吗？您提交的报价将被删除。"
+      "cancelSiteVisit": "确定要取消现场访问申请吗？",
+      "cancelBidding": "确定要取消投标吗？您提交的报价将被删除。"
     },
     "quoteModal": {
       "createQuote": "创建报价",
-      "submittedQuote": "已提交报价",
-      "totalQuoteAmount": "总报价金额 (CAD)",
+      "submittedQuote": "已提交的报价",
+      "totalQuoteAmount": "总报价金额（CAD）",
       "detailedWorkDescription": "详细工作描述",
-      "workDescriptionPlaceholder": "写下吸引客户的工作详情（选填）",
+      "workDescriptionPlaceholder": "撰写吸引客户的工作详情（可选）",
       "importantNotice": "重要提示",
       "noticeText": "提交后，报价无法修改或取消。请在提交前仔细检查。",
-      "detailedQuotePdf": "详细报价 (PDF)",
+      "detailedQuotePdf": "详细报价（PDF）",
       "selectFile": "选择文件或拖放到此处",
       "pdfOnly": "仅限PDF文件（最大10MB）",
       "fileSelected": "已选择文件",
@@ -322,33 +425,33 @@
   },
   "contractorSignup": {
     "title": "承包商注册",
-    "completeProfile": "完善承包商资料",
-    "subtitle": "注册您的企业并与客户建立联系",
-    "subtitleExisting": "添加您的企业信息以完成注册",
+    "completeProfile": "完成承包商资料",
+    "subtitle": "注册您的业务并与客户建立联系",
+    "subtitleExisting": "添加您的业务信息以完成注册",
     "areYouCustomer": "您是客户吗？",
     "customerSignup": "客户注册",
     "alreadyHaveAccount": "已有账户？",
     "contractorLogin": "承包商登录",
-    "checkingAuth": "正在检查认证状态...",
+    "checkingAuth": "检查认证状态...",
     "alreadyLoggedIn": "已登录",
-    "loggedInAs": "您已以 {email} 登录。只需在下方添加您的企业信息。",
+    "loggedInAs": "您已以 {email} 登录。只需在下方添加您的业务信息。",
     "alreadyRegistered": "您已注册为承包商",
-    "businessInfo": "企业信息",
+    "businessInfo": "业务信息",
     "accountInfo": "账户信息",
-    "businessName": "企业名称",
-    "businessNamePlaceholder": "例如：ABC装修公司",
+    "businessName": "公司名称",
+    "businessNamePlaceholder": "例如：ABC装修",
     "contactName": "联系人姓名",
     "contactNamePlaceholder": "例如：张三",
     "phoneNumber": "电话号码",
     "phoneNumberPlaceholder": "(416) 555 - 1234",
-    "businessAddress": "企业地址",
+    "businessAddress": "公司地址",
     "businessAddressPlaceholder": "例如：123 Main St, North York, ON",
     "specialties": "专业领域",
     "specialtiesNote": "（至少选择一项）",
     "residential": "住宅",
     "commercial": "商业",
     "selectSpecialty": "请至少选择一个专业领域。",
-    "email": "邮箱",
+    "email": "电子邮件",
     "emailPlaceholder": "your@email.com",
     "password": "密码",
     "confirmPassword": "确认密码",
@@ -361,31 +464,31 @@
     "passwordsMatch": "密码匹配",
     "passwordsNotMatch": "密码不匹配",
     "completeRegistration": "完成注册",
-    "completingRegistration": "正在完成注册...",
+    "completingRegistration": "完成注册中...",
     "signUpAsContractor": "注册为承包商",
     "signingUp": "注册中...",
     "registrationCompleted": "承包商注册完成！",
     "validation": {
-      "fillAllFields": "请填写所有必填项并至少选择一个专业领域。",
+      "fillAllFields": "请填写所有必填字段并至少选择一个专业领域。",
       "passwordsNotMatch": "密码不匹配。",
       "meetPasswordRequirements": "请满足所有密码要求。"
     },
     "errors": {
-      "failedToCreate": "账户创建失败。",
-      "failedToUpdate": "用户资料更新失败：",
-      "failedToSave": "承包商资料保存失败：",
+      "failedToCreate": "创建账户失败。",
+      "failedToUpdate": "更新用户资料失败：",
+      "failedToSave": "保存承包商资料失败：",
       "genericError": "注册过程中发生错误。"
     }
   },
   "contractorLogin": {
     "title": "承包商登录",
-    "subtitle": "使用您的承包商账户登录",
+    "subtitle": "使用您的专业承包商账户登录",
     "backToHome": "返回首页",
     "areYouCustomer": "您是普通客户吗？",
     "customerLogin": "客户登录",
     "notMemberYet": "还不是承包商会员？",
     "contractorSignup": "承包商注册",
-    "email": "邮箱",
+    "email": "电子邮件",
     "emailPlaceholder": "your@email.com",
     "password": "密码",
     "keepSignedIn": "保持登录状态",
@@ -396,32 +499,29 @@
     "signInWithGoogle": "使用Google登录",
     "checkingStatus": "检查登录状态...",
     "alreadyLoggedIn": "已登录",
-    "loggedOutSuccess": "已成功退出登录",
-    "logoutFailed": "退出登录失败",
-    "logoutError": "退出登录时发生错误",
+    "loggedOutSuccess": "已成功登出",
+    "logoutFailed": "登出失败",
+    "logoutError": "登出过程中发生错误",
     "contractorAccount": "承包商账户",
-    "customerAccountWarning": "您已使用普通客户账户登录。请退出登录后使用承包商账户重新登录。",
+    "customerAccountWarning": "您已使用普通客户账户登录。请登出后使用承包商账户重新登录。",
     "adminAccountInfo": "您已使用管理员账户登录。",
-    "goToContractorDashboard": "前往承包商仪表板",
-    "goToAdminDashboard": "前往管理员仪表板",
-    "logoutAndLoginAgain": "退出登录并重新登录",
-    "loggingOut": "退出中...",
-    "toDifferentAccount": "要使用其他账户登录，请先退出登录。",
+    "goToContractorDashboard": "前往承包商控制面板",
+    "goToAdminDashboard": "前往管理员控制面板",
+    "logoutAndLoginAgain": "登出并重新登录",
+    "loggingOut": "登出中...",
+    "toDifferentAccount": "要使用其他账户登录，请先登出。",
     "validation": {
-      "enterBothFields": "请输入邮箱和密码。",
-      "invalidEmail": "请输入有效的邮箱地址。"
+      "enterBothFields": "请输入电子邮件和密码。",
+      "invalidEmail": "请输入有效的电子邮件地址。"
     },
     "errors": {
       "loginFailed": "登录失败。",
-      "invalidCredentials": "邮箱或密码不正确。",
-      "emailNotConfirmed": "请先验证您的邮箱。请查看收件箱中的验证链接。",
-      "tooManyRequests": "登录尝试次数过多。请稍后再试。",
       "notContractorAccount": "这不是承包商账户。请注册为承包商。",
-      "unexpectedError": "登录时发生错误。",
+      "unexpectedError": "登录过程中发生错误。",
       "googleLoginFailed": "Google登录失败。"
     },
     "success": {
-      "loggedInAs": "已以{company}身份登录"
+      "loggedInAs": "已以 {company} 登录"
     }
   },
   "login": {
@@ -429,7 +529,7 @@
     "backToHome": "返回首页",
     "notMemberYet": "还不是会员？",
     "signUp": "注册",
-    "email": "邮箱",
+    "email": "电子邮件",
     "emailPlaceholder": "your@email.com",
     "password": "密码",
     "rememberMe": "记住我",
@@ -439,20 +539,18 @@
     "or": "或",
     "signInWithGoogle": "使用Google登录",
     "validation": {
-      "enterBothFields": "请输入邮箱和密码。",
-      "invalidEmail": "请输入有效的邮箱地址。"
+      "enterBothFields": "请输入电子邮件和密码。",
+      "invalidEmail": "请输入有效的电子邮件地址。"
     },
     "errors": {
       "loginFailed": "登录失败。",
-      "invalidCredentials": "邮箱或密码不正确。",
-      "emailNotConfirmed": "登录前请先验证您的邮箱。请查看收件箱中的验证链接。",
-      "tooManyRequests": "登录尝试次数过多。请稍后再试。",
-      "unexpectedError": "登录时发生意外错误。请稍后重试。",
+      "emailNotConfirmed": "登录前请验证您的电子邮件。请检查收件箱中的验证链接。",
+      "unexpectedError": "登录过程中发生意外错误。请稍后重试。",
       "googleLoginFailed": "Google登录失败。"
     },
     "success": {
       "signedInAsAdmin": "已以管理员身份登录。",
-      "signedInAsContractor": "已以{company}身份登录。",
+      "signedInAsContractor": "已以 {company} 登录。",
       "signedInSuccess": "登录成功。"
     }
   },
@@ -463,12 +561,12 @@
     "areYouContractor": "您是专业承包商吗？",
     "contractorSignup": "承包商注册",
     "signUpWithGoogle": "使用Google注册",
-    "orSignUpWithEmail": "或使用邮箱注册",
-    "email": "邮箱",
-    "firstName": "名字",
-    "firstNamePlaceholder": "名字",
-    "lastName": "姓氏",
-    "lastNamePlaceholder": "姓氏",
+    "orSignUpWithEmail": "或使用电子邮件注册",
+    "email": "电子邮件",
+    "firstName": "名",
+    "firstNamePlaceholder": "名",
+    "lastName": "姓",
+    "lastNamePlaceholder": "姓",
     "phoneNumber": "电话号码",
     "phoneNumberPlaceholder": "(416) 555 - 1234",
     "password": "密码",
@@ -483,12 +581,12 @@
     "passwordsNotMatch": "密码不匹配",
     "signUp": "注册",
     "signingUp": "注册中...",
-    "checkYourEmail": "请检查您的邮箱",
+    "checkYourEmail": "查看您的电子邮件",
     "verificationEmailSent": "我们已发送验证邮件至：",
     "nextStep": "下一步：",
     "clickVerificationLink": "点击邮件中的验证链接以激活您的账户。",
     "tip": "提示：",
-    "googleSignInTip": "验证邮箱后，您也可以使用相同的邮箱地址进行Google登录！",
+    "googleSignInTip": "验证邮件后，您也可以使用相同的电子邮件地址通过Google登录！",
     "checkSpamFolder": "如果没有看到邮件，请检查垃圾邮件文件夹",
     "linkExpiry": "链接将在24小时后过期",
     "returnToLogin": "返回登录",
@@ -499,7 +597,7 @@
     },
     "errors": {
       "googleSignupFailed": "Google注册失败。",
-      "genericError": "注册时发生错误。"
+      "genericError": "注册过程中发生错误。"
     }
   }
 }
