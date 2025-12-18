@@ -10,19 +10,14 @@ export async function POST(request: NextRequest) {
   try {
     // Authorization 헤더에서 토큰 가져오기
     const authHeader = request.headers.get('authorization')
-    console.log('Auth header exists:', !!authHeader)
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No Bearer token in Authorization header')
       return NextResponse.json({ error: '인증되지 않았습니다. (토큰 없음)' }, { status: 401 })
     }
     
     const accessToken = authHeader.replace('Bearer ', '')
-    console.log('Access token extracted, length:', accessToken.length)
     
-    // 환경변수 확인
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.log('Service role key missing')
       return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
     }
     
@@ -34,23 +29,17 @@ export async function POST(request: NextRequest) {
     )
     
     // 사용자 검증
-    console.log('Verifying user with token...')
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
     
     if (userError || !user) {
-      console.log('User verification failed:', userError?.message)
       return NextResponse.json({ error: '인증되지 않았습니다. (사용자 검증 실패)' }, { status: 401 })
     }
     
-    console.log('User verified:', user.email)
-    
     // 관리자 확인
     if (user.email !== 'cmgg919@gmail.com') {
-      console.log('Not admin:', user.email)
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
     }
     
-    console.log('Admin verified, parsing body...')
     const body = await request.json()
     const { email, password, company_name, contact_name, phone, address } = body
     
@@ -59,14 +48,13 @@ export async function POST(request: NextRequest) {
     }
     
     // 이메일 중복 확인
-    console.log('Checking existing user...')
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
     if (existingUsers?.users?.find((u: any) => u.email === email)) {
       return NextResponse.json({ error: '이미 등록된 이메일입니다.' }, { status: 400 })
     }
     
     // 사용자 생성
-    console.log('Creating user...')
+    console.log('Creating auth user...')
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -75,19 +63,21 @@ export async function POST(request: NextRequest) {
     })
     
     if (createError || !newUser.user) {
-      console.log('User creation failed:', createError?.message)
       return NextResponse.json({ error: `사용자 생성 실패: ${createError?.message}` }, { status: 500 })
     }
     
-    console.log('User created:', newUser.user.id)
+    console.log('Auth user created:', newUser.user.id)
     
-    // users 테이블 - display_name 대신 name 사용 또는 최소 필드만
+    // users 테이블 - first_name 필수 포함
+    console.log('Inserting into users table...')
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
       .insert({ 
         id: newUser.user.id, 
         email, 
-        user_type: 'contractor'
+        user_type: 'contractor',
+        first_name: contact_name || company_name,
+        last_name: ''
       })
     
     if (userInsertError) {
