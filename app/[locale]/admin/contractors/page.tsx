@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, User, Phone, Mail, MapPin, Star, Calendar, FileText, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, User, Phone, Mail, MapPin, Star, Calendar, FileText, Plus, Trash2, X } from 'lucide-react'
 
 interface Contractor {
   id: string
@@ -302,6 +302,11 @@ export default function ContractorManagementPage() {
     return true
   })
 
+  const getContractorName = (contractorId: string) => {
+    const contractor = contractors.find(c => c.id === contractorId)
+    return contractor?.company_name || '알 수 없음'
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -327,6 +332,7 @@ export default function ContractorManagementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -346,8 +352,410 @@ export default function ContractorManagementPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Rest of the component continues... */}
+        {/* Tabs */}
+        <div className="flex space-x-4 mb-6">
+          <button
+            onClick={() => { setActiveTab('contractors'); setFilter('all'); }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'contractors' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            업체 목록 ({contractors.length})
+          </button>
+          <button
+            onClick={() => { setActiveTab('portfolios'); setFilter('all'); }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'portfolios' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            포트폴리오 ({portfolios.length})
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex space-x-2 mb-6">
+          {activeTab === 'contractors' ? (
+            <>
+              <button onClick={() => setFilter('all')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                전체
+              </button>
+              <button onClick={() => setFilter('approved')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                활성
+              </button>
+              <button onClick={() => setFilter('pending')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                비활성
+              </button>
+              <button onClick={() => setFilter('rejected')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                정지됨
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setFilter('all')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                전체
+              </button>
+              <button onClick={() => setFilter('featured')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'featured' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                추천
+              </button>
+              <button onClick={() => setFilter('regular')} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'regular' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                일반
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Contractors List */}
+        {activeTab === 'contractors' && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {filteredContractors.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                등록된 업체가 없습니다.
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">업체명</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">담당자</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">연락처</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">등록일</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredContractors.map((contractor) => {
+                    const statusBadge = getStatusColor(contractor.status)
+                    const StatusIcon = statusBadge.icon
+                    return (
+                      <tr key={contractor.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">{contractor.company_name}</div>
+                          {contractor.specialties && contractor.specialties.length > 0 && (
+                            <div className="text-sm text-gray-500">{contractor.specialties.slice(0, 3).join(', ')}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-900">
+                            <User className="h-4 w-4 mr-2 text-gray-400" />
+                            {contractor.contact_name || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            <div className="flex items-center mb-1">
+                              <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                              {contractor.email || '-'}
+                            </div>
+                            <div className="flex items-center">
+                              <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                              {contractor.phone || '-'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge.color}`}>
+                            <StatusIcon className="h-3 w-3 mr-1" />
+                            {statusBadge.text}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(contractor.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => setSelectedContractor(contractor)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <Eye className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => setShowDeleteModal(contractor)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Portfolios List */}
+        {activeTab === 'portfolios' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPortfolios.length === 0 ? (
+              <div className="col-span-full p-8 text-center text-gray-500 bg-white rounded-xl shadow-sm">
+                등록된 포트폴리오가 없습니다.
+              </div>
+            ) : (
+              filteredPortfolios.map((portfolio) => (
+                <div key={portfolio.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="aspect-video bg-gray-100 relative">
+                    {portfolio.thumbnail_url ? (
+                      <img src={portfolio.thumbnail_url} alt={portfolio.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <FileText className="h-12 w-12" />
+                      </div>
+                    )}
+                    {portfolio.is_featured && (
+                      <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-xs font-medium">
+                        추천
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-medium text-gray-900 mb-1">{portfolio.title}</h3>
+                    <p className="text-sm text-gray-500 mb-2">{getContractorName(portfolio.contractor_id)}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">{formatDate(portfolio.created_at)}</span>
+                      <button
+                        onClick={() => updatePortfolioFeatured(portfolio.id, !portfolio.is_featured)}
+                        className={`text-xs px-2 py-1 rounded ${
+                          portfolio.is_featured 
+                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                        }`}
+                      >
+                        {portfolio.is_featured ? '추천 해제' : '추천하기'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Contractor Detail Modal */}
+      {selectedContractor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">업체 상세 정보</h2>
+              <button onClick={() => setSelectedContractor(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">업체명</label>
+                <p className="text-gray-900">{selectedContractor.company_name}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">담당자</label>
+                  <p className="text-gray-900">{selectedContractor.contact_name || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">이메일</label>
+                  <p className="text-gray-900">{selectedContractor.email || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">전화번호</label>
+                  <p className="text-gray-900">{selectedContractor.phone || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">주소</label>
+                  <p className="text-gray-900">{selectedContractor.address || '-'}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">전문 분야</label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedContractor.specialties?.map((specialty, index) => (
+                    <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                      {specialty}
+                    </span>
+                  )) || <span className="text-gray-400">-</span>}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">평점</label>
+                  <p className="text-gray-900 flex items-center">
+                    <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                    {selectedContractor.rating?.toFixed(1) || '0.0'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">경력</label>
+                  <p className="text-gray-900">{selectedContractor.years_experience || 0}년</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">포트폴리오</label>
+                  <p className="text-gray-900">{selectedContractor.portfolio_count || 0}개</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-2">상태 변경</label>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => updateContractorStatus(selectedContractor.id, 'active')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedContractor.status === 'active' 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-green-100 text-green-800 hover:bg-green-200'
+                    }`}
+                  >
+                    활성화
+                  </button>
+                  <button
+                    onClick={() => updateContractorStatus(selectedContractor.id, 'inactive')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedContractor.status === 'inactive' 
+                        ? 'bg-gray-600 text-white' 
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    }`}
+                  >
+                    비활성화
+                  </button>
+                  <button
+                    onClick={() => updateContractorStatus(selectedContractor.id, 'suspended')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedContractor.status === 'suspended' 
+                        ? 'bg-red-600 text-white' 
+                        : 'bg-red-100 text-red-800 hover:bg-red-200'
+                    }`}
+                  >
+                    정지
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Contractor Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">새 업체 추가</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateContractor} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
+                  <input
+                    type="email"
+                    required
+                    value={newContractor.email}
+                    onChange={(e) => setNewContractor({ ...newContractor, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 *</label>
+                  <input
+                    type="password"
+                    required
+                    value={newContractor.password}
+                    onChange={(e) => setNewContractor({ ...newContractor, password: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">업체명 *</label>
+                <input
+                  type="text"
+                  required
+                  value={newContractor.company_name}
+                  onChange={(e) => setNewContractor({ ...newContractor, company_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">담당자명</label>
+                  <input
+                    type="text"
+                    value={newContractor.contact_name}
+                    onChange={(e) => setNewContractor({ ...newContractor, contact_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                  <input
+                    type="tel"
+                    value={newContractor.phone}
+                    onChange={(e) => setNewContractor({ ...newContractor, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
+                <input
+                  type="text"
+                  value={newContractor.address}
+                  onChange={(e) => setNewContractor({ ...newContractor, address: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? '추가 중...' : '업체 추가'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">업체 삭제 확인</h2>
+              <p className="text-gray-600 mb-6">
+                <span className="font-medium text-gray-900">{showDeleteModal.company_name}</span> 업체를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteModal(null)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeleteContractor}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? '삭제 중...' : '삭제'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
