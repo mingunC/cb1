@@ -1,16 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function DELETE(request: NextRequest) {
+  console.log('=== DELETE CONTRACTOR API ===')
+  
   try {
-    const supabase = await createServerClient()
+    // Authorization 헤더에서 토큰 가져오기
+    const authHeader = request.headers.get('authorization')
     
-    // 관리자 권한 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: '인증되지 않았습니다.' }, { status: 401 })
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: '인증되지 않았습니다. (토큰 없음)' }, { status: 401 })
     }
-
+    
+    const accessToken = authHeader.replace('Bearer ', '')
+    
+    // 환경변수 확인
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
+    }
+    
+    // Supabase Admin 클라이언트 생성
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    )
+    
+    // 사용자 검증
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: '인증되지 않았습니다. (사용자 검증 실패)' }, { status: 401 })
+    }
+    
     // 관리자 확인
     if (user.email !== 'cmgg919@gmail.com') {
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
@@ -27,7 +52,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 업체 정보 확인
-    const { data: contractor, error: contractorError } = await supabase
+    const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
       .select('company_name, email')
       .eq('id', contractor_id)
@@ -42,7 +67,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 1. contractors 테이블에서 삭제
-    const { error: deleteContractorError } = await supabase
+    const { error: deleteContractorError } = await supabaseAdmin
       .from('contractors')
       .delete()
       .eq('id', contractor_id)
@@ -56,25 +81,23 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 2. users 테이블에서 삭제
-    const { error: deleteUserError } = await supabase
+    const { error: deleteUserError } = await supabaseAdmin
       .from('users')
       .delete()
       .eq('id', user_id)
 
     if (deleteUserError) {
       console.error('Users delete error:', deleteUserError)
-      // 부분적으로만 삭제된 상태이지만 계속 진행
     }
 
-    // 3. auth.users에서 삭제 (admin API 사용)
-    const supabaseAdmin = await createServerClient()
+    // 3. auth.users에서 삭제
     const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(user_id)
 
     if (deleteAuthError) {
       console.error('Auth user delete error:', deleteAuthError)
-      // 로그만 남기고 계속 진행
     }
 
+    console.log('SUCCESS! Contractor deleted:', contractor_id)
     return NextResponse.json({
       success: true,
       message: `업체 "${contractor.company_name}"가 성공적으로 삭제되었습니다.`,
