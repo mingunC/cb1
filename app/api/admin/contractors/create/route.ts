@@ -53,13 +53,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '이미 등록된 이메일입니다.' }, { status: 400 })
     }
     
+    // contact_name에서 first_name, last_name 분리
+    const nameParts = (contact_name || company_name).split(' ')
+    const firstName = nameParts[0] || company_name
+    const lastName = nameParts.slice(1).join(' ') || ''
+    
     // 사용자 생성
     console.log('Creating auth user...')
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name: company_name, user_type: 'contractor' }
+      user_metadata: { 
+        first_name: firstName,
+        last_name: lastName,
+        user_type: 'contractor',
+        phone: phone || ''
+      }
     })
     
     if (createError || !newUser.user) {
@@ -68,7 +78,7 @@ export async function POST(request: NextRequest) {
     
     console.log('Auth user created:', newUser.user.id)
     
-    // users 테이블 - first_name 필수 포함
+    // users 테이블 - contractor-signup 페이지와 동일한 구조
     console.log('Inserting into users table...')
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
@@ -76,8 +86,11 @@ export async function POST(request: NextRequest) {
         id: newUser.user.id, 
         email, 
         user_type: 'contractor',
-        first_name: contact_name || company_name,
-        last_name: ''
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || null,
+        preferred_language: 'ko',
+        preferred_languages: ['ko']
       })
     
     if (userInsertError) {
@@ -86,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `사용자 테이블 추가 실패: ${userInsertError.message}` }, { status: 500 })
     }
     
-    // contractors 테이블
+    // contractors 테이블 - contractor-signup 페이지와 동일한 구조
     console.log('Creating contractor...')
     const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
@@ -97,11 +110,14 @@ export async function POST(request: NextRequest) {
         email,
         phone: phone || null,
         address: address || null,
-        specialties: [],
+        status: 'active',
+        specialties: ['residential'],
+        preferred_languages: ['ko'],
         years_experience: 0,
         portfolio_count: 0,
         rating: 0,
-        status: 'active'
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single()
