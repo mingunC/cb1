@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createAdminClient } from '@/lib/supabase/server-clients'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,12 +38,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Service Role 클라이언트 사용 (admin 작업용)
+    const supabaseAdmin = createAdminClient()
+
     // 이메일 중복 확인
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single()
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingUser = existingUsers?.users?.find((u: any) => u.email === email)
 
     if (existingUser) {
       return NextResponse.json(
@@ -53,8 +53,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Service role client로 사용자 생성 (이메일 확인 없이)
-    const supabaseAdmin = await createServerClient()
-    
     const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -73,8 +71,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // users 테이블에 추가
-    const { error: userInsertError } = await supabase
+    // users 테이블에 추가 (admin 클라이언트로 RLS 우회)
+    const { error: userInsertError } = await supabaseAdmin
       .from('users')
       .insert({
         id: newUser.user.id,
@@ -93,8 +91,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // contractors 테이블에 추가
-    const { data: contractor, error: contractorError } = await supabase
+    // contractors 테이블에 추가 (admin 클라이언트로 RLS 우회)
+    const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
       .insert({
         user_id: newUser.user.id,
@@ -117,7 +115,7 @@ export async function POST(request: NextRequest) {
     if (contractorError) {
       console.error('Contractor insert error:', contractorError)
       // 생성된 데이터 롤백
-      await supabase.from('users').delete().eq('id', newUser.user.id)
+      await supabaseAdmin.from('users').delete().eq('id', newUser.user.id)
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
       return NextResponse.json(
         { error: `업체 정보 추가 실패: ${contractorError.message}` },
