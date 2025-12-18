@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
+
+// Node.js runtime 강제 설정
+export const runtime = 'nodejs'
 
 // Admin 클라이언트 (service role)
 function getAdminClient() {
@@ -17,60 +18,70 @@ function getAdminClient() {
   )
 }
 
-// 서버 클라이언트 (사용자 세션용)
-async function getServerClient() {
-  const cookieStore = await cookies()
-  
-  return createSupabaseServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // 서버 컴포넌트에서 쿠키를 설정할 수 없는 경우 무시
-          }
-        },
-      },
-    }
-  )
-}
-
 export async function POST(request: NextRequest) {
   console.log('=== Contractor Create API Started ===')
   
   try {
-    console.log('Step 1: Creating server client...')
-    const supabase = await getServerClient()
+    // 쿠키에서 직접 토큰 가져오기
+    const cookieHeader = request.headers.get('cookie') || ''
+    console.log('Step 1: Cookie header exists:', !!cookieHeader)
     
-    console.log('Step 2: Getting user from auth...')
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Supabase 토큰 찾기
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=')
+      acc[key] = value
+      return acc
+    }, {} as Record<string, string>)
     
-    console.log('Step 3: Auth result:', { 
+    // Supabase auth 토큰 이름 패턴
+    const authTokenKey = Object.keys(cookies).find(key => 
+      key.includes('sb-') && key.includes('-auth-token')
+    )
+    
+    console.log('Step 2: Auth token key found:', authTokenKey || 'not found')
+    
+    let accessToken = ''
+    if (authTokenKey && cookies[authTokenKey]) {
+      try {
+        // base64로 인코딩된 JSON을 디코딩
+        const tokenData = JSON.parse(decodeURIComponent(cookies[authTokenKey]))
+        accessToken = tokenData.access_token || tokenData[0]?.access_token || ''
+        console.log('Step 3: Access token extracted:', !!accessToken)
+      } catch (e) {
+        console.log('Step 3: Token parse error:', e)
+      }
+    }
+    
+    if (!accessToken) {
+      console.log('No access token found in cookies')
+      return NextResponse.json({ error: '인증되지 않았습니다.' }, { status: 401 })
+    }
+    
+    // Admin 클라이언트로 토큰 검증
+    console.log('Step 4: Creating admin client...')
+    const supabaseAdmin = getAdminClient()
+    
+    console.log('Step 5: Verifying user with token...')
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
+    
+    console.log('Step 6: User verification result:', { 
       hasUser: !!user, 
       userEmail: user?.email,
-      authError: authError?.message 
+      error: userError?.message 
     })
     
-    if (authError || !user) {
-      console.log('Auth failed:', authError?.message || 'No user found')
+    if (userError || !user) {
+      console.log('User verification failed:', userError?.message)
       return NextResponse.json({ error: '인증되지 않았습니다.' }, { status: 401 })
     }
 
-    console.log('Step 4: Checking admin permission...')
+    console.log('Step 7: Checking admin permission...')
     if (user.email !== 'cmgg919@gmail.com') {
       console.log('Not admin:', user.email)
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
     }
 
-    console.log('Step 5: Parsing request body...')
+    console.log('Step 8: Parsing request body...')
     const body = await request.json()
     const {
       email,
@@ -85,7 +96,7 @@ export async function POST(request: NextRequest) {
       years_experience
     } = body
 
-    console.log('Step 6: Request body received:', { email, company_name, contact_name })
+    console.log('Step 9: Request body received:', { email, company_name, contact_name })
 
     // 필수 필드 검증
     if (!email || !password || !company_name) {
@@ -96,12 +107,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Step 7: Creating admin client...')
-    const supabaseAdmin = getAdminClient()
-    console.log('Admin client created:', !!supabaseAdmin)
-
     // 이메일 중복 확인
-    console.log('Step 8: Checking for existing user...')
+    console.log('Step 10: Checking for existing user...')
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers()
     
     if (listError) {
@@ -122,7 +129,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Step 9: Creating new auth user...')
+    console.log('Step 11: Creating new auth user...')
     const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -141,10 +148,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Step 10: User created successfully:', newUser.user.id)
+    console.log('Step 12: User created successfully:', newUser.user.id)
 
     // users 테이블에 추가
-    console.log('Step 11: Inserting into users table...')
+    console.log('Step 13: Inserting into users table...')
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
       .insert({
@@ -163,10 +170,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Step 12: Users table insert successful')
+    console.log('Step 14: Users table insert successful')
 
     // contractors 테이블에 추가
-    console.log('Step 13: Inserting into contractors table...')
+    console.log('Step 15: Inserting into contractors table...')
     const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
       .insert({
@@ -197,7 +204,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Step 14: Contractor created successfully:', contractor.id)
+    console.log('Step 16: Contractor created successfully:', contractor.id)
     console.log('=== Contractor Create API Completed ===')
 
     return NextResponse.json({
