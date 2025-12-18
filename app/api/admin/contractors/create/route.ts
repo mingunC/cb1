@@ -1,12 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createAdminClient } from '@/lib/supabase/server-clients'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
+
+// Admin 클라이언트 (service role)
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    }
+  )
+}
+
+// 서버 클라이언트 (사용자 세션용)
+async function getServerClient() {
+  const cookieStore = await cookies()
+  
+  return createSupabaseServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // 서버 컴포넌트에서 쿠키를 설정할 수 없는 경우 무시
+          }
+        },
+      },
+    }
+  )
+}
 
 export async function POST(request: NextRequest) {
   console.log('=== Contractor Create API Started ===')
   
   try {
     console.log('Step 1: Creating server client...')
-    const supabase = await createServerClient()
+    const supabase = await getServerClient()
     
     console.log('Step 2: Getting user from auth...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -55,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Step 7: Creating admin client...')
-    const supabaseAdmin = createAdminClient()
+    const supabaseAdmin = getAdminClient()
     console.log('Admin client created:', !!supabaseAdmin)
 
     // 이메일 중복 확인
