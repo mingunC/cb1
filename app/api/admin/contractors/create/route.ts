@@ -2,20 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server-clients'
 
 export async function POST(request: NextRequest) {
+  console.log('=== Contractor Create API Started ===')
+  
   try {
+    console.log('Step 1: Creating server client...')
     const supabase = await createServerClient()
     
-    // 관리자 권한 확인
+    console.log('Step 2: Getting user from auth...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    console.log('Step 3: Auth result:', { 
+      hasUser: !!user, 
+      userEmail: user?.email,
+      authError: authError?.message 
+    })
+    
     if (authError || !user) {
+      console.log('Auth failed:', authError?.message || 'No user found')
       return NextResponse.json({ error: '인증되지 않았습니다.' }, { status: 401 })
     }
 
-    // 관리자 확인
+    console.log('Step 4: Checking admin permission...')
     if (user.email !== 'cmgg919@gmail.com') {
+      console.log('Not admin:', user.email)
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
     }
 
+    console.log('Step 5: Parsing request body...')
     const body = await request.json()
     const {
       email,
@@ -30,33 +43,48 @@ export async function POST(request: NextRequest) {
       years_experience
     } = body
 
+    console.log('Step 6: Request body received:', { email, company_name, contact_name })
+
     // 필수 필드 검증
     if (!email || !password || !company_name) {
+      console.log('Missing required fields')
       return NextResponse.json(
         { error: '이메일, 비밀번호, 업체명은 필수입니다.' },
         { status: 400 }
       )
     }
 
-    // Service Role 클라이언트 사용 (admin 작업용)
+    console.log('Step 7: Creating admin client...')
     const supabaseAdmin = createAdminClient()
+    console.log('Admin client created:', !!supabaseAdmin)
 
     // 이메일 중복 확인
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    console.log('Step 8: Checking for existing user...')
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+    
+    if (listError) {
+      console.log('List users error:', listError.message)
+      return NextResponse.json(
+        { error: `사용자 목록 조회 실패: ${listError.message}` },
+        { status: 500 }
+      )
+    }
+    
     const existingUser = existingUsers?.users?.find((u: any) => u.email === email)
 
     if (existingUser) {
+      console.log('User already exists:', email)
       return NextResponse.json(
         { error: '이미 등록된 이메일입니다.' },
         { status: 400 }
       )
     }
 
-    // Service role client로 사용자 생성 (이메일 확인 없이)
+    console.log('Step 9: Creating new auth user...')
     const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // 이메일 확인 자동 처리
+      email_confirm: true,
       user_metadata: {
         name: company_name,
         user_type: 'contractor'
@@ -64,14 +92,17 @@ export async function POST(request: NextRequest) {
     })
 
     if (createUserError || !newUser.user) {
-      console.error('User creation error:', createUserError)
+      console.log('User creation error:', createUserError?.message)
       return NextResponse.json(
         { error: `사용자 생성 실패: ${createUserError?.message}` },
         { status: 500 }
       )
     }
 
-    // users 테이블에 추가 (admin 클라이언트로 RLS 우회)
+    console.log('Step 10: User created successfully:', newUser.user.id)
+
+    // users 테이블에 추가
+    console.log('Step 11: Inserting into users table...')
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
       .insert({
@@ -82,8 +113,7 @@ export async function POST(request: NextRequest) {
       })
 
     if (userInsertError) {
-      console.error('Users table insert error:', userInsertError)
-      // 생성된 auth 사용자 삭제
+      console.log('Users table insert error:', userInsertError.message)
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
       return NextResponse.json(
         { error: `사용자 테이블 추가 실패: ${userInsertError.message}` },
@@ -91,7 +121,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // contractors 테이블에 추가 (admin 클라이언트로 RLS 우회)
+    console.log('Step 12: Users table insert successful')
+
+    // contractors 테이블에 추가
+    console.log('Step 13: Inserting into contractors table...')
     const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
       .insert({
@@ -107,14 +140,13 @@ export async function POST(request: NextRequest) {
         years_experience: years_experience || 0,
         portfolio_count: 0,
         rating: 0,
-        status: 'active' // 관리자가 직접 추가하므로 바로 활성화
+        status: 'active'
       })
       .select()
       .single()
 
     if (contractorError) {
-      console.error('Contractor insert error:', contractorError)
-      // 생성된 데이터 롤백
+      console.log('Contractor insert error:', contractorError.message)
       await supabaseAdmin.from('users').delete().eq('id', newUser.user.id)
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
       return NextResponse.json(
@@ -122,6 +154,9 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    console.log('Step 14: Contractor created successfully:', contractor.id)
+    console.log('=== Contractor Create API Completed ===')
 
     return NextResponse.json({
       success: true,
