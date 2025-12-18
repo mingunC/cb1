@@ -81,10 +81,14 @@ export async function POST(request: NextRequest) {
     
     console.log('User created:', newUser.user.id)
     
-    // users 테이블
+    // users 테이블 - display_name 대신 name 사용 또는 최소 필드만
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
-      .insert({ id: newUser.user.id, email, user_type: 'contractor', display_name: company_name })
+      .insert({ 
+        id: newUser.user.id, 
+        email, 
+        user_type: 'contractor'
+      })
     
     if (userInsertError) {
       console.log('Users table insert failed:', userInsertError.message)
