@@ -52,6 +52,7 @@ export default function ContractorManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState<Contractor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   
   const router = useRouter()
 
@@ -95,6 +96,13 @@ export default function ContractorManagementPage() {
         if (user.email !== 'cmgg919@gmail.com') {
           router.push('/')
           return
+        }
+        
+        // 세션에서 액세스 토큰 가져오기
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          setAccessToken(session.access_token)
+          console.log('✅ Access token obtained')
         }
         
         setIsAuthorized(true)
@@ -149,37 +157,36 @@ export default function ContractorManagementPage() {
   const handleCreateContractor = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 🔴 디버깅 로그 시작
-    console.log('========================================')
-    console.log('🚀 업체 추가 버튼 클릭!')
-    console.log('📝 입력 데이터:', newContractor)
-    console.log('========================================')
+    console.log('🚀 업체 추가 시작')
+    
+    if (!accessToken) {
+      alert('인증 토큰이 없습니다. 페이지를 새로고침해주세요.')
+      return
+    }
     
     setIsSubmitting(true)
 
     try {
-      console.log('📤 API 호출 시작: /api/admin/contractors/create')
-      console.log('📤 요청 body:', JSON.stringify(newContractor))
+      console.log('📤 API 호출 (Authorization 헤더 포함)')
       
       const response = await fetch('/api/admin/contractors/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // 쿠키 포함
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
         body: JSON.stringify(newContractor),
       })
 
-      console.log('📥 응답 상태:', response.status, response.statusText)
-      console.log('📥 응답 헤더:', Object.fromEntries(response.headers.entries()))
+      console.log('📥 응답 상태:', response.status)
       
       const result = await response.json()
       console.log('📥 응답 데이터:', result)
 
       if (!response.ok) {
-        console.error('❌ API 에러:', result.error)
         throw new Error(result.error || '업체 추가에 실패했습니다.')
       }
 
-      console.log('✅ 업체 추가 성공!')
       alert(result.message || '업체가 성공적으로 추가되었습니다.')
       setShowCreateModal(false)
       setNewContractor({
@@ -197,24 +204,30 @@ export default function ContractorManagementPage() {
       
       await fetchData()
     } catch (error) {
-      console.error('========================================')
-      console.error('❌ 전체 에러:', error)
-      console.error('========================================')
+      console.error('❌ 에러:', error)
       alert(error instanceof Error ? error.message : '업체 추가 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
-      console.log('🔄 isSubmitting 해제')
     }
   }
 
   const handleDeleteContractor = async () => {
     if (!showDeleteModal) return
+    
+    if (!accessToken) {
+      alert('인증 토큰이 없습니다. 페이지를 새로고침해주세요.')
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/admin/contractors/delete', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
         body: JSON.stringify({
           contractor_id: showDeleteModal.id,
           user_id: showDeleteModal.user_id
