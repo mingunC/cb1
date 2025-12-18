@@ -5,66 +5,28 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  // 가장 먼저 로그 출력
-  console.log('=== API REACHED ===')
+  console.log('=== CREATE CONTRACTOR API ===')
   
   try {
-    console.log('Step 1: Getting cookies from request headers')
-    const cookieHeader = request.headers.get('cookie') || ''
-    console.log('Cookie exists:', !!cookieHeader)
-    console.log('Cookie length:', cookieHeader.length)
+    // Authorization 헤더에서 토큰 가져오기
+    const authHeader = request.headers.get('authorization')
+    console.log('Auth header exists:', !!authHeader)
     
-    // 환경변수 확인
-    console.log('Step 2: Checking env vars')
-    console.log('SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
-    
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
-    }
-    
-    // 쿠키 파싱
-    console.log('Step 3: Parsing cookies')
-    const cookies: Record<string, string> = {}
-    cookieHeader.split(';').forEach(cookie => {
-      const [key, value] = cookie.trim().split('=')
-      if (key && value) cookies[key] = value
-    })
-    
-    console.log('Cookie keys:', Object.keys(cookies).join(', '))
-    
-    // Supabase auth 토큰 찾기
-    const authTokenKey = Object.keys(cookies).find(key => 
-      key.includes('sb-') && key.includes('-auth-token')
-    )
-    
-    console.log('Step 4: Auth token key:', authTokenKey || 'NOT FOUND')
-    
-    if (!authTokenKey || !cookies[authTokenKey]) {
-      console.log('No auth token found')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No Bearer token in Authorization header')
       return NextResponse.json({ error: '인증되지 않았습니다. (토큰 없음)' }, { status: 401 })
     }
     
-    // 토큰 디코딩
-    console.log('Step 5: Decoding token')
-    let accessToken = ''
-    try {
-      const decoded = decodeURIComponent(cookies[authTokenKey])
-      console.log('Decoded token length:', decoded.length)
-      const tokenData = JSON.parse(decoded)
-      accessToken = tokenData.access_token || (Array.isArray(tokenData) ? tokenData[0]?.access_token : '')
-      console.log('Access token extracted:', !!accessToken)
-    } catch (e: any) {
-      console.log('Token decode error:', e.message)
-      return NextResponse.json({ error: '토큰 파싱 실패' }, { status: 401 })
-    }
+    const accessToken = authHeader.replace('Bearer ', '')
+    console.log('Access token extracted, length:', accessToken.length)
     
-    if (!accessToken) {
-      return NextResponse.json({ error: '인증되지 않았습니다. (액세스 토큰 없음)' }, { status: 401 })
+    // 환경변수 확인
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Service role key missing')
+      return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
     }
     
     // Supabase Admin 클라이언트 생성
-    console.log('Step 6: Creating Supabase admin client')
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -72,7 +34,7 @@ export async function POST(request: NextRequest) {
     )
     
     // 사용자 검증
-    console.log('Step 7: Verifying user')
+    console.log('Verifying user with token...')
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
     
     if (userError || !user) {
@@ -80,15 +42,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '인증되지 않았습니다. (사용자 검증 실패)' }, { status: 401 })
     }
     
-    console.log('Step 8: User verified:', user.email)
+    console.log('User verified:', user.email)
     
     // 관리자 확인
     if (user.email !== 'cmgg919@gmail.com') {
-      console.log('Not admin')
+      console.log('Not admin:', user.email)
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
     }
     
-    console.log('Step 9: Admin verified, parsing body')
+    console.log('Admin verified, parsing body...')
     const body = await request.json()
     const { email, password, company_name, contact_name, phone, address } = body
     
@@ -97,14 +59,14 @@ export async function POST(request: NextRequest) {
     }
     
     // 이메일 중복 확인
-    console.log('Step 10: Checking existing user')
+    console.log('Checking existing user...')
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
     if (existingUsers?.users?.find((u: any) => u.email === email)) {
       return NextResponse.json({ error: '이미 등록된 이메일입니다.' }, { status: 400 })
     }
     
     // 사용자 생성
-    console.log('Step 11: Creating user')
+    console.log('Creating user...')
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -117,7 +79,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `사용자 생성 실패: ${createError?.message}` }, { status: 500 })
     }
     
-    console.log('Step 12: User created:', newUser.user.id)
+    console.log('User created:', newUser.user.id)
     
     // users 테이블
     const { error: userInsertError } = await supabaseAdmin
@@ -125,12 +87,13 @@ export async function POST(request: NextRequest) {
       .insert({ id: newUser.user.id, email, user_type: 'contractor', display_name: company_name })
     
     if (userInsertError) {
+      console.log('Users table insert failed:', userInsertError.message)
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
       return NextResponse.json({ error: `사용자 테이블 추가 실패: ${userInsertError.message}` }, { status: 500 })
     }
     
     // contractors 테이블
-    console.log('Step 13: Creating contractor')
+    console.log('Creating contractor...')
     const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
       .insert({
@@ -150,12 +113,13 @@ export async function POST(request: NextRequest) {
       .single()
     
     if (contractorError) {
+      console.log('Contractor insert failed:', contractorError.message)
       await supabaseAdmin.from('users').delete().eq('id', newUser.user.id)
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
       return NextResponse.json({ error: `업체 추가 실패: ${contractorError.message}` }, { status: 500 })
     }
     
-    console.log('Step 14: SUCCESS!')
+    console.log('SUCCESS! Contractor created:', contractor.id)
     return NextResponse.json({ success: true, contractor, message: '업체가 성공적으로 추가되었습니다.' })
     
   } catch (error: any) {
