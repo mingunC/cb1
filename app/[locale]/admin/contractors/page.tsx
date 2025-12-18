@@ -64,11 +64,28 @@ export default function ContractorManagementPage() {
     contact_name: '',
     phone: '',
     address: '',
-    license_number: '',
-    insurance_info: '',
-    specialties: [] as string[],
-    years_experience: 0
+    specialties: [] as string[]
   })
+
+  // 전문 분야 옵션
+  const specialtyOptions = [
+    { value: 'residential', label: 'Residential (주거)' },
+    { value: 'commercial', label: 'Commercial (상업)' }
+  ]
+
+  const handleSpecialtyChange = (specialty: string, checked: boolean) => {
+    if (checked) {
+      setNewContractor({
+        ...newContractor,
+        specialties: [...newContractor.specialties, specialty]
+      })
+    } else {
+      setNewContractor({
+        ...newContractor,
+        specialties: newContractor.specialties.filter(s => s !== specialty)
+      })
+    }
+  }
 
   const safeQuery = async (queryBuilder: any) => {
     try {
@@ -163,6 +180,12 @@ export default function ContractorManagementPage() {
       alert('인증 토큰이 없습니다. 페이지를 새로고침해주세요.')
       return
     }
+
+    // 전문 분야 필수 체크
+    if (newContractor.specialties.length === 0) {
+      alert('전문 분야를 최소 1개 이상 선택해주세요.')
+      return
+    }
     
     setIsSubmitting(true)
 
@@ -196,10 +219,7 @@ export default function ContractorManagementPage() {
         contact_name: '',
         phone: '',
         address: '',
-        license_number: '',
-        insurance_info: '',
-        specialties: [],
-        years_experience: 0
+        specialties: []
       })
       
       await fetchData()
@@ -688,6 +708,7 @@ export default function ContractorManagementPage() {
                     value={newContractor.email}
                     onChange={(e) => setNewContractor({ ...newContractor, email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="contractor@email.com"
                   />
                 </div>
                 <div>
@@ -698,6 +719,7 @@ export default function ContractorManagementPage() {
                     value={newContractor.password}
                     onChange={(e) => setNewContractor({ ...newContractor, password: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="8자 이상"
                   />
                 </div>
               </div>
@@ -709,6 +731,7 @@ export default function ContractorManagementPage() {
                   value={newContractor.company_name}
                   onChange={(e) => setNewContractor({ ...newContractor, company_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ABC Construction"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -719,6 +742,7 @@ export default function ContractorManagementPage() {
                     value={newContractor.contact_name}
                     onChange={(e) => setNewContractor({ ...newContractor, contact_name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="홍길동"
                   />
                 </div>
                 <div>
@@ -728,6 +752,7 @@ export default function ContractorManagementPage() {
                     value={newContractor.phone}
                     onChange={(e) => setNewContractor({ ...newContractor, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="416-123-4567"
                   />
                 </div>
               </div>
@@ -738,8 +763,31 @@ export default function ContractorManagementPage() {
                   value={newContractor.address}
                   onChange={(e) => setNewContractor({ ...newContractor, address: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="123 Main St, Toronto, ON"
                 />
               </div>
+
+              {/* 전문 분야 선택 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">전문 분야 * (최소 1개 선택)</label>
+                <div className="space-y-2">
+                  {specialtyOptions.map((option) => (
+                    <label key={option.value} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newContractor.specialties.includes(option.value)}
+                        onChange={(e) => handleSpecialtyChange(option.value, e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {newContractor.specialties.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">전문 분야를 선택해주세요</p>
+                )}
+              </div>
+
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
@@ -750,7 +798,7 @@ export default function ContractorManagementPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || newContractor.specialties.length === 0}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? '추가 중...' : '업체 추가'}
