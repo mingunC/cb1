@@ -148,21 +148,38 @@ export default function ContractorManagementPage() {
 
   const handleCreateContractor = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // 🔴 디버깅 로그 시작
+    console.log('========================================')
+    console.log('🚀 업체 추가 버튼 클릭!')
+    console.log('📝 입력 데이터:', newContractor)
+    console.log('========================================')
+    
     setIsSubmitting(true)
 
     try {
+      console.log('📤 API 호출 시작: /api/admin/contractors/create')
+      console.log('📤 요청 body:', JSON.stringify(newContractor))
+      
       const response = await fetch('/api/admin/contractors/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 쿠키 포함
         body: JSON.stringify(newContractor),
       })
 
+      console.log('📥 응답 상태:', response.status, response.statusText)
+      console.log('📥 응답 헤더:', Object.fromEntries(response.headers.entries()))
+      
       const result = await response.json()
+      console.log('📥 응답 데이터:', result)
 
       if (!response.ok) {
+        console.error('❌ API 에러:', result.error)
         throw new Error(result.error || '업체 추가에 실패했습니다.')
       }
 
+      console.log('✅ 업체 추가 성공!')
       alert(result.message || '업체가 성공적으로 추가되었습니다.')
       setShowCreateModal(false)
       setNewContractor({
@@ -180,10 +197,13 @@ export default function ContractorManagementPage() {
       
       await fetchData()
     } catch (error) {
-      console.error('Create contractor error:', error)
+      console.error('========================================')
+      console.error('❌ 전체 에러:', error)
+      console.error('========================================')
       alert(error instanceof Error ? error.message : '업체 추가 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
+      console.log('🔄 isSubmitting 해제')
     }
   }
 
