@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, User, Phone, Mail, MapPin, Star, Calendar, FileText, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, User, Phone, Mail, MapPin, Star, Calendar, FileText, Plus, Trash2, X, Globe } from 'lucide-react'
 
 interface Contractor {
   id: string
@@ -64,13 +64,21 @@ export default function ContractorManagementPage() {
     contact_name: '',
     phone: '',
     address: '',
-    specialties: [] as string[]
+    specialties: [] as string[],
+    preferred_languages: ['en'] as string[]
   })
 
   // 전문 분야 옵션
   const specialtyOptions = [
     { value: 'residential', label: 'Residential (주거)' },
     { value: 'commercial', label: 'Commercial (상업)' }
+  ]
+
+  // 언어 옵션
+  const languageOptions = [
+    { value: 'en', label: 'English' },
+    { value: 'zh', label: '中文 (Chinese)' },
+    { value: 'ko', label: '한국어 (Korean)' }
   ]
 
   const handleSpecialtyChange = (specialty: string, checked: boolean) => {
@@ -83,6 +91,20 @@ export default function ContractorManagementPage() {
       setNewContractor({
         ...newContractor,
         specialties: newContractor.specialties.filter(s => s !== specialty)
+      })
+    }
+  }
+
+  const handleLanguageChange = (language: string, checked: boolean) => {
+    if (checked) {
+      setNewContractor({
+        ...newContractor,
+        preferred_languages: [...newContractor.preferred_languages, language]
+      })
+    } else {
+      setNewContractor({
+        ...newContractor,
+        preferred_languages: newContractor.preferred_languages.filter(l => l !== language)
       })
     }
   }
@@ -186,6 +208,12 @@ export default function ContractorManagementPage() {
       alert('전문 분야를 최소 1개 이상 선택해주세요.')
       return
     }
+
+    // 언어 필수 체크
+    if (newContractor.preferred_languages.length === 0) {
+      alert('선호 언어를 최소 1개 이상 선택해주세요.')
+      return
+    }
     
     setIsSubmitting(true)
 
@@ -219,7 +247,8 @@ export default function ContractorManagementPage() {
         contact_name: '',
         phone: '',
         address: '',
-        specialties: []
+        specialties: [],
+        preferred_languages: ['en']
       })
       
       await fetchData()
@@ -699,6 +728,32 @@ export default function ContractorManagementPage() {
               </button>
             </div>
             <form onSubmit={handleCreateContractor} className="p-6 space-y-4">
+              
+              {/* 선호 언어 선택 */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Globe className="inline h-4 w-4 mr-1" />
+                  선호 언어 * (이메일 알림 언어)
+                </label>
+                <p className="text-xs text-gray-500 mb-3">다중 선택 가능</p>
+                <div className="flex flex-wrap gap-4">
+                  {languageOptions.map((option) => (
+                    <label key={option.value} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newContractor.preferred_languages.includes(option.value)}
+                        onChange={(e) => handleLanguageChange(option.value, e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {newContractor.preferred_languages.length === 0 && (
+                  <p className="text-red-500 text-sm mt-2">언어를 선택해주세요</p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
@@ -798,7 +853,7 @@ export default function ContractorManagementPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || newContractor.specialties.length === 0}
+                  disabled={isSubmitting || newContractor.specialties.length === 0 || newContractor.preferred_languages.length === 0}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? '추가 중...' : '업체 추가'}
