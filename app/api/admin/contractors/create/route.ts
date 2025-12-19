@@ -47,10 +47,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '이메일, 비밀번호, 업체명은 필수입니다.' }, { status: 400 })
     }
     
-    // 이메일 중복 확인
+    // 1. users 테이블에서 이메일 중복 확인
+    const { data: existingUserInTable } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .eq('email', email)
+      .single()
+    
+    if (existingUserInTable) {
+      return NextResponse.json({ error: '이미 등록된 이메일입니다. (users 테이블)' }, { status: 400 })
+    }
+    
+    // 2. contractors 테이블에서 이메일 중복 확인
+    const { data: existingContractor } = await supabaseAdmin
+      .from('contractors')
+      .select('id, email')
+      .eq('email', email)
+      .single()
+    
+    if (existingContractor) {
+      return NextResponse.json({ error: '이미 등록된 업체 이메일입니다.' }, { status: 400 })
+    }
+    
+    // 3. Auth에서 이메일 중복 확인
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    if (existingUsers?.users?.find((u: any) => u.email === email)) {
-      return NextResponse.json({ error: '이미 등록된 이메일입니다.' }, { status: 400 })
+    const existingAuthUser = existingUsers?.users?.find((u: any) => u.email === email)
+    
+    if (existingAuthUser) {
+      // Auth에는 있는데 users/contractors 테이블에 없으면 - 이전 실패 데이터일 수 있음
+      // 기존 auth 사용자 삭제 후 재생성
+      console.log('Found orphan auth user, deleting:', existingAuthUser.id)
+      await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id)
     }
     
     // contact_name에서 first_name, last_name 분리
@@ -62,7 +89,7 @@ export async function POST(request: NextRequest) {
     const langs = preferred_languages || ['en']
     const primaryLang = langs[0] || 'en'
     
-    // 사용자 생성
+    // 4. 새 사용자 생성
     console.log('Creating auth user...')
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -84,11 +111,11 @@ export async function POST(request: NextRequest) {
     
     console.log('Auth user created:', newUser.user.id)
     
-    // users 테이블
+    // 5. users 테이블 - upsert 사용
     console.log('Inserting into users table...')
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
-      .insert({ 
+      .upsert({ 
         id: newUser.user.id, 
         email, 
         user_type: 'contractor',
@@ -97,7 +124,7 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         preferred_language: primaryLang,
         preferred_languages: langs
-      })
+      }, { onConflict: 'id' })
     
     if (userInsertError) {
       console.log('Users table insert failed:', userInsertError.message)
@@ -105,7 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `사용자 테이블 추가 실패: ${userInsertError.message}` }, { status: 500 })
     }
     
-    // contractors 테이블
+    // 6. contractors 테이블
     console.log('Creating contractor...')
     const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
