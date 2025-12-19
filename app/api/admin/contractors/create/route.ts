@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json()
-    const { email, password, company_name, contact_name, phone, address } = body
+    const { email, password, company_name, contact_name, phone, address, specialties, preferred_languages } = body
     
     if (!email || !password || !company_name) {
       return NextResponse.json({ error: '이메일, 비밀번호, 업체명은 필수입니다.' }, { status: 400 })
@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
     const firstName = nameParts[0] || company_name
     const lastName = nameParts.slice(1).join(' ') || ''
     
+    // preferred_language 결정 (첫 번째 언어 사용)
+    const langs = preferred_languages || ['en']
+    const primaryLang = langs[0] || 'en'
+    
     // 사용자 생성
     console.log('Creating auth user...')
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -68,7 +72,9 @@ export async function POST(request: NextRequest) {
         first_name: firstName,
         last_name: lastName,
         user_type: 'contractor',
-        phone: phone || ''
+        phone: phone || '',
+        preferred_language: primaryLang,
+        preferred_languages: langs
       }
     })
     
@@ -78,7 +84,7 @@ export async function POST(request: NextRequest) {
     
     console.log('Auth user created:', newUser.user.id)
     
-    // users 테이블 - contractor-signup 페이지와 동일한 구조
+    // users 테이블
     console.log('Inserting into users table...')
     const { error: userInsertError } = await supabaseAdmin
       .from('users')
@@ -89,8 +95,8 @@ export async function POST(request: NextRequest) {
         first_name: firstName,
         last_name: lastName,
         phone: phone || null,
-        preferred_language: 'ko',
-        preferred_languages: ['ko']
+        preferred_language: primaryLang,
+        preferred_languages: langs
       })
     
     if (userInsertError) {
@@ -99,7 +105,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `사용자 테이블 추가 실패: ${userInsertError.message}` }, { status: 500 })
     }
     
-    // contractors 테이블 - contractor-signup 페이지와 동일한 구조
+    // contractors 테이블
     console.log('Creating contractor...')
     const { data: contractor, error: contractorError } = await supabaseAdmin
       .from('contractors')
@@ -111,8 +117,8 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         address: address || null,
         status: 'active',
-        specialties: ['residential'],
-        preferred_languages: ['ko'],
+        specialties: specialties || ['residential'],
+        preferred_languages: langs,
         years_experience: 0,
         portfolio_count: 0,
         rating: 0,
