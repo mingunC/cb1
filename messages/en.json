@@ -356,6 +356,8 @@
       "title": "Profile Management",
       "description": "Click the button below to update your profile information.",
       "editProfile": "Edit Profile",
+      "tabProfile": "Profile",
+      "tabSecurity": "Security Settings",
       "companyName": "Company Name",
       "companyNameRequired": "Company name is required",
       "companyDescription": "Company Description",
@@ -413,6 +415,40 @@
         "deleteSuccess": "Account successfully deleted",
         "deleting": "Deleting...",
         "deleteMyAccount": "Delete My Account"
+      },
+      "security": {
+        "title": "Security Settings",
+        "description": "Change your account password to keep your account secure.",
+        "currentPassword": "Current Password",
+        "currentPasswordPlaceholder": "Enter your current password",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Enter your new password",
+        "confirmPassword": "Confirm Password",
+        "confirmPasswordPlaceholder": "Confirm your new password",
+        "changePassword": "Change Password",
+        "passwordsMatch": "Passwords match",
+        "passwordsNotMatch": "Passwords do not match",
+        "requirements": {
+          "title": "Password Requirements",
+          "minLength": "At least 8 characters",
+          "letter": "At least one letter (a-z, A-Z)",
+          "number": "At least one number (0-9)"
+        },
+        "validation": {
+          "minLength": "Password must be at least 8 characters long",
+          "requireLetter": "Password must contain at least one letter",
+          "requireNumber": "Password must contain at least one number"
+        },
+        "errors": {
+          "currentPasswordRequired": "Please enter your current password",
+          "newPasswordRequired": "Please enter a new password",
+          "passwordsNotMatch": "Passwords do not match",
+          "samePassword": "New password must be different from current password",
+          "invalidCurrentPassword": "Current password is incorrect",
+          "userNotFound": "User not found. Please log in again.",
+          "updateFailed": "Failed to update password. Please try again."
+        },
+        "success": "Password changed successfully!"
       }
     },
     "specialties": {

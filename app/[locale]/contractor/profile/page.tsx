@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabase/clients'
-import { ArrowLeft, Camera, Save, Trash2, AlertTriangle, X, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Camera, Save, Trash2, AlertTriangle, X, Eye, EyeOff, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import PasswordChangeSection from '@/components/contractor/PasswordChangeSection'
 
 interface ContractorProfile {
   id: string
@@ -67,6 +68,7 @@ export default function ContractorProfile() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isOAuthUser, setIsOAuthUser] = useState(false)
   const [deleteStep, setDeleteStep] = useState<'warning' | 'confirm'>('warning')
+  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile')
   const phoneInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -603,7 +605,38 @@ export default function ContractorProfile() {
 
       {/* Profile content */}
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-xl shadow-sm p-8">
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden border border-gray-200">
+          <div className="border-b border-gray-200">
+            <nav className="flex px-6">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'profile'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {t('tabProfile')}
+              </button>
+              <button
+                onClick={() => setActiveTab('security')}
+                className={`py-4 px-1 ml-8 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
+                  activeTab === 'security'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                {t('tabSecurity')}
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'profile' ? (
+          <div className="bg-white rounded-xl shadow-sm p-8">
           {/* Logo section */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative">
@@ -869,26 +902,29 @@ export default function ContractorProfile() {
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Delete Account Section */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm p-8 border border-red-100">
-          <h2 className="text-lg font-semibold text-red-600 mb-4 flex items-center">
-            <AlertTriangle className="h-5 w-5 mr-2" />
-            {tDangerZone('title')}
-          </h2>
-          <p className="text-gray-600 mb-4">
-            {tDangerZone('description')}
-          </p>
-          <button
-            type="button"
-            onClick={openDeleteModal}
-            className="flex items-center px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            {tDangerZone('deleteAccount')}
-          </button>
-        </div>
+          
+          {/* Delete Account Section */}
+          <div className="mt-8 bg-white rounded-xl shadow-sm p-8 border border-red-100">
+            <h2 className="text-lg font-semibold text-red-600 mb-4 flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              {tDangerZone('title')}
+            </h2>
+            <p className="text-gray-600 mb-4">
+              {tDangerZone('description')}
+            </p>
+            <button
+              type="button"
+              onClick={openDeleteModal}
+              className="flex items-center px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {tDangerZone('deleteAccount')}
+            </button>
+          </div>
+          </div>
+        ) : (
+          <PasswordChangeSection />
+        )}
       </div>
 
       {/* Delete Account Modal */}

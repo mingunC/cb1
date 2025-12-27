@@ -356,6 +356,8 @@
       "title": "个人资料管理",
       "description": "点击下面的按钮更新您的个人资料信息。",
       "editProfile": "编辑个人资料",
+      "tabProfile": "个人资料",
+      "tabSecurity": "安全设置",
       "companyName": "公司名称",
       "companyNameRequired": "公司名称为必填项",
       "companyDescription": "公司简介",
@@ -413,6 +415,40 @@
         "deleteSuccess": "账户已成功删除",
         "deleting": "删除中...",
         "deleteMyAccount": "删除我的账户"
+      },
+      "security": {
+        "title": "安全设置",
+        "description": "更改您的账户密码以保护账户安全。",
+        "currentPassword": "当前密码",
+        "currentPasswordPlaceholder": "请输入当前密码",
+        "newPassword": "新密码",
+        "newPasswordPlaceholder": "请输入新密码",
+        "confirmPassword": "确认密码",
+        "confirmPasswordPlaceholder": "请再次输入新密码",
+        "changePassword": "更改密码",
+        "passwordsMatch": "密码匹配",
+        "passwordsNotMatch": "密码不匹配",
+        "requirements": {
+          "title": "密码要求",
+          "minLength": "至少8个字符",
+          "letter": "至少一个字母 (a-z, A-Z)",
+          "number": "至少一个数字 (0-9)"
+        },
+        "validation": {
+          "minLength": "密码必须至少8个字符",
+          "requireLetter": "密码必须包含至少一个字母",
+          "requireNumber": "密码必须包含至少一个数字"
+        },
+        "errors": {
+          "currentPasswordRequired": "请输入当前密码",
+          "newPasswordRequired": "请输入新密码",
+          "passwordsNotMatch": "密码不匹配",
+          "samePassword": "新密码必须与当前密码不同",
+          "invalidCurrentPassword": "当前密码不正确",
+          "userNotFound": "找不到用户。请重新登录。",
+          "updateFailed": "密码更新失败。请重试。"
+        },
+        "success": "密码已成功更改！"
       }
     },
     "specialties": {
