@@ -1,95 +1,85 @@
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   console.log('🗑️ Delete account API called')
   
   try {
-    const supabase = await createServerClient()
-    console.log('✅ Supabase client created with cookies')
+    // ✅ Next.js 15: cookies()를 await로 호출
+    const cookieStore = await cookies()
     
-    // 사용자 확인 - getSession과 getUser 모두 시도
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Server Component에서 쿠키 설정 불가 시 무시
+            }
+          },
+        },
+      }
+    )
+
+    // ✅ getSession과 getUser 모두 시도
     let user = null
     
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    console.log('🔐 Session check:', { 
-      hasSession: !!sessionData?.session, 
-      userId: sessionData?.session?.user?.id,
-      sessionError: sessionError?.message 
-    })
+    const { data: sessionData } = await supabase.auth.getSession()
+    console.log('🔐 Session check:', { hasSession: !!sessionData?.session })
     
     if (sessionData?.session?.user) {
       user = sessionData.session.user
       console.log('✅ Got user from session:', user.email)
     } else {
-      // getSession이 실패하면 getUser로 시도
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      console.log('👤 User check:', { 
-        hasUser: !!userData?.user, 
-        userId: userData?.user?.id,
-        userError: userError?.message 
-      })
-      
+      // getSession 실패 시 getUser로 재시도
+      const { data: userData } = await supabase.auth.getUser()
       if (userData?.user) {
         user = userData.user
         console.log('✅ Got user from getUser:', user.email)
       }
     }
-    
+
     if (!user) {
-      console.error('❌ No user found')
+      console.error('❌ No user found - both getSession and getUser failed')
       return NextResponse.json(
         { error: 'Unauthorized', details: 'Auth session missing!' },
         { status: 401 }
       )
     }
 
-    // Provider 확인
-    const provider = user.app_metadata?.provider || user.user_metadata?.provider
-    const isOAuthUser = provider === 'google' || provider === 'oauth'
-    console.log('🔐 Provider:', provider, 'isOAuth:', isOAuthUser)
+    // 요청 바디 파싱
+    const { password, email: confirmEmail } = await request.json()
 
-    const requestBody = await request.json()
-    console.log('📦 Request body:', { 
-      hasEmail: !!requestBody.email, 
-      hasPassword: !!requestBody.password 
-    })
+    // OAuth vs 일반 사용자 구분
+    const provider = user.app_metadata?.provider
+    const isOAuthUser = provider === 'google' || provider === 'kakao'
 
-    // OAuth 사용자와 일반 사용자 분기 처리
     if (isOAuthUser) {
-      const { email: confirmEmail } = requestBody
-
-      if (!confirmEmail) {
-        return NextResponse.json(
-          { error: 'Email is required for account deletion' },
-          { status: 400 }
-        )
-      }
-
-      console.log('📧 Email comparison:', { 
-        confirmEmail, 
-        userEmail: user.email,
-        match: confirmEmail.toLowerCase() === user.email?.toLowerCase() 
-      })
-
-      if (confirmEmail.toLowerCase() !== user.email?.toLowerCase()) {
+      // OAuth 사용자: 이메일로 확인
+      if (confirmEmail !== user.email) {
         return NextResponse.json(
           { error: 'Email does not match' },
           { status: 401 }
         )
       }
     } else {
-      // 일반 이메일 사용자: 비밀번호 확인
-      const { password } = requestBody
-
+      // 일반 사용자: 비밀번호로 확인
       if (!password) {
         return NextResponse.json(
-          { error: 'Password is required for account deletion' },
+          { error: 'Password is required' },
           { status: 400 }
         )
       }
 
-      // 비밀번호 재확인
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email!,
         password: password
@@ -104,50 +94,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 사용자 타입 확인
-    const { data: userData, error: userDataError } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', user.id)
-      .single()
-
-    console.log('👤 User data:', { userData, userDataError: userDataError?.message })
-
-    // 진행 중인 프로젝트/입찰 확인
-
-    if (userData?.user_type === 'customer') {
-      const { data: activeProjects } = await supabase
-        .from('quote_requests')
-        .select('id, status')
-        .eq('customer_id', user.id)
-        .in('status', ['approved', 'site-visit-pending', 'bidding', 'bidding-closed', 'contractor-selected', 'in-progress'])
-
-      if (activeProjects && activeProjects.length > 0) {
-        return NextResponse.json(
-          { error: 'Cannot delete account with active projects.' },
-          { status: 400 }
-        )
-      }
-    }
-
-    if (userData?.user_type === 'contractor') {
-      const { data: activeQuotes } = await supabase
-        .from('contractor_quotes')
-        .select('id, status')
-        .eq('contractor_id', user.id)
-        .eq('status', 'pending')
-
-      if (activeQuotes && activeQuotes.length > 0) {
-        return NextResponse.json(
-          { error: 'Cannot delete account with pending quotes.' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Soft delete 실행
-    console.log('🗑️ Soft deleting user:', user.id)
-    
+    // Soft delete 처리
     const { error: updateError } = await supabase
       .from('users')
       .update({ 
@@ -158,32 +105,26 @@ export async function POST(request: Request) {
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('❌ Update error:', updateError)
+      console.error('❌ Failed to mark user as deleted:', updateError)
       return NextResponse.json(
-        { error: 'Failed to delete account', details: updateError.message },
+        { error: 'Failed to delete account' },
         { status: 500 }
       )
     }
 
-    // Contractor 비활성화
-    if (userData?.user_type === 'contractor') {
-      const { error: contractorError } = await supabase
-        .from('contractors')
-        .update({ 
-          status: 'inactive',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-
-      if (contractorError) {
-        console.error('⚠️ Contractor update error:', contractorError)
-      }
-    }
+    // contractors 테이블 업데이트
+    await supabase
+      .from('contractors')
+      .update({ 
+        status: 'inactive',
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
 
     // 로그아웃
     await supabase.auth.signOut()
-    console.log('✅ Account deleted successfully')
 
+    console.log('✅ Account deleted successfully:', user.email)
     return NextResponse.json({ 
       success: true,
       message: 'Account successfully deleted' 
