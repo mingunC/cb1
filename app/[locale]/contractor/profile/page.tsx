@@ -482,15 +482,27 @@ export default function ContractorProfile() {
     setIsDeleting(true)
 
     try {
+      // ✅ 세션에서 accessToken 가져오기
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) {
+        toast.error('Session expired. Please log in again.')
+        router.push('/contractor-login')
+        setIsDeleting(false)
+        return
+      }
+
       const body = isOAuthUser 
-        ? { email: confirmEmail }
-        : { password: deletePassword }
+        ? { email: confirmEmail, accessToken: session.access_token }
+        : { password: deletePassword, accessToken: session.access_token }
 
       const response = await fetch('/api/delete-account', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(body),
       })
