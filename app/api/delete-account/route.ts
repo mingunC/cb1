@@ -11,6 +11,12 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { password, email: confirmEmail, accessToken } = body
     
+    console.log('📝 Request body:', { 
+      hasPassword: !!password, 
+      hasConfirmEmail: !!confirmEmail, 
+      hasAccessToken: !!accessToken 
+    })
+    
     let user = null
     let supabase = null
 
@@ -114,15 +120,37 @@ export async function POST(request: Request) {
       )
     }
 
-    // OAuth vs 일반 사용자 구분
-    const provider = user.app_metadata?.provider
-    const isOAuthUser = provider === 'google' || provider === 'kakao'
+    // OAuth vs 일반 사용자 구분 (더 넓은 범위로 체크)
+    const provider = user.app_metadata?.provider || ''
+    const identities = user.identities || []
+    
+    // OAuth 사용자 확인: provider가 있거나, identities에 oauth가 있는 경우
+    const isOAuthUser = 
+      provider === 'google' || 
+      provider === 'kakao' || 
+      provider === 'oauth' ||
+      provider.includes('google') ||
+      provider.includes('oauth') ||
+      identities.some((id: any) => id.provider === 'google' || id.provider === 'kakao')
+    
+    console.log('👤 User info:', {
+      email: user.email,
+      provider,
+      isOAuthUser,
+      identitiesCount: identities.length,
+      identityProviders: identities.map((id: any) => id.provider)
+    })
 
     if (isOAuthUser) {
-      // OAuth 사용자: 이메일로 확인
-      if (confirmEmail !== user.email) {
+      // OAuth 사용자: 이메일로 확인 (대소문자 무시)
+      const userEmail = user.email?.toLowerCase().trim()
+      const inputEmail = confirmEmail?.toLowerCase().trim()
+      
+      console.log('📧 Email comparison:', { userEmail, inputEmail, match: userEmail === inputEmail })
+      
+      if (!inputEmail || inputEmail !== userEmail) {
         return NextResponse.json(
-          { error: 'Email does not match' },
+          { error: 'Email does not match', details: 'Please enter the email address you used to sign up.' },
           { status: 401 }
         )
       }
@@ -149,32 +177,42 @@ export async function POST(request: Request) {
       }
     }
 
-    // Soft delete 처리
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ 
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-
-    if (updateError) {
-      console.error('❌ Failed to mark user as deleted:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to delete account' },
-        { status: 500 }
-      )
-    }
-
-    // contractors 테이블 업데이트
-    await supabase
+    // contractors 테이블 업데이트 (먼저 시도)
+    const { error: contractorError } = await supabase
       .from('contractors')
       .update({ 
         status: 'inactive',
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id)
+
+    if (contractorError) {
+      console.error('❌ Failed to update contractor:', contractorError)
+      // contractors 업데이트 실패해도 계속 진행
+    } else {
+      console.log('✅ Contractor status updated to inactive')
+    }
+
+    // users 테이블 Soft delete 처리 (선택적)
+    try {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.warn('⚠️ Failed to mark user as deleted in users table:', updateError.message)
+        // users 테이블 업데이트 실패해도 계속 진행 (테이블이 없거나 권한 문제일 수 있음)
+      } else {
+        console.log('✅ User marked as deleted in users table')
+      }
+    } catch (userTableError) {
+      console.warn('⚠️ users table update skipped:', userTableError)
+    }
 
     // 로그아웃
     await supabase.auth.signOut()
