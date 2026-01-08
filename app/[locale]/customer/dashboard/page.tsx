@@ -728,10 +728,27 @@ export default function CustomerDashboard() {
                   return
 
                 try {
+                  // ✅ 세션에서 accessToken 가져오기
+                  const supabase = createBrowserClient()
+                  const { data: { session } } = await supabase.auth.getSession()
+                  
+                  if (!session?.access_token) {
+                    alert('Session expired. Please log in again.')
+                    window.location.href = '/login'
+                    return
+                  }
+
                   const response = await fetch('/api/delete-account', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password }),
+                    credentials: 'include',
+                    headers: { 
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: JSON.stringify({ 
+                      password,
+                      accessToken: session.access_token 
+                    }),
                   })
 
                   const data = await response.json()
